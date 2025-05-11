@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)Dll</OutDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,15 +116,19 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\dongd\gitproject\GameEngine\Include;C:\Users\dongd\gitproject\GameEngine\Include\freetype-2.13.0\include;C:\Users\dongd\gitproject\GameEngine\Include\Core;C:\Users\dongd\gitproject\GameEngine\Include\Utility;C:\Users\dongd\gitproject\GameEngine\Include\ICUinclude;C:\Users\dongd\gitproject\GameEngine\Include\Fbx;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.26100.0\um;C:\Users\dongd\gitproject\GameEngine\Include\Inc;C:\Users\dongd\gitproject\GameEngine\Core\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\Utility;$(SolutionDir)Include\ICUinclude;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Inc;$(SolutionDir)Include\Src;$(SolutionDir)Include\freetype-2.13.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>C:\Users\dongd\gitproject\GameEngine\x64\Debug;C:\Users\dongd\gitproject\GameEngine\Lib;C:\Users\dongd\gitproject\GameEngine\Include\Fbx\lib;C:\Users\dongd\gitproject\GameEngine\Lib\ICUlib64;C:\Users\dongd\gitproject\GameEngine\Lib\harfbuzz;C:\Users\dongd\gitproject\GameEngine\Lib\library;C:\Users\dongd\gitproject\GameEngine\Lib\libpng-1.6.39;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)Lib;$(SolutionDir)Lib\ICUlib64;$(SolutionDir)Include\Fbx\lib;$(SolutionDir)Lib\harfbuzz;$(SolutionDir)Lib\library;$(SolutionDir)Lib\libpng-1.6.39;$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Utility.lib;UploadBuffer.lib;Allocator.lib;HeapManager.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;freetype.lib;harfbuzz.lib;png16.lib;imm32.lib;icudt.lib;icuind.lib;icuiod.lib;icutestd.lib;icutud.lib;icuucd.lib;JsonParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)Dll\$(Platform)\$(Configuration)\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -143,7 +147,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <OutputFile>$(OutDir)</OutputFile>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)Dll\$(Platform)\$(Configuration)\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\Asset\Animation\AnimationClip.h" />

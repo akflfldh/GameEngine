@@ -105,14 +105,17 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\dongd\gitproject\GameEngine\Include;C:\Users\dongd\gitproject\GameEngine\Include\Core;C:\Users\dongd\gitproject\GameEngine\Include\freetype-2.13.0\include;C:\Users\dongd\gitproject\GameEngine\Include\Fbx;C:\Users\dongd\gitproject\GameEngine\Include\Utility;C:\Users\dongd\gitproject\GameEngine\Include\Allocator;C:\Users\dongd\gitproject\GameEngine\GameDirector;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\freetype-2.13.0\include;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Include\Utility;$(SolutionDir)Include\Include\Allocator;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\dongd\gitproject\GameEngine\Lib;C:\Users\dongd\gitproject\GameEngine\x64\Debug;C:\Users\dongd\gitproject\GameEngine\Dll;C:\Users\dongd\gitproject\GameEngine\Lib\harfbuzz;C:\Users\dongd\gitproject\GameEngine\Include\Fbx\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib;$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)Dll;$(SolutionDir)Lib\harfbuzz;$(SolutionDir)Include\Fbx\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Utility.lib;Allocator.lib;HeapManager.lib;Core.lib;JsonParser.lib;imm32.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)Dll\$(Platform)\$(Configuration)\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -129,6 +132,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(TargetPath)" "$(SolutionDir)Dll\$(Platform)\$(Configuration)\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="DefaultBaseMsgHandlerComponet.h" />

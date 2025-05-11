@@ -840,66 +840,6 @@ void Application::InitSystems()
 
 
 
-
-
-
-   // InitFileUiWindow();
-   //// mResourceController.LoadFile(L"Resource\\black_bison.fbx");
-   //// mResourceController.LoadFile(L"Resource\\chair.fbx");
-   //// mResourceController.LoadFile(L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Resource\\cone.fbx");
-
-   // InitGamePlayWindow();   //game play window 라고하는데 동시에 월드 에디터이기도한거지
-   // InitAttributeWindow();
-
-   // InitFrameWindow();
-   //
-   // InitDragAndDropWindow();
-   // InitPopupWindow();
-
-
-   // if (!mGraphicCommandObject.GetCloseState())
-   // {
-   //     mGraphicCommandObject.ExecuteCommandList();
-   //     mGraphicCommandObject.FlushCommandQueue();
-   // }
-
-
-  //  mResourceController.SendDefaultAssetLoadResponseEvent();
- 
-  //  std::vector<DockingWindowController*>normalWindowControllerVector = { mGameWindowPlayController,mFileUiWindowController,mAttributeWindowController };
-
-
-  ////  mCreatingProjectDirector.Initialize(mFrameWindow, std::move(normalWindowControllerVector), mPopupWindowController, mFrameWindowController);
-
-
-
-
-
-
-//#ifdef EditorMode
-//    mEditorModeDirector.Initialize(mGamePlayWindowChromeSystem);
-//    mEditorModeDirector.InitGameWindowLayoutSystem();
-//
-//
-//    EditorModeDirector::SendAssetToFileSystem();
-//#endif 
-
-
-    ////여기까지는 에디터를 위한내용
-    //mProjectDirector.Initialize(mFrameWindow, std::move(normalWindowControllerVector), mPopupWindowController, mFrameWindowController,mFrameWindowUiSystem);
-    //
-
-
-    //user data처리
-
-
-
-
-
-
-
-
-
    return ;
 }
 

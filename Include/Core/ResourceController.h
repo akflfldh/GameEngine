@@ -272,7 +272,7 @@ namespace Quad
 	private:
 		void InitFileUiSystem();
 		void InitGamePlayUiSystem();
-		void LoadCommonEffect();
+		void LoadEffect(const std::string& folderPath);
 		void LoadCommonTexture();
 		void InitLayout();
 		D3D12_INPUT_ELEMENT_DESC MakeInputElement(LPCSTR semanticName, UINT sematicIndex, DXGI_FORMAT format, UINT inputSlot, UINT AlignedByteOffset,

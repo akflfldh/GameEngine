@@ -161,7 +161,8 @@ void Quad::EditorDirector::Initialize()
     //std::vector<Asset*> editorDefaultAssetVector= mEditorModeDirector.LoadAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
 
     SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-    std::vector<Asset*> editorAsset = mEditorModeDirector.LoadAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
+
+    std::vector<Asset*> editorAsset = mEditorModeDirector.LoadAsset(".\\Asset");
 
    
     InitFileUiWindow();
@@ -208,7 +209,7 @@ void Quad::EditorDirector::Initialize()
     //}
 
    
-    AddVisibleEditorAssetToFileWindow("C:\\Users\\dongd\\gitproject\\GameEngine\\EditorConfig\\EditorAssetVisibleConfig.json");
+    AddVisibleEditorAssetToFileWindow(".\\EditorConfig\\EditorAssetVisibleConfig.json");
 
 
 
@@ -1747,19 +1748,26 @@ void Quad::EditorDirector::AddEffect(RenderSystem* renderSystem, Effect* effect)
 
 }
 
-
-
-
-
-
-
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+  
 #ifdef _DEBUG
+    //bool ret = SetDllDirectory(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Dll\\x64\\Debug\\");
+ 
+
+    //if (ret != true)
+      //  assert(1);
     // 메모리 누수 체크 활성화
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+#else
+
+    SetDllDirectory(L".\\Dll\\x64\\Release\\");
+
+#endif 
+
+
+
+
     int a = 2;
 
     Quad::Application app;

@@ -133,7 +133,7 @@ namespace Quad
 
 
 		CreateDefaultShaderResource();
-		LoadCommonEffect();
+		//LoadCommonEffect();
 		
 	
 		auto effectManager = EffectManager::GetInstance();
@@ -2733,17 +2733,20 @@ namespace Quad
 
 	}
 
-	void ResourceController::LoadCommonEffect()
+	void ResourceController::LoadEffect(const std::string& folderPath)
 	{
-
 		wchar_t currentDirectoryBuffer[MAX_PATH];
 		GetCurrentDirectory(MAX_PATH, currentDirectoryBuffer);
 
-#ifdef RUN
-		SetCurrentDirectory(_T("..\\..\\SceneGraphQuadTree\\effect"));
-#else 
-		SetCurrentDirectory(_T("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\effect"));
-#endif
+		SetCurrentDirectory(Utility::ConvertToWString(folderPath, true).c_str());
+
+		//#ifdef RUN
+		//		SetCurrentDirectory(_T("..\\..\\SceneGraphQuadTree\\effect"));
+		//#else 
+		//		SetCurrentDirectory(_T("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\effect"));
+		//#endif
+
+
 		WIN32_FIND_DATAA fileData;
 
 		HANDLE handle = FindFirstFileA("*.effect", &fileData);
@@ -2759,8 +2762,9 @@ namespace Quad
 
 		SetCurrentDirectory(currentDirectoryBuffer);
 		return;
-
 	}
+
+
 
 	void ResourceController::LoadCommonTexture()
 	{

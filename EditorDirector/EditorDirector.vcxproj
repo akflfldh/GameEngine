@@ -105,14 +105,19 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\dongd\gitproject\GameEngine\Include;C:\Users\dongd\gitproject\GameEngine\Include\Utility;C:\Users\dongd\gitproject\GameEngine\Include\Object;C:\Users\dongd\gitproject\GameEngine\Include\EditorDirector;C:\Users\dongd\gitproject\GameEngine\Include\Core;C:\Users\dongd\gitproject\GameEngine\Include\Fbx;C:\Users\dongd\gitproject\GameEngine\Include\freetype-2.13.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Utility;$(SolutionDir)Include\Object;$(SolutionDir)Include\EditorDirector;$(SolutionDir)Include\Core;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\freetype-2.13.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\dongd\gitproject\GameEngine\x64\Debug;C:\Users\dongd\gitproject\GameEngine\Include\Fbx\lib;C:\Users\dongd\gitproject\GameEngine\Dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)Include\Fbx\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Utility.lib;Allocator.lib;HeapManager.lib;Core.lib;JsonParser.lib;imm32.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -129,6 +134,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnimationStateLinkRectNode.cpp" />

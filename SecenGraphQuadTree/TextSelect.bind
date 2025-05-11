@@ -1,9 +1,0 @@
-
-
-PassConstantBuffer : b0 :CBV
-
-gObjectStructuredBuffer :t0 :SRV
-
-gDiffuseMap : t1 :SRV
-
-MinMagMipLinearSampler : s0 : SPV

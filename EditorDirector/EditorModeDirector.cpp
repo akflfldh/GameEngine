@@ -33,7 +33,9 @@ std::vector<Quad::Asset*> & Quad::EditorModeDirector::LoadAsset(const std::strin
 {
 
 	
+	
 
+	LoadEffect(assetPath);
 
 	LoadTexture(assetPath);
 
@@ -228,6 +230,19 @@ void Quad::EditorModeDirector::InitGameWindowLayoutSystem()
 
 }
 
+void Quad::EditorModeDirector::LoadEffect(const std::string& assetPath)
+{
+	ResourceController* resourceController = ResourceController::GetInstance();
+
+	
+	const std::string effectFolderPath = assetPath + "\\Effect";
+	//const std::string preDirectoryPath = Utility::SetNewCurrentDirectory(effectFolderPath);
+	
+	resourceController->LoadEffect(effectFolderPath);
+
+
+}
+
 void Quad::EditorModeDirector::LoadMesh(const std::string& assetPath)
 {
 	ResourceController* resourceController = ResourceController::GetInstance();
@@ -355,23 +370,17 @@ void Quad::EditorModeDirector::LoadTexture(const std::string& assetPath)
 	ResourceController* resourceController = ResourceController::GetInstance();
 	ResourceLoader * resourceLoader =  resourceController->mResourceLoader;
 
-
+	wchar_t currentDirectoryBuffer[MAX_PATH];
+	GetCurrentDirectory(MAX_PATH, currentDirectoryBuffer);
 
 
 	const std::string textureMetaDataFilePath = assetPath + "\\TextureMetaData.json";
 
-
-	wchar_t currentDirectoryBuffer[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, currentDirectoryBuffer);
-
-	const std::wstring textureFolderPath = Utility::ConvertToWString((assetPath + "\\Texture").c_str(),true);
-	SetCurrentDirectory(textureFolderPath.c_str());
-
-
 	JsonParser::ReadFile(textureMetaDataFilePath);
 
 	JsonParser::ReadStart();
-	
+
+
 	unsigned long long readObjectIndex = 0;
 	unsigned long long nextTextureAvailableUniqueID = 0;
 	JsonParser::Read("NextAvailableUniqueID", nextTextureAvailableUniqueID);
@@ -387,6 +396,11 @@ void Quad::EditorModeDirector::LoadTexture(const std::string& assetPath)
 	
 
 	unsigned long long assetID = 0;
+
+
+	const std::wstring textureFolderPath = Utility::ConvertToWString((assetPath + "\\Texture").c_str(), true);
+	int ret = SetCurrentDirectory(textureFolderPath.c_str());
+
 
 	for (unsigned long long i = 0; i < textureNum; ++i)
 	{

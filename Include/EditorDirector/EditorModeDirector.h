@@ -36,7 +36,7 @@ namespace Quad
 	private:
 		
 
-
+		static void LoadEffect(const std::string& assetPath);
 		static void LoadMesh(const std::string& assetPath);
 		static void LoadMaterial(const std::string& assetPath);
 		static void LoadTexture(const std::string& assetPath);
