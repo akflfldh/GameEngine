@@ -1,0 +1,28 @@
+
+
+
+NAME : TestEntity
+
+CLASS : ButtonEntity
+	
+POSITION : {0.0f,0.0f,0.0f}
+
+SCALE : {1.0F,1.0f,1.0f}
+
+ROTATION : {0.0f,0.0f,0.0f}
+
+
+SUBMESH : [	
+
+	[ MATERIAL : [ 
+	  NAME : Button.mat
+	  TEXTURE : Button.bmp] ],
+	[ MATERIAL : [
+	  Name :Button2.mat
+	  TEXTURE: Button2.bmp] ]
+]
+
+
+//CHILD : ["TextBox","ButtonLine"]
+
+

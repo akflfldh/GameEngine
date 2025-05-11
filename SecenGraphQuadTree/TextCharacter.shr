@@ -1,0 +1,27 @@
+
+
+
+CB : ObjectConstantBuffer/Object
+{
+
+	float4x4 gWorld
+
+}
+
+
+CB: PassConstantBuffer/Pass
+{
+	float4x4 gViewProj
+}
+
+
+T2D : gDiffuseMap/DiffuseMap/Object
+
+
+SP : MinMagMipLinearSampler /Pass 
+{
+	Min Linear
+	Mag Linear
+	Mip Linear	
+
+}

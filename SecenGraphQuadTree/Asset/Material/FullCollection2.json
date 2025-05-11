@@ -1,0 +1,41 @@
+[
+    {
+        "ContentItem_Name": "FullCollection",
+        "Asset_ID": 2,
+        "Material_DiffuseMap": 433,
+        "Material_NormalMap": 0,
+        "Material_Diffuse": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_Ambient": [
+            0.20000000298023224,
+            0.20000000298023224,
+            0.20000000298023224
+        ],
+        "Material_FresnelR0": [
+            0.10000000149011612,
+            0.10000000149011612,
+            0.10000000149011612
+        ],
+        "Material_Shiness": 0.0,
+        "Material_Specular": [
+            -107374176.0,
+            -107374176.0,
+            -107374176.0
+        ],
+        "Material_Color": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_ColorIntensity": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_EffectName": "Default.effect"
+    }
+]

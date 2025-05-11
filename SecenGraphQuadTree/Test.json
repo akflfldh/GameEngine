@@ -1,0 +1,34 @@
+{
+  "title": "������ ��Ű��",
+  "description": "�� ��Ű���� �������� ���� �����͸� �����ϱ� ���� �ۼ��� ��Ű����.",
+  //�����̰Ŵ� ��Ű�������� ��Ÿ������
+  //��Ű�� ��ü���� json���� �ۼ��� ��ü �ν��Ͻ����� Ÿ�Կ� ���������� ����ִ°Ŵ� (��ǻ� ��Ÿ�����Ͷ���Ҽ��ִµ�)
+  //�� ��Ű�������� ��Ÿ������ Ű���尡 title�ϰ� description�ϰ� default�̴�.
+  "type": "object",
+  "properties": {
+    "name": {
+      "type",
+      "string"
+    },
+    "family": {
+      "type",
+      "string"
+    },
+    "age": { "type": "integer" },
+    "weight": {
+      "type",
+      "number"
+    },
+    "owner": {
+      "type": "object",
+      "properties": {
+        "ownerName": {
+          "type",
+          "string"
+        },
+        "phone": {"type","string"}
+      }
+    }
+}
+
+

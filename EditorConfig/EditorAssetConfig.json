@@ -1,0 +1,49 @@
+
+[
+    {"Texture":
+    [
+        {
+            "Name":"Blue.png"
+        },
+        {
+            "Name":"Default.bmp"
+        }
+    
+    ]
+    },
+
+    {
+    "Effect":[
+        "Default.effect","DefaultUi.effect","Line.effect","TextBox.effect","TextCharacter.effect"],
+    "HLSL": [
+        "DefaultUi.hlsl","Temp.hlsl","TextCharacter.hlsl","TextSelect.hlsl","Line.hlsl"]
+    },
+    
+    {"MaterialToUser":
+    [
+        {
+            "Name":"Default"
+        }
+    
+    ]
+    
+    },
+
+
+    {"MeshToUser" :
+    [
+
+        {
+            "Name":"Cube"
+        },
+
+        { 
+            "Name":"Rectangle"
+        }
+    ]
+
+    }
+
+
+
+]

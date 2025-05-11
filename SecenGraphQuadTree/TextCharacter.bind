@@ -1,0 +1,9 @@
+
+
+ObjectConstantBuffer : b0 :CBV
+
+PassConstantBuffer: b1:CBV
+
+gDiffuseMap : t0 :SRV
+
+MinMagMipLinearSampler : s0 : SPV

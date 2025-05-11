@@ -1,0 +1,11 @@
+[{  
+    "Texture":["Blue.png","Default.bmp"],
+    "Effect":[ "Default.effect","DefaultUi.effect","Line.effect","TextBox.effect","TextCharacter.effect"],
+    "HLSL":["DefaultUi.hlsl","Temp.hlsl","TextCharacter.hlsl","TextSelect.hlsl","Line.hlsl","DefaultLight.hlsl"],
+    "Material":["Default"],
+    "Mesh":["Cube","Rectangle"]
+}
+
+
+
+]

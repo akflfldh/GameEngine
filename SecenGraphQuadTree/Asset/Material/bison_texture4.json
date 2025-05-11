@@ -1,0 +1,41 @@
+[
+    {
+        "ContentItem_Name": "bison_texture",
+        "Asset_ID": 4,
+        "Material_DiffuseMap": 432,
+        "Material_NormalMap": 0,
+        "Material_Diffuse": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_Ambient": [
+            0.20000000298023224,
+            0.20000000298023224,
+            0.20000000298023224
+        ],
+        "Material_FresnelR0": [
+            0.10000000149011612,
+            0.10000000149011612,
+            0.10000000149011612
+        ],
+        "Material_Shiness": 14.090909004211426,
+        "Material_Specular": [
+            0.1753246784210205,
+            0.1753246784210205,
+            0.1753246784210205
+        ],
+        "Material_Color": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_ColorIntensity": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Material_EffectName": "Default.effect"
+    }
+]

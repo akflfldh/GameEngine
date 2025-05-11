@@ -1,0 +1,519 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{a6be0b8b-9f22-4618-b39c-ac1f6c062943}</ProjectGuid>
+    <RootNamespace>Core</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)Dll</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;CORE_EXPORT_LIB;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Users\dongd\gitproject\GameEngine\Include;C:\Users\dongd\gitproject\GameEngine\Include\freetype-2.13.0\include;C:\Users\dongd\gitproject\GameEngine\Include\Core;C:\Users\dongd\gitproject\GameEngine\Include\Utility;C:\Users\dongd\gitproject\GameEngine\Include\ICUinclude;C:\Users\dongd\gitproject\GameEngine\Include\Fbx;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.26100.0\um;C:\Users\dongd\gitproject\GameEngine\Include\Inc;C:\Users\dongd\gitproject\GameEngine\Core\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>C:\Users\dongd\gitproject\GameEngine\x64\Debug;C:\Users\dongd\gitproject\GameEngine\Lib;C:\Users\dongd\gitproject\GameEngine\Include\Fbx\lib;C:\Users\dongd\gitproject\GameEngine\Lib\ICUlib64;C:\Users\dongd\gitproject\GameEngine\Lib\harfbuzz;C:\Users\dongd\gitproject\GameEngine\Lib\library;C:\Users\dongd\gitproject\GameEngine\Lib\libpng-1.6.39;C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.26100.0\um\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Utility.lib;UploadBuffer.lib;Allocator.lib;HeapManager.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;freetype.lib;harfbuzz.lib;png16.lib;imm32.lib;icudt.lib;icuind.lib;icuiod.lib;icutestd.lib;icutud.lib;icuucd.lib;JsonParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;CORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Asset\Animation\AnimationClip.h" />
+    <ClInclude Include="..\Include\Asset\Animation\Bone.h" />
+    <ClInclude Include="..\Include\Asset\Animation\BoneAnimationClip.h" />
+    <ClInclude Include="..\Include\Asset\Asset.h" />
+    <ClInclude Include="..\Include\Asset\Material\LineBaseMaterial.h" />
+    <ClInclude Include="..\Include\Asset\Material\Material.h" />
+    <ClInclude Include="..\Include\Asset\Material\ModelMaterial\ModelMaterial.h" />
+    <ClInclude Include="..\Include\Asset\Mesh\Mesh.h" />
+    <ClInclude Include="..\Include\Asset\Mesh\MeshType.h" />
+    <ClInclude Include="..\Include\Asset\Mesh\SkinningMesh.h" />
+    <ClInclude Include="..\Include\Asset\Mesh\StaticMesh.h" />
+    <ClInclude Include="..\Include\Asset\Skeleton\Skeleton.h" />
+    <ClInclude Include="..\Include\Asset\Texture\Texture.h" />
+    <ClInclude Include="..\Include\Collision\BoxCollider.h" />
+    <ClInclude Include="..\Include\Collision\CameraBoxCollider.h" />
+    <ClInclude Include="..\Include\Collision\CameraFrustumCollider.h" />
+    <ClInclude Include="..\Include\Collision\Collider.h" />
+    <ClInclude Include="..\Include\Collision\ColliderGenerator.h" />
+    <ClInclude Include="..\Include\Collision\CollisionHelper.h" />
+    <ClInclude Include="..\Include\Collision\CollisionWorld.h" />
+    <ClInclude Include="..\Include\Collision\FrustumCollider.h" />
+    <ClInclude Include="..\Include\Collision\OrientedCollider.h" />
+    <ClInclude Include="..\Include\Collision\PointLightCollider.h" />
+    <ClInclude Include="..\Include\Collision\RectCollider.h" />
+    <ClInclude Include="..\Include\Collision\SphereCollider.h" />
+    <ClInclude Include="..\Include\Collision\SplineCollider.h" />
+    <ClInclude Include="..\Include\Collision\UiCollider.h" />
+    <ClInclude Include="..\Include\Collision\UiCollisionWorld.h" />
+    <ClInclude Include="..\Include\Component.h" />
+    <ClInclude Include="..\Include\Component\AnimationComponent.h" />
+    <ClInclude Include="..\Include\Component\ColliderComponent.h" />
+    <ClInclude Include="..\Include\Component\MeshComponent.h" />
+    <ClInclude Include="..\Include\Component\Model.h" />
+    <ClInclude Include="..\Include\Component\UiColliderComponent.h" />
+    <ClInclude Include="..\Include\Core\AnimationClipSplitter.h" />
+    <ClInclude Include="..\Include\Core\AnimationKeyFrame.h" />
+    <ClInclude Include="..\Include\Core\AnimationUpdateSystem.h" />
+    <ClInclude Include="..\Include\Core\Application.h" />
+    <ClInclude Include="..\Include\Core\BaseComponent.h" />
+    <ClInclude Include="..\Include\Core\BaseWindow.h" />
+    <ClInclude Include="..\Include\Core\BaseWindowController.h" />
+    <ClInclude Include="..\Include\Core\BaseWindowMsgHandlerComponent.h" />
+    <ClInclude Include="..\Include\Core\BezierCurve.h" />
+    <ClInclude Include="..\Include\Core\BoneAnimSRT.h" />
+    <ClInclude Include="..\Include\Core\BoneFactory.h" />
+    <ClInclude Include="..\Include\Core\CameraEventComponentFactory.h" />
+    <ClInclude Include="..\Include\Core\CameraFixWindowResizeEventComponent.h" />
+    <ClInclude Include="..\Include\Core\CollisionWorldFactory.h" />
+    <ClInclude Include="..\Include\Core\ComponentIDGenerator.h" />
+    <ClInclude Include="..\Include\Core\ComponentUpdateSystem.h" />
+    <ClInclude Include="..\Include\Core\ContentItem.h" />
+    <ClInclude Include="..\Include\Core\Controller.h" />
+    <ClInclude Include="..\Include\Core\CoreDllExport.h" />
+    <ClInclude Include="..\Include\Core\Curve.h" />
+    <ClInclude Include="..\Include\Core\CurveFactory.h" />
+    <ClInclude Include="..\Include\Core\CustomWindowMessage.h" />
+    <ClInclude Include="..\Include\Core\DDSTextureLoader12.h" />
+    <ClInclude Include="..\Include\Core\DefaultMoveFrustumCamera.h" />
+    <ClInclude Include="..\Include\Core\DeleteTextureEvent.h" />
+    <ClInclude Include="..\Include\Core\EffectLoader.h" />
+    <ClInclude Include="..\Include\Core\EffectTable.h" />
+    <ClInclude Include="..\Include\Core\EffectUtility.h" />
+    <ClInclude Include="..\Include\Core\Event.h" />
+    <ClInclude Include="..\Include\Core\EventDispatcher.h" />
+    <ClInclude Include="..\Include\Core\Font.h" />
+    <ClInclude Include="..\Include\Core\GameTimer.h" />
+    <ClInclude Include="..\Include\Core\GraphicCommand.h" />
+    <ClInclude Include="..\Include\Core\GraphicPipeLine.h" />
+    <ClInclude Include="..\Include\Core\HermiteCurve.h" />
+    <ClInclude Include="..\Include\Core\IAxisCallbackTable.h" />
+    <ClInclude Include="..\Include\Core\ICallbackTable.h" />
+    <ClInclude Include="..\Include\Core\ICameraEventComponent.h" />
+    <ClInclude Include="..\Include\Core\ICollisionWorldFactoryImpl.h" />
+    <ClInclude Include="..\Include\Core\InputLayoutTable.h" />
+    <ClInclude Include="..\Include\Core\InputSystem.h" />
+    <ClInclude Include="..\Include\Core\InputSystemImpl.h" />
+    <ClInclude Include="..\Include\Core\InputSystemType.h" />
+    <ClInclude Include="..\Include\Core\InputType.h" />
+    <ClInclude Include="..\Include\Core\InstancingTable.h" />
+    <ClInclude Include="..\Include\Core\InstancingTableType.h" />
+    <ClInclude Include="..\Include\Core\IProgramDirector.h" />
+    <ClInclude Include="..\Include\Core\ISpacePartitioningStructureFactoryImpl.h" />
+    <ClInclude Include="..\Include\Core\KeyBoard.h" />
+    <ClInclude Include="..\Include\Core\KeyEvent.h" />
+    <ClInclude Include="..\Include\Core\KeyInputHandlerComponent.h" />
+    <ClInclude Include="..\Include\Core\LookComponent.h" />
+    <ClInclude Include="..\Include\Core\MapController.h" />
+    <ClInclude Include="..\Include\Core\MapManager.h" />
+    <ClInclude Include="..\Include\Core\MapMetaData.h" />
+    <ClInclude Include="..\Include\Core\MaterialGenerator.h" />
+    <ClInclude Include="..\Include\Core\MeshComponent.h" />
+    <ClInclude Include="..\Include\Core\ModelBaseComponent.h" />
+    <ClInclude Include="..\Include\Core\Mouse.h" />
+    <ClInclude Include="..\Include\Core\MouseClickSelectEvent.h" />
+    <ClInclude Include="..\Include\Core\MouseClickState.h" />
+    <ClInclude Include="..\Include\Core\MouseEvent.h" />
+    <ClInclude Include="..\Include\Core\MouseHandlerComponent.h" />
+    <ClInclude Include="..\Include\Core\MouseInOutEvent.h" />
+    <ClInclude Include="..\Include\Core\MoveComponent.h" />
+    <ClInclude Include="..\Include\Core\ObjectBinnedAllocator.h" />
+    <ClInclude Include="..\Include\Core\PanelUiEntity.h" />
+    <ClInclude Include="..\Include\Core\PassData.h" />
+    <ClInclude Include="..\Include\Core\PointLightCollider.h" />
+    <ClInclude Include="..\Include\Core\QuadTree.h" />
+    <ClInclude Include="..\Include\Core\RawResourceType.h" />
+    <ClInclude Include="..\Include\Core\Ray.h" />
+    <ClInclude Include="..\Include\Core\RegisterAnimStateTransitionCallbackClass.h" />
+    <ClInclude Include="..\Include\Core\RegisterAnimStateTransitionCallbackClassManager.h" />
+    <ClInclude Include="..\Include\Core\RenderPass.h" />
+    <ClInclude Include="..\Include\Core\RenderPassSystem.h" />
+    <ClInclude Include="..\Include\Core\RenderSystem.h" />
+    <ClInclude Include="..\Include\Core\ResourceController.h" />
+    <ClInclude Include="..\Include\Core\ResourceImportCommonHeader.h" />
+    <ClInclude Include="..\Include\Core\ResourceLoader.h" />
+    <ClInclude Include="..\Include\Core\ResourceStorer.h" />
+    <ClInclude Include="..\Include\Core\RootSignature.h" />
+    <ClInclude Include="..\Include\Core\SceneElement.h" />
+    <ClInclude Include="..\Include\Core\SceneNode.h" />
+    <ClInclude Include="..\Include\Core\SchemaLoader.h" />
+    <ClInclude Include="..\Include\Core\SelectEvent.h" />
+    <ClInclude Include="..\Include\Core\Shader.h" />
+    <ClInclude Include="..\Include\Core\ShaderManager.h" />
+    <ClInclude Include="..\Include\Core\SpacePartitioningStructure.h" />
+    <ClInclude Include="..\Include\Core\SpacePartitioningStructureFactory.h" />
+    <ClInclude Include="..\Include\Core\State.h" />
+    <ClInclude Include="..\Include\Core\StaticCallbackHelpr.h" />
+    <ClInclude Include="..\Include\Core\StructuredBufferFactory.h" />
+    <ClInclude Include="..\Include\Core\System.h" />
+    <ClInclude Include="..\Include\Core\SystemSelectState.h" />
+    <ClInclude Include="..\Include\Core\SystemState.h" />
+    <ClInclude Include="..\Include\Core\TextBox.h" />
+    <ClInclude Include="..\Include\Core\TextCharacterEntity.h" />
+    <ClInclude Include="..\Include\Core\TextCharacterPanelEntity.h" />
+    <ClInclude Include="..\Include\Core\TextCursorEntity.h" />
+    <ClInclude Include="..\Include\Core\TextureLoader.h" />
+    <ClInclude Include="..\Include\Core\Transform.h" />
+    <ClInclude Include="..\Include\Core\VectorSpace.h" />
+    <ClInclude Include="..\Include\Core\WICTextureLoader12.h" />
+    <ClInclude Include="..\Include\Core\WindowActiveEvent.h" />
+    <ClInclude Include="..\Include\Core\WindowRequestEvent.h" />
+    <ClInclude Include="..\Include\Core\WindowResizeEvent.h" />
+    <ClInclude Include="..\Include\Effect\Effect.h" />
+    <ClInclude Include="..\Include\Event\EventTable.h" />
+    <ClInclude Include="..\Include\Map\Map.h" />
+    <ClInclude Include="..\Include\Map\SceneGraph.h" />
+    <ClInclude Include="..\Include\ObjectFactory\BaseObjectFactory.h" />
+    <ClInclude Include="..\Include\ObjectFactory\LineFactory.h" />
+    <ClInclude Include="..\Include\ObjectFactory\ObjectFactory.h" />
+    <ClInclude Include="..\Include\ObjectFactory\RuntimeObjectFactory.h" />
+    <ClInclude Include="..\Include\ObjectFactory\TextFactory.h" />
+    <ClInclude Include="..\Include\ObjectManager\BaseObjectManager.h" />
+    <ClInclude Include="..\Include\ObjectManager\EditGameObjectManager.h" />
+    <ClInclude Include="..\Include\ObjectManager\ObjectManager.h" />
+    <ClInclude Include="..\Include\ObjectManager\RuntimeGameObjectManager.h" />
+    <ClInclude Include="..\Include\ObjectManager\RuntimeObjectManager.h" />
+    <ClInclude Include="..\Include\Object\Camera\Camera.h" />
+    <ClInclude Include="..\Include\Object\Camera\CameraHelper.h" />
+    <ClInclude Include="..\Include\Object\Camera\FrustumCamera.h" />
+    <ClInclude Include="..\Include\Object\Camera\OrthogoanlCamera.h" />
+    <ClInclude Include="..\Include\Object\Entity.h" />
+    <ClInclude Include="..\Include\Object\Light\Light.h" />
+    <ClInclude Include="..\Include\Object\Line\Grid.h" />
+    <ClInclude Include="..\Include\Object\Line\Line.h" />
+    <ClInclude Include="..\Include\Object\Line\LineBase.h" />
+    <ClInclude Include="..\Include\Object\Line\Spline.h" />
+    <ClInclude Include="..\Include\Object\Macro.h" />
+    <ClInclude Include="..\Include\Object\Object.h" />
+    <ClInclude Include="..\Include\Object\ObjectSmartPointer.h" />
+    <ClInclude Include="..\Include\Object\ObjectType.h" />
+    <ClInclude Include="..\Include\Object\RegisterObjectHelper.h" />
+    <ClInclude Include="..\Include\Object\StateComponent.h" />
+    <ClInclude Include="..\Include\Object\UiEntity.h" />
+    <ClInclude Include="..\Include\Predeclare.h" />
+    <ClInclude Include="..\Include\ResourceFactory\TextureFactory\TextureFactory.h" />
+    <ClInclude Include="..\Include\ResourceManager\AnimationClipManager.h" />
+    <ClInclude Include="..\Include\ResourceManager\EffectManager\EffectManager.h" />
+    <ClInclude Include="..\Include\ResourceManager\MaterialManager\MaterialManager.h" />
+    <ClInclude Include="..\Include\ResourceManager\MeshManager.h" />
+    <ClInclude Include="..\Include\ResourceManager\SkeletonManager.h" />
+    <ClInclude Include="..\Include\ResourceManager\TextureManager\TextureManager.h" />
+    <ClInclude Include="..\Include\ResourceSmartPointer\IAssetSmartPointer.h" />
+    <ClInclude Include="..\Include\ResourceSmartPointer\MaterialSmartPointer.h" />
+    <ClInclude Include="..\Include\ResourceSmartPointer\MeshSmartPointer.h" />
+    <ClInclude Include="..\Include\ResourceSmartPointer\TextureSmartPointer.h" />
+    <ClInclude Include="..\Include\Shader\ShaderResource.h" />
+    <ClInclude Include="..\Include\Shader\ShaderResourceConstantBuffer.h" />
+    <ClInclude Include="..\Include\Shader\ShaderResourceSampler.h" />
+    <ClInclude Include="..\Include\Shader\ShaderResourceTexture.h" />
+    <ClInclude Include="..\Include\Shader\ShaderResourceType.h" />
+    <ClInclude Include="..\Include\System\UiSystem.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="GameEntity.h" />
+    <ClInclude Include="GameMapSystem.h" />
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AnimationClip.cpp" />
+    <ClCompile Include="AnimationClipManager.cpp" />
+    <ClCompile Include="AnimationClipSplitter.cpp" />
+    <ClCompile Include="AnimationComponent.cpp" />
+    <ClCompile Include="AnimationKeyFrame.cpp" />
+    <ClCompile Include="AnimationUpdateSystem.cpp" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Asset.cpp" />
+    <ClCompile Include="BaseComponent.cpp" />
+    <ClCompile Include="BaseObjectFactory.cpp" />
+    <ClCompile Include="BaseObjectManager.cpp" />
+    <ClCompile Include="BaseWindow.cpp" />
+    <ClCompile Include="BaseWindowController.cpp" />
+    <ClCompile Include="BaseWindowMsgHandlerComponent.cpp" />
+    <ClCompile Include="BezierCurve.cpp" />
+    <ClCompile Include="Bone.cpp" />
+    <ClCompile Include="BoneAnimationClip.cpp" />
+    <ClCompile Include="BoneFactory.cpp" />
+    <ClCompile Include="BoxCollider.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraBoxCollider.cpp" />
+    <ClCompile Include="CameraEventComponentFactory.cpp" />
+    <ClCompile Include="CameraFixWIndowResizeEventComponent.cpp" />
+    <ClCompile Include="Curve.cpp" />
+    <ClCompile Include="CurveFactory.cpp" />
+    <ClCompile Include="HermiteCurve.cpp" />
+    <ClCompile Include="ICameraEventComponent.cpp" />
+    <ClCompile Include="CameraFrustumCollider.cpp" />
+    <ClCompile Include="CameraHelper.cpp" />
+    <ClCompile Include="Collider.cpp" />
+    <ClCompile Include="ColliderComponent.cpp" />
+    <ClCompile Include="ColliderGenerator.cpp" />
+    <ClCompile Include="CollisionHelper.cpp" />
+    <ClCompile Include="CollisionWorld.cpp" />
+    <ClCompile Include="CollisionWorldFactory.cpp" />
+    <ClCompile Include="ComponentIDGenerator.cpp" />
+    <ClCompile Include="ComponentUpdateSystem.cpp" />
+    <ClCompile Include="ConstantBufferManager.cpp" />
+    <ClCompile Include="ContentItem.cpp" />
+    <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="DDSTextureLoader12.cpp" />
+    <ClCompile Include="DefaultMoveFrustumCamera.cpp" />
+    <ClCompile Include="DeleteTextureEvent.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="EditGameObjectManager.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="EffectLoader.cpp" />
+    <ClCompile Include="EffectManager.cpp" />
+    <ClCompile Include="EffectUtility.cpp" />
+    <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="EventDispatcher.cpp" />
+    <ClCompile Include="EventTable.cpp" />
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="FrustumCamera.cpp" />
+    <ClCompile Include="FrustumCollider.cpp" />
+    <ClCompile Include="GameEntity.cpp" />
+    <ClCompile Include="GameMapSystem.cpp" />
+    <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="GraphicCommand.cpp" />
+    <ClCompile Include="GraphicPipeLine.cpp" />
+    <ClCompile Include="Grid.cpp" />
+    <ClCompile Include="IAxisCallbackTable.cpp" />
+    <ClCompile Include="ICallbackTable.cpp" />
+    <ClCompile Include="ICollisionWorldFactoryImpl.cpp" />
+    <ClCompile Include="InputLayoutTable.cpp" />
+    <ClCompile Include="InputSystem.cpp" />
+    <ClCompile Include="InputSystemImpl.cpp" />
+    <ClCompile Include="InstancingTable.cpp" />
+    <ClCompile Include="IProgramDirector.cpp" />
+    <ClCompile Include="ISpacePartitioningStructureFactoryImpl.cpp" />
+    <ClCompile Include="KeyBoard.cpp" />
+    <ClCompile Include="KeyEvent.cpp" />
+    <ClCompile Include="KeyInputHandlerComponent.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Line.cpp" />
+    <ClCompile Include="LineBase.cpp" />
+    <ClCompile Include="LineBaseMaterial.cpp" />
+    <ClCompile Include="LineFactory.cpp" />
+    <ClCompile Include="LookComponent.cpp" />
+    <ClCompile Include="Map.cpp" />
+    <ClCompile Include="MapController.cpp" />
+    <ClCompile Include="MapManager.cpp" />
+    <ClCompile Include="MapMetaData.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="MaterialGenerator.cpp" />
+    <ClCompile Include="MaterialManager.cpp" />
+    <ClCompile Include="MaterialSmartPointer.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshComponent.cpp" />
+    <ClCompile Include="MeshManager.cpp" />
+    <ClCompile Include="MeshSmartPointer.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelBaseComponent.cpp" />
+    <ClCompile Include="ModelMaterial.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="MouseClickSelectEvent.cpp" />
+    <ClCompile Include="MouseEvent.cpp" />
+    <ClCompile Include="MouseHandlerComponent.cpp" />
+    <ClCompile Include="MouseInOutEvent.cpp" />
+    <ClCompile Include="MoveComponent.cpp" />
+    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="ObjectBinnedAllocator.cpp" />
+    <ClCompile Include="ObjectFactory.cpp" />
+    <ClCompile Include="ObjectManager.cpp" />
+    <ClCompile Include="ObjectSmartPointer.cpp" />
+    <ClCompile Include="OrientedCollider.cpp" />
+    <ClCompile Include="OrthogoanlCamera.cpp" />
+    <ClCompile Include="PanelUiEntity.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="PointLightCollider.cpp" />
+    <ClCompile Include="Ray.cpp" />
+    <ClCompile Include="RectCollider.cpp" />
+    <ClCompile Include="RegisterAnimStateTransitionCallbackClassManager.cpp" />
+    <ClCompile Include="RegisterObjectHelper.cpp" />
+    <ClCompile Include="RegisterAnimStateTransitionCallbackClass.cpp" />
+    <ClCompile Include="RenderPassSystem.cpp" />
+    <ClCompile Include="RenderPassTwo.cpp" />
+    <ClCompile Include="RenderSystem.cpp" />
+    <ClCompile Include="RenderTargetTexture.cpp" />
+    <ClCompile Include="ResourceController.cpp" />
+    <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="ResourceStorer.cpp" />
+    <ClCompile Include="RuntimeGameObjectManager.cpp" />
+    <ClCompile Include="RuntimeObjectFactory.cpp" />
+    <ClCompile Include="RuntimeObjectManager.cpp" />
+    <ClCompile Include="SceneElement.cpp" />
+    <ClCompile Include="SceneGraph.cpp" />
+    <ClCompile Include="SelectEvent.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="ShaderResource.cpp" />
+    <ClCompile Include="ShaderResourceConstantBuffer.cpp" />
+    <ClCompile Include="ShaderResourceSampler.cpp" />
+    <ClCompile Include="ShaderResourceTexture.cpp" />
+    <ClCompile Include="Skeleton.cpp" />
+    <ClCompile Include="SkeletonManager.cpp" />
+    <ClCompile Include="SkinningMesh.cpp" />
+    <ClCompile Include="SpacePartitioningStructure.cpp" />
+    <ClCompile Include="SpacePartitioningStructureFactory.cpp" />
+    <ClCompile Include="SphereCollider.cpp" />
+    <ClCompile Include="Spline.cpp" />
+    <ClCompile Include="SplineCollider.cpp" />
+    <ClCompile Include="StateComponent.cpp" />
+    <ClCompile Include="StaticCallbackHelpr.cpp" />
+    <ClCompile Include="StaticMesh.cpp" />
+    <ClCompile Include="StructuredBufferFactory.cpp" />
+    <ClCompile Include="System.cpp" />
+    <ClCompile Include="SystemState.cpp" />
+    <ClCompile Include="TextBox.cpp" />
+    <ClCompile Include="TextCharacterEntity.cpp" />
+    <ClCompile Include="TextCharacterPanelEntity.cpp" />
+    <ClCompile Include="TextCursorEntity.cpp" />
+    <ClCompile Include="TextFactory.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureFactory.cpp" />
+    <ClCompile Include="TextureLoader.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="TextureSmartPointer.cpp" />
+    <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UiCollider.cpp" />
+    <ClCompile Include="UiColliderComponent.cpp" />
+    <ClCompile Include="UiCollisionWorld.cpp" />
+    <ClCompile Include="UiEntity.cpp" />
+    <ClCompile Include="UiSystem.cpp" />
+    <ClCompile Include="VectorSpace.cpp" />
+    <ClCompile Include="WICTextureLoader12.cpp" />
+    <ClCompile Include="WindowActiveEvent.cpp" />
+    <ClCompile Include="WindowRequestEvent.cpp" />
+    <ClCompile Include="WindowResizeEvent.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,121 @@
+﻿#pragma once
+
+#include"Predeclare.h"
+#include<unordered_map>
+#include"IDGenerator.h"
+
+
+
+#ifdef UTILITY_LIB_EXPORT
+#define UTILITY_LIB_API __declspec(dllexport)
+#else
+#define UTILITY_LIB_API __declspec(dllimport)
+#endif
+
+
+
+
+
+namespace Quad
+{
+	template<typename T>
+	class  UniqueIDTable
+	{
+	public:
+
+		UniqueIDTable() = default;
+		~UniqueIDTable() = default;
+
+
+		void Register(T* element);
+		void UnRegister(T* element);
+		void UnRegister(unsigned long long id);
+
+		T* GetElement(unsigned long long id) const;
+
+		const std::unordered_map<unsigned long long, T*>& GetTable() const;
+		
+		//id를 새로 부여하는게 아니라 ,이미 가지고있다고 가정하고 등록한다.
+		void RegisterFromFile(T* element,unsigned long long id);
+
+
+		//소비하지는않고 다음번에 사용가능한 id를리턴한다
+		unsigned long long PeekUniqueID() const;
+
+		void SetNextAvailalbeUniqueID(unsigned long long id);
+
+	private:
+
+		std::unordered_map<unsigned long long, T*> mTable;
+		IDGenerator mIDGenerator;
+
+
+
+	};
+
+
+
+
+
+	template<typename T>
+	inline void UniqueIDTable<T>::Register(T* element)
+	{
+		unsigned long long id = mIDGenerator.GetNewID();
+		element->SetUniqueID(id);
+
+		mTable[id] = element;
+	}
+	template<typename T>
+	inline void UniqueIDTable<T>::UnRegister(T* element)
+	{
+		unsigned long long id = element->GetUniqueID();
+		UnRegister(id);
+	}
+	template<typename T>
+	void UniqueIDTable<T>::UnRegister(unsigned long long id)
+	{
+		//mIDGenerator.ReturnID(id);
+		mTable.erase(id);
+
+
+	}
+	template<typename T>
+	inline T* UniqueIDTable<T>::GetElement(unsigned long long id) const
+	{
+
+
+		typedef typename std::unordered_map<unsigned long long, T*>::const_iterator const_iterator;
+		const_iterator itr = mTable.find(id);
+
+		return itr != mTable.cend() ? itr->second : nullptr;
+	}
+
+	template<typename T>
+	const std::unordered_map<unsigned long long, T*>& UniqueIDTable<T>::GetTable() const
+	{
+		return mTable;
+		// TODO: 여기에 return 문을 삽입합니다.
+	}
+
+	template<typename T>
+	void UniqueIDTable<T>::RegisterFromFile(T* element, unsigned long long id)
+	{
+		element->SetUniqueID(id);
+		mTable[id] = element;
+		return;
+	}
+
+	template<typename T>
+	unsigned long long UniqueIDTable<T>::PeekUniqueID() const
+	{
+		return mIDGenerator.PeekNewID();
+	}
+
+	template<typename T>
+	void UniqueIDTable<T>::SetNextAvailalbeUniqueID(unsigned long long id)
+	{
+		mIDGenerator.SetNextAvailableID(id);
+
+	}
+	
+}

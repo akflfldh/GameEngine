@@ -1,0 +1,32 @@
+
+
+PASS
+{
+
+
+VS
+{
+  File:"Gizmo.hlsl"
+
+  EntryPoint:"VS"
+
+  Version:"vs_5_1"
+}
+
+
+PS
+{
+  File:"Gizmo.hlsl"
+
+  EntryPoint:"PS"
+
+  Version:"ps_5_1"
+}
+
+
+DEPTHFUNC:ALWAYS
+RENDERPASSID : GIZMO
+
+
+
+}

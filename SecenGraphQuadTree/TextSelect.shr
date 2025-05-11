@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+CB : PassConstantBuffer/Pass
+{
+	float4x4 gViewProj
+}
+
+ST: ObjectStruct
+{
+   float4x4 gWorld 
+}
+
+STB : gObjectStructuredBuffer/ObjectStruct/Object
+
+
+T2D : gDiffuseMap/DiffuseMap/Object
+
+
+SP : MinMagMipLinearSampler/Pass

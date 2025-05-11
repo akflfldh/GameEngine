@@ -1,0 +1,40 @@
+
+
+
+
+
+
+PASS 
+{
+
+VS
+{
+	File:"TextCharacter.hlsl"
+	EntryPoint:"VS"
+	Version:"vs_5_1"
+}
+
+PS
+{
+	File:"TextCharacter.hlsl"
+	EntryPoint:"PS"
+	Version:"ps_5_1"
+}
+
+BLENDENABLE:TRUE
+BLENDOP:ADD
+SRCBLEND:D3D12_BLEND_SRC_ALPHA
+DESTBLEND:D3D12_BLEND_INV_SRC_ALPHA
+
+
+STENCILENABLE : true
+STENCILFAILOP : KEEP
+STENCILDEPTHFAILOP :KEEP
+STENCILPASSOP : KEEP
+STENCILFUNC :EQUAL
+
+
+
+
+
+}

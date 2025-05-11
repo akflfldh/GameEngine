@@ -1,0 +1,30 @@
+
+
+
+PASS 
+{
+
+VS
+{
+  File:"Line.hlsl"
+
+  EntryPoint:"VS"
+
+  Version:"vs_5_1"
+}
+
+
+PS
+{
+  File:"Line.hlsl"
+
+  EntryPoint:"PS"
+
+  Version:"ps_5_1"
+}
+
+
+PRIMITIVETOPOLOGYTYPE : LINELIST
+
+
+}

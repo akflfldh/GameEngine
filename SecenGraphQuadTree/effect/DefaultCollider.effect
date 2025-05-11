@@ -1,0 +1,34 @@
+
+
+PASS
+{
+
+VS
+{
+  File:"DefaultCollider.hlsl"
+
+  EntryPoint : "VS"
+
+  Version : "vs_5_1"
+}
+
+
+PS
+{
+  File:"DefaultCollider.hlsl"
+
+  EntryPoint : "PS"
+
+  Version : "ps_5_1"
+}
+
+
+
+
+}
+
+
+
+
+
+

@@ -1,0 +1,2155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{702cb39a-a68b-4939-864b-9fe227e64137}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Manager">
+      <UniqueIdentifier>{53423962-3b4d-4b0b-a835-5732621d222b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Allocator">
+      <UniqueIdentifier>{663d2ce0-523b-411e-98cb-28a011fcc2df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Controller">
+      <UniqueIdentifier>{b5eb457f-f771-43a1-8df7-720484279be7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Loader">
+      <UniqueIdentifier>{ecb448c3-3ee9-4d60-81b2-5928ea5bb430}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Mesh">
+      <UniqueIdentifier>{04157498-f5de-480c-a7ae-7009d128521b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Material">
+      <UniqueIdentifier>{33947996-bc63-4ef7-9aa5-96d09dd5a15f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Texture">
+      <UniqueIdentifier>{e0df299e-4d54-45eb-bb4b-b387d25146bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object">
+      <UniqueIdentifier>{6d82396b-c70a-4d2b-a122-27c9bb95ad08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity">
+      <UniqueIdentifier>{2cb4df1b-1bc6-4205-90a4-771ba296c1c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Map">
+      <UniqueIdentifier>{27e6ae26-e5ba-4524-8f11-703657363a34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Map\SceneGraph">
+      <UniqueIdentifier>{1df0bb45-14bf-4479-ac9d-d1a6b6ab4561}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Camera">
+      <UniqueIdentifier>{51de7bb5-660c-4b7f-9317-1a2a16869545}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{aab3f188-fc11-4225-b6a1-49bc31ce9ca3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{f1859d60-e77c-41d4-9fae-3cedbb0aa4b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Storer">
+      <UniqueIdentifier>{2816928a-7ef5-4243-b5ef-be493c2b391c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GeometryGenerator">
+      <UniqueIdentifier>{08893698-e81b-46f6-87b8-8e469918fb1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect">
+      <UniqueIdentifier>{3428834d-093b-4b52-a53e-d64a9b0c8d62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Sampler">
+      <UniqueIdentifier>{dc892a07-f8df-436b-8d96-07420019200e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Componenet">
+      <UniqueIdentifier>{a7a3ac40-832f-4121-99e2-d74f7348a848}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Componenet\UiComponent">
+      <UniqueIdentifier>{5f5bc847-705b-461d-96bc-9b98dec01c19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity">
+      <UniqueIdentifier>{061410cc-e433-4f91-a572-ba1a2592ebc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Collision">
+      <UniqueIdentifier>{770af270-3776-415e-8ab1-50c5caec3e64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Collision\CollisionSystem">
+      <UniqueIdentifier>{dcd1353b-07ff-4828-bee7-51dec4d349d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{35c97c23-a4a3-4db1-a0d5-b62f7004a06a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Map\SpacePartitioningStruct">
+      <UniqueIdentifier>{0614ab98-281b-43f9-b8aa-b56e00081f5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="State">
+      <UniqueIdentifier>{5750d13c-5f5e-4926-a3b5-93214152aa51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="State\ClickableComponentState">
+      <UniqueIdentifier>{fce96daa-ec3b-4c2e-9af7-504393ff1b2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="State\GamePlayUiSystemState">
+      <UniqueIdentifier>{f9bfc14c-9355-46ca-b65f-1a2e958eb626}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{23ea3f3d-e561-4ee3-aa11-49f9dfca87a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event\MouseEvent">
+      <UniqueIdentifier>{98c84aa6-c30b-4d08-9108-8cfbaa09a8e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="State\GamePlayUiSystemPlayState">
+      <UniqueIdentifier>{eac53ee5-77d8-4238-ae3c-7811c92240cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{3fe4dbe9-7caa-4863-9180-f3b1ccef6c57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\UISystem">
+      <UniqueIdentifier>{a321bb7a-0834-4c6e-8c34-96ce4570393f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\WorldEditObject">
+      <UniqueIdentifier>{c7f587c4-c279-401b-b692-d9b409a7cce3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\WorldEditObject\WorldEditEntity">
+      <UniqueIdentifier>{3dfd0d2f-d088-4b35-a157-25624e154ab3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Text">
+      <UniqueIdentifier>{5ff2a95f-0988-458a-870e-d570b69bb7e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FreeType">
+      <UniqueIdentifier>{2fe7c024-14d5-4e2a-bcb6-9086f8eefdc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="InputDevice">
+      <UniqueIdentifier>{a97687f4-ec75-4cc3-98a1-5de725b03e4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\EngineDefaultEntity">
+      <UniqueIdentifier>{32130bcc-fb26-4474-adbb-210806dac036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\BoxEntity">
+      <UniqueIdentifier>{63bab659-6534-4a58-8217-32a057420a64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DescriptorHeapManager">
+      <UniqueIdentifier>{67b659d5-ff97-4ed2-9df9-2928db09bc66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DescriptorHeapManager\CbvSrvUavHeapManager">
+      <UniqueIdentifier>{c1649bbf-2dbd-4dae-a7d9-f66a5d138f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DescriptorHeapManager\DsvHeapManager">
+      <UniqueIdentifier>{5ff1eeb6-29ec-4ec7-b54d-a92cce2146c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DescriptorHeapManager\RtvHeapManager">
+      <UniqueIdentifier>{77f640f9-42c8-409c-a54d-1462e1487a2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DescriptorHeapManager\SamplerHeapManager">
+      <UniqueIdentifier>{55d77c02-8121-41e7-88f4-aa16e6a98c54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="InstancingTable">
+      <UniqueIdentifier>{67958204-26c3-49d4-b71c-24fabfb86d02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\EffectClass">
+      <UniqueIdentifier>{176421db-a275-4b5b-8e7c-e0d6111786aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\EffectClass\ShaderResource">
+      <UniqueIdentifier>{cb2301d2-dd7d-4e54-a3e5-8ca861e09907}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Buffer">
+      <UniqueIdentifier>{136a2edd-b573-45f2-b2e7-c2150ee5e75e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect">
+      <UniqueIdentifier>{090b4fa5-9b53-4c2c-8541-2dafc5e173f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Text\TextItem">
+      <UniqueIdentifier>{d34ab512-b015-466a-99bc-f1761d9a901f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Project">
+      <UniqueIdentifier>{a9c76bd3-dc1a-4ac8-8d2f-93eeaa9f9e2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Light">
+      <UniqueIdentifier>{9bea0eb6-a1c9-4f5d-bfab-7fcedda3bba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\UiEffect">
+      <UniqueIdentifier>{691325df-dd3a-4470-a498-4ca88f868eea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\UiEffect\TextBoxEffect">
+      <UniqueIdentifier>{d5abd452-2e2e-493c-a0ea-65c17866aabd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\UiEffect\TextCharacterEffect">
+      <UniqueIdentifier>{90415440-4917-4f62-a476-84dc10410fc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\UiEffect\TextSelectEffect">
+      <UniqueIdentifier>{efbc49a9-317c-4df8-a519-4a501efcda90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\Default">
+      <UniqueIdentifier>{06f5d77c-03dc-44e5-8ab5-fec05133c088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\DefaultUi">
+      <UniqueIdentifier>{cd587da3-6483-4e2b-a441-e7edccf70c00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event\WindowRequestEvent">
+      <UniqueIdentifier>{bc80b5be-c927-4f2d-8f55-853165b0ff83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\WindowControlEntity">
+      <UniqueIdentifier>{df68a773-8173-49de-8375-7d67e8214e26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\WindowControlEntity\WindowButton">
+      <UniqueIdentifier>{8cd0cf18-ca7a-49eb-a782-1f07db4a3556}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\WindowChromeSystem">
+      <UniqueIdentifier>{d8f57e21-7e21-4f6c-9009-1e13b0a3281b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\GameWindowSystem">
+      <UniqueIdentifier>{76009283-5a00-414a-ad39-11f7ef6fa6d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\AttributeWindowSystem">
+      <UniqueIdentifier>{4b80bc4f-c45f-4c0f-95a7-6a2252ea725b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\FrameWindowSystem">
+      <UniqueIdentifier>{9ada5077-886a-49af-af11-ab805ba140d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\FileUiWindowSystem">
+      <UniqueIdentifier>{b019dedd-9999-4f75-82d7-f80431df8374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Model">
+      <UniqueIdentifier>{e17e8d0c-4bcd-4ab6-a47f-457a550da865}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\WindowDockingSystem">
+      <UniqueIdentifier>{753555d9-4578-4c60-aeb4-f01cf919d06f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\DockingSystemEntity">
+      <UniqueIdentifier>{92bc02ba-b1af-445d-b156-9632807d4c94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event\FileEvent">
+      <UniqueIdentifier>{fc10d1ab-8cdb-4f28-95d0-0ee7b944b29e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\LogicalFolder">
+      <UniqueIdentifier>{4c88f8eb-901e-4df3-a955-16766f6977a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FastAccessContainer">
+      <UniqueIdentifier>{0e4671cf-bd3d-40e0-b75b-255dbe3ad20a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\ContentItemUiEntity">
+      <UniqueIdentifier>{072ec6dc-0801-4151-8ed1-a512ea82cb8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\DragAndDropSystem">
+      <UniqueIdentifier>{96bf7859-68a6-46de-b36c-e14c24109a57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Skeleton">
+      <UniqueIdentifier>{db37e908-b781-4e5e-a48a-f70920a1b028}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Animation">
+      <UniqueIdentifier>{98be56ab-debd-4522-9c2b-f0140e0b0713}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\DefaultSkinning">
+      <UniqueIdentifier>{59f9e2e8-e2bd-4985-9a84-afcffa67a012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\Line">
+      <UniqueIdentifier>{c2246924-46e6-44b1-bcb9-a7bbb9d1fc32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Line">
+      <UniqueIdentifier>{505921ad-f121-411f-b708-3974440f1b31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Line\Grid">
+      <UniqueIdentifier>{ea6018c6-7161-4cc2-9409-2450b536f71f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Collision\Collider">
+      <UniqueIdentifier>{472427cb-25e0-49b9-a401-8d1e02314253}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Collision\Collider\LightCollider">
+      <UniqueIdentifier>{64e654ea-e8c4-4e80-9a30-75ebbdecf548}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\DefaultCollider">
+      <UniqueIdentifier>{139ace68-ddb1-4d05-91ac-c89fa6171d46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\Gizmo">
+      <UniqueIdentifier>{ab29c6da-55c5-4c91-9c2e-5d3d89689d53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event\EventDispatcher">
+      <UniqueIdentifier>{2c77273e-0d45-4936-ab89-fa788aa92184}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Effect\DefaultEffect\GizmoEffect">
+      <UniqueIdentifier>{3cf2ca5d-cb24-4166-adc9-b321111971c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel">
+      <UniqueIdentifier>{b9f0958e-451a-4b63-b5af-aee0d086673d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\Folder">
+      <UniqueIdentifier>{ccd42c0b-4517-41dd-a93b-408a75ce9521}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\IconEntity">
+      <UniqueIdentifier>{18870f6b-8855-473d-b9d7-6dd362a1694e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\PopupWindowSystem">
+      <UniqueIdentifier>{5fc78240-ad52-4cfc-89f8-f16f78f23402}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\ContentItemUiPanelEntity">
+      <UniqueIdentifier>{f66447a9-4042-4e3b-976f-70cdaee1e569}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\NavigationPanel">
+      <UniqueIdentifier>{e21865cb-b47c-4924-bdbd-4840a7717445}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\NewFilter1">
+      <UniqueIdentifier>{7b2137b7-d6b6-4e90-ba4f-1c0f8a1e1a62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\ScrollListPanel">
+      <UniqueIdentifier>{c0ad113b-812e-4fcd-a268-ccb74e8e4925}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\TextBoxPanel">
+      <UniqueIdentifier>{c56b674f-9f0a-43f7-8eee-19b33f0d7cbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GameBase">
+      <UniqueIdentifier>{9358b429-161c-45c8-9610-5597bf8b8eaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Camera\UserCamera">
+      <UniqueIdentifier>{fc5bb64b-5f55-4f75-8439-509258f3b2ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SmartPointer">
+      <UniqueIdentifier>{17151325-2528-4aeb-9794-4fd8e51701fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JsonParser">
+      <UniqueIdentifier>{d938ca5f-4535-445d-aea1-4ff45ff3c7a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CreatingProject">
+      <UniqueIdentifier>{11a77ec4-4ac5-4506-a191-354ebdc93839}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource\Object\Entity\UiEntity\Panel\ListPanel">
+      <UniqueIdentifier>{343ccf39-ea71-4c28-9904-1d2c28ae6528}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Application.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DoException.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTimer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="QuadTreeApp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="PoolAllocator.cpp">
+      <Filter>Allocator</Filter>
+    </ClCompile>
+    <ClCompile Include="DestructingPoolAllocator.cpp">
+      <Filter>Allocator</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceLoader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Resource\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>Resource\Material</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureLoader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader12.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WICTextureLoader12.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Resource\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Resource\Object\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Resource\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Resource\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneGraph.cpp">
+      <Filter>Resource\Map\SceneGraph</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="MapManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderSystem.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="MapController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorHeapManager.cpp">
+      <Filter>DescriptorHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="CbvSrvUavHeapManager.cpp">
+      <Filter>DescriptorHeapManager\CbvSrvUavHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DsvHeapManager.cpp">
+      <Filter>DescriptorHeapManager\DsvHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="RtvHeapManager.cpp">
+      <Filter>DescriptorHeapManager\RtvHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplerHeapManager.cpp">
+      <Filter>DescriptorHeapManager\SamplerHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorHeapManagerMaster.cpp">
+      <Filter>DescriptorHeapManager</Filter>
+    </ClCompile>
+    <ClCompile Include="QuadTree.cpp">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceStorer.cpp">
+      <Filter>Storer</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoGenerator.cpp">
+      <Filter>GeometryGenerator</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialGenerator.cpp">
+      <Filter>GeometryGenerator</Filter>
+    </ClCompile>
+    <ClCompile Include="UploadBuffer.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="UiComponent.cpp">
+      <Filter>Componenet\UiComponent</Filter>
+    </ClCompile>
+    <ClCompile Include="ButtonUiEntitiy.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="UiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="GameRenderWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="SpacePartitioningStructure.cpp">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="VectorSpace.cpp">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicCommand.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MathHelper.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Ray.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ClickableComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="Component.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="State.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="ClickableComponentState.cpp">
+      <Filter>State\ClickableComponentState</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemState.cpp">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseClickState.cpp">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClCompile>
+    <ClCompile Include="Event.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseEvent.cpp">
+      <Filter>Event\MouseEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultState.cpp">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="EventTable.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseClickSelectEvent.cpp">
+      <Filter>Event\MouseEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayUiGamePlaySelectState.cpp">
+      <Filter>State\GamePlayUiSystemPlayState</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayUiGamePlayState.cpp">
+      <Filter>State\GamePlayUiSystemPlayState</Filter>
+    </ClCompile>
+    <ClCompile Include="System.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldEditEntity.cpp">
+      <Filter>Resource\Object\WorldEditObject\WorldEditEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldEditUiEntity.cpp">
+      <Filter>Resource\Object\WorldEditObject\WorldEditEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Attribute.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SchemaLoader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldEditEntityTable.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldEditEntityFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AttributeWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="UiSystem.cpp">
+      <Filter>System\UISystem</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemSelectState.cpp">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClCompile>
+    <ClCompile Include="TextFactory.cpp">
+      <Filter>FreeType</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyBoard.cpp">
+      <Filter>InputDevice</Filter>
+    </ClCompile>
+    <ClCompile Include="DeleteTextureEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundaryRect.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectoryUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="ResizeHandle.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundaryStick.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ResizeEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\BoxEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector3Box.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\BoxEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>FreeType</Filter>
+    </ClCompile>
+    <ClCompile Include="InstancingTable.cpp">
+      <Filter>InstancingTable</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPass.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="RootSignature.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicPipeLine.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectLoader.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectTable.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="InputLayoutTable.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectUtility.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantBuffer.cpp">
+      <Filter>Resource\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantBufferManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuredBuffer.cpp">
+      <Filter>Resource\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuredBufferFactory.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="DockingWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="MapGraph.cpp">
+      <Filter>Resource\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="StaticMesh.cpp">
+      <Filter>Resource\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="SkinningMesh.cpp">
+      <Filter>Resource\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="FbxParser.cpp">
+      <Filter>Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Resource\Object\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowChromeSystem.cpp">
+      <Filter>System\WindowChromeSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowRequestEvent.cpp">
+      <Filter>Event\WindowRequestEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowResizeEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowControlEntity.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse.cpp">
+      <Filter>InputDevice</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleBarEntity.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowButton.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowCloseButton.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlaySystem.cpp">
+      <Filter>System\GameWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayUiSystem.cpp">
+      <Filter>System\GameWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="AttributeSystem.cpp">
+      <Filter>System\AttributeWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="AttributeUiSystem.cpp">
+      <Filter>System\AttributeWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindowSystem.cpp">
+      <Filter>System\FrameWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindowUiSystem.cpp">
+      <Filter>System\FrameWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiUiSystem.cpp">
+      <Filter>System\FileUiWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiSystem.cpp">
+      <Filter>System\FileUiWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="ChromeSystemCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowMaxRestoreButton.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowMinButton.cpp">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseInOutEvent.cpp">
+      <Filter>Event\MouseEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowDockingSystem.cpp">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DockingSelectBox.cpp">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="DockingSystemCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="DockingPanel.cpp">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="SizeControllerStickEntity.cpp">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindowDockingSystem.cpp">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="ChildWindowDockingSystem.cpp">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiWindowContoller.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadRequestFileEvent.cpp">
+      <Filter>Event\FileEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadFileResponseEvent.cpp">
+      <Filter>Event\FileEvent</Filter>
+    </ClCompile>
+    <ClCompile Include="Asset.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="LogicalContentItemUiEntityFolder.cpp">
+      <Filter>Resource\LogicalFolder</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItem.cpp">
+      <Filter>Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUiSystemCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="FastAccessContainer.cpp">
+      <Filter>FastAccessContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="VectorContainer.cpp">
+      <Filter>FastAccessContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="UnOrderedMapContainer.cpp">
+      <Filter>FastAccessContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItemUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItemImageUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="DragAndDropWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="DragAndDropWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="DummySystem.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="DragAndDropSystem.cpp">
+      <Filter>System\DragAndDropSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DragAndDropUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItemUiEntityFactory.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Grid.cpp">
+      <Filter>Resource\Object\Line\Grid</Filter>
+    </ClCompile>
+    <ClCompile Include="Line.cpp">
+      <Filter>Resource\Object\Line</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderManager.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderResourceSampler.cpp">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderResourceConstantBuffer.cpp">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderResource.cpp">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplerManager.cpp">
+      <Filter>Resource\Sampler</Filter>
+    </ClCompile>
+    <ClCompile Include="PopupWindow.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPassTwo.cpp">
+      <Filter>Effect\EffectClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderResourceTexture.cpp">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClCompile>
+    <ClCompile Include="Skeleton.cpp">
+      <Filter>Resource\Skeleton</Filter>
+    </ClCompile>
+    <ClCompile Include="Bone.cpp">
+      <Filter>Resource\Skeleton</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationClip.cpp">
+      <Filter>Resource\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationKeyFrame.cpp">
+      <Filter>Resource\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="BoneAnimationClip.cpp">
+      <Filter>Resource\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="SkeletonManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationClipManager.cpp">
+      <Filter>Resource\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPassSystem.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="LineFactory.cpp">
+      <Filter>Resource\Object\Line</Filter>
+    </ClCompile>
+    <ClCompile Include="LineBase.cpp">
+      <Filter>Resource\Object\Line</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionWorld.cpp">
+      <Filter>Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionHelper.cpp">
+      <Filter>Collision\CollisionSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Collider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="SphereCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="OrientedCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="FrustumCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="ColliderGenerator.cpp">
+      <Filter>Collision\CollisionSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraFrustumCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraBoxCollider.cpp">
+      <Filter>Collision\Collider</Filter>
+    </ClCompile>
+    <ClCompile Include="PointLightCollider.cpp">
+      <Filter>Collision\Collider\LightCollider</Filter>
+    </ClCompile>
+    <ClCompile Include="Gizmo.cpp">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="GizmoHandle.cpp">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="LineBaseMaterial.cpp">
+      <Filter>Resource\Material</Filter>
+    </ClCompile>
+    <ClCompile Include="EventDispatcher.cpp">
+      <Filter>Event\EventDispatcher</Filter>
+    </ClCompile>
+    <ClCompile Include="SelectEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="StateComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="GizmoRotationHandle.cpp">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayWindowCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="GizmoScaleHandle.cpp">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="NotifyDragAndDropEvent.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlaySystemDefaultState.cpp">
+      <Filter>State</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollBarEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBoxPanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\TextBoxPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="ListExpandButton.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="FolderPanelEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\Folder</Filter>
+    </ClCompile>
+    <ClCompile Include="FolderListPanelEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\Folder</Filter>
+    </ClCompile>
+    <ClCompile Include="IconEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\IconEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="PopupWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="PopupWindowUiSystem.cpp">
+      <Filter>System\PopupWindowSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="PopupSystemCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItemUiPanelEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ContentItemUiPanelEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="NavigationFolderPanelEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\NavigationPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBox.cpp">
+      <Filter>Resource\Object\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="TextCharacterPanelEntity.cpp">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClCompile>
+    <ClCompile Include="TextCharacterEntity.cpp">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClCompile>
+    <ClCompile Include="TextCursorEntity.cpp">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowActiveEvent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformPropertyPanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObjectSelectEvent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetImageFrameEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="ScrollListPanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ScrollListPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="SubMeshListPanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ScrollListPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="AttrUiSystemSelectObjectComponent.cpp">
+      <Filter>Componenet\UiComponent</Filter>
+    </ClCompile>
+    <ClCompile Include="ComponentIDGenerator.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="ExpandablePanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="GameBase.cpp">
+      <Filter>GameBase</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectFactory.cpp">
+      <Filter>Resource\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationClipSplitter.cpp">
+      <Filter>Resource\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTargetTexture.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureFactory.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthStencilTexture.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="UserCamera.cpp">
+      <Filter>Resource\Object\Camera\UserCamera</Filter>
+    </ClCompile>
+    <ClCompile Include="UnqiueIDTable.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="IDGenerator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RegisterObjectHelper.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BinnedAllocator.cpp">
+      <Filter>Allocator</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectSmartPointer.cpp">
+      <Filter>SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonParser.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="NameTable.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshType.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialSmartPointer.cpp">
+      <Filter>SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureSmartPointer.cpp">
+      <Filter>SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelMaterial.cpp">
+      <Filter>Resource\Material</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshSmartPointer.cpp">
+      <Filter>SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="EnginTexture.cpp">
+      <Filter>Resource\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="OrthogoanlCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="FrustumCamera.cpp">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneNode.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformNode.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectNode.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SpacePartitioningStructureFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeObjectFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectBinnedAllocator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelBaseComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="ColliderComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneElement.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationComponent.cpp">
+      <Filter>Componenet</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseObjectFactory.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditGameObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeGameObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorSystem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectMetaData.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentItemBaseUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentIProjecttemUiEntity.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="CreatingProejctWindowController.cpp">
+      <Filter>CreatingProject</Filter>
+    </ClCompile>
+    <ClCompile Include="CreatingProjectDirector.cpp">
+      <Filter>CreatingProject</Filter>
+    </ClCompile>
+    <ClCompile Include="CreatingProjectWindow.cpp">
+      <Filter>CreatingProject</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectDirector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Project.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MapMetaData.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameWindowMenuDirector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ListPanel.cpp">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ListPanel</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseWindowController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineModeDirector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorModeDirector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraHelper.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTimer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="header.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="DoException.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTreeApp.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="PoolAllocator.h">
+      <Filter>Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="DestructingPoolAllocator.h">
+      <Filter>Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceLoader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Resource\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshType.h">
+      <Filter>Resource\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>Resource\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLoader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader12.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WICTextureLoader12.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Resource\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Resource\Object\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Resource\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
+      <Filter>Resource\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneGraph.h">
+      <Filter>Resource\Map\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="MapManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="MapController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorHeapManager.h">
+      <Filter>DescriptorHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="CbvSrvUavHeapManager.h">
+      <Filter>DescriptorHeapManager\CbvSrvUavHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DsvHeapManager.h">
+      <Filter>DescriptorHeapManager\DsvHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="RtvHeapManager.h">
+      <Filter>DescriptorHeapManager\RtvHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplerHeapManager.h">
+      <Filter>DescriptorHeapManager\SamplerHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorHeapManagerMaster.h">
+      <Filter>DescriptorHeapManager</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTree.h">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectType.h">
+      <Filter>Resource\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceStorer.h">
+      <Filter>Storer</Filter>
+    </ClInclude>
+    <ClInclude Include="RawResourceType.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoGenerator.h">
+      <Filter>GeometryGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialGenerator.h">
+      <Filter>GeometryGenerator</Filter>
+    </ClInclude>
+    <ClInclude Include="UploadBuffer.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResourceType.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="UiComponent.h">
+      <Filter>Componenet\UiComponent</Filter>
+    </ClInclude>
+    <ClInclude Include="ButtonUiEntitiy.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="UiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="GameRenderWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayWindowController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="SpacePartitioningStructure.h">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="VectorSpace.h">
+      <Filter>Resource\Map\SpacePartitioningStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicCommand.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MathHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MaxMinNum.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ClickableComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="Component.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="State.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="ClickableComponentState.h">
+      <Filter>State\ClickableComponentState</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemState.h">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseClickState.h">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseEvent.h">
+      <Filter>Event\MouseEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="DefaultState.h">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="EventTable.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseClickSelectEvent.h">
+      <Filter>Event\MouseEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayUiGamePlaySelectState.h">
+      <Filter>State\GamePlayUiSystemPlayState</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayUiGamePlayState.h">
+      <Filter>State\GamePlayUiSystemPlayState</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldEditEntity.h">
+      <Filter>Resource\Object\WorldEditObject\WorldEditEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldEditUiEntity.h">
+      <Filter>Resource\Object\WorldEditObject\WorldEditEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Attribute.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SchemaLoader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldEditEntityTable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldEditEntityFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AttributeWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="UiSystem.h">
+      <Filter>System\UISystem</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemSelectState.h">
+      <Filter>State\GamePlayUiSystemState</Filter>
+    </ClInclude>
+    <ClInclude Include="TextFactory.h">
+      <Filter>FreeType</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyBoard.h">
+      <Filter>InputDevice</Filter>
+    </ClInclude>
+    <ClInclude Include="DeleteTextureEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="BoundaryRect.h">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectoryUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\EngineDefaultEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="ResizeHandle.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BoundaryStick.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ResizeEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\BoxEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3Box.h">
+      <Filter>Resource\Object\Entity\UiEntity\BoxEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>FreeType</Filter>
+    </ClInclude>
+    <ClInclude Include="InstancingTable.h">
+      <Filter>InstancingTable</Filter>
+    </ClInclude>
+    <ClInclude Include="InstancingTableType.h">
+      <Filter>InstancingTable</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPass.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="RootSignature.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicPipeLine.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectLoader.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectTable.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLayoutTable.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectUtility.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBuffer.h">
+      <Filter>Resource\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBufferManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuredBuffer.h">
+      <Filter>Resource\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuredBufferFactory.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingWindowController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="MapGraph.h">
+      <Filter>Resource\Map</Filter>
+    </ClInclude>
+    <ClInclude Include="SkinningMesh.h">
+      <Filter>Resource\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMesh.h">
+      <Filter>Resource\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="FbxParser.h">
+      <Filter>Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Resource\Object\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowChromeSystem.h">
+      <Filter>System\WindowChromeSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowRequestEvent.h">
+      <Filter>Event\WindowRequestEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowResizeEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowControlEntity.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse.h">
+      <Filter>InputDevice</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleBarEntity.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowButton.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowCloseButton.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlaySystem.h">
+      <Filter>System\GameWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayUiSystem.h">
+      <Filter>System\GameWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="AttributeSystem.h">
+      <Filter>System\AttributeWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="AttributeUiSystem.h">
+      <Filter>System\AttributeWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindowController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindowUiSystem.h">
+      <Filter>System\FrameWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindowSystem.h">
+      <Filter>System\FrameWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiUiSystem.h">
+      <Filter>System\FileUiWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiSystem.h">
+      <Filter>System\FileUiWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="ChromeSystemCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowMaxRestoreButton.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowControlEntityHeader.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowMinButton.h">
+      <Filter>Resource\Object\Entity\WindowControlEntity\WindowButton</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseInOutEvent.h">
+      <Filter>Event\MouseEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowDockingSystem.h">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingSelectBox.h">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingSystemCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="DockingPanel.h">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeControllerStickEntity.h">
+      <Filter>Resource\Object\Entity\DockingSystemEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindowDockingSystem.h">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildWindowDockingSystem.h">
+      <Filter>System\WindowDockingSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiWindowContoller.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadRequestFileEvent.h">
+      <Filter>Event\FileEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadFileResponseEvent.h">
+      <Filter>Event\FileEvent</Filter>
+    </ClInclude>
+    <ClInclude Include="Asset.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="LogicalContentItemUiEntityFolder.h">
+      <Filter>Resource\LogicalFolder</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItem.h">
+      <Filter>Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUiSystemCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="FastAccessContainer.h">
+      <Filter>FastAccessContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="VectorContainer.h">
+      <Filter>FastAccessContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="UnOrderedMapContainer.h">
+      <Filter>FastAccessContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItemUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItemImageUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="DragAndDropWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="DragAndDropWindowController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="DummySystem.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="DragAndDropSystem.h">
+      <Filter>System\DragAndDropSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DragAndDropUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItemUiEntityFactory.h">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Grid.h">
+      <Filter>Resource\Object\Line\Grid</Filter>
+    </ClInclude>
+    <ClInclude Include="Line.h">
+      <Filter>Resource\Object\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="PassData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResourceSampler.h">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResourceConstantBuffer.h">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResource.h">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplerManager.h">
+      <Filter>Resource\Sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupWindow.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPassTwo.h">
+      <Filter>Effect\EffectClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResourceTexture.h">
+      <Filter>Effect\EffectClass\ShaderResource</Filter>
+    </ClInclude>
+    <ClInclude Include="Skeleton.h">
+      <Filter>Resource\Skeleton</Filter>
+    </ClInclude>
+    <ClInclude Include="Bone.h">
+      <Filter>Resource\Skeleton</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationClip.h">
+      <Filter>Resource\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationKeyFrame.h">
+      <Filter>Resource\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="BoneAnimationClip.h">
+      <Filter>Resource\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationClipManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="SkeletonManager.h">
+      <Filter>Resource\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPassSystem.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="LineFactory.h">
+      <Filter>Resource\Object\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="LineBase.h">
+      <Filter>Resource\Object\Line</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionWorld.h">
+      <Filter>Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionHelper.h">
+      <Filter>Collision\CollisionSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Collider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="FrustumCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="OrientedCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="ColliderGenerator.h">
+      <Filter>Collision\CollisionSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraFrustumCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraBoxCollider.h">
+      <Filter>Collision\Collider</Filter>
+    </ClInclude>
+    <ClInclude Include="PointLightCollider.h">
+      <Filter>Collision\Collider\LightCollider</Filter>
+    </ClInclude>
+    <ClInclude Include="Gizmo.h">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="GizmoHandle.h">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="LineBaseMaterial.h">
+      <Filter>Resource\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="EventDispatcher.h">
+      <Filter>Event\EventDispatcher</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="StateComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="GizmoRotationHandle.h">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayWindowCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="GizmoScaleHandle.h">
+      <Filter>Resource\Object\Entity\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="NotifyDragAndDropEvent.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlaySystemDefaultState.h">
+      <Filter>State</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollBarEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="TextBoxPanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\TextBoxPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="ListExpandButton.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="FolderPanelEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\Folder</Filter>
+    </ClInclude>
+    <ClInclude Include="FolderListPanelEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\Folder</Filter>
+    </ClInclude>
+    <ClInclude Include="IconEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\IconEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomWindowMessage.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupWindowUiSystem.h">
+      <Filter>System\PopupWindowSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupPanelID.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupSystemCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItemUiPanelEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ContentItemUiPanelEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="NavigationFolderPanelEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\NavigationPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="TextBox.h">
+      <Filter>Resource\Object\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="TextCharacterPanelEntity.h">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClInclude>
+    <ClInclude Include="TextCharacterEntity.h">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClInclude>
+    <ClInclude Include="TextCursorEntity.h">
+      <Filter>Resource\Object\Text\TextItem</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowActiveEvent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformPropertyPanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObjectSelectEvent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetImageFrameEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="ScrollListPanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ScrollListPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="SubMeshListPanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ScrollListPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="AttrUiSystemSelectObjectComponent.h">
+      <Filter>Componenet\UiComponent</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentIDGenerator.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="ExpandablePanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="GameBase.h">
+      <Filter>GameBase</Filter>
+    </ClInclude>
+    <ClInclude Include="Macro.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectFactory.h">
+      <Filter>Resource\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationClipSplitter.h">
+      <Filter>Resource\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTargetTexture.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureFactory.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthStencilTexture.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="UserCamera.h">
+      <Filter>Resource\Object\Camera\UserCamera</Filter>
+    </ClInclude>
+    <ClInclude Include="UniqueIDTable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="IDGenerator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RegisterObjectHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BinnedAllocator.h">
+      <Filter>Allocator</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectSmartPointer.h">
+      <Filter>SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonParser.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="NameTable.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialSmartPointer.h">
+      <Filter>SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureSmartPointer.h">
+      <Filter>SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelMaterial.h">
+      <Filter>Resource\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshSmartPointer.h">
+      <Filter>SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="EnginTexture.h">
+      <Filter>Resource\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="OrthogoanlCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="FrustumCamera.h">
+      <Filter>Resource\Object\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneNode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformNode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectNode.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SpacePartitioningStructureFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectBinnedAllocator.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelBaseComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="ColliderComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneElement.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationComponent.h">
+      <Filter>Componenet</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseObjectFactory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditGameObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeGameObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorSystem.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectMetaData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentItemBaseUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentIProjecttemUiEntity.h">
+      <Filter>Resource\Object\Entity\UiEntity\ContentItemUiEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="CreatingProjectWindow.h">
+      <Filter>CreatingProject</Filter>
+    </ClInclude>
+    <ClInclude Include="CreatingProjectDirector.h">
+      <Filter>CreatingProject</Filter>
+    </ClInclude>
+    <ClInclude Include="CreatingProejctWindowController.h">
+      <Filter>CreatingProject</Filter>
+    </ClInclude>
+    <ClInclude Include="CreateProjectFolderHierarchy.h">
+      <Filter>CreatingProject</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectDirector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Project.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MapMetaData.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameWindowMenuDirector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ListPanel.h">
+      <Filter>Resource\Object\Entity\UiEntity\Panel\ListPanel</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseWindowController.h">
+      <Filter>Controller</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupWindowController.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceImportCommonHeader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineModeDirector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorModeDirector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Object\Object.h">
+      <Filter>Resource\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraHelper.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Type.h">
+      <Filter>헤더 파일</Filter>
+    </None>
+    <None Include="RenderOpaque.effect">
+      <Filter>Effect</Filter>
+    </None>
+    <None Include="Test.json" />
+    <None Include="ButtonEntity.sch" />
+    <None Include="TextSelect.effect">
+      <Filter>Effect\UiEffect\TextSelectEffect</Filter>
+    </None>
+    <None Include="TextSelect.bind">
+      <Filter>Effect\UiEffect\TextSelectEffect</Filter>
+    </None>
+    <None Include="TextSelect.shr">
+      <Filter>Effect\UiEffect\TextSelectEffect</Filter>
+    </None>
+    <None Include="TextCharacter.effect">
+      <Filter>Effect\UiEffect\TextCharacterEffect</Filter>
+    </None>
+    <None Include="TextBox.effect">
+      <Filter>Effect\UiEffect\TextBoxEffect</Filter>
+    </None>
+    <None Include="TestEntity.spn" />
+    <None Include="Default.effect">
+      <Filter>Effect\DefaultEffect\Default</Filter>
+    </None>
+    <None Include="DefaultUi.effect">
+      <Filter>Effect\DefaultEffect\DefaultUi</Filter>
+    </None>
+    <None Include="WindowLayout.effect">
+      <Filter>Effect\DefaultEffect</Filter>
+    </None>
+    <None Include="cpp.hint" />
+    <None Include="DefaultSkinning.effect">
+      <Filter>Effect\DefaultEffect\DefaultSkinning</Filter>
+    </None>
+    <None Include="Line.effect">
+      <Filter>Effect\DefaultEffect\Line</Filter>
+    </None>
+    <None Include="DefaultCollider.effect">
+      <Filter>Effect\DefaultEffect\DefaultCollider</Filter>
+    </None>
+    <None Include="Gizmo.effect">
+      <Filter>Effect\DefaultEffect\GizmoEffect</Filter>
+    </None>
+    <None Include="GizmoLine.effect">
+      <Filter>Effect\DefaultEffect\GizmoEffect</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SecenGraphQuadTree.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="TextSelectBackground.hlsl">
+      <Filter>Effect</Filter>
+    </FxCompile>
+    <FxCompile Include="Text.hlsl">
+      <Filter>Effect\UiEffect\TextCharacterEffect</Filter>
+    </FxCompile>
+    <FxCompile Include="TextSelect.hlsl">
+      <Filter>Effect\UiEffect\TextSelectEffect</Filter>
+    </FxCompile>
+    <FxCompile Include="DefaultLight.hlsl">
+      <Filter>Effect\DefaultEffect</Filter>
+    </FxCompile>
+    <FxCompile Include="Temp.hlsl">
+      <Filter>Effect\DefaultEffect\Default</Filter>
+    </FxCompile>
+    <FxCompile Include="DefaultUi.hlsl">
+      <Filter>Effect\DefaultEffect\DefaultUi</Filter>
+    </FxCompile>
+    <FxCompile Include="WindowLayout.hlsl">
+      <Filter>Effect\DefaultEffect</Filter>
+    </FxCompile>
+    <FxCompile Include="DefaultSkinning.hlsl">
+      <Filter>Effect\DefaultEffect\DefaultSkinning</Filter>
+    </FxCompile>
+    <FxCompile Include="Line.hlsl">
+      <Filter>Effect\DefaultEffect\Line</Filter>
+    </FxCompile>
+    <FxCompile Include="DefaultCollider.hlsl">
+      <Filter>Effect\DefaultEffect\DefaultCollider</Filter>
+    </FxCompile>
+    <FxCompile Include="Gizmo.hlsl">
+      <Filter>Effect\DefaultEffect\GizmoEffect</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="StencilValue.txt" />
+    <Text Include="AttributeProject.pjo">
+      <Filter>Project</Filter>
+    </Text>
+    <Text Include="Test.effect">
+      <Filter>Effect</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

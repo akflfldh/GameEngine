@@ -1,0 +1,32 @@
+
+
+PASS 
+{
+
+VS
+{
+  File:"DefaultSkinning.hlsl"
+
+  EntryPoint:"VS"
+
+  Version:"vs_5_1"
+}
+
+
+PS
+{
+  File:"DefaultSkinning.hlsl"
+
+  EntryPoint:"PS"
+
+  Version:"ps_5_1"
+}
+
+
+}
+
+
+
+
+
+

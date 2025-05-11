@@ -1,0 +1,808 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{f91c12c7-7a94-4fd3-b5c0-e60f9f561f83}</ProjectGuid>
+    <RootNamespace>SecenGraphQuadTree</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableUnitySupport>true</EnableUnitySupport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/UNICODE /utf-8 </AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level2</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;EditorMode;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.26100.0\um;./include/ThirdPartyHeaderFile;./freetype-2.13.0\include;./effect;./FbxInclude;./freetype-2.13.0\include\freetype;./Font;./ICUinclude;./Fbx;./Include;C:\Users\dongd\gitproject\GameEngine\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/UNICODE </AdditionalOptions>
+      <MaxFilesInUnityFile>5</MaxFilesInUnityFile>
+      <DisableSpecificWarnings>4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files %28x86%29\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Users\dongd\source\repos\SecenGraphQuadTree\SecenGraphQuadTree\libary;C:\Users\dongd\source\repos\SecenGraphQuadTree\SecenGraphQuadTree\harfbuzz;C:\Users\dongd\source\repos\SecenGraphQuadTree\SecenGraphQuadTree\libpng-1.6.39;C:\Users\dongd\source\repos\SecenGraphQuadTree\SecenGraphQuadTree\ICUlib64;C:\Users\dongd\source\repos\SecenGraphQuadTree\SecenGraphQuadTree\Fbx;C:\Users\dongd\Downloads\icu4c-75_1-src %281%29\icu\lib64;./library;./harfbuzz;./libpng-1.6.39;./ICUlib64;./lib64;./Fbx/lib;C:\Users\dongd\gitproject\GameEngine\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dxgi.lib;d3dcompiler.lib;d3d12.lib;freetype.lib;harfbuzz.lib;png16.lib;imm32.lib;icudt.lib;icuind.lib;icuiod.lib;icutestd.lib;icutud.lib;icuucd.lib;libfbxsdk.lib;Utility.lib;JsonParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\Object\Object.h" />
+    <ClInclude Include="AnimationClip.h" />
+    <ClInclude Include="AnimationClipManager.h" />
+    <ClInclude Include="AnimationClipSplitter.h" />
+    <ClInclude Include="AnimationComponent.h" />
+    <ClInclude Include="AnimationKeyFrame.h" />
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="Asset.h" />
+    <ClInclude Include="AssetImageFrameEntity.h" />
+    <ClInclude Include="AttrUiSystemSelectObjectComponent.h" />
+    <ClInclude Include="BaseComponent.h" />
+    <ClInclude Include="BaseObjectFactory.h" />
+    <ClInclude Include="BaseObjectManager.h" />
+    <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="BaseWindowController.h" />
+    <ClInclude Include="BinnedAllocator.h" />
+    <ClInclude Include="Bone.h" />
+    <ClInclude Include="BoneAnimationClip.h" />
+    <ClInclude Include="BoxCollider.h" />
+    <ClInclude Include="CameraBoxCollider.h" />
+    <ClInclude Include="CameraFrustumCollider.h" />
+    <ClInclude Include="CameraHelper.h" />
+    <ClInclude Include="ColliderComponent.h" />
+    <ClInclude Include="ComponentIDGenerator.h" />
+    <ClInclude Include="ContentIProjecttemUiEntity.h" />
+    <ClInclude Include="ContentItemBaseUiEntity.h" />
+    <ClInclude Include="CreateProjectFolderHierarchy.h" />
+    <ClInclude Include="CreatingProejctWindowController.h" />
+    <ClInclude Include="CreatingProjectDirector.h" />
+    <ClInclude Include="CreatingProjectWindow.h" />
+    <ClInclude Include="DepthStencilTexture.h" />
+    <ClInclude Include="EditGameObjectManager.h" />
+    <ClInclude Include="EditorModeDirector.h" />
+    <ClInclude Include="EditorSystem.h" />
+    <ClInclude Include="EffectManager.h" />
+    <ClInclude Include="EngineModeDirector.h" />
+    <ClInclude Include="EnginTexture.h" />
+    <ClInclude Include="ExpandablePanel.h" />
+    <ClInclude Include="FrameWindowMenuDirector.h" />
+    <ClInclude Include="FrustumCamera.h" />
+    <ClInclude Include="GameBase.h" />
+    <ClInclude Include="GameObjectSelectEvent.h" />
+    <ClInclude Include="IDGenerator.h" />
+    <ClInclude Include="JsonParser.h" />
+    <ClInclude Include="ListPanel.h" />
+    <ClInclude Include="Macro.h" />
+    <ClInclude Include="MapMetaData.h" />
+    <ClInclude Include="MaterialSmartPointer.h" />
+    <ClInclude Include="MeshComponent.h" />
+    <ClInclude Include="MeshSmartPointer.h" />
+    <ClInclude Include="ModelBaseComponent.h" />
+    <ClInclude Include="ModelMaterial.h" />
+    <ClInclude Include="NameTable.h" />
+    <ClInclude Include="ObjectBinnedAllocator.h" />
+    <ClInclude Include="ObjectFactory.h" />
+    <ClInclude Include="ObjectManager.h" />
+    <ClInclude Include="ObjectNode.h" />
+    <ClInclude Include="ObjectSmartPointer.h" />
+    <ClInclude Include="OrthogoanlCamera.h" />
+    <ClInclude Include="Project.h" />
+    <ClInclude Include="ProjectMetaData.h" />
+    <ClInclude Include="ProjectDirector.h" />
+    <ClInclude Include="RegisterObjectHelper.h" />
+    <ClInclude Include="ResourceImportCommonHeader.h" />
+    <ClInclude Include="RuntimeGameObjectManager.h" />
+    <ClInclude Include="RuntimeObjectFactory.h" />
+    <ClInclude Include="RuntimeObjectManager.h" />
+    <ClInclude Include="SceneElement.h" />
+    <ClInclude Include="SceneNode.h" />
+    <ClInclude Include="SpacePartitioningStructureFactory.h" />
+    <ClInclude Include="TextureSmartPointer.h" />
+    <ClInclude Include="TransformNode.h" />
+    <ClInclude Include="UniqueIDTable.h" />
+    <ClInclude Include="RenderTargetTexture.h" />
+    <ClInclude Include="ScrollListPanel.h" />
+    <ClInclude Include="SubMeshListPanel.h" />
+    <ClInclude Include="TextCharacterEntity.h" />
+    <ClInclude Include="Collider.h" />
+    <ClInclude Include="ColliderGenerator.h" />
+    <ClInclude Include="CollisionWorld.h" />
+    <ClInclude Include="ContentItemImageUiEntity.h" />
+    <ClInclude Include="ContentItemUiEntity.h" />
+    <ClInclude Include="Attribute.h" />
+    <ClInclude Include="AttributeSystem.h" />
+    <ClInclude Include="AttributeUiSystem.h" />
+    <ClInclude Include="AttributeWindow.h" />
+    <ClInclude Include="BoundaryRect.h" />
+    <ClInclude Include="BoundaryStick.h" />
+    <ClInclude Include="BoxEntity.h" />
+    <ClInclude Include="ButtonUiEntitiy.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CbvSrvUavHeapManager.h" />
+    <ClInclude Include="ChildWindowDockingSystem.h" />
+    <ClInclude Include="ChromeSystemCamera.h" />
+    <ClInclude Include="ClickableComponent.h" />
+    <ClInclude Include="ContentItem.h" />
+    <ClInclude Include="ContentItemUiEntityFactory.h" />
+    <ClInclude Include="ContentItemUiPanelEntity.h" />
+    <ClInclude Include="CustomWindowMessage.h" />
+    <ClInclude Include="DockingPanel.h" />
+    <ClInclude Include="DockingSelectBox.h" />
+    <ClInclude Include="DockingSystemCamera.h" />
+    <ClInclude Include="DragAndDropSystem.h" />
+    <ClInclude Include="DragAndDropUiEntity.h" />
+    <ClInclude Include="DragAndDropWindow.h" />
+    <ClInclude Include="DragAndDropWindowController.h" />
+    <ClInclude Include="DummySystem.h" />
+    <ClInclude Include="FastAccessContainer.h" />
+    <ClInclude Include="FileUiSystem.h" />
+    <ClInclude Include="FileUiSystemCamera.h" />
+    <ClInclude Include="FileUiWindowContoller.h" />
+    <ClInclude Include="FolderListPanelEntity.h" />
+    <ClInclude Include="FolderPanelEntity.h" />
+    <ClInclude Include="FrameWindow.h" />
+    <ClInclude Include="FrameWindowController.h" />
+    <ClInclude Include="FrameWindowDockingSystem.h" />
+    <ClInclude Include="FrameWindowSystem.h" />
+    <ClInclude Include="FrameWindowUiSystem.h" />
+    <ClInclude Include="FrustumCollider.h" />
+    <ClInclude Include="GamePlaySystemDefaultState.h" />
+    <ClInclude Include="GamePlayWindowCamera.h" />
+    <ClInclude Include="Gizmo.h" />
+    <ClInclude Include="GizmoHandle.h" />
+    <ClInclude Include="GizmoRotationHandle.h" />
+    <ClInclude Include="GizmoScaleHandle.h" />
+    <ClInclude Include="Grid.h" />
+    <ClInclude Include="IconEntity.h" />
+    <ClInclude Include="Line.h" />
+    <ClInclude Include="LineBase.h" />
+    <ClInclude Include="LineFactory.h" />
+    <ClInclude Include="LineBaseMaterial.h" />
+    <ClInclude Include="ListExpandButton.h" />
+    <ClInclude Include="LoadFileResponseEvent.h" />
+    <ClInclude Include="LoadRequestFileEvent.h" />
+    <ClInclude Include="LogicalContentItemUiEntityFolder.h" />
+    <ClInclude Include="MouseInOutEvent.h" />
+    <ClInclude Include="NavigationFolderPanelEntity.h" />
+    <ClInclude Include="NotifyDragAndDropEvent.h" />
+    <ClInclude Include="OrientedCollider.h" />
+    <ClInclude Include="PanelUiEntity.h" />
+    <ClInclude Include="PassData.h" />
+    <ClInclude Include="PointLightCollider.h" />
+    <ClInclude Include="PopupPanelID.h" />
+    <ClInclude Include="PopupSystemCamera.h" />
+    <ClInclude Include="PopupWindow.h" />
+    <ClInclude Include="PopupWindowController.h" />
+    <ClInclude Include="PopupWindowUiSystem.h" />
+    <ClInclude Include="RenderPassSystem.h" />
+    <ClInclude Include="RenderPassTwo.h" />
+    <ClInclude Include="SamplerManager.h" />
+    <ClInclude Include="ScrollBarEntity.h" />
+    <ClInclude Include="SelectEvent.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="ShaderManager.h" />
+    <ClInclude Include="ShaderResource.h" />
+    <ClInclude Include="ShaderResourceConstantBuffer.h" />
+    <ClInclude Include="ShaderResourceSampler.h" />
+    <ClInclude Include="ShaderResourceTexture.h" />
+    <ClInclude Include="SizeControllerStickEntity.h" />
+    <ClInclude Include="Skeleton.h" />
+    <ClInclude Include="SkeletonManager.h" />
+    <ClInclude Include="SphereCollider.h" />
+    <ClInclude Include="EventDispatcher.h" />
+    <ClInclude Include="StateComponent.h" />
+    <ClInclude Include="TextBox.h" />
+    <ClInclude Include="TextCharacterPanelEntity.h" />
+    <ClInclude Include="TextCursorEntity.h" />
+    <ClInclude Include="TextBoxPanel.h" />
+    <ClInclude Include="TextureFactory.h" />
+    <ClInclude Include="TransformPropertyPanel.h" />
+    <ClInclude Include="UnOrderedMapContainer.h" />
+    <ClInclude Include="UserCamera.h" />
+    <ClInclude Include="VectorContainer.h" />
+    <ClInclude Include="WindowActiveEvent.h" />
+    <ClInclude Include="WindowDockingSystem.h" />
+    <ClInclude Include="WindowMaxRestoreButton.h" />
+    <ClInclude Include="WindowCloseButton.h" />
+    <ClInclude Include="CollisionHelper.h" />
+    <ClInclude Include="Component.h" />
+    <ClInclude Include="ConstantBuffer.h" />
+    <ClInclude Include="ConstantBufferManager.h" />
+    <ClInclude Include="Controller.h" />
+    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DDSTextureLoader12.h" />
+    <ClInclude Include="DeleteTextureEvent.h" />
+    <ClInclude Include="DescriptorHeapManager.h" />
+    <ClInclude Include="DescriptorHeapManagerMaster.h" />
+    <ClInclude Include="DestructingPoolAllocator.h" />
+    <ClInclude Include="DirectoryUiEntity.h" />
+    <ClInclude Include="DoException.h" />
+    <ClInclude Include="DsvHeapManager.h" />
+    <ClInclude Include="Effect.h" />
+    <ClInclude Include="EffectLoader.h" />
+    <ClInclude Include="EffectTable.h" />
+    <ClInclude Include="EffectUtility.h" />
+    <ClInclude Include="Entity.h" />
+    <ClInclude Include="Event.h" />
+    <ClInclude Include="EventTable.h" />
+    <ClInclude Include="FbxParser.h" />
+    <ClInclude Include="FileUiEntity.h" />
+    <ClInclude Include="FileUiUiSystem.h" />
+    <ClInclude Include="FileUiWindow.h" />
+    <ClInclude Include="Font.h" />
+    <ClInclude Include="GamePlayEvent.h" />
+    <ClInclude Include="GamePlaySystem.h" />
+    <ClInclude Include="DefaultState.h" />
+    <ClInclude Include="GamePlayUiGamePlaySelectState.h" />
+    <ClInclude Include="GamePlayUiGamePlayState.h" />
+    <ClInclude Include="Mouse.h" />
+    <ClInclude Include="MouseClickState.h" />
+    <ClInclude Include="GamePlayUiSystem.h" />
+    <ClInclude Include="SystemSelectState.h" />
+    <ClInclude Include="SystemState.h" />
+    <ClInclude Include="GamePlayWindowController.h" />
+    <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="GeoGenerator.h" />
+    <ClInclude Include="GraphicCommand.h" />
+    <ClInclude Include="GraphicPipeLine.h" />
+    <ClInclude Include="header.h" />
+    <ClInclude Include="InputLayoutTable.h" />
+    <ClInclude Include="InstancingTable.h" />
+    <ClInclude Include="InstancingTableType.h" />
+    <ClInclude Include="KeyBoard.h" />
+    <ClInclude Include="KeyEvent.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Map.h" />
+    <ClInclude Include="MapController.h" />
+    <ClInclude Include="MapGraph.h" />
+    <ClInclude Include="MapManager.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="MaterialGenerator.h" />
+    <ClInclude Include="MaterialManager.h" />
+    <ClInclude Include="MathHelper.h" />
+    <ClInclude Include="MaxMinNum.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshManager.h" />
+    <ClInclude Include="MeshType.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ClickableComponentState.h" />
+    <ClInclude Include="MouseClickSelectEvent.h" />
+    <ClInclude Include="MouseEvent.h" />
+    <ClInclude Include="ObjectType.h" />
+    <ClInclude Include="PoolAllocator.h" />
+    <ClInclude Include="QuadTree.h" />
+    <ClInclude Include="QuadTreeApp.h" />
+    <ClInclude Include="RawResourceType.h" />
+    <ClInclude Include="Ray.h" />
+    <ClInclude Include="RenderPass.h" />
+    <ClInclude Include="RenderSystem.h" />
+    <ClInclude Include="GameRenderWindow.h" />
+    <ClInclude Include="ResizeEvent.h" />
+    <ClInclude Include="ResizeHandle.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ResourceController.h" />
+    <ClInclude Include="ResourceLoader.h" />
+    <ClInclude Include="ResourceStorer.h" />
+    <ClInclude Include="RootSignature.h" />
+    <ClInclude Include="RtvHeapManager.h" />
+    <ClInclude Include="SamplerHeapManager.h" />
+    <ClInclude Include="SceneGraph.h" />
+    <ClInclude Include="SchemaLoader.h" />
+    <ClInclude Include="ShaderResourceType.h" />
+    <ClInclude Include="Singleton.h" />
+    <ClInclude Include="SkinningMesh.h" />
+    <ClInclude Include="SpacePartitioningStructure.h" />
+    <ClInclude Include="State.h" />
+    <ClInclude Include="StaticMesh.h" />
+    <ClInclude Include="StructuredBuffer.h" />
+    <ClInclude Include="StructuredBufferFactory.h" />
+    <ClInclude Include="TextFactory.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="TextureLoader.h" />
+    <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="TitleBarEntity.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="UiComponent.h" />
+    <ClInclude Include="UiEntity.h" />
+    <ClInclude Include="System.h" />
+    <ClInclude Include="UiSystem.h" />
+    <ClInclude Include="UploadBuffer.h" />
+    <ClInclude Include="Vector3Box.h" />
+    <ClInclude Include="VectorSpace.h" />
+    <ClInclude Include="WICTextureLoader12.h" />
+    <ClInclude Include="Window.h" />
+    <ClInclude Include="WindowButton.h" />
+    <ClInclude Include="WindowControlEntity.h" />
+    <ClInclude Include="WindowControlEntityHeader.h" />
+    <ClInclude Include="DockingWindowController.h" />
+    <ClInclude Include="WindowChromeSystem.h" />
+    <ClInclude Include="WindowMinButton.h" />
+    <ClInclude Include="WindowRequestEvent.h" />
+    <ClInclude Include="WindowResizeEvent.h" />
+    <ClInclude Include="WorldEditEntity.h" />
+    <ClInclude Include="WorldEditEntityTable.h" />
+    <ClInclude Include="WorldEditUiEntity.h" />
+    <ClInclude Include="WorldEditEntityFactory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AnimationClip.cpp" />
+    <ClCompile Include="AnimationClipManager.cpp" />
+    <ClCompile Include="AnimationClipSplitter.cpp" />
+    <ClCompile Include="AnimationComponent.cpp" />
+    <ClCompile Include="AnimationKeyFrame.cpp" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Asset.cpp" />
+    <ClCompile Include="AssetImageFrameEntity.cpp" />
+    <ClCompile Include="AttrUiSystemSelectObjectComponent.cpp" />
+    <ClCompile Include="BaseComponent.cpp" />
+    <ClCompile Include="BaseObjectFactory.cpp" />
+    <ClCompile Include="BaseObjectManager.cpp" />
+    <ClCompile Include="BaseWindow.cpp" />
+    <ClCompile Include="BaseWindowController.cpp" />
+    <ClCompile Include="BinnedAllocator.cpp" />
+    <ClCompile Include="Bone.cpp" />
+    <ClCompile Include="BoneAnimationClip.cpp" />
+    <ClCompile Include="BoxCollider.cpp" />
+    <ClCompile Include="CameraBoxCollider.cpp" />
+    <ClCompile Include="CameraFrustumCollider.cpp" />
+    <ClCompile Include="CameraHelper.cpp" />
+    <ClCompile Include="ColliderComponent.cpp" />
+    <ClCompile Include="ComponentIDGenerator.cpp" />
+    <ClCompile Include="ContentIProjecttemUiEntity.cpp" />
+    <ClCompile Include="ContentItemBaseUiEntity.cpp" />
+    <ClCompile Include="CreatingProejctWindowController.cpp" />
+    <ClCompile Include="CreatingProjectDirector.cpp" />
+    <ClCompile Include="CreatingProjectWindow.cpp" />
+    <ClCompile Include="DepthStencilTexture.cpp" />
+    <ClCompile Include="EditGameObjectManager.cpp" />
+    <ClCompile Include="EditorModeDirector.cpp" />
+    <ClCompile Include="EditorSystem.cpp" />
+    <ClCompile Include="EffectManager.cpp" />
+    <ClCompile Include="EngineModeDirector.cpp" />
+    <ClCompile Include="EnginTexture.cpp" />
+    <ClCompile Include="ExpandablePanel.cpp" />
+    <ClCompile Include="FrameWindowMenuDirector.cpp" />
+    <ClCompile Include="FrustumCamera.cpp" />
+    <ClCompile Include="GameBase.cpp" />
+    <ClCompile Include="GameObjectSelectEvent.cpp" />
+    <ClCompile Include="IDGenerator.cpp" />
+    <ClCompile Include="JsonParser.cpp" />
+    <ClCompile Include="ListPanel.cpp" />
+    <ClCompile Include="MapMetaData.cpp" />
+    <ClCompile Include="MaterialSmartPointer.cpp" />
+    <ClCompile Include="MeshComponent.cpp" />
+    <ClCompile Include="MeshSmartPointer.cpp" />
+    <ClCompile Include="MeshType.cpp" />
+    <ClCompile Include="ModelBaseComponent.cpp" />
+    <ClCompile Include="ModelMaterial.cpp" />
+    <ClCompile Include="NameTable.cpp" />
+    <ClCompile Include="ObjectBinnedAllocator.cpp" />
+    <ClCompile Include="ObjectFactory.cpp" />
+    <ClCompile Include="ObjectManager.cpp" />
+    <ClCompile Include="ObjectNode.cpp" />
+    <ClCompile Include="ObjectSmartPointer.cpp" />
+    <ClCompile Include="OrthogoanlCamera.cpp" />
+    <ClCompile Include="Project.cpp" />
+    <ClCompile Include="ProjectMetaData.cpp" />
+    <ClCompile Include="ProjectDirector.cpp" />
+    <ClCompile Include="RegisterObjectHelper.cpp" />
+    <ClCompile Include="RuntimeGameObjectManager.cpp" />
+    <ClCompile Include="RuntimeObjectFactory.cpp" />
+    <ClCompile Include="RuntimeObjectManager.cpp" />
+    <ClCompile Include="SceneElement.cpp" />
+    <ClCompile Include="SceneNode.cpp" />
+    <ClCompile Include="SpacePartitioningStructureFactory.cpp" />
+    <ClCompile Include="TextureSmartPointer.cpp" />
+    <ClCompile Include="TransformNode.cpp" />
+    <ClCompile Include="UnqiueIDTable.cpp" />
+    <ClCompile Include="RenderTargetTexture.cpp" />
+    <ClCompile Include="ScrollListPanel.cpp" />
+    <ClCompile Include="SubMeshListPanel.cpp" />
+    <ClCompile Include="TextCharacterEntity.cpp" />
+    <ClCompile Include="Collider.cpp" />
+    <ClCompile Include="ColliderGenerator.cpp" />
+    <ClCompile Include="CollisionWorld.cpp" />
+    <ClCompile Include="ContentItemImageUiEntity.cpp" />
+    <ClCompile Include="ContentItemUiEntity.cpp" />
+    <ClCompile Include="Attribute.cpp" />
+    <ClCompile Include="AttributeSystem.cpp" />
+    <ClCompile Include="AttributeUiSystem.cpp" />
+    <ClCompile Include="AttributeWindow.cpp" />
+    <ClCompile Include="BoundaryRect.cpp" />
+    <ClCompile Include="BoundaryStick.cpp" />
+    <ClCompile Include="BoxEntity.cpp" />
+    <ClCompile Include="ButtonUiEntitiy.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CbvSrvUavHeapManager.cpp" />
+    <ClCompile Include="ChildWindowDockingSystem.cpp" />
+    <ClCompile Include="ChromeSystemCamera.cpp" />
+    <ClCompile Include="ClickableComponent.cpp" />
+    <ClCompile Include="ContentItem.cpp" />
+    <ClCompile Include="ContentItemUiEntityFactory.cpp" />
+    <ClCompile Include="ContentItemUiPanelEntity.cpp" />
+    <ClCompile Include="DockingPanel.cpp" />
+    <ClCompile Include="DockingSelectBox.cpp" />
+    <ClCompile Include="DockingSystemCamera.cpp" />
+    <ClCompile Include="DragAndDropSystem.cpp" />
+    <ClCompile Include="DragAndDropUiEntity.cpp" />
+    <ClCompile Include="DragAndDropWindow.cpp" />
+    <ClCompile Include="DragAndDropWindowController.cpp" />
+    <ClCompile Include="DummySystem.cpp" />
+    <ClCompile Include="FastAccessContainer.cpp" />
+    <ClCompile Include="FileUiSystem.cpp" />
+    <ClCompile Include="FileUiSystemCamera.cpp" />
+    <ClCompile Include="FileUiWindowContoller.cpp" />
+    <ClCompile Include="FolderListPanelEntity.cpp" />
+    <ClCompile Include="FolderPanelEntity.cpp" />
+    <ClCompile Include="FrameWindow.cpp" />
+    <ClCompile Include="FrameWindowController.cpp" />
+    <ClCompile Include="FrameWindowDockingSystem.cpp" />
+    <ClCompile Include="FrameWindowSystem.cpp" />
+    <ClCompile Include="FrameWindowUiSystem.cpp" />
+    <ClCompile Include="FrustumCollider.cpp" />
+    <ClCompile Include="GamePlaySystemDefaultState.cpp" />
+    <ClCompile Include="GamePlayWindowCamera.cpp" />
+    <ClCompile Include="Gizmo.cpp" />
+    <ClCompile Include="GizmoHandle.cpp" />
+    <ClCompile Include="GizmoRotationHandle.cpp" />
+    <ClCompile Include="GizmoScaleHandle.cpp" />
+    <ClCompile Include="Grid.cpp" />
+    <ClCompile Include="IconEntity.cpp" />
+    <ClCompile Include="Line.cpp" />
+    <ClCompile Include="LineBase.cpp" />
+    <ClCompile Include="LineFactory.cpp" />
+    <ClCompile Include="LineBaseMaterial.cpp" />
+    <ClCompile Include="ListExpandButton.cpp" />
+    <ClCompile Include="LoadFileResponseEvent.cpp" />
+    <ClCompile Include="LoadRequestFileEvent.cpp" />
+    <ClCompile Include="LogicalContentItemUiEntityFolder.cpp" />
+    <ClCompile Include="MouseInOutEvent.cpp" />
+    <ClCompile Include="NavigationFolderPanelEntity.cpp" />
+    <ClCompile Include="NotifyDragAndDropEvent.cpp" />
+    <ClCompile Include="OrientedCollider.cpp" />
+    <ClCompile Include="PanelUiEntity.cpp" />
+    <ClCompile Include="PointLightCollider.cpp" />
+    <ClCompile Include="PopupSystemCamera.cpp" />
+    <ClCompile Include="PopupWindow.cpp" />
+    <ClCompile Include="PopupWindowController.cpp" />
+    <ClCompile Include="PopupWindowUiSystem.cpp" />
+    <ClCompile Include="RenderPassSystem.cpp" />
+    <ClCompile Include="RenderPassTwo.cpp" />
+    <ClCompile Include="SamplerManager.cpp" />
+    <ClCompile Include="ScrollBarEntity.cpp" />
+    <ClCompile Include="SelectEvent.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="ShaderManager.cpp" />
+    <ClCompile Include="ShaderResource.cpp" />
+    <ClCompile Include="ShaderResourceConstantBuffer.cpp" />
+    <ClCompile Include="ShaderResourceSampler.cpp" />
+    <ClCompile Include="ShaderResourceTexture.cpp" />
+    <ClCompile Include="SizeControllerStickEntity.cpp" />
+    <ClCompile Include="Skeleton.cpp" />
+    <ClCompile Include="SkeletonManager.cpp" />
+    <ClCompile Include="SphereCollider.cpp" />
+    <ClCompile Include="EventDispatcher.cpp" />
+    <ClCompile Include="StateComponent.cpp" />
+    <ClCompile Include="TextBox.cpp" />
+    <ClCompile Include="TextCharacterPanelEntity.cpp" />
+    <ClCompile Include="TextCursorEntity.cpp" />
+    <ClCompile Include="TextBoxPanel.cpp" />
+    <ClCompile Include="TextureFactory.cpp" />
+    <ClCompile Include="TransformPropertyPanel.cpp" />
+    <ClCompile Include="UnOrderedMapContainer.cpp" />
+    <ClCompile Include="UserCamera.cpp" />
+    <ClCompile Include="VectorContainer.cpp" />
+    <ClCompile Include="WindowActiveEvent.cpp" />
+    <ClCompile Include="WindowDockingSystem.cpp" />
+    <ClCompile Include="WindowMaxRestoreButton.cpp" />
+    <ClCompile Include="WindowCloseButton.cpp" />
+    <ClCompile Include="CollisionHelper.cpp" />
+    <ClCompile Include="Component.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
+    <ClCompile Include="ConstantBufferManager.cpp" />
+    <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="DDSTextureLoader12.cpp" />
+    <ClCompile Include="DeleteTextureEvent.cpp" />
+    <ClCompile Include="DescriptorHeapManager.cpp" />
+    <ClCompile Include="DescriptorHeapManagerMaster.cpp" />
+    <ClCompile Include="DestructingPoolAllocator.cpp" />
+    <ClCompile Include="DirectoryUiEntity.cpp" />
+    <ClCompile Include="DoException.cpp" />
+    <ClCompile Include="DsvHeapManager.cpp" />
+    <ClCompile Include="Effect.cpp" />
+    <ClCompile Include="EffectLoader.cpp" />
+    <ClCompile Include="EffectTable.cpp" />
+    <ClCompile Include="EffectUtility.cpp" />
+    <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="EventTable.cpp" />
+    <ClCompile Include="FbxParser.cpp" />
+    <ClCompile Include="FileUiEntity.cpp" />
+    <ClCompile Include="FileUiUiSystem.cpp" />
+    <ClCompile Include="FileUiWindow.cpp" />
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="GamePlayEvent.cpp" />
+    <ClCompile Include="GamePlaySystem.cpp" />
+    <ClCompile Include="DefaultState.cpp" />
+    <ClCompile Include="GamePlayUiGamePlaySelectState.cpp" />
+    <ClCompile Include="GamePlayUiGamePlayState.cpp" />
+    <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="MouseClickState.cpp" />
+    <ClCompile Include="GamePlayUiSystem.cpp" />
+    <ClCompile Include="SystemSelectState.cpp" />
+    <ClCompile Include="SystemState.cpp" />
+    <ClCompile Include="GamePlayWindowController.cpp" />
+    <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="GeoGenerator.cpp" />
+    <ClCompile Include="GraphicCommand.cpp" />
+    <ClCompile Include="GraphicPipeLine.cpp" />
+    <ClCompile Include="InputLayoutTable.cpp" />
+    <ClCompile Include="InstancingTable.cpp" />
+    <ClCompile Include="KeyBoard.cpp" />
+    <ClCompile Include="KeyEvent.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Map.cpp" />
+    <ClCompile Include="MapController.cpp" />
+    <ClCompile Include="MapGraph.cpp" />
+    <ClCompile Include="MapManager.cpp" />
+    <ClCompile Include="Material.cpp" />
+    <ClCompile Include="MaterialGenerator.cpp" />
+    <ClCompile Include="MaterialManager.cpp" />
+    <ClCompile Include="MathHelper.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshManager.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ClickableComponentState.cpp" />
+    <ClCompile Include="MouseClickSelectEvent.cpp" />
+    <ClCompile Include="MouseEvent.cpp" />
+    <ClCompile Include="PoolAllocator.cpp" />
+    <ClCompile Include="QuadTree.cpp" />
+    <ClCompile Include="QuadTreeApp.cpp" />
+    <ClCompile Include="Ray.cpp" />
+    <ClCompile Include="RenderPass.cpp" />
+    <ClCompile Include="RenderSystem.cpp" />
+    <ClCompile Include="GameRenderWindow.cpp" />
+    <ClCompile Include="ResizeEvent.cpp" />
+    <ClCompile Include="ResizeHandle.cpp" />
+    <ClCompile Include="ResourceController.cpp" />
+    <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="ResourceStorer.cpp" />
+    <ClCompile Include="RootSignature.cpp" />
+    <ClCompile Include="RtvHeapManager.cpp" />
+    <ClCompile Include="SamplerHeapManager.cpp" />
+    <ClCompile Include="SceneGraph.cpp" />
+    <ClCompile Include="SchemaLoader.cpp" />
+    <ClCompile Include="SkinningMesh.cpp" />
+    <ClCompile Include="SpacePartitioningStructure.cpp" />
+    <ClCompile Include="State.cpp" />
+    <ClCompile Include="StaticMesh.cpp" />
+    <ClCompile Include="StructuredBuffer.cpp" />
+    <ClCompile Include="StructuredBufferFactory.cpp" />
+    <ClCompile Include="TextFactory.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureLoader.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="TitleBarEntity.cpp" />
+    <ClCompile Include="Transform.cpp" />
+    <ClCompile Include="UiComponent.cpp" />
+    <ClCompile Include="UiEntity.cpp" />
+    <ClCompile Include="System.cpp" />
+    <ClCompile Include="UiSystem.cpp" />
+    <ClCompile Include="UploadBuffer.cpp" />
+    <ClCompile Include="Vector3Box.cpp" />
+    <ClCompile Include="VectorSpace.cpp" />
+    <ClCompile Include="WICTextureLoader12.cpp" />
+    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="WindowButton.cpp" />
+    <ClCompile Include="WindowControlEntity.cpp" />
+    <ClCompile Include="DockingWindowController.cpp" />
+    <ClCompile Include="WindowChromeSystem.cpp" />
+    <ClCompile Include="WindowMinButton.cpp" />
+    <ClCompile Include="WindowRequestEvent.cpp" />
+    <ClCompile Include="WindowResizeEvent.cpp" />
+    <ClCompile Include="WorldEditEntity.cpp" />
+    <ClCompile Include="WorldEditEntityTable.cpp" />
+    <ClCompile Include="WorldEditUiEntity.cpp" />
+    <ClCompile Include="WorldEditEntityFactory.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ButtonEntity.sch" />
+    <None Include="cpp.hint" />
+    <None Include="DefaultCollider.effect" />
+    <None Include="DefaultSkinning.effect" />
+    <None Include="DefaultUi.effect" />
+    <None Include="Gizmo.effect" />
+    <None Include="GizmoLine.effect" />
+    <None Include="Line.effect" />
+    <None Include="RenderOpaque.effect" />
+    <None Include="Default.effect" />
+    <None Include="Test.json" />
+    <None Include="TestEntity.spn" />
+    <None Include="TextBox.effect" />
+    <None Include="TextCharacter.effect" />
+    <None Include="TextSelect.bind" />
+    <None Include="TextSelect.effect" />
+    <None Include="TextSelect.shr" />
+    <None Include="Type.h" />
+    <None Include="WindowLayout.effect" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SecenGraphQuadTree.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="DefaultCollider.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="DefaultLight.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="DefaultSkinning.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="DefaultUi.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Gizmo.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Line.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Temp.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Text.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="TextSelect.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="TextSelectBackground.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="WindowLayout.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="AttributeProject.pjo" />
+    <Text Include="StencilValue.txt" />
+    <Text Include="Test.effect" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

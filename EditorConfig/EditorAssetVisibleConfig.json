@@ -1,0 +1,9 @@
+[
+    {
+    "Texture":["Default.bmp"],
+    "Material":["Default"],
+    "Mesh":["Cube"],
+    "Effect":[ "Default.effect","DefaultUi.effect","Line.effect","TextBox.effect","TextCharacter.effect"],
+    "HLSL":["DefaultUi.hlsl","Temp.hlsl","TextCharacter.hlsl","TextSelect.hlsl","Line.hlsl","DefaultLight.hlsl"]
+    }
+]

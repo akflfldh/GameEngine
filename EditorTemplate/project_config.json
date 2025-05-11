@@ -1,0 +1,10 @@
+{
+    "name":"UserCode",
+    "type":"dll",
+    "cpp_standard" :"stdcpp20",
+    "filters":["소스 파일","헤더 파일"],
+    "sources":[],
+    "includeDirs": ["C:/Users/dongd/gitproject/GameEngine/Include","C:/Users/dongd/gitproject/GameEngine/Include/Core"],
+    "libs":["core.lib","Allocator.lib","Utility.lib"],
+    "libDirs":["C:/Users/dongd/gitproject/GameEngine/Dll","C:/Users/dongd/gitproject/GameEngine/x64/Debug"]
+}

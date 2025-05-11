@@ -1,0 +1,6 @@
+[
+    {
+        "DllList":["JsonParser.dll","Utility.dll","UploadBuffer.dll","HeapManager.dll","Allocator.dll","icuio75d.dll",
+    "harfbuzz.dll","freetype-6.dll","png16-16.dll","libfbxsdk.dll","Core.dll"]
+    }
+]
