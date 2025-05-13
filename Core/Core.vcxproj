@@ -116,14 +116,14 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\Utility;$(SolutionDir)Include\ICUinclude;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Inc;$(SolutionDir)Include\Src;$(SolutionDir)Include\freetype-2.13.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\Utility;$(SolutionDir)Include\ICUinclude;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Inc;$(SolutionDir)Include\Src;$(SolutionDir)Include\freetype-2.13.0\include;$(SolutionDir)Include\DirectTexX;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)Lib;$(SolutionDir)Lib\ICUlib64;$(SolutionDir)Include\Fbx\lib;$(SolutionDir)Lib\harfbuzz;$(SolutionDir)Lib\library;$(SolutionDir)Lib\libpng-1.6.39;$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utility.lib;UploadBuffer.lib;Allocator.lib;HeapManager.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;freetype.lib;harfbuzz.lib;png16.lib;imm32.lib;icudt.lib;icuind.lib;icuiod.lib;icutestd.lib;icutud.lib;icuucd.lib;JsonParser.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Utility.lib;UploadBuffer.lib;Allocator.lib;HeapManager.lib;dxgi.lib;d3dcompiler.lib;d3d12.lib;freetype.lib;harfbuzz.lib;png16.lib;imm32.lib;icudt.lib;icuind.lib;icuiod.lib;icutestd.lib;icutud.lib;icuucd.lib;JsonParser.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
@@ -211,7 +211,9 @@
     <ClInclude Include="..\Include\Core\CurveFactory.h" />
     <ClInclude Include="..\Include\Core\CustomWindowMessage.h" />
     <ClInclude Include="..\Include\Core\DDSTextureLoader12.h" />
+    <ClInclude Include="..\Include\Core\DefaultCollisionWorldFactoryImpl.h" />
     <ClInclude Include="..\Include\Core\DefaultMoveFrustumCamera.h" />
+    <ClInclude Include="..\Include\Core\DefaultSpacePartitioningStructureFactoryImpl.h" />
     <ClInclude Include="..\Include\Core\DeleteTextureEvent.h" />
     <ClInclude Include="..\Include\Core\EffectLoader.h" />
     <ClInclude Include="..\Include\Core\EffectTable.h" />
@@ -266,6 +268,8 @@
     <ClInclude Include="..\Include\Core\RenderPassSystem.h" />
     <ClInclude Include="..\Include\Core\RenderSystem.h" />
     <ClInclude Include="..\Include\Core\ResourceController.h" />
+    <ClInclude Include="..\Include\Core\ResourceFileType.h" />
+    <ClInclude Include="..\Include\Core\ResourceHelperClass.h" />
     <ClInclude Include="..\Include\Core\ResourceImportCommonHeader.h" />
     <ClInclude Include="..\Include\Core\ResourceLoader.h" />
     <ClInclude Include="..\Include\Core\ResourceStorer.h" />
@@ -375,6 +379,8 @@
     <ClCompile Include="CameraFixWIndowResizeEventComponent.cpp" />
     <ClCompile Include="Curve.cpp" />
     <ClCompile Include="CurveFactory.cpp" />
+    <ClCompile Include="DefaultCollisionWorldFactoryImpl.cpp" />
+    <ClCompile Include="DefaultSpacePartitioningStructureFactoryImpl.cpp" />
     <ClCompile Include="HermiteCurve.cpp" />
     <ClCompile Include="ICameraEventComponent.cpp" />
     <ClCompile Include="CameraFrustumCollider.cpp" />
@@ -471,6 +477,7 @@
     <ClCompile Include="RenderSystem.cpp" />
     <ClCompile Include="RenderTargetTexture.cpp" />
     <ClCompile Include="ResourceController.cpp" />
+    <ClCompile Include="ResourceHelperClass.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="ResourceStorer.cpp" />
     <ClCompile Include="RuntimeGameObjectManager.cpp" />

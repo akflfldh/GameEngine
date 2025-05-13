@@ -19,7 +19,7 @@ namespace Quad
 		virtual void Initialize(Quad::BaseWindowController* windowController) override;
 		virtual void Update(float deltaTime) override;
 		virtual void UploadObjectToRenderSystem()override;
-		virtual void EndUpdate()override;
+		virtual void EndUpdate(float deltaTime)override;
 		virtual void Draw() override;
 
 		virtual void CreateWindowClass() override;

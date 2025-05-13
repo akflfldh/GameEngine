@@ -1,7 +1,7 @@
 ﻿#include "Game3DSystem.h"
 
 Quad::Game3DSystem::Game3DSystem()
-	:System(Quad::ESystemType::eMainSystem,Quad::ESystemID::eGamePlayMainSystem,"")
+	:System(Quad::ESystemType::eMainSystem,Quad::ESystemID::eGamePlayMainSystem,"",ESystemMode::eRunTimeMode)
 {
 
 
@@ -25,9 +25,9 @@ void Quad::Game3DSystem::Update(float deltaTime, bool playMode)
 
 }
 
-void Quad::Game3DSystem::EndUpdate()
+void Quad::Game3DSystem::EndUpdate(float deltaTime)
 {
-	System::EndUpdate();
+	System::EndUpdate(deltaTime);
 }
 
 void Quad::Game3DSystem::OnResize(UINT clientWidth, UINT clientHeight)

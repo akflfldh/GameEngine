@@ -25,9 +25,21 @@ namespace Quad
 			GraphicCommand* graphicsCommandObject);
 
 		bool LoadTextureFile(const std::string & filePath, Texture& oTexture);
+		bool LoadDDSFileFromMemory(uint8_t * blob, size_t size , Texture & oTexture);
+
+
+
 		void ReleaseUploadBuffer();
 
 		void test();
+
+	private:
+		void UploadTexture(Microsoft::WRL::ComPtr<ID3D12Resource> & defaultTexture,
+		std::vector<D3D12_SUBRESOURCE_DATA> &  subresourceData,
+			Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
+
+
+
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;

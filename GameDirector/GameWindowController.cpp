@@ -15,7 +15,7 @@ Quad::GameWindowController::GameWindowController(GameWindow* gameWindow)
 	:BaseWindowController(new RenderSystem),mWindow(gameWindow)
 {
 	mGame3DSystem = new Game3DSystem;
-	mGameUiSystem = new GameUiSystem;
+	//mGameUiSystem = new GameUiSystem;
 
 
 
@@ -39,7 +39,7 @@ Quad::GameWindowController::GameWindowController(GameWindow* gameWindow)
 
 
 	mGame3DSystem->Initialize(clientWidth, clientHeight, nullptr);
-	mGameUiSystem->Initialize(clientWidth, clientHeight, nullptr);
+	//mGameUiSystem->Initialize(clientWidth, clientHeight, nullptr);
 
 
 
@@ -66,7 +66,7 @@ void Quad::GameWindowController::Update(float deltaTime)
 {
 
 
-	mGameUiSystem->Update(deltaTime);
+//	mGameUiSystem->Update(deltaTime);
 	mGame3DSystem->Update(deltaTime);
 
 }
@@ -80,8 +80,8 @@ void Quad::GameWindowController::UploadObjectToRenderSystem()
 
 	renderSystem->PreUpdate();
 
-	const std::vector<MapLayer>& mapLayerVectorUi =	mGameUiSystem->GetEntity();
-	renderSystem->SetMapLayerVector(mapLayerVectorUi, Quad::ESystemType::eUiSystem);
+	//const std::vector<MapLayer>& mapLayerVectorUi =	mGameUiSystem->GetEntity();
+	//renderSystem->SetMapLayerVector(mapLayerVectorUi, Quad::ESystemType::eUiSystem);
 
 
 	const std::vector<MapLayer>& mapLayerVector3D = mGame3DSystem->GetEntity();
@@ -91,10 +91,10 @@ void Quad::GameWindowController::UploadObjectToRenderSystem()
 }
 
 
-void Quad::GameWindowController::EndUpdate()
+void Quad::GameWindowController::EndUpdate(float deltaTime)
 {
-	mGameUiSystem->EndUpdate();
-	mGame3DSystem->EndUpdate();
+	//mGameUiSystem->EndUpdate(deltaTime);
+	mGame3DSystem->EndUpdate(deltaTime);
 
 }
 
@@ -106,7 +106,7 @@ void Quad::GameWindowController::Draw()
 
 void Quad::GameWindowController::OnResize(int clientWidth, int clientHeight, int direction)
 {
-	mGameUiSystem->OnResize(clientWidth, clientHeight);
+	//mGameUiSystem->OnResize(clientWidth, clientHeight);
 	mGame3DSystem->OnResize(clientWidth, clientHeight);
 
 }

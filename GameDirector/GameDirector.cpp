@@ -10,18 +10,41 @@
 #include"Project.h"
 #include"Game3DSystem.h"
 #include"GameUiSystem.h"
+#include"Core/DefaultCollisionWorldFactoryImpl.h"
+#include"Core/DefaultSpacePartitioningStructureFactoryImpl.h"
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
 
     Quad::Application app;
-
     Quad::GameDirector gameDirector;
+    Quad::AppInitData appInitData;
 
-    if (!app.Initialize(hInstance, nCmdShow, &gameDirector))
+    appInitData.hInstance = hInstance;
+    appInitData.nShowCmd = nCmdShow;
+    appInitData.programDirector = &gameDirector;
+
+    std::unique_ptr< Quad::DefaultCollisionWorldFactoryImpl> collisionFactoryImpl(new Quad::DefaultCollisionWorldFactoryImpl);
+    appInitData.collisionWorldFactoryImpl = collisionFactoryImpl.get();
+    std::unique_ptr< Quad::DefaultSpacePartitioningStructureFactoryImpl>sapcePartitioningStructureFactoryImpl(new Quad::DefaultSpacePartitioningStructureFactoryImpl);
+    appInitData.spacePartitoingStructureFactoryImpl = sapcePartitioningStructureFactoryImpl.get();
+
+    if (!app.Initialize(appInitData))
         return 0;
 
     return app.Run();
+}
+
+Quad::GameDirector::GameDirector()
+    :mGameWindow(nullptr), mGameWindowController(nullptr),mProject(nullptr)
+{
+
+    wchar_t path[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, path);
+
+    mEditorPathW = path;
+    mEditorPathA = Utility::ConvertToString(mEditorPathW, true);
+
 }
 
 void Quad::GameDirector::Initialize()
@@ -62,7 +85,9 @@ void Quad::GameDirector::Initialize()
 
 
     resourceController->LoadEffect(".\\Asset\\Effect", mGameWindowController);
-    resourceController->LoadUserAsset(".\\Asset");
+
+    //resourceController->LoadUserAsset(".\\Asset");
+    resourceController->LoadAssetPackage(mEditorPathA);
 
 
     //resourceController->LoadUserTexture("Asset\\Texture");
@@ -78,23 +103,22 @@ void Quad::GameDirector::Initialize()
     //project map load
 
     std::vector<MapMetaData*> map3DMetaDataVector;
-    std::vector<MapMetaData*> mapUiMetaDataVector;
 
 
-    ReadMapMetaDataFile(".\\MapMetaDataFile.json", map3DMetaDataVector, mapUiMetaDataVector);
+    ReadMapMetaDataFile(".\\MapMetaDataFile.json", map3DMetaDataVector);
 
    // JsonParser::ReadFile(".\\MapMetaDataFile.json");
     
 
     std::string beforeDirectoryPath =    Utility::SetNewCurrentDirectory(".\\Map");
 
-    auto game3DSystem = Game3DSystem::GetInstance();
-    auto gameUiSystem = GameUiSystem::GetInstance();
+    auto gameSystem = Game3DSystem::GetInstance();
+   // auto gameUiSystem = GameUiSystem::GetInstance();
 
 
     for (auto mapMetaData : map3DMetaDataVector)
     {
-        Map * map =  GameMapInstanceGenerator::CreateMap(game3DSystem, mapMetaData->GetMapName());
+        Map * map =  GameMapInstanceGenerator::CreateMap(gameSystem, mapMetaData->GetMapName());
         if (map != nullptr)
         {
 
@@ -105,23 +129,8 @@ void Quad::GameDirector::Initialize()
     }
     //game3DSystem->SetMap(mProject->GetMap(map3DMetaDataVector[0]->GetMapName()));
 
-
-    for (auto mapMetaData : mapUiMetaDataVector)
-    {
-        Map* map = GameMapInstanceGenerator::CreateMap(gameUiSystem, mapMetaData->GetMapName());
-        if (map != nullptr)
-        {
-            JsonParser::ReadFile(map->GetName() + ".json");
-            map->DeSerialize();
-            mProject->AddMap(map->GetName(), map);
-        }
-    }
-
-
-
+    gameSystem->SetMap(mProject->GetMap(map3DMetaDataVector[0]->GetMapName()));
  
-    game3DSystem->SetMap(mProject->GetMap(map3DMetaDataVector[0]->GetMapName()));
-    gameUiSystem->SetMap(mProject->GetMap(mapUiMetaDataVector[0]->GetMapName()));
 
 
     Utility::SetNewCurrentDirectory(beforeDirectoryPath);
@@ -129,6 +138,12 @@ void Quad::GameDirector::Initialize()
 
 
     //window visible
+
+
+    //초기화 마지막, 맵전환시에 start호출
+
+    Map * currMap =gameSystem->GetMap();
+    currMap->Start();
 
 }
 
@@ -149,6 +164,8 @@ void Quad::GameDirector::Update(float deltaTime)
 
 void Quad::GameDirector::EndUpdate(float deltaTime)
 {
+
+    mGameWindow->EndUpdate(deltaTime);
 }
 
 void Quad::GameDirector::Draw()
@@ -159,7 +176,7 @@ void Quad::GameDirector::Draw()
     //mGameWindowController->Draw();
 }
 
-void Quad::GameDirector::ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<Quad::MapMetaData*>& o3DMapMetaDataVector, std::vector<Quad::MapMetaData*>& oUiMapMetaDataVector)
+void Quad::GameDirector::ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<Quad::MapMetaData*>& o3DMapMetaDataVector)
 {
 
     unsigned int currentReadObjectIndext = 0;
@@ -167,8 +184,8 @@ void Quad::GameDirector::ReadMapMetaDataFile(const std::string& mapMetaDatFilePa
     JsonParser::ReadStart();
 
     unsigned int map3DNum = 0;
-    unsigned int mapUiNum = 0;
-    JsonParser::Read("Project_3DSystemMapMetaDataNum", map3DNum);
+   // unsigned int mapUiNum = 0;
+    JsonParser::Read("Project_SystemMapMetaDataNum", map3DNum);
 
     o3DMapMetaDataVector.resize(map3DNum,new MapMetaData);
 
@@ -178,19 +195,5 @@ void Quad::GameDirector::ReadMapMetaDataFile(const std::string& mapMetaDatFilePa
         JsonParser::SetCurrentIndex(currentReadObjectIndext);
         mapElement->DeSerialize();
     }
-
-    currentReadObjectIndext++;
-    JsonParser::SetCurrentIndex(currentReadObjectIndext);
-    JsonParser::Read("Project_UiSystemMapMetaDataNum", mapUiNum);
-
-    oUiMapMetaDataVector.resize(mapUiNum,new MapMetaData);
-
-    for (auto mapElement : oUiMapMetaDataVector)
-    {
-        currentReadObjectIndext++;
-        JsonParser::SetCurrentIndex(currentReadObjectIndext);
-        mapElement->DeSerialize();
-    }
-
 
 }

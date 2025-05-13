@@ -196,6 +196,12 @@ namespace Quad
 
 	}
 
+	void Material::SetDiffuse(const DirectX::XMFLOAT4& diffuse)
+	{
+		mDiffuse = diffuse;
+
+	}
+
 	void Material::SetEffectName(const std::string& effectName)
 	{
 		mEffectName = effectName;

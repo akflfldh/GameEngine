@@ -3,7 +3,7 @@
 #include"header.h"
 #include"IProgramDirector.h"
 
-#include"Singleton.h"
+#include"Utility/Singleton.h"
 
 namespace Quad
 {
@@ -14,6 +14,8 @@ namespace Quad
 	class GameDirector :public Quad::IProgramDirector,Quad::Singleton<GameDirector>
 	{
 	public:
+		GameDirector();
+
 		virtual void Initialize()override;
 		virtual void PreUpdate(float deltaTime)override;
 		virtual void Update(float deltaTime)override;
@@ -23,8 +25,7 @@ namespace Quad
 
 	private:
 
-		void ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<MapMetaData*>& o3DMapMetaDataVector,
-			std::vector<MapMetaData*>& oUiMapMetaDataVector);
+		void ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<MapMetaData*>& o3DMapMetaDataVector);
 
 
 
@@ -33,7 +34,8 @@ namespace Quad
 		GameWindowController* mGameWindowController;
 
 		Project* mProject;
-
+		std::string mEditorPathA;
+		std::wstring mEditorPathW;
 	};
 
 

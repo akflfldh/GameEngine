@@ -44,7 +44,9 @@ namespace Quad
 		static std::vector<std::wstring> GetTokenSubString(const std::wstring& str, const std::vector<std::wstring>& delimiterVector);
 		
 		static std::string GetExtension(const std::string& filePath);		//잘못되면 return "";
+		static std::wstring GetExtension(const std::wstring& filePath);		//잘못되면 return "";
 		static std::string GetFileNameFromPath(const std::string& filePath);
+		static std::wstring GetFileNameFromPath(const std::wstring& filePath);
 
 		static std::string RemoveExtension(const std::string& fileName);
 

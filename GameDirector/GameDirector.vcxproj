@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\freetype-2.13.0\include;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Include\Utility;$(SolutionDir)Include\Include\Allocator;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Core;$(SolutionDir)Include\freetype-2.13.0\include;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\Utility;$(SolutionDir)Include\Allocator;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

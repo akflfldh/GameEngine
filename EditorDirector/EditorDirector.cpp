@@ -1778,8 +1778,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     appInitData.hInstance = hInstance;
     appInitData.nShowCmd = nCmdShow;
     appInitData.programDirector = &editorDirector;
-    appInitData.collisionWorldFactoryImpl = new Quad::EditorCollisionWorldFactoryImpl;
-    appInitData.spacePartitoingStructureFactoryImpl= new Quad::EditorSpacePartitioningStructrureFactoryImpl;
+    std::unique_ptr< Quad::EditorCollisionWorldFactoryImpl> collisionFactoryImpl(new Quad::EditorCollisionWorldFactoryImpl);
+    appInitData.collisionWorldFactoryImpl = collisionFactoryImpl.get();
+    std::unique_ptr< Quad::EditorSpacePartitioningStructrureFactoryImpl>sapcePartitioningStructureFactoryImpl(new Quad::EditorSpacePartitioningStructrureFactoryImpl);
+    appInitData.spacePartitoingStructureFactoryImpl = sapcePartitioningStructureFactoryImpl.get();
 
     if (!app.Initialize(appInitData))
         return 0;

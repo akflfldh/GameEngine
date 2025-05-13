@@ -11,7 +11,7 @@
 #include"Core/CoreDllExport.h"
 namespace Quad
 {
-	enum class EMeshType
+	enum class EMeshType:int
 	{
 		eStaticMesh = 0,
 		eSknningMesh,

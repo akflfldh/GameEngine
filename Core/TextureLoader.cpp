@@ -3,6 +3,8 @@
 
 #include"Asset/Texture/Texture.h"
 
+#include"DirectXTex.h"
+
 namespace Quad
 {
 	void TextureLoader::Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device, GraphicCommand* graphicsCommandObject)
@@ -59,6 +61,38 @@ namespace Quad
 		return true;
 	}
 
+	bool TextureLoader::LoadDDSFileFromMemory(uint8_t * blob, size_t size, Texture& oTexture)
+	{
+		
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList = mGraphicsCommandObject->GetGraphicsCommandList();
+		if (mGraphicsCommandObject->GetCloseState())
+			mGraphicsCommandObject->ResetCommandList(nullptr);
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> defaultTexture;
+		Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+
+		std::vector<D3D12_SUBRESOURCE_DATA> subresourceData;
+
+		HRESULT ret = DirectX::LoadDDSTextureFromMemory(mDevice.Get(), blob, size, defaultTexture.GetAddressOf(), subresourceData);
+		
+		if (ret != S_OK)
+		{
+			return false;
+		}
+
+		//std::unique_ptr<uint8_t> aa(blob);
+		UploadTexture(defaultTexture,  subresourceData, uploadBuffer);
+
+		mGraphicsCommandObject->ExecuteCommandList();
+		mGraphicsCommandObject->FlushCommandQueue();
+
+
+
+		oTexture.SetTextureResource(defaultTexture);
+
+		return true;
+	}
+
 
 	void TextureLoader::ReleaseUploadBuffer()
 	{
@@ -81,24 +115,10 @@ namespace Quad
 
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> TextureLoader::LoadTextureFromDDS(const std::wstring& filename, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer)
+	void TextureLoader::UploadTexture(Microsoft::WRL::ComPtr<ID3D12Resource>  & defaultTexture, std::vector<D3D12_SUBRESOURCE_DATA>& subresourceData, Microsoft::WRL::ComPtr<ID3D12Resource> & uploadBuffer)
 	{
+
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList = mGraphicsCommandObject->GetGraphicsCommandList();
-
-
-		Microsoft::WRL::ComPtr<ID3D12Resource> defaultTexture;
-		std::unique_ptr<uint8_t[]> ddsData;
-		std::vector<D3D12_SUBRESOURCE_DATA> subresourceData;
-		/*ThrowIfFailed(DirectX::LoadDDSTextureFromFile(mDevice.Get(), filename.data(), defaultTexture.GetAddressOf(), ddsData, subresourceData));*/
-
-
-		HRESULT ret = DirectX::LoadDDSTextureFromFile(mDevice.Get(), filename.data(), defaultTexture.GetAddressOf(), ddsData, subresourceData);
-		if (ret != S_OK)
-		{
-			return nullptr;
-		}
-
-
 
 
 		size_t subResourceNum = subresourceData.size();//defaultTexture->GetDesc().MipLevels; -텍스처배열일수도있기에 이렇게하면안될거같다.
@@ -162,91 +182,117 @@ namespace Quad
 			graphicsCommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 		}
 
+
+
+
+	}
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> TextureLoader::LoadTextureFromDDS(const std::wstring& filename, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer)
+	{
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList = mGraphicsCommandObject->GetGraphicsCommandList();
+
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> defaultTexture;
+		std::unique_ptr<uint8_t[]> ddsData;
+		std::vector<D3D12_SUBRESOURCE_DATA> subresourceData;
+		/*ThrowIfFailed(DirectX::LoadDDSTextureFromFile(mDevice.Get(), filename.data(), defaultTexture.GetAddressOf(), ddsData, subresourceData));*/
+
+
+		HRESULT ret = DirectX::LoadDDSTextureFromFile(mDevice.Get(), filename.data(), defaultTexture.GetAddressOf(), ddsData, subresourceData);
+		if (ret != S_OK)
+		{
+			return nullptr;
+		}
+
+		UploadTexture(defaultTexture, subresourceData , uploadBuffer);
 		return defaultTexture;
+
+
+
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> TextureLoader::LoadTextureFromBITMAP(const std::wstring& filename, Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer)
 	{
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList = mGraphicsCommandObject->GetGraphicsCommandList();
 
-
-
+		//DirectX::ScratchImage
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> defaultTexture;
 		std::unique_ptr<uint8_t[]> decodedInitData;
 		D3D12_SUBRESOURCE_DATA subresourceData; //LoadWICTexture는 밉맵을 생성하지못한다.(공간은 예약가능하다고한다)
 	/*	ThrowIfFailed(DirectX::LoadWICTextureFromFile(mDevice.Get(), filename.c_str(), defaultTexture.GetAddressOf(), decodedInitData, subresourceData));*/
+		std::vector<D3D12_SUBRESOURCE_DATA> subresourceDataVector(1);
 
-		HRESULT ret= DirectX::LoadWICTextureFromFile(mDevice.Get(), filename.c_str(), defaultTexture.GetAddressOf(), decodedInitData, subresourceData);
+		HRESULT ret= DirectX::LoadWICTextureFromFile(mDevice.Get(), filename.c_str(), defaultTexture.GetAddressOf(), decodedInitData, subresourceDataVector[0]);
 
 		if (ret != S_OK)
 		{
 			return nullptr;
 		}
 		
+		UploadTexture(defaultTexture, subresourceDataVector, uploadBuffer);
+
+		//D3D12_RESOURCE_DESC defaultTextureDesc = defaultTexture->GetDesc();
+		//D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedSubResourceFootPrint;
+		//UINT numRow = 0;
+		//UINT64  rowSizeInByte = 0;
+		//UINT64 totalByte = 0;
+		//mDevice->GetCopyableFootprints(&defaultTextureDesc, 0, 1, 0, &placedSubResourceFootPrint, &numRow, &rowSizeInByte, &totalByte);
 
 
-		D3D12_RESOURCE_DESC defaultTextureDesc = defaultTexture->GetDesc();
-		D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedSubResourceFootPrint;
-		UINT numRow = 0;
-		UINT64  rowSizeInByte = 0;
-		UINT64 totalByte = 0;
-		mDevice->GetCopyableFootprints(&defaultTextureDesc, 0, 1, 0, &placedSubResourceFootPrint, &numRow, &rowSizeInByte, &totalByte);
+		//D3D12_RESOURCE_DESC uploadBufferDesc;
+		//uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		//uploadBufferDesc.Alignment = 0;
+		//uploadBufferDesc.DepthOrArraySize = 1;
+		//uploadBufferDesc.Width = totalByte;
+		//uploadBufferDesc.Height = 1;
+		//uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+		//uploadBufferDesc.MipLevels = 1;
+		//uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		//uploadBufferDesc.SampleDesc.Count = 1;
+		//uploadBufferDesc.SampleDesc.Quality = 0;
+		//uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
+		//CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
+		//ThrowIfFailed(mDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+		//	nullptr, IID_PPV_ARGS(&uploadBuffer)));
 
-		D3D12_RESOURCE_DESC uploadBufferDesc;
-		uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		uploadBufferDesc.Alignment = 0;
-		uploadBufferDesc.DepthOrArraySize = 1;
-		uploadBufferDesc.Width = totalByte;
-		uploadBufferDesc.Height = 1;
-		uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-		uploadBufferDesc.MipLevels = 1;
-		uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		uploadBufferDesc.SampleDesc.Count = 1;
-		uploadBufferDesc.SampleDesc.Quality = 0;
-		uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-		CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-		ThrowIfFailed(mDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr, IID_PPV_ARGS(&uploadBuffer)));
-
-		D3D12_RANGE mapRange = { 0,0 };
-		uint8_t* pMapped = nullptr;
-		ThrowIfFailed(uploadBuffer->Map(0, &mapRange, (void**)&pMapped));
-
-
-
-		UINT64 offset = placedSubResourceFootPrint.Offset;
-		UINT64 rowPitch = placedSubResourceFootPrint.Footprint.RowPitch;
-		UINT8* pData = (UINT8*)subresourceData.pData;
-
-		for (UINT sliceIndex = 0; sliceIndex < placedSubResourceFootPrint.Footprint.Depth; ++sliceIndex)
-		{
-
-			//4x4압축이될수있기때문에 placedSubResourceFootPrint에서 height를 rownum로 사용하지않는다. 
-			//height은 압축이전의 행의수를 의미하기에
-			for (UINT rowIndex = 0; rowIndex < numRow; ++rowIndex)
-			{
-
-				memcpy((void*)&pMapped[offset + rowPitch * rowIndex], pData + rowIndex * subresourceData.RowPitch, rowSizeInByte);
-
-			}
-			offset += rowPitch * numRow;
-			pData += subresourceData.SlicePitch;
-		}
+		//D3D12_RANGE mapRange = { 0,0 };
+		//uint8_t* pMapped = nullptr;
+		//ThrowIfFailed(uploadBuffer->Map(0, &mapRange, (void**)&pMapped));
 
 
 
-		uploadBuffer->Unmap(0, nullptr);
+		//UINT64 offset = placedSubResourceFootPrint.Offset;
+		//UINT64 rowPitch = placedSubResourceFootPrint.Footprint.RowPitch;
+		//UINT8* pData = (UINT8*)subresourceData.pData;
+
+		//for (UINT sliceIndex = 0; sliceIndex < placedSubResourceFootPrint.Footprint.Depth; ++sliceIndex)
+		//{
+
+		//	//4x4압축이될수있기때문에 placedSubResourceFootPrint에서 height를 rownum로 사용하지않는다. 
+		//	//height은 압축이전의 행의수를 의미하기에
+		//	for (UINT rowIndex = 0; rowIndex < numRow; ++rowIndex)
+		//	{
+
+		//		memcpy((void*)&pMapped[offset + rowPitch * rowIndex], pData + rowIndex * subresourceData.RowPitch, rowSizeInByte);
+
+		//	}
+		//	offset += rowPitch * numRow;
+		//	pData += subresourceData.SlicePitch;
+		//}
+
+
+
+		//uploadBuffer->Unmap(0, nullptr);
 
 
 
 
-		D3D12_TEXTURE_COPY_LOCATION src{ uploadBuffer.Get(),D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT ,placedSubResourceFootPrint };
-		D3D12_TEXTURE_COPY_LOCATION dst{ defaultTexture.Get(),D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,(UINT64)0 };
+		//D3D12_TEXTURE_COPY_LOCATION src{ uploadBuffer.Get(),D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT ,placedSubResourceFootPrint };
+		//D3D12_TEXTURE_COPY_LOCATION dst{ defaultTexture.Get(),D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,(UINT64)0 };
 
-		graphicsCommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+		//graphicsCommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 
 
 		return defaultTexture;

@@ -432,7 +432,7 @@ void Quad::FrameWindowMenuDirector::CreateCreateEntityClassPopupPanel(int popupP
 	DirectX::XMFLOAT3 classNameTextBoxPos =	tagTextBoxPanel->GetTransform().GetPositionLocal();
 	classNameTextBoxPos.x += tagPanelWidth / 2 + margin + classNameTextBoxWidth/2;
 	classNameTextBox->SetPosition(classNameTextBoxPos);
-	classNameTextBox->SetTextDrawFlag(false);
+	classNameTextBox->SetTextDrawFlag(true);
 	classNameTextBox->SetSelectAvailableFlag(false);
 	classNameTextBox->SetTextColor({ 0.0f,0.0f,0.0f });
 
@@ -558,7 +558,9 @@ void Quad::FrameWindowMenuDirector::CreateCreateEntityClassPopupPanel(int popupP
 		std::string projectName =ProjectDirector::GetCurrentProject()->GetName();
 		ProjectMetaData* projectMetaData = ProjectDirector::GetProjectMetaData(projectName);
 		
+		//상대경로로 수정해야함
 		UserBuildFileGenerator::CreateClassFile(className, "C:/Users/dongd/gitproject/GameEngine/EditorTemplate", projectMetaData->GetProjectFolderPath());
+		OutputDebugStringW(L"클래스파일생성 상대경로로 수정할것 !\n");
 
 
 		//popup창 종료

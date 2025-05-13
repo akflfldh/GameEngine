@@ -61,6 +61,13 @@
 #include<sstream>
 
 #include"BaseWindowController.h"
+
+#include"ResourceHelperClass.h"
+
+#include"DirectTexX/DirectXTex.h"
+
+#include"ResourceFileType.h"
+
 namespace Quad
 {
 
@@ -2262,11 +2269,228 @@ namespace Quad
 
 	}
 
-	void ResourceController::SaveUserAssetPackage(const std::string& assetFolderPath)
+	void ResourceController::SaveAssetPackage(const std::string& editorAssetFolderPath, const std::string& userAssetFolderPath, const std::string & outputFolderPath)
 	{
 
+
+		SaveTexturePackage(editorAssetFolderPath,userAssetFolderPath, outputFolderPath);
 		
 
+		SaveMaterialPackage(outputFolderPath);
+
+
+		SaveMeshPackage(outputFolderPath);
+
+
+		SaveSkeletonPackage(outputFolderPath);
+
+
+		SaveAnimClipPackage(outputFolderPath);
+
+
+	}
+
+	void ResourceController::LoadAssetPackage(const std::string& folderPath)
+	{
+		//저장순서는 상관없으나, 불러올때는 순서가 중요하다.
+		LoadTexturePackage(folderPath);
+
+
+		LoadMaterialPackage(folderPath);
+
+
+		LoadMeshPackage(folderPath);
+
+
+		LoadSkeletonPackage(folderPath);
+
+
+		LoadAnimClipPackage(folderPath);
+
+	}
+
+	void ResourceController::SaveMeshPackage(const std::string & outputFolderPath)
+	{
+
+		MeshManager * meshManager = MeshManager::GetInstance();
+	
+		std::vector<Mesh* > meshVector;
+	
+
+		const std::unordered_map<unsigned long long ,Mesh*> & meshIDTable =	meshManager->mIDTable.GetTable();
+		
+		meshVector.reserve(meshIDTable.size());
+
+		for (auto& meshElement : meshIDTable)
+		{
+			Mesh* mesh = meshElement.second;
+
+			if (!mesh->GetEngineContentItemFlag())
+			{
+				meshVector.push_back(mesh);
+			}
+
+
+		}
+
+		const std::string meshPackageFilePath = outputFolderPath + "\\Mesh.pkg";
+
+		mResourceStorer->SaveMeshPackage(meshPackageFilePath, meshVector);
+
+
+	}
+
+	void ResourceController::LoadMeshPackage(const std::string& folderPath)
+	{
+
+
+		const std::string meshPackageFilePath = folderPath + "\\Mesh.pkg";
+
+		mResourceLoader->LoadMeshPackage(meshPackageFilePath);
+
+
+	}
+
+	void ResourceController::SaveMaterialPackage(const std::string& outputFolderPath)
+	{
+
+		std::vector<Material*> materialVector;
+
+		MaterialManager * materialMangaer = 	MaterialManager::GetInstance();
+
+		const std::unordered_map<unsigned long long ,Material*> & materialIDTable =  materialMangaer->mIDTable.GetTable();
+		materialVector.reserve(materialIDTable.size());
+
+		for (auto& materialElement : materialIDTable)
+		{
+			Material* material = materialElement.second;
+			if (!material->GetEngineContentItemFlag())
+				materialVector.push_back(material);
+		}
+		const std::string materialPackageFilePath = outputFolderPath + "\\Mat.pkg";
+
+		mResourceStorer->SaveMaterialPackage(materialPackageFilePath, materialVector);
+
+
+	}
+
+	void ResourceController::LoadMaterialPackage(const std::string& folderPath)
+	{
+		const std::string materialPackageFilePath = folderPath + "\\Mat.pkg";
+		mResourceLoader->LoadMaterialPackage(materialPackageFilePath);
+
+	}
+
+	
+
+	HRESULT LoadTextureRawDataFromFile(const std::wstring& filePath, DirectX::ScratchImage& scratchImage,
+	DirectX::TexMetadata& texMetaData)
+	{
+		std::wstring extension = Utility::GetExtension(filePath);
+		HRESULT hresult = S_OK;
+		if (extension == L"dds")
+		{
+
+			DirectX::LoadFromDDSFile(filePath.c_str(), DirectX::DDS_FLAGS_NONE, &texMetaData, scratchImage);
+		}
+		else
+		{
+
+			hresult = DirectX::LoadFromWICFile(filePath.c_str(), DirectX::WIC_FLAGS_NONE, &texMetaData, scratchImage);
+		}
+
+		return hresult;
+	}
+
+		
+	void ResourceController::SaveTexturePackage(const std::string & editorAssetFolderPath, const std::string& userAssetFolderPath, const std::string & outputFolderPath)
+	{
+
+		const std::string texturePackageFilePath = outputFolderPath + "\\Texture.pkg";
+
+		//mResourceStorer
+		
+
+
+		const std::string userTextureFolderPath = userAssetFolderPath + "\\Texture";
+		const std::wstring editorTextureFolderPathW = Utility::ConvertToWString(editorAssetFolderPath + "\\Texture",true);
+
+		const std::string preDirectoryPath = Utility::SetNewCurrentDirectory(userTextureFolderPath);
+
+		//텍스처 파일들의 이름을 얻고
+
+
+		const std::unordered_map<unsigned long long ,Texture*> & textureTable = mTextureManager->mIDTable.GetTable();
+		std::vector<DirectX::Blob> blobVector;
+		blobVector.reserve(textureTable.size());
+
+		std::vector<ResourcePackageEntryMeta> resourcePackageEntryMetaVector;
+		resourcePackageEntryMetaVector.reserve(textureTable.size());
+
+
+		std::vector<Texture*>  textureVector;
+		textureVector.reserve(textureTable.size());
+
+		for (auto& textureElement : textureTable)
+		{
+			Texture* texture = textureElement.second;
+			if (texture->GetEngineContentItemFlag())
+				continue;
+
+			const std::wstring textureFileNameW = Utility::ConvertToWString(ResourceHelperClass::GetTextureFileName(texture), true);
+			//로드 
+			DirectX::ScratchImage scratchImage;
+			DirectX::TexMetadata texMetaData;
+
+			HRESULT hresult = LoadTextureRawDataFromFile(textureFileNameW, scratchImage, texMetaData);
+
+			if (hresult != S_OK)
+			{
+				//userAssetTextureFolder에서 없으니 EditorAssetTextureFolder에서 다시한번 시도 
+				const std::wstring editorTextureFileNameW = editorTextureFolderPathW + L"\\"+textureFileNameW;
+
+				hresult = LoadTextureRawDataFromFile(editorTextureFileNameW, scratchImage, texMetaData);
+				if (hresult != S_OK)
+				{
+					OutputDebugStringW(L"패키지 저장작업 - 텍스처파일 로드 실패 - ");
+					assert(0);
+				}
+			}
+
+
+			//가공
+
+
+			//ddsMemory 저장
+			DirectX::Blob blob;
+			
+			DirectX::SaveToDDSMemory(scratchImage.GetImages(),               
+				scratchImage.GetImageCount(),           
+				scratchImage.GetMetadata(), DirectX::DDS_FLAGS_NONE, blob);
+
+
+			blobVector.push_back(std::move(blob));
+		//	textureVector.push_back(texture);
+		// 
+		// 
+			//패키지파일저장을위해 metaData + blob struct 채운다
+			ResourcePackageEntryMeta packageEntryMeta;
+			packageEntryMeta.mName = texture->GetName();	//에디터에서사용한 고유의이름그대로
+			packageEntryMeta.mID = texture->GetUniqueID();	
+			packageEntryMeta.mNameLength = packageEntryMeta.mName.size();
+
+			resourcePackageEntryMetaVector.push_back(std::move(packageEntryMeta));
+		}
+
+
+		//최종 패키지파일로 통합저장
+		
+		
+		mResourceStorer->SaveTexturePackage(texturePackageFilePath, resourcePackageEntryMetaVector, blobVector);
+
+
+
+		Utility::SetNewCurrentDirectory(preDirectoryPath);
 
 
 
@@ -2282,9 +2506,76 @@ namespace Quad
 
 	}
 
-	std::vector<Asset*> ResourceController::LoadUserAssetPackage(const std::string& assetFolderPath)
+	void ResourceController::LoadTexturePackage(const std::string& folderPath)
 	{
-		return std::vector<Asset*>();
+		const std::string texturePackageFilePath = folderPath + "\\Texture.pkg";
+		mResourceLoader->LoadTexturePackage(texturePackageFilePath);
+
+
+
+	}
+
+
+	void ResourceController::SaveSkeletonPackage(const std::string& outputFolderPath)
+	{
+
+		std::vector<Skeleton*> skeletonlVector;
+
+		SkeletonManager* skeletonManager = SkeletonManager::GetInstance();
+
+		const std::unordered_map<unsigned long long, Skeleton*>& skeletonIDTable = skeletonManager->mIDTable.GetTable();
+		skeletonlVector.reserve(skeletonIDTable.size());
+
+		for (auto& skeletonElement : skeletonIDTable)
+		{
+			Skeleton* skeleton = skeletonElement.second;
+			if (!skeleton->GetEngineContentItemFlag())
+				skeletonlVector.push_back(skeleton);
+		}
+
+		const std::string skeletonPackageFilePath = outputFolderPath + "\\Skeleton.pkg";
+		mResourceStorer->SaveSkeletonPackage(skeletonPackageFilePath, skeletonlVector);
+
+
+
+	}
+
+
+	void ResourceController::LoadSkeletonPackage(const std::string& folderPath)
+	{
+		const std::string skeletonPackageFilePath = folderPath + "\\Skeleton.pkg";
+
+		mResourceLoader->LoadSkeletonPackage(skeletonPackageFilePath);
+
+	}
+
+	void ResourceController::SaveAnimClipPackage(const std::string& outputFolderPath)
+	{
+		std::vector<AnimationClip*> animClipVector;
+
+		AnimationClipManager* animClipManager = AnimationClipManager::GetInstance();
+
+		const std::unordered_map<unsigned long long, AnimationClip*>& animClipIDTable = animClipManager->mIDTable.GetTable();
+		animClipVector.reserve(animClipIDTable.size());
+
+		for (auto& skeletonElement : animClipIDTable)
+		{
+			AnimationClip* animClip = skeletonElement.second;
+			if (!animClip->GetEngineContentItemFlag())
+				animClipVector.push_back(animClip);
+		}
+
+		const std::string packageFilePath = outputFolderPath + "\\AnimClip.pkg";
+		mResourceStorer->SaveAnimationClipPackage(packageFilePath, animClipVector);
+
+	}
+
+	void ResourceController::LoadAnimClipPackage(const std::string& folderPath)
+	{
+		const std::string packageFilePath = folderPath + "\\AnimClip.pkg";
+
+		mResourceLoader->LoadAnimClipPackage(packageFilePath);
+
 	}
 
 

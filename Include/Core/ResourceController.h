@@ -96,19 +96,41 @@ namespace Quad
 
 
 
-		void SaveUserAssetPackage(const std::string& assetFolderPath);
-		std::vector<Asset*> LoadUserAssetPackage(const std::string& assetFolderPath);
+		void SaveAssetPackage(const std::string& editorAssetFolderPath, const std::string& userAssetFolderPath, const std::string& outputFolderPath);
+		void LoadAssetPackage(const std::string& folderPath);
+
+
+		void SaveMeshPackage(const std::string& outputFolderPath);
+		void LoadMeshPackage(const std::string& assetFolderPath);
+
+
+		void SaveMaterialPackage(const std::string& outputFolderPath);
+		void LoadMaterialPackage(const std::string& assetFolderPath);
+
+
+		void SaveTexturePackage(const std::string& editorAssetFolderPath, const std::string& userAssetFolderPath, const std::string& outputFolderPath);
+		void LoadTexturePackage(const std::string& assetFolderPath);
+
+
+		void SaveSkeletonPackage(const std::string& outputFolderPath);
+		void LoadSkeletonPackage(const std::string& assetFolderPath);
+
+
+		void SaveAnimClipPackage(const std::string& outputFolderPath);
+		void LoadAnimClipPackage(const std::string& assetFolderPath);
+
+
+
+
+
+
+
 
 
 		void SaveUserAsset(const std::string& assetFolderPath);
 		std::vector<Asset*> LoadUserAsset(const std::string& assetFolderPath);
 
 		
-
-
-
-
-
 		void SaveUserMaterial(const std::string& assetFolderPath);
 		void LoadUserMaterial(const std::string& assetFolderPath);
 
@@ -128,8 +150,14 @@ namespace Quad
 		void LoadUserAnimClip(const std::string& assetFolderPath);
 
 
-		//LoadFile은 임포트할경우사용
-		//std::vector<Asset*> ImportFile(const std::string& filePath);
+	
+
+
+
+
+
+
+
 	protected:
 
 	

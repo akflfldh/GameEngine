@@ -282,6 +282,8 @@ void Quad::AnimEditSceneDirector::CreateAnimNodePopupPanel()
 	mainPanel->RegisterAcceptEvent("LButtonDown");
 	mainPanel->RegisterAcceptEvent("LButtonUp");
 	mainPanel->SetSelectAvailableFlag(true);
+	mainPanel->SetDrawFlag(false);
+	mainPanel->SetActiveFlag(false);
 
 	//PanelUiEntity* mainPanel = PanelUiEntity::Create(map, mapLayerIndex);
 	//mainPanel->SetSize(300, 600);

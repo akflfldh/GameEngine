@@ -235,6 +235,10 @@ namespace Quad
 		int mFrameWindowSceneSwitch;
 		bool mWindowSwitchRenderFlag;//윈도우들을 스위치할때, 클리어,렌더가 수행되었으니, 창들을 띄워도된다는것을 나타내는 상태플래그
 		
+
+
+
+
 	};
 
 

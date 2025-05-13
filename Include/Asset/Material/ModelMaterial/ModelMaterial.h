@@ -35,7 +35,7 @@ namespace Quad
 		virtual void SetColor(const DirectX::XMFLOAT3& color)override;
 		virtual void SetColorIntensity(const DirectX::XMFLOAT3& intensity) override;
 		virtual void SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0)override;
-
+		virtual void SetDiffuse(const DirectX::XMFLOAT4& diffuse) override;
 		virtual void SetEffectName(const std::string& effectName)override;
 
 

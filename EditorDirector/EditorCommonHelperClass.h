@@ -10,6 +10,9 @@ namespace Quad
 		//transform.IndependentRotataionFlag = true,transform.IndependentScaleFlag =true, selectAvaliable = false
 		static void SetObjectDefaultInit(Object * ob);
 
+		
+
+
 	private:
 
 	};

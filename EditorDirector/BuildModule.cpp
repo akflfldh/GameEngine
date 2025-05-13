@@ -19,9 +19,9 @@ bool CreateBuildFolderHierarchy(const std::string& outputBuildPath,const std::st
 	const std::wstring assetPathW = programPathW + L"\\Asset";
 	const std::wstring mapPathW = programPathW + L"\\Map";
 
-	const std::wstring meshPathW = assetPathW + L"\\Mesh";
-	const std::wstring materialPathW = assetPathW + L"\\Material";
-	const std::wstring texturePathW = assetPathW + L"\\Texture";
+//	const std::wstring meshPathW = assetPathW + L"\\Mesh";
+//	const std::wstring materialPathW = assetPathW + L"\\Material";
+//	const std::wstring texturePathW = assetPathW + L"\\Texture";
 	const std::wstring effectPathW = assetPathW + L"\\Effect";
 
 
@@ -45,23 +45,23 @@ bool CreateBuildFolderHierarchy(const std::string& outputBuildPath,const std::st
 		return false;
 	}
 	
-	if (!CreateDirectory(meshPathW.c_str(), nullptr))
-	{
-		//실패
-		return false;
-	}
+	//if (!CreateDirectory(meshPathW.c_str(), nullptr))
+	//{
+	//	//실패
+	//	return false;
+	//}
 
-	if (!CreateDirectory(materialPathW.c_str(), nullptr))
-	{
-		//실패
-		return false;
-	}
+	//if (!CreateDirectory(materialPathW.c_str(), nullptr))
+	//{
+	//	//실패
+	//	return false;
+	//}
 
-	if (!CreateDirectory(texturePathW.c_str(), nullptr))
-	{
-		//실패
-		return false;
-	}
+	//if (!CreateDirectory(texturePathW.c_str(), nullptr))
+	//{
+	//	//실패
+	//	return false;
+	//}
 
 	if (!CreateDirectory(effectPathW.c_str(), nullptr))
 	{
@@ -98,7 +98,7 @@ bool Quad::BuildModule::Build(const std::string& outputBuildPath,const std::stri
 
 
 
-	GenerateFinalAssetFile(programFolderPath +"\\Asset", currProjectFolderPathW);
+	GenerateFinalAssetFile(programFolderPath, currProjectFolderPathW);
 
 
 	//유저의 프로젝트폴더에있는 mapMetaData와 map들도 복사 
@@ -114,7 +114,7 @@ bool Quad::BuildModule::Build(const std::string& outputBuildPath,const std::stri
 	return true;
 }
 
-bool Quad::BuildModule::GenerateFinalAssetFile(const std::string & outputAssetPath,const std::string & currProjectPath)
+bool Quad::BuildModule::GenerateFinalAssetFile(const std::string & outputPath,const std::string & currProjectPath)
 {
 
 
@@ -122,9 +122,15 @@ bool Quad::BuildModule::GenerateFinalAssetFile(const std::string & outputAssetPa
 	//일단 현재 모든 asset들을 저장한다.(즉 사용하지않은 asset들도 포함된다)
 	//config파일을 읽어서 editor의 기본asset들중 user에게 드러난 asset들의 목록을 읽어
 	//그 asset들의 engineFlag를 false로 설정한다.(이러면 saveUserAsset시 userAsset으로 인식되어 저장된다)
+	EditorDirector* editorDirector = EditorDirector::GetInstance();
+
+	const std::string editorFolderPath = editorDirector->GetEditorPathA();
+	const std::string editorAssetFolderPath = editorFolderPath + "\\Asset";
+	const std::string userAssetFolderPath = currProjectPath + "\\Asset";
+
 
 	
-	JsonParser::ReadFile("C:\\Users\\dongd\\gitproject\\GameEngine\\EditorConfig\\EditorAssetVisibleConfig.json");
+	JsonParser::ReadFile(editorFolderPath+"\\EditorConfig\\EditorAssetVisibleConfig.json");
 	JsonParser::ReadStart();
 	const rapidjson::Value::ConstArray & textureArray =	JsonParser::ReadArray("Texture");
 	std::vector<Asset*> editorDefaultAssetVector;
@@ -180,12 +186,12 @@ bool Quad::BuildModule::GenerateFinalAssetFile(const std::string & outputAssetPa
 	////user effect와 editor defualt effect들은 복사 
 
 	//editor effect path 
-	std::string beforeDirectoryPath = Utility::SetNewCurrentDirectory("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset\\Effect");
+	std::string beforeDirectoryPath = Utility::SetNewCurrentDirectory(editorAssetFolderPath+"\\Effect");
 
 	const rapidjson::Value::ConstArray& effectArray = JsonParser::ReadArray("Effect");
 	const rapidjson::Value::ConstArray& hlslArray = JsonParser::ReadArray("HLSL");
 
-	const std::string outputEffectPath = outputAssetPath + "\\Effect";
+	const std::string outputEffectPath = outputPath+ + "\\Asset\\Effect";
 	const std::wstring outputEffectPathW = Utility::ConvertToWString(outputEffectPath, true);
 
 	for (auto& element : effectArray)
@@ -211,7 +217,9 @@ bool Quad::BuildModule::GenerateFinalAssetFile(const std::string & outputAssetPa
 
 	auto resourceController = ResourceController::GetInstance();
 	
-	resourceController->SaveUserAsset(outputAssetPath);
+	//resourceController->SaveUserAsset(outputAssetPath);
+
+	resourceController->SaveAssetPackage(editorAssetFolderPath, userAssetFolderPath, outputPath);
 
 
 	//editor default asset들의 engine flag를 복구
@@ -290,7 +298,7 @@ bool Quad::BuildModule::CopyProjectFiles(const std::string & programFolderPath,c
 	auto editorDirector = EditorDirector::GetInstance();
 	const std::string & editorFolderPath = editorDirector->GetEditorPathA();
 	const std::string gameDllListFilePath = editorFolderPath+"\\EditorConfig\\GameDllList.json";
-	const std::wstring dllFolderPath = Utility::ConvertToWString(editorFolderPath + "\\Dll\\",true);
+	const std::wstring dllFolderPath = Utility::ConvertToWString(editorFolderPath + "\\Dll\\x64\\Debug\\",true);
 	JsonParser::ReadFile(gameDllListFilePath);
 
 	JsonParser::ReadStart();

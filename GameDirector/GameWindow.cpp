@@ -36,10 +36,10 @@ namespace Quad
 
     }
 
-    void GameWindow::EndUpdate()
+    void GameWindow::EndUpdate(float deltaTime)
     {
        /// BaseWindowController *  GetWindowController();
-        mGameWindowController->EndUpdate();
+        mGameWindowController->EndUpdate(deltaTime);
 
     }
 

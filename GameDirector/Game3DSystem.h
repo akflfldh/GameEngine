@@ -11,7 +11,7 @@ namespace Quad
 
 		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
 		virtual void Update(float deltaTime, bool playMode = true);
-		virtual void EndUpdate();
+		virtual void EndUpdate(float deltaTime) override;
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
 
 

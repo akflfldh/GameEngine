@@ -117,6 +117,13 @@ void Quad::ModelMaterial::SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0)
 	mFresnelR0DirtyFlag = true;
 }
 
+void Quad::ModelMaterial::SetDiffuse(const DirectX::XMFLOAT4& diffuse)
+{
+	Material::SetDiffuse(diffuse);
+	mDiffuseDirtyFlag = true;
+
+}
+
 void Quad::ModelMaterial::SetEffectName(const std::string& effectName)
 {
 	Material::SetEffectName(effectName);

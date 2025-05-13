@@ -21,6 +21,8 @@
 #include"Application.h"
 #include<sstream>
 
+#include"ResourceHelperClass.h"
+
 
 std::vector<Quad::Asset*> Quad::ImportModule::ImportFile(const std::string& filePath, const std::string& logicalFolderPath,
 	const std::string& copyAssetFolderPath)
@@ -225,14 +227,16 @@ Quad::Texture* Quad::ImportModule::ImportTextureFile(const std::string& filePath
 
 		std::wstring filePathW = Utility::ConvertToWString(filePath.c_str(), true);
 
-		std::string assetRawName = Utility::GetFileNameFromPath(texture->GetName());
+	/*	std::string assetRawName = Utility::GetFileNameFromPath(texture->GetName());
 
 		std::stringstream ss;
 		ss << std::hex;
 		ss << texture->GetUniqueID() << "_" << assetRawName;
-		std::string aa = ss.str();
+		std::string aa = ss.str();*/
 
-		std::wstring newFilePathW = Utility::ConvertToWString(textureFolderPath, true) + L"\\" + Utility::ConvertToWString(ss.str(), true);
+		std::string  textureFileName = ResourceHelperClass::GetTextureFileName(texture);
+
+		std::wstring newFilePathW = Utility::ConvertToWString(textureFolderPath, true) + L"\\" + Utility::ConvertToWString(textureFileName, true);
 
 		CopyFile(filePathW.c_str(), newFilePathW.c_str(), false);
 

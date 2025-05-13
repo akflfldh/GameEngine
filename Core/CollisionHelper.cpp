@@ -171,7 +171,10 @@ namespace Quad
 
 			//r = q - p0
 			DirectX::XMVECTOR r = DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&rayOrigin), DirectX::XMLoadFloat3(&p0));
-
+			if (rayOrigin.y > -14.0f)
+			{
+				int a = 2;
+			}
 			
 
 			//r * v1 

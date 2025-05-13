@@ -16,7 +16,7 @@ namespace Quad
 
 
 	private:
-		static bool GenerateFinalAssetFile(const std::string& outputAssetPath, const std::string& currProjectPath);
+		static bool GenerateFinalAssetFile(const std::string& outputPath, const std::string& currProjectPath);
 		static bool CopyProjectFiles(const std::string& programFolderPath, const std::string& programName);
 	};
 }

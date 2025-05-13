@@ -1,5 +1,10 @@
-﻿#include "EditorCommonHelperClass.h"
+﻿#include<sstream>
+#include"Utility/Utility.h"
+#include "EditorCommonHelperClass.h"
+
 #include"Object.h"
+#include"Asset/Texture/Texture.h"
+
 void Quad::EditorCommonHelperClass::SetObjectDefaultInit(Object* ob)
 {
 	Transform & transform =	ob->GetTransform();
@@ -11,3 +16,19 @@ void Quad::EditorCommonHelperClass::SetObjectDefaultInit(Object* ob)
 
 
 }
+
+//const std::string Quad::EditorCommonHelperClass::GetTextureFileName(Texture* texture)
+//{
+//
+//
+//	std::stringstream ss;
+//
+//	
+//	std::string assetRawName = Utility::GetFileNameFromPath(texture->GetName());
+//
+//	std::stringstream ss;
+//	ss << std::hex;
+//	ss << texture->GetUniqueID() << "_" << assetRawName;
+//
+//	return ss.str();
+//}

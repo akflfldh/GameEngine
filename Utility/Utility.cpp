@@ -57,15 +57,18 @@ namespace Quad
 		uploadBufferDesc.DepthOrArraySize = 1;
 		uploadBufferDesc.MipLevels = 1;
 		uploadBufferDesc.SampleDesc.Count = 1;
-		uploadBufferDesc.SampleDesc.Quality = 0;
+		uploadBufferDesc.SampleDesc.Quality = 0; 
 		uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
 		uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 
 		CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-		ThrowIfFailed(device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr, IID_PPV_ARGS(&mUploadBuffer)));
+		HRESULT hresult = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr, IID_PPV_ARGS(&mUploadBuffer));
+
+		
+		ThrowIfFailed(hresult);
 
 		D3D12_RANGE read_range{ 0,0 };
 		void* pMapped = nullptr;
@@ -167,13 +170,27 @@ namespace Quad
 
 		std::string extension = filePath.substr(dotIndex + 1);
 		return extension;
+
+
+	}
+
+	std::wstring Utility::GetExtension(const std::wstring& filePath)
+	{
+
+		size_t dotIndex = filePath.find_last_of('.');
+		if (dotIndex == std::wstring::npos)
+			return L"";
+
+		std::wstring extension = filePath.substr(dotIndex + 1);
+		return extension;
+
 	}
 
 	std::string Utility::GetFileNameFromPath(const std::string& filePath)
 	{
 		
-		size_t offset1 =	filePath.find_last_of(L'\\');
-		size_t offset2 =	filePath.find_last_of(L'/');
+		size_t offset1 =	filePath.find_last_of('\\');
+		size_t offset2 =	filePath.find_last_of('/');
 
 	
 		if (offset1 == std::string::npos && offset2 ==std::string::npos)
@@ -200,6 +217,11 @@ namespace Quad
 		 
 
 
+	}
+
+	std::wstring Utility::GetFileNameFromPath(const std::wstring& filePath)
+	{
+		return	ConvertToWString(GetFileNameFromPath(ConvertToString(filePath, true)),true);
 	}
 
 	std::string Utility::RemoveExtension(const std::string& fileName)

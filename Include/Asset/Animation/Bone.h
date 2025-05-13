@@ -5,7 +5,7 @@
 #include"CoreDllExport.h"
 namespace Quad
 {
-	enum class EBoneType
+	enum class EBoneType:unsigned int
 	{
 		eBone=0,
 		eMesh,

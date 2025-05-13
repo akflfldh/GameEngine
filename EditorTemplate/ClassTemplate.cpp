@@ -44,6 +44,12 @@ void {{CLASSNAME}}::Update(float deltaTime)
 
 }
 
+void {{CLASSNAME}}::EndUpdate(float deltaTime)
+{
+    Quad::Entity::EndUpdate(deltaTime);
+}
+
+
 void {{CLASSNAME}}::OnEvent(Quad::Event* pEvent)
 {
     Quad::Entity::OnEvent(pEvent);

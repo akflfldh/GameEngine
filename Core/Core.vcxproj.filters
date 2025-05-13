@@ -597,6 +597,18 @@
     <ClInclude Include="..\Include\Core\RegisterAnimStateTransitionCallbackClass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\Core\ResourceHelperClass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Core\ResourceFileType.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Core\DefaultCollisionWorldFactoryImpl.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\Core\DefaultSpacePartitioningStructureFactoryImpl.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WindowActiveEvent.cpp">
@@ -1107,6 +1119,15 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="RegisterAnimStateTransitionCallbackClassManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceHelperClass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultCollisionWorldFactoryImpl.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DefaultSpacePartitioningStructureFactoryImpl.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

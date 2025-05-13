@@ -408,9 +408,13 @@ void Quad::TextBox::OnEvent(Event* event)
 
 	const std::string& eventName = event->GetName();
 
-	if (eventName == "LButtonDown")
+	if (eventName == "Hover")
 	{
-		int a = 2;
+		MouseEvent* mouseEvnet = (MouseEvent*)event;
+		if (mouseEvnet->GetHoverState())
+		{
+			int a = 2;
+		}
 	}
 	UiEntity::OnEvent(event);
 
@@ -428,10 +432,10 @@ void Quad::TextBox::OnEvent(Event* event)
 	{
 		HandleWindowActive(event);
 	}
-	else if (eventName == "LButtonDown")
-	{
-		HandleLButtonDown(event);
-	}
+	//else if (eventName == "LButtonDown")
+	//{
+	//	HandleLButtonDown(event);
+	//}
 
 
 

@@ -21,7 +21,7 @@ namespace Quad
 
 		void Update(float deltaTime);
 		void UploadObjectToRenderSystem();
-		void EndUpdate();
+		void EndUpdate(float deltaTime);
 		void Draw();
 
 		void OnResize(int clientWidth, int clientHeigh, int direction);
@@ -31,7 +31,7 @@ namespace Quad
 		GameWindow* mWindow;
 
 		Game3DSystem* mGame3DSystem;
-		GameUiSystem* mGameUiSystem;
+	//	GameUiSystem* mGameUiSystem;
 	
 	};
 
