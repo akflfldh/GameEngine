@@ -8,4 +8,4 @@ Fbx SDK 최신 버전을 다운로드하여 Fbx폴더안에 다운받은  fbxsdk
 
 GameDirector 프로젝트와 관련하여 몇몇 경로들이 절대경로로 지정되어 정상적인 실행을 위해서 아직은 자체 수정을 해야합니다.
 
-![엔진스크린샷][GameEngine/게임엔진스샷git.png]
+![엔진스크린샷](GameEngine/게임엔진스샷git.png)
