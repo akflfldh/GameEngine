@@ -1,6 +1,8 @@
 ﻿#include "Core/BaseWindowController.h"
 #include"BaseWindowMsgHandlerComponent.h"
 
+#include"RenderSystem.h"
+
 Quad::BaseWindowController::BaseWindowController(RenderSystem* renderSystem)
 	:Controller(),mMousePositionState(true), mRenderSystem(renderSystem)
 {
@@ -94,4 +96,20 @@ Quad::RenderSystem* Quad::BaseWindowController::GetRenderSystem()
 const Quad::RenderSystem* Quad::BaseWindowController::GetRenderSystem() const
 {
 	return mRenderSystem;
+}
+
+void Quad::BaseWindowController::NotifyCreatingMapLayer(ESystemType systemType, D3D12_VIEWPORT viewportLocal, D3D12_VIEWPORT viewportGlobal)
+{
+	//render system에게 mapLayer 생성을 알린다.
+	mRenderSystem->NotifyCreatingMapLayer(systemType, viewportLocal,viewportGlobal);
+
+
+}
+
+void Quad::BaseWindowController::NotifyResizeMapLayer(ESystemType systemType, int mapLayerIndex, D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal)
+{
+
+	mRenderSystem->NotifyResizeMapLayer(systemType, mapLayerIndex, viewport, viewportGlobal);
+
+
 }

@@ -1,7 +1,7 @@
 ﻿#include "Object/Camera/FrustumCamera.h"
 #include"Collision/ColliderGenerator.h"
 #include"Collision/CameraFrustumCollider.h"
-#include"Component/ColliderComponent.h"
+//#include"Component/ColliderComponent.h"
 #include"Map/Map.h"
 
 #include"Core/WindowResizeEvent.h"
@@ -29,21 +29,21 @@ void Quad::FrustumCamera::Initialize()
 
 	mViewFrustumCollider = ColliderGenerator::CreateCameraFrustumCollider(this);
 
-	//mViewFrustumCollider->SetSystem(GetSystem());
-	GetTransform().SetTransformChangeEventFlag(true);
-	GetTransform().RegisterTransformChangeCallback([camera  = this , viewCollider = mViewFrustumCollider]() {
+	////mViewFrustumCollider->SetSystem(GetSystem());
+	//GetTransform().SetTransformChangeEventFlag(true);
+	//GetTransform().RegisterTransformChangeCallback([camera  = this , viewCollider = mViewFrustumCollider]() {
 
 
-		Transform& cameraTransform = camera->GetTransform();
-		Transform & viewColliderTransform =	 viewCollider->GetTransform();
+	//	Transform& cameraTransform = camera->GetTransform();
+	//	Transform & viewColliderTransform =	 viewCollider->GetTransform();
 
-		viewColliderTransform.SetQuaternionWorld(cameraTransform.GetQuaternionWorld());
-		
-		DirectX::XMFLOAT3  posWorld = cameraTransform.GetPositionWorld();
-		viewColliderTransform.SetPositionWorld(posWorld);
+	//	viewColliderTransform.SetQuaternionWorld(cameraTransform.GetQuaternionWorld());
+	//	
+	//	DirectX::XMFLOAT3  posWorld = cameraTransform.GetPositionWorld();
+	//	viewColliderTransform.SetPositionWorld(posWorld);
 
-		viewCollider->UpdateCollider();
-		});
+	//	viewCollider->UpdateCollider();
+	//	});
 
 }
 

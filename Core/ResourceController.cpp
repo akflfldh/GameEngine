@@ -3045,6 +3045,9 @@ namespace Quad
 		{
 			while (1)
 			{
+			
+
+
 				mResourceLoader->LoadEffect(fileData.cFileName);
 				if (FindNextFileA(handle, &fileData) == 0)
 					break;
@@ -3328,43 +3331,9 @@ namespace Quad
 
 	void ResourceController::SaveMaterialMetaDataFile(const std::string &filePath)
 	{
-	/*	const std::vector<LogicalContentItemUiEntityFolder*> & logicalContentItemUiEntityVector= FileUiUiSystem::GetLogicalContentItemUiEntityFolderVector();*/
 
 
 		JsonParser::StartWrite();
-
-
-		//version 1
-		/*
-		unsigned int materialNum = 0;
-		unsigned long long logicalFolderUniqueID = 0;
-
-		for (auto logicalFolder : logicalContentItemUiEntityVector)
-		{
-			logicalFolderUniqueID = logicalFolder->GetUniqueID();
-
-
-			ContentItemUiPanelEntity* contentItemUiPanelEntity = logicalFolder->GetContentItemPanelEntity();
-			const std::vector<ContentItemBaseUiEntity*>& contentItemBaseUEntityVector = contentItemUiPanelEntity->GetContentItemBaseUiEntityVector();
-
-			for (auto contentItemUiEntity : contentItemBaseUEntityVector)
-			{
-				ContentItem* contentItem = contentItemUiEntity->GetAsset();
-				if (contentItem->GetEContentItemType() == EContentItemType::eAsset)
-				{
-					Asset* asset = static_cast<Asset*>(contentItem);
-					if (asset->GetAssetType() == EAssetType::eMaterial)
-					{
-						JsonParser::StartWriteObject();
-						JsonParser::Write("AssetUniqueID", asset->GetUniqueID());
-						JsonParser::Write("LogicalFolderUnqiueID", logicalFolderUniqueID);	
-						materialNum++;
-					}
-				}
-			}
-		}
-		JsonParser::StartWriteObject();
-	*/
 
 
 		//version 2
@@ -3385,7 +3354,7 @@ namespace Quad
 
 
 	
-		JsonParser::StartWriteObject();
+		//JsonParser::StartWriteObject();
 		unsigned long long materialNum = 0;
 		for (auto& element : materialIDTable)
 		{
@@ -3396,7 +3365,7 @@ namespace Quad
 		JsonParser::Write("MaterialNum", materialNum);
 
 
-
+		JsonParser::AscendOutofObjectOrArray();
 		for (auto& element : materialIDTable)
 		{
 			Material* material = element.second;
@@ -3408,6 +3377,8 @@ namespace Quad
 			JsonParser::StartWriteObject();
 			JsonParser::Write("AssetUniqueID", material->GetUniqueID());
 			JsonParser::Write("LogicalFolderUniqueID", logicalFolderUniqueID);
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 		//nextAavailableUniqueID
@@ -3444,9 +3415,11 @@ namespace Quad
 				textureNum++;
 		}
 
-		JsonParser::StartWriteObject();
+	//	JsonParser::StartWriteObject();
 		JsonParser::Write("TextureNum", textureNum);
 		
+		JsonParser::AscendOutofObjectOrArray();
+
 		for (auto& element : textureIDTable)
 		{
 
@@ -3472,6 +3445,8 @@ namespace Quad
 			JsonParser::Write("AssetUniqueName", texture->GetName());
 			JsonParser::Write("AssetUniqueID", texture->GetUniqueID());
 			JsonParser::Write("LogicalFolderUniqueID", texture->GetDestLogicalFolderUnqiueID());
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3518,9 +3493,9 @@ namespace Quad
 
 
 
-		JsonParser::StartWriteObject();
+		//JsonParser::StartWriteObject();
 		JsonParser::Write("MeshNum", meshNum);
-		
+		JsonParser::AscendOutofObjectOrArray();
 		for (auto& element : meshIDTable)
 		{
 			mesh = element.second;
@@ -3531,7 +3506,7 @@ namespace Quad
 
 			JsonParser::Write("AssetUniqueID", mesh->GetUniqueID());
 			JsonParser::Write("LogicalFolderUniqueID", mesh->GetDestLogicalFolderUnqiueID());
-
+			JsonParser::AscendOutofObjectOrArray();
 
 		}
 
@@ -3578,8 +3553,10 @@ namespace Quad
 
 
 
-		JsonParser::StartWriteObject();
+		//JsonParser::StartWriteObject();
 		JsonParser::Write("SkeletonNum", skeletonNum);
+		JsonParser::AscendOutofObjectOrArray();
+
 
 		for (auto& element : skeletonIDTable)
 		{
@@ -3592,7 +3569,7 @@ namespace Quad
 			JsonParser::Write("AssetUniqueID", skeleton->GetUniqueID());
 			JsonParser::Write("LogicalFolderUniqueID", skeleton->GetDestLogicalFolderUnqiueID());
 
-
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3630,10 +3607,10 @@ namespace Quad
 
 
 
-		JsonParser::StartWriteObject();
+		//JsonParser::StartWriteObject();
 		JsonParser::Write("AnimationClipNum", animClipNum);
 
-
+		JsonParser::AscendOutofObjectOrArray();
 		for (auto& element : animClipIDTable)
 		{
 			animClip = element.second;
@@ -3645,7 +3622,7 @@ namespace Quad
 			JsonParser::Write("AssetUniqueID", animClip->GetUniqueID());
 			JsonParser::Write("LogicalFolderUniqueID", animClip->GetDestLogicalFolderUnqiueID());
 
-
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3670,13 +3647,13 @@ namespace Quad
 		MaterialManager* materialManager = MaterialManager::GetInstance();
 		unsigned long long readObjectIndex = 0;
 		
-		
+		JsonParser::DescendIntoObjectOrArray();
 		//nextAavailableUniqueID
 		unsigned long long nextAvailableUniqueID = 0;
 		JsonParser::Read("NextAvailableUniqueID", nextAvailableUniqueID);
 		materialManager->mIDTable.SetNextAvailalbeUniqueID(nextAvailableUniqueID);
 
-		JsonParser::SetCurrentIndex(++readObjectIndex);
+		//JsonParser::SetCurrentIndex(++readObjectIndex);
 
 		
 		unsigned long long materialNum = 0;
@@ -3687,8 +3664,12 @@ namespace Quad
 		unsigned long long logicalFolderUniqueID = 0;
 		unsigned long long materialUniqueID = 0;
 		std::vector<Asset*> assetVector(materialNum, nullptr);
+
+		JsonParser::AscendOutofObjectOrArray();
 		for (unsigned long long i = 0; i < materialNum; ++i)
 		{
+
+			JsonParser::DescendIntoObjectOrArray();
 			readObjectIndex++;
 			JsonParser::SetCurrentIndex(readObjectIndex);
 			JsonParser::Read("AssetUniqueID", materialUniqueID);
@@ -3698,6 +3679,8 @@ namespace Quad
 			material->SetDestLogicalFolderUnqiueID(logicalFolderUniqueID);
 			
 			assetVector[i] = material;
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3726,27 +3709,30 @@ namespace Quad
 	
 		TextureManager* textureManager = TextureManager::GetInstance();
 
+
+		JsonParser::DescendIntoObjectOrArray();
+
 		unsigned long long readObjectIndex = 0;
 		//nextAavailableUniqueID
 		unsigned long long nextAvailableUniqueID = 0;
 		JsonParser::Read("NextAvailableUniqueID", nextAvailableUniqueID);
 		textureManager->mIDTable.SetNextAvailalbeUniqueID(nextAvailableUniqueID);
-		JsonParser::SetCurrentIndex(++readObjectIndex);
-		
-		
-		unsigned long long textureNum;
 
+		unsigned long long textureNum;
 		JsonParser::Read("TextureNum", textureNum);
 
 		unsigned long long logicalFolderUniqueID = 0;
 		unsigned long long textureUniqueID = 0;
 
 		std::vector<Asset*> assetVector(textureNum, nullptr);
-
+		JsonParser::AscendOutofObjectOrArray();
 		for (unsigned long long i = 0; i < textureNum; ++i)
 		{
 			readObjectIndex++;
-			JsonParser::SetCurrentIndex(readObjectIndex);
+			//JsonParser::SetCurrentIndex(readObjectIndex);
+
+			JsonParser::DescendIntoObjectOrArray();
+
 			std::string assetUniqueName;
 			std::string textureName;
 			JsonParser::Read("FileName", textureName);
@@ -3758,6 +3744,8 @@ namespace Quad
 			texture->SetDestLogicalFolderUnqiueID(logicalFolderUniqueID);
 
 			assetVector[i] = texture;
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3781,11 +3769,11 @@ namespace Quad
 		
 		MeshManager* meshManager = MeshManager::GetInstance();
 
-
+		JsonParser::DescendIntoObjectOrArray();
 		unsigned long long nextAvailableUniqueID = 0;
 		JsonParser::Read("NextAvailableUniqueID", nextAvailableUniqueID);
 		meshManager->mIDTable.SetNextAvailalbeUniqueID(nextAvailableUniqueID);
-		JsonParser::SetCurrentIndex(++readObjectIndex);
+		//JsonParser::SetCurrentIndex(++readObjectIndex);
 
 
 		unsigned long long meshNum=0;
@@ -3801,8 +3789,12 @@ namespace Quad
 
 		std::vector<Asset*> assetVector(meshNum, nullptr);
 
+		JsonParser::AscendOutofObjectOrArray();
 		for (unsigned long long i = 0; i < meshNum; ++i)
 		{
+
+			JsonParser::DescendIntoObjectOrArray();
+
 			readObjectIndex++;
 			JsonParser::SetCurrentIndex(readObjectIndex);
 
@@ -3814,6 +3806,8 @@ namespace Quad
 			mesh->SetDestLogicalFolderUnqiueID(logicalFolderUniqueID);
 
 			assetVector[i] = mesh;
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -3843,12 +3837,12 @@ namespace Quad
 		JsonParser::ReadStart();
 		unsigned long long readObjectIndex = 0;
 
-
+		JsonParser::DescendIntoObjectOrArray();
 
 		unsigned long long nextAvailableUniqueID = 0;
 		JsonParser::Read("NextAvailableUniqueID", nextAvailableUniqueID);
 		mSkeletonManager.mIDTable.SetNextAvailalbeUniqueID(nextAvailableUniqueID);
-		JsonParser::SetCurrentIndex(++readObjectIndex);
+	//	JsonParser::SetCurrentIndex(++readObjectIndex);
 
 
 		unsigned long long skeletonNum = 0;
@@ -3863,9 +3857,11 @@ namespace Quad
 
 
 		std::vector<Asset*> assetVector(skeletonNum, nullptr);
-
+		JsonParser::AscendOutofObjectOrArray();
 		for (unsigned long long i = 0; i < skeletonNum; ++i)
 		{
+
+			JsonParser::DescendIntoObjectOrArray();
 			readObjectIndex++;
 			JsonParser::SetCurrentIndex(readObjectIndex);
 
@@ -3877,6 +3873,10 @@ namespace Quad
 			skeleton->SetDestLogicalFolderUnqiueID(logicalFolderUniqueID);
 
 			assetVector[i] = skeleton;
+
+			JsonParser::AscendOutofObjectOrArray();
+
+
 		}
 
 
@@ -3899,12 +3899,12 @@ namespace Quad
 		JsonParser::ReadStart();
 		unsigned long long readObjectIndex = 0;
 
-
+		JsonParser::DescendIntoObjectOrArray();
 
 		unsigned long long nextAvailableUniqueID = 0;
 		JsonParser::Read("NextAvailableUniqueID", nextAvailableUniqueID);
 		mAnimationClipManager.mIDTable.SetNextAvailalbeUniqueID(nextAvailableUniqueID);
-		JsonParser::SetCurrentIndex(++readObjectIndex);
+	//	JsonParser::SetCurrentIndex(++readObjectIndex);
 
 
 		unsigned long long animClipNum = 0;
@@ -3919,9 +3919,11 @@ namespace Quad
 
 
 		std::vector<Asset*> assetVector(animClipNum, nullptr);
-
+		JsonParser::AscendOutofObjectOrArray();
 		for (unsigned long long i = 0; i < animClipNum; ++i)
 		{
+
+			JsonParser::DescendIntoObjectOrArray();
 			readObjectIndex++;
 			JsonParser::SetCurrentIndex(readObjectIndex);
 
@@ -3933,6 +3935,8 @@ namespace Quad
 			animClip->SetDestLogicalFolderUnqiueID(logicalFolderUniqueID);
 
 			assetVector[i] = animClip;
+
+			JsonParser::AscendOutofObjectOrArray();
 		}
 
 
@@ -4147,17 +4151,17 @@ namespace Quad
 
 	}
 
-	ETextureFormat ResourceController::ConvertTextureFormatEnum(DXGI_FORMAT format)
+	EColorFormat ResourceController::ConvertTextureFormatEnum(DXGI_FORMAT format)
 	{
 
 		switch (format)
 		{
 		case DXGI_FORMAT_R8G8B8A8_UNORM:
 
-			return ETextureFormat::eRgb;
+			return EColorFormat::eRgb;
 
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-			return ETextureFormat::eSRgb;
+			return EColorFormat::eSRgb;
 		}
 		
 	}

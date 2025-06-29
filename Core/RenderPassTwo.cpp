@@ -6,6 +6,15 @@
 #include"Shader/ShaderResourceSampler.h"
 
 
+Quad::RenderPassTwo::RenderPassTwo()
+    : mDestEffect(nullptr),mPipelineState(nullptr),mRootSignature(nullptr),mPrimitiveTopologyType(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST),mRenderPassID(ERenderPassID::eOpaque),
+    mCustomRenderTargetTexture(nullptr), mCustomRenderTargetLocalID(-1), mRenderPassDrawType(ERenderPassDrawType::eObjectDraw)
+{
+
+
+
+}
+
 Quad::RenderPassTwo::~RenderPassTwo()
 {
 
@@ -53,6 +62,14 @@ Quad::RenderPassTwo::RenderPassTwo(const RenderPassTwo& renderPass)
 
 
 
+}
+void Quad::RenderPassTwo::SetDestEffect(Effect* effect)
+{
+    mDestEffect = effect;
+}
+Quad::Effect* Quad::RenderPassTwo::GetDestEffect() const
+{
+    return mDestEffect;
 }
 Microsoft::WRL::ComPtr<ID3D12PipelineState> Quad::RenderPassTwo::GetPipelineState() const
 {
@@ -128,4 +145,81 @@ bool Quad::RenderPassTwo::GetStencilWriteFlag() const
 {
     return mStencilWriteFlag;
 }
+
+void Quad::RenderPassTwo::SetCustomRenderTarget(RenderTargetTexture* renderTargetTexture)
+{
+
+    mCustomRenderTargetTexture = renderTargetTexture;
+}
+
+Quad::RenderTargetTexture* Quad::RenderPassTwo::GetCustomRenderTarget() const
+{
+    return mCustomRenderTargetTexture;
+}
+
+void Quad::RenderPassTwo::SetCustomRenderTargetLocalID(int id)
+{
+    mCustomRenderTargetLocalID = id;
+}
+
+int Quad::RenderPassTwo::GetCustomRenderTargetLocalID() const
+{
+    return mCustomRenderTargetLocalID;
+}
+
+void Quad::RenderPassTwo::AddPreRenderPassCommand(RenderPassCommand* renderPassCommmand)
+{
+    mPreRenderPassCommandVector.push_back(renderPassCommmand);
+}
+
+void Quad::RenderPassTwo::AddPostRenderPassCommand( RenderPassCommand* renderPassCommand)
+{
+    mPostRenderPassCommandVector.push_back(renderPassCommand);
+}
+
+void Quad::RenderPassTwo::SetPreRenderPassCommandVector(const std::vector<RenderPassCommand*>& renderPassCommandVector)
+{
+    mPreRenderPassCommandVector = renderPassCommandVector;
+
+}
+
+void Quad::RenderPassTwo::SetPreRenderPassCommandVector(std::vector<RenderPassCommand*>&& renderPassCommandVector)
+{
+    mPreRenderPassCommandVector = std::move(renderPassCommandVector);
+}
+
+void Quad::RenderPassTwo::SetPostRenderPassCommandVector(const std::vector<RenderPassCommand*>& renderPassCommandVector)
+{
+    mPostRenderPassCommandVector = renderPassCommandVector;
+}
+
+void Quad::RenderPassTwo::SetPostRenderPassCommandVector(std::vector<RenderPassCommand*>&& renderPassCommandVector)
+{
+    mPostRenderPassCommandVector = std::move(renderPassCommandVector);
+}
+
+const std::vector<Quad::RenderPassCommand*>& Quad::RenderPassTwo::GetPreRenderPassCommandVector() const
+{
+    return mPreRenderPassCommandVector;
+    // TODO: 여기에 return 문을 삽입합니다.
+}
+
+const std::vector<Quad::RenderPassCommand*>& Quad::RenderPassTwo::GetPostRenderPassCommandVector() const
+{
+    return mPostRenderPassCommandVector;
+    // TODO: 여기에 return 문을 삽입합니다.
+}
+
+void Quad::RenderPassTwo::SetRenderPassDrawType(ERenderPassDrawType renderPassDrawType)
+{
+
+    mRenderPassDrawType = renderPassDrawType;
+}
+
+Quad::ERenderPassDrawType Quad::RenderPassTwo::GetRenderPassDrawType() const
+{
+    return mRenderPassDrawType;
+}
+
+
 

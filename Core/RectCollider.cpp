@@ -19,52 +19,64 @@ Quad::RectCollider::~RectCollider()
 //	return mDestUiEntity;
 //}
 
-void Quad::RectCollider::Update(float deltaTime)
+//void Quad::RectCollider::Update(const DirectX::XMFLOAT4X4 & worldMatrix)
+//{
+////	UiEntity * destUiEntity =static_cast<UiEntity*>(GetDestObject());
+////
+////	float widthLocal = destUiEntity->GetWidth();
+////	float heightLocal = destUiEntity->GetHeight();
+////	Transform & destUiEntityTransform = destUiEntity->GetTransform();
+////
+////	DirectX::XMFLOAT3 posLocal = destUiEntityTransform.GetPositionLocal();
+////	DirectX::XMFLOAT3 topLeft = posLocal;
+////	//topLeft.x -= widthLocal / 2;
+////	//topLeft.y += heightLocal / 2;
+////
+////	DirectX::XMFLOAT3 topRight = posLocal;
+//////	topRight.x += widthLocal / 2;
+//////	topRight.y += heightLocal / 2;
+////
+////	DirectX::XMFLOAT3 bottomLeft = posLocal;
+////	//bottomLeft.x -= widthLocal / 2;
+//////	bottomLeft.y -= heightLocal / 2;
+////
+////
+////	DirectX::XMFLOAT3 bottomRight = posLocal;
+///////	bottomRight.x += widthLocal / 2;
+//////	bottomRight.y -= heightLocal / 2;
+////
+////
+////
+////	topLeft = { -0.5f,0.5f,0 };
+////	topRight = { 0.5f,0.5f,0 };
+////	bottomLeft = { -0.5f,-0.5f,0 };
+////	bottomRight = { 0.5f,-0.5f,0 };
+////
+////
+////
+////
+////
+////
+////
+////	DirectX::XMFLOAT4X4 worldMatrixF = destUiEntityTransform.GetWorldMatrix();
+////	DirectX::XMMATRIX worldMatrix = DirectX::XMLoadFloat4x4(&worldMatrixF);
+////	
+////	DirectX::XMStoreFloat3(&mTopLeftPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&topLeft), worldMatrix));
+////	DirectX::XMStoreFloat3(&mTopRightPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&topRight), worldMatrix));
+////	DirectX::XMStoreFloat3(&mBottomLeftPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&bottomLeft), worldMatrix));
+////	DirectX::XMStoreFloat3(&mBottomRightPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&bottomRight), worldMatrix));
+////
+//
+//
+//
+//
+//}
+
+void Quad::RectCollider::Update(const DirectX::XMFLOAT4X4& transformMatrix)
 {
-	UiEntity * destUiEntity =static_cast<UiEntity*>(GetDestObject());
-
-	float widthLocal = destUiEntity->GetWidth();
-	float heightLocal = destUiEntity->GetHeight();
-	Transform & destUiEntityTransform = destUiEntity->GetTransform();
-
-	DirectX::XMFLOAT3 posLocal = destUiEntityTransform.GetPositionLocal();
-	DirectX::XMFLOAT3 topLeft = posLocal;
-	//topLeft.x -= widthLocal / 2;
-	//topLeft.y += heightLocal / 2;
-
-	DirectX::XMFLOAT3 topRight = posLocal;
-//	topRight.x += widthLocal / 2;
-//	topRight.y += heightLocal / 2;
-
-	DirectX::XMFLOAT3 bottomLeft = posLocal;
-	//bottomLeft.x -= widthLocal / 2;
-//	bottomLeft.y -= heightLocal / 2;
+	UiEntity * destUiEntity = static_cast<UiEntity*>(GetDestObject());
 
 
-	DirectX::XMFLOAT3 bottomRight = posLocal;
-///	bottomRight.x += widthLocal / 2;
-//	bottomRight.y -= heightLocal / 2;
-
-
-
-	topLeft = { -0.5f,0.5f,0 };
-	topRight = { 0.5f,0.5f,0 };
-	bottomLeft = { -0.5f,-0.5f,0 };
-	bottomRight = { 0.5f,-0.5f,0 };
-
-
-
-
-
-
-
-	DirectX::XMFLOAT4X4 worldMatrixF = destUiEntityTransform.GetWorldMatrix();
-	DirectX::XMMATRIX worldMatrix = DirectX::XMLoadFloat4x4(&worldMatrixF);
-	
-	DirectX::XMStoreFloat3(&mTopLeftPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&topLeft), worldMatrix));
-	DirectX::XMStoreFloat3(&mTopRightPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&topRight), worldMatrix));
-	DirectX::XMStoreFloat3(&mBottomLeftPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&bottomLeft), worldMatrix));
-	DirectX::XMStoreFloat3(&mBottomRightPoint,DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&bottomRight), worldMatrix));
 
 
 

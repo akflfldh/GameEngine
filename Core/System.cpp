@@ -3,12 +3,11 @@
 #include"Core/WindowResizeEvent.h"
 #include"Core/SystemState.h"
 #include"BaseWindowController.h"
-//#include"Window.h"
-//#include"TextCharacterEntity.h"
-//#include"EditorSystem.h"
 
 
-#include"GameMapSystem.h"
+
+
+#include"UiPickingRaySystem.h"
 
 
 
@@ -19,10 +18,22 @@ namespace Quad
 
 	System::System(ESystemType systemType, ESystemID systemID, const std::string& name, Quad::ESystemMode systemMode)
 		: mName(name),mEventFocusFlag(false),mSystemType(systemType),mSystemID(systemID),mState(nullptr),
-		mPlayModeState(false),mActiveState(false),mSystemMode(systemMode)
+		mPlayModeState(false),mActiveState(false),mSystemMode(systemMode), mFixedViewportGlobalTopLeftX(0.0f), mFixedViewportGlobalTopLeftY(0.0f)
 	{
 
+		mViewPortLocal.Width = 1.0f;
+		mViewPortLocal.Height= 1.0f;
+		mViewPortLocal.TopLeftX= 0.0f;
+		mViewPortLocal.TopLeftY=  0.0f;
+		mViewPortLocal.MinDepth = 0.0f;
+		mViewPortLocal.MaxDepth = 1.0f;
 
+		mViewPortGlobal.Width = 1.0f;
+		mViewPortGlobal.Height = 1.0f;
+		mViewPortGlobal.TopLeftX = 0.0f;
+		mViewPortGlobal.TopLeftY = 0.0f;
+		mViewPortGlobal.MinDepth = 0.0f;
+		mViewPortGlobal.MaxDepth = 1.0f;
 
 	}
 
@@ -31,48 +42,42 @@ namespace Quad
 		delete mState;
 	}
 
-	void System::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map)
+	void System::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staitcMap,Quad::Map * runtimeMap)
 	{
 		mClientRect.left = mClientRect.top = 0;
 		SetClientWidth(clientWidth);
 		SetClientHeight(clientHeight);
 
-
 		ESystemMode systemMode = GetSystemMode();
-
 		switch (systemMode)
 		{
 		case ESystemMode::eSwitchMode:
-
 		{
-			mEditMap = map;
+			mEditMap = staitcMap;
 			mCurrentMap = mEditMap;
-
-			mRuntimeMap = GameMapSystem::CreateMap(this, "", GetIsUserGameSystem());
-			//mRuntimeMap.Initialize(this, { 0,1.0f,0 });
-
-			//SetViewPort(0, 0, mClientWidth, clientHeight, 0.0f, 1.0f);
 		}
 		break;
 		case ESystemMode::eRunTimeMode:
 		{
 			mRuntimeModeState = true;
 			mEditMap = nullptr;
-			mRuntimeMap = map;
+			mRuntimeMap = runtimeMap;
 			mCurrentMap = mRuntimeMap;
 		}
 		break;
 		}
 
-
-		SetViewPort(0, 0, mClientWidth, clientHeight, 0.0f, 1.0f);
-
-
-
-
-	
+		UpdateViewportGlobal();
+		
 		//MAP의 초기 VIEWPORT는 기본설정 (화면전체)
 		//또 창의 크기가변하면 따라 변하든지 조정이 필요할텐데.
+
+
+
+	}
+
+	void System::Start()
+	{
 
 
 
@@ -85,53 +90,30 @@ namespace Quad
 
 	void System::EndUpdate(float deltaTime)
 	{
-		if (mTransformDirtyObjectVector.size() != 0)
-		{
-			int a = 2;
-		}
-
-		for (int i = 0; i < mTransformDirtyObjectVector.size(); ++i)
-		{
-
-
-			SceneElement* object = mTransformDirtyObjectVector[i];
-		//	if (object == nullptr)
-			//	continue;
-
-	/*		if (object->GetUniqueID() == 0)
-				continue;*/
-
-			object->GetTransform().SetDirtyFlag(false);
-			
-		}
-
-
-		mTransformDirtyObjectVector.clear();
 		
-
 		mCurrentMap->EndUpdate(deltaTime);
-		//mTrnasformDirtyObjectVector가 다시 채워질수있다.
-		//그들은 프레임시작앞부분에 world Matrix를 자식들에게 전파한다.
-		//혹시나 EndUpdate에서 죽은 object들이있다면 적절히 vector에서 걸러내야한다.
+		////mTrnasformDirtyObjectVector가 다시 채워질수있다.
+		////그들은 프레임시작앞부분에 world Matrix를 자식들에게 전파한다.
+		////혹시나 EndUpdate에서 죽은 object들이있다면 적절히 vector에서 걸러내야한다.
 
-		for(int i=0; i<mTransformDirtyObjectVector.size();)
-		{
-			SceneElement* element = mTransformDirtyObjectVector[i];
+		//for(int i=0; i<mTransformDirtyObjectVector.size();)
+		//{
+		//	SceneElement* element = mTransformDirtyObjectVector[i];
 
-			if (element->GetSceneElementType() == ESceneElementType::eObject)
-			{
-				Object* object = static_cast<Object*>(element);
-				if (object->GetKilledState())
-				{
-					mTransformDirtyObjectVector[i] = mTransformDirtyObjectVector.back();
-					mTransformDirtyObjectVector.pop_back();
-					continue;
-				}
-			}
+		//	if (element->GetSceneElementType() == ESceneElementType::eObject)
+		//	{
+		//		Object* object = static_cast<Object*>(element);
+		//		if (object->GetKilledState())
+		//		{
+		//			mTransformDirtyObjectVector[i] = mTransformDirtyObjectVector.back();
+		//			mTransformDirtyObjectVector.pop_back();
+		//			continue;
+		//		}
+		//	}
 
-			i++;
+		//	i++;
 
-		}
+		//}
 
 
 	}
@@ -143,27 +125,14 @@ namespace Quad
 		SetClientWidth(clientWidth);
 		SetClientHeight(clientHeight);
 
-		//mViewPort.TopLeftY = ((WindowController*)GetController())->GetTitleBarHeight();
-		mViewPort.Width = GetClientWidth();
-		mViewPort.Height = GetClientHeight();
 
-		if (mCurrentMap != nullptr)
-		{
-			//mCurrentMap->OnResize(clientWidth, clientHeight);
+		
+		UpdateViewportLocal();
 
-			if (mCurrentMap->GetViewportAutoFlag(0))
-			{
-				mCurrentMap->SetViewPort(mViewPort.TopLeftX, mViewPort.TopLeftY, mViewPort.Width, mViewPort.Height, mViewPort.MinDepth,
-					mViewPort.MaxDepth);
-			}
+		UpdateViewportGlobal();
 
-			if (mCurrentMap->GetViewportAutoFlag(1))
-			{
-				mCurrentMap->SetViewPort(mViewPort.TopLeftX, mViewPort.TopLeftY, mViewPort.Width, mViewPort.Height, mViewPort.MinDepth,
-					mViewPort.MaxDepth, 1);
-			}
-		}
-
+		
+	
 
 		std::vector<Object*> objectVector;
 		mEventTable.GetObjectVector("WindowResizeEvent", objectVector);
@@ -174,6 +143,8 @@ namespace Quad
 		{
 			objectVector[i]->OnEvent(&windowResizeEvent);
 		}
+
+		
 
 
 	}
@@ -198,11 +169,6 @@ namespace Quad
 	void System::SetClientHeight(UINT clientHeight)
 	{
 
-		if (mClientHeight != clientHeight)
-		{
-			int a = 2;
-			OutputDebugString(L"kk");
-		}
 		mClientHeight = clientHeight;
 		mClientRect.bottom = clientHeight;
 	}
@@ -223,30 +189,51 @@ namespace Quad
 		return mClientRect;
 	}
 
-	void System::SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT width, FLOAT height, FLOAT minDepth, FLOAT maxDepth)
+	void System::SetViewPortLocal(FLOAT topLeftX, FLOAT topLeftY, FLOAT width, FLOAT height, FLOAT minDepth, FLOAT maxDepth)
 	{
-		mViewPort.TopLeftX = topLeftX;
-		mViewPort.TopLeftY = topLeftY;
-		mViewPort.Width = width;
-		mViewPort.Height = height;
-		mViewPort.MinDepth = minDepth;
-		mViewPort.MaxDepth = maxDepth;
+		mViewPortLocal.TopLeftX = topLeftX;
+		mViewPortLocal.TopLeftY = topLeftY;
+		mViewPortLocal.Width = width;
+		mViewPortLocal.Height = height;
+		mViewPortLocal.MinDepth = minDepth;
+		mViewPortLocal.MaxDepth = maxDepth;
 
+		UpdateViewportGlobal();
 		if(mCurrentMap!=nullptr)
-		mCurrentMap->SetViewPort(mViewPort.TopLeftX, mViewPort.TopLeftY, mViewPort.Width, mViewPort.Height, mViewPort.MinDepth,
-			mViewPort.MaxDepth);
+			mCurrentMap->SetSystemViewPortAll();
 	}
 
-	void System::SetViewPort(const D3D12_VIEWPORT& viewport)
+	void System::SetViewPortLocal(const D3D12_VIEWPORT& viewport)
 	{
-		mViewPort = viewport;
-		mCurrentMap->SetViewPort(mViewPort.TopLeftX, mViewPort.TopLeftY, mViewPort.Width, mViewPort.Height, mViewPort.MinDepth,
-			mViewPort.MaxDepth);
+		mViewPortLocal = viewport;
+
+		UpdateViewportGlobal();
+
 	}
 
-	D3D12_VIEWPORT System::GetViewPort() const
+	void System::FixTopLeftGlobalX(float topleftX)
 	{
-		return mViewPort;
+		mFixedViewportGlobalTopLeftX = topleftX;
+		UpdateViewportLocal();
+		UpdateViewportGlobal();
+	}
+
+	void System::FixTopLeftGlobalY(float topleftY)
+	{
+		mFixedViewportGlobalTopLeftY = topleftY;
+		UpdateViewportLocal();
+		UpdateViewportGlobal();
+
+	}
+
+	D3D12_VIEWPORT System::GetViewPortLocal() const
+	{
+		return mViewPortLocal;
+	}
+
+	D3D12_VIEWPORT System::GetViewPortGlobal() const
+	{
+		return mViewPortGlobal;
 	}
 
 	bool System::GetEventFocusFlag() const
@@ -286,7 +273,7 @@ namespace Quad
 		//map->GetCamera
 
 		oRenderSettingItem.mCamera = map->GetMainCamera();
-		oRenderSettingItem.mViewPort = GetViewPort();
+	//	oRenderSettingItem.mViewPort = GetViewPort();
 
 	}
 
@@ -295,9 +282,6 @@ namespace Quad
 		return mCurrentMap->RemoveObject(object);
 	}
 
-	//void System::GetEntity(std::vector<Object*>& oEntityVector)
-	//{
-	//}
 
 	const std::vector<MapLayer> System::GetEntity()
 	{
@@ -313,20 +297,32 @@ namespace Quad
 		if (!GetActiveState())
 			return;
 
-		//문자열 비교는 비용이 많이들어간다.
-		const std::string& eventName = event->GetName();
+		////문자열 비교는 비용이 많이들어간다.
+		//const std::string& eventName = event->GetName();
 
-		SystemState* currState = GetSystemState();
+		//SystemState* currState = GetSystemState();
 
-		SystemState* newState = currState->HandleEvent(*this, event);
-		if (newState != nullptr)
-		{
-			currState->ExitState(*this);
-			delete currState;
+		//SystemState* newState = currState->HandleEvent(*this, event);
+		//if (newState != nullptr)
+		//{
+		//	currState->ExitState(*this);
+		//	delete currState;
 
-			newState->EnterState(*this);
-			SetSystemState(newState);
-		}
+		//	newState->EnterState(*this);
+		//	SetSystemState(newState);
+		//}
+
+
+		mUiPickingRaySystem->HandleEvent(event,mCurrentMap->mObjectVector);
+
+
+
+
+
+
+
+
+
 
 	}
 
@@ -438,8 +434,6 @@ namespace Quad
 		if (mRuntimeModeState == false)
 			return;
 
-		mRuntimeMap->PrintObjectName();
-
 		//runtimeMap reset		
 		mRuntimeMap->Reset();
 		//runtime object table리셋(정확히는 그 맵에있는 오브젝트들을 테이블에서 제거)
@@ -494,65 +488,6 @@ namespace Quad
 		return mSelectObject;
 	}
 
-	//void System::OnGizmo(Object * object)
-	//{
-
-	//	//내가볼땐 자식으로 묶어야돼
-
-	//	//부모자식관계를 다시 맺는것도 비용이들고 어차피 다른씬그래프에있으니
-	//	//Gizmo가 움직일때 그 선택된 object도 같은 위치로 움직이면된다.
-
-
-
-
-	//	//GetMap()->ChangeParentObject(object, &mGizmo);
-
-	//	//mGizmo.GetTransform().SetPositionLocal({ 0,0,0 });
-
-	//	//mGizmo.GetTransform().SetPositionWorld(object->GetTransform().GetPositionWorld());
-
-
-	//	
-	//	/*mGizmo->SetDestObject(object);
-
-	//	mGizmo->OnGizmo();*/
-
-	//}
-
-	//void System::OffGizmo()
-	//{
-	//	/*mGizmo->SetDestObject(nullptr);
-
-	//	mGizmo->OffGizmo();*/
-
-	//	/*mGizmo.SetDrawFlag(false);
-	//	mGizmo.SetActiveFlag(false);
-	//	mGizmo.SetEntireDrawFlag(false);
-	//	mGizmo.SetEntireSelectAvailableFlag(false);*/
-	//}
-
-	//const Gizmo* System::GetGizmo() const
-	//{
-	//	return mGizmo;
-	//}
-
-	void System::AddTransformDirtyObject(SceneElement* object)
-	{
-		mTransformDirtyObjectVector.push_back(object);
-
-
-
-
-
-	}
-
-	// std::vector<Object*>& System::GetTransformDirtyObjectVector() 
-	//{
-
-	//	return mTransformDirtyObjectVector;
-	//	// TODO: 여기에 return 문을 삽입합니다.
-	//}
-
 	void System::SetActiveState(bool state)
 	{
 		mActiveState = state;
@@ -574,6 +509,47 @@ namespace Quad
 		return mSystemMode;
 	}
 
+	void System::NotifyCreatingMapLayer(D3D12_VIEWPORT viewportLocal,D3D12_VIEWPORT viewportGlobal)
+	{
+		//Controller에게 mapLayer 생성을 알린다.
+		//자신의 타입도 같이 전달한다.
+
+		mController->NotifyCreatingMapLayer(mSystemType, viewportLocal, viewportGlobal);
+
+
+
+	}
+
+	void System::NotifyResizeMapLayer(int mapLayerIndex, D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal)
+	{
+
+		mController->NotifyResizeMapLayer(mSystemType,mapLayerIndex , viewport, viewportGlobal);
+
+	}
+
+	void System::UpdateViewportGlobal()
+	{
+
+		float widthL = mViewPortLocal.Width;
+		float heightL = mViewPortLocal.Height;
+
+		float topleftXL = mViewPortLocal.TopLeftX;
+		float topleftYL = mViewPortLocal.TopLeftY;
+
+
+		mViewPortGlobal.Width = mClientWidth * widthL;
+		mViewPortGlobal.Height = mClientHeight * heightL;
+
+		mViewPortGlobal.TopLeftX = topleftXL * mClientWidth;
+		mViewPortGlobal.TopLeftY = topleftYL * mClientHeight;
+
+
+		if(mCurrentMap)
+			mCurrentMap->SetSystemViewPortAll();
+		
+
+	}
+
 	SystemState* System::GetSystemState() const
 	{
 
@@ -585,16 +561,24 @@ namespace Quad
 		mState = systemState;
 	}
 
-	void System::SetInitSetting(bool isUserGameSystem)
+	//void System::SetInitSetting(bool isUserGameSystem)
+	//{
+
+	//	mIsUserGameSystem = isUserGameSystem;
+
+	//}
+
+	//bool System::GetIsUserGameSystem() const
+	//{
+	//	return mIsUserGameSystem;
+	//}
+
+	void System::UpdateViewportLocal()
 	{
-
-		mIsUserGameSystem = isUserGameSystem;
-
-	}
-
-	bool System::GetIsUserGameSystem() const
-	{
-		return mIsUserGameSystem;
+		
+		mViewPortLocal.TopLeftX= mFixedViewportGlobalTopLeftX / mClientWidth;
+		mViewPortLocal.TopLeftY = mFixedViewportGlobalTopLeftY / mClientHeight;
+		
 	}
 
 

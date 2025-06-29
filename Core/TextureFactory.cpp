@@ -17,27 +17,47 @@ Quad::TextureFactory::TextureFactory()
 	mTextureAllocator->Initialize();
 
 
-	mDtorTable["Texture"] = [allocator = mTextureAllocator, heapManager = mDescriptorHeapManagerMaster](Texture* texture) {
+	mDtorTable[ETextureType::eDefaultTexture] = [allocator = mTextureAllocator, heapManager = mDescriptorHeapManagerMaster](Texture* texture) {
 
-		if (texture->GetViewIndex() != -1)
+		ReleaseTextureResource(texture);
+
+		/*if (texture->GetViewIndex() != -1)
 		{
 			heapManager->ReleaseCbvSrvUav(texture->GetViewIndex());
-		}
+		}*/
 
 		allocator->ReleaseInstance(texture);
 		};
 
-	mDtorTable["RenderTargetTexture"] = [heapManager = mDescriptorHeapManagerMaster](Texture* texture) {
 
-		RenderTargetTexture* renderTargetTexture = static_cast<RenderTargetTexture*>(texture);
+	mDtorTable[ETextureType::eRenderTargetTexture] = [heapManager = mDescriptorHeapManagerMaster](Texture* texture) {
+
+
+		ReleaseTextureResource(texture);
+
+		/*RenderTargetTexture* renderTargetTexture = static_cast<RenderTargetTexture*>(texture);
 
 		heapManager->ReleaseCbvSrvUav(renderTargetTexture->GetViewIndex());
-		heapManager->ReleaseRtv(renderTargetTexture->GetRendedrTargetViewIndex());
-
-		delete renderTargetTexture;
+		heapManager->ReleaseRtv(renderTargetTexture->GetRendedrTargetViewIndex());*/
+	
+		//delete renderTargetTexture;
+		delete texture;
 		};
 
+	mDtorTable[ETextureType::eDepthStencilBuffer] = [allocator = mTextureAllocator,heapManager = mDescriptorHeapManagerMaster](Texture* texture) {
 
+
+		ReleaseTextureResource(texture);
+
+		/*RenderTargetTexture* renderTargetTexture = static_cast<RenderTargetTexture*>(texture);
+
+		heapManager->ReleaseCbvSrvUav(renderTargetTexture->GetViewIndex());
+		heapManager->ReleaseRtv(renderTargetTexture->GetRendedrTargetViewIndex());*/
+
+		//delete renderTargetTexture;
+		allocator->ReleaseInstance(texture);
+
+		};
 
 
 
@@ -67,13 +87,125 @@ Quad::Texture* Quad::TextureFactory::CreateTexture()
 
 
 
+Quad::Texture* Quad::TextureFactory::CreateTexture(int width, int height, ETextureFormat textureFormat)
+{
+
+	auto instance = GetInstance();
+
+
+	Texture* texture = instance->mTextureAllocator->GetInstance();
+	//TextureManager::CreateTexture()
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = nullptr;
+
+
+
+	D3D12_HEAP_PROPERTIES heapPropertiesDesc;
+	heapPropertiesDesc.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapPropertiesDesc.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapPropertiesDesc.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapPropertiesDesc.CreationNodeMask = 0;
+	heapPropertiesDesc.VisibleNodeMask = 0;
+
+
+
+
+	D3D12_RESOURCE_DESC resourceDesc;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Alignment = 0;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.Width = width;
+	resourceDesc.Height = height;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	//resourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	resourceDesc.Format = (DXGI_FORMAT)textureFormat;
+
+	D3D12_CLEAR_VALUE clearValue;
+	clearValue.Color[0] = 0.0f;
+	clearValue.Color[1] = 0.0f;
+	clearValue.Color[2] = 0.0f;
+	clearValue.Color[3] = 1.0f;
+	clearValue.Format = resourceDesc.Format;
+
+
+	//instance->mDevice->CreateCommittedResource(&heapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, /IID_PPV_ARGS(&texture));
+	instance->mDevice->CreateCommittedResource(&heapPropertiesDesc, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, &clearValue, IID_PPV_ARGS(&textureResource));
+
+
+
+	//srv
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = resourceDesc.Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0;
+	srvDesc.Texture2D.PlaneSlice = 0;
+
+
+	ViewIndex srvIndex = instance->mDescriptorHeapManagerMaster->CreateSrv(textureResource, &srvDesc);
+	texture->SetViewIndex(srvIndex);
+
+	texture->SetTextureResource(textureResource);
+
+
+
+	return texture;
+
+
+}
+
 Quad::RenderTargetTexture* Quad::TextureFactory::CreateRenderTargetTexture(int width, int height)
 {
 	auto instance = GetInstance();
 
 
-	RenderTargetTexture* renderTargetTexture = new RenderTargetTexture();
+	RenderTargetTexture* renderTargetTexture = new RenderTargetTexture();		
 	//TextureManager::CreateTexture()
+
+	CreateRenderTargetTextureResource(renderTargetTexture,width,height);
+
+	return renderTargetTexture;
+
+
+
+
+
+
+
+
+
+
+}
+
+Quad::Texture* Quad::TextureFactory::CreateDepthStencilBuffer(int width, int height)
+{
+
+
+	auto instance = GetInstance();
+
+	/*if (instance->mNameTable.GetID(name) != 0 )
+		return nullptr;*/
+
+	Texture* depthStencilBuffer = CreateTexture();
+
+	CreateDepthStencilBufferResource(depthStencilBuffer,width,height);
+
+	return depthStencilBuffer;
+}
+
+void Quad::TextureFactory::CreateRenderTargetTextureResource(RenderTargetTexture* renderTargetTexture, int width, int height)
+{
+	//향후 텍스처 포맷설정도 할수있게
+
+
+	auto instance = GetInstance();
+
 
 	ID3D12Resource* texture = nullptr;
 
@@ -88,7 +220,7 @@ Quad::RenderTargetTexture* Quad::TextureFactory::CreateRenderTargetTexture(int w
 
 
 
-	
+
 	D3D12_RESOURCE_DESC resourceDesc;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Alignment = 0;
@@ -97,7 +229,7 @@ Quad::RenderTargetTexture* Quad::TextureFactory::CreateRenderTargetTexture(int w
 	resourceDesc.Height = height;
 	resourceDesc.MipLevels = 1;
 	resourceDesc.SampleDesc.Count = 1;
-	resourceDesc.SampleDesc.Quality= 0;
+	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 	resourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -122,11 +254,11 @@ Quad::RenderTargetTexture* Quad::TextureFactory::CreateRenderTargetTexture(int w
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.ResourceMinLODClamp= 0;
-	srvDesc.Texture2D.PlaneSlice= 0;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0;
+	srvDesc.Texture2D.PlaneSlice = 0;
 
 
-	ViewIndex srvIndex= instance->mDescriptorHeapManagerMaster->CreateSrv(texture, &srvDesc);
+	ViewIndex srvIndex = instance->mDescriptorHeapManagerMaster->CreateSrv(texture, &srvDesc);
 	renderTargetTexture->SetViewIndex(srvIndex);
 
 
@@ -146,33 +278,14 @@ Quad::RenderTargetTexture* Quad::TextureFactory::CreateRenderTargetTexture(int w
 
 	renderTargetTexture->SetTextureResource(texture);
 
-	 
-
-	return renderTargetTexture;
-
-
-
-
-
-
-
-
 
 
 }
 
-Quad::Texture* Quad::TextureFactory::CreateDepthStencilBuffer(int width, int height)
+void Quad::TextureFactory::CreateDepthStencilBufferResource(Texture* depthStencilBuffer, int width, int height)
 {
 
-
 	auto instance = GetInstance();
-
-	/*if (instance->mNameTable.GetID(name) != 0 )
-		return nullptr;*/
-
-
-	Texture* depthStencilBuffer = CreateTexture();
-
 
 	ID3D12Resource* texture = nullptr;
 
@@ -197,11 +310,11 @@ Quad::Texture* Quad::TextureFactory::CreateDepthStencilBuffer(int width, int hei
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	resourceDesc.Flags =D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 	resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 	D3D12_CLEAR_VALUE clearDepthStencilValue;
-	
+
 	clearDepthStencilValue.DepthStencil.Depth = 1.0f;
 	clearDepthStencilValue.DepthStencil.Stencil = 0.0f;
 	clearDepthStencilValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -219,13 +332,14 @@ Quad::Texture* Quad::TextureFactory::CreateDepthStencilBuffer(int width, int hei
 	dsvDesc.Texture2D.MipSlice = 0;
 
 	ViewIndex viewIndex = instance->mDescriptorHeapManagerMaster->CreateDsv(texture, &dsvDesc);
-	
+
 
 
 	depthStencilBuffer->SetViewIndex(viewIndex);
 	depthStencilBuffer->SetTextureResource(texture);
 
-	return depthStencilBuffer;
+	return;
+
 }
 
 
@@ -243,7 +357,7 @@ void Quad::TextureFactory::CreateSrvTex2D(Texture* texture)
 	if (srvDesc.ViewDimension == D3D12_SRV_DIMENSION_TEXTURE2D)
 		FillSRVTEX2DDesc(srvDesc, resource);
 
-	texture->SetTextureFormat(ConvertTextureFormatEnum(srvDesc.Format));
+	texture->SetTextureColorFormat(ConvertTextureFormatEnum(srvDesc.Format));
 
 	ViewIndex viewIndex = instance->mDescriptorHeapManagerMaster->CreateSrv(resource, &srvDesc);
 	texture->SetViewIndex(viewIndex);
@@ -253,8 +367,56 @@ void Quad::TextureFactory::CreateSrvTex2D(Texture* texture)
 void Quad::TextureFactory::ReleaseTexture(Texture* texture)
 {
 	
+
 	auto instance = GetInstance();
-	instance->mDtorTable[texture->GetClassTypeName()](texture);
+	instance->mDtorTable[texture->GetTextureType()](texture);
+}
+
+void Quad::TextureFactory::ReleaseTextureResource(Texture* texture)
+{
+
+	auto instance = GetInstance();
+	switch (texture->GetTextureType())
+	{
+	case ETextureType::eDefaultTexture:
+
+		//srv 만 제거
+	{
+		ViewIndex viewIndex = texture->GetViewIndex();
+		instance->mDescriptorHeapManagerMaster->ReleaseCbvSrvUav(viewIndex);
+	}
+		break;
+	case ETextureType::eRenderTargetTexture:
+
+	{
+		//srv 있다면, rtv 제거
+		
+		RenderTargetTexture* renderTargetTexture = static_cast<RenderTargetTexture*>(texture);
+
+		ViewIndex srvIndex = renderTargetTexture->GetViewIndex();
+		instance->mDescriptorHeapManagerMaster->ReleaseCbvSrvUav(srvIndex);
+		
+		ViewIndex rtvIndex = renderTargetTexture->GetRendedrTargetViewIndex();
+		instance->mDescriptorHeapManagerMaster->ReleaseRtv(rtvIndex);
+	
+	}
+
+		break;
+	case ETextureType::eDepthStencilBuffer:
+	{
+		// dsv 제거
+
+		ViewIndex dsvIndex = texture->GetViewIndex();
+		instance->mDescriptorHeapManagerMaster->ReleaseDsv(dsvIndex);
+
+	
+	}
+		break;
+	}
+
+	texture->GetResource()->Release();
+	texture->SetTextureResource(nullptr);
+
 }
 
 
@@ -285,17 +447,17 @@ void Quad::TextureFactory::FillSRVTEX2DDesc(D3D12_SHADER_RESOURCE_VIEW_DESC& oSr
 
 }
 
-Quad::ETextureFormat Quad::TextureFactory::ConvertTextureFormatEnum(DXGI_FORMAT format)
+Quad::EColorFormat Quad::TextureFactory::ConvertTextureFormatEnum(DXGI_FORMAT format)
 {
 
 	switch (format)
 	{
 	case DXGI_FORMAT_R8G8B8A8_UNORM:
 
-		return ETextureFormat::eRgb;
+		return EColorFormat::eRgb;
 
 	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-		return ETextureFormat::eSRgb;
+		return EColorFormat::eSRgb;
 	}
 
 }

@@ -2,7 +2,7 @@
 
 #include"Object/Object.h"
 Quad::UiCollider::UiCollider(EUiColliderType colliderType)
-	:mDestObject(nullptr),mColliderType(colliderType)
+	:BaseCollider(EBaseColliderType::eUiCollider),mDestObject(nullptr),mColliderType(colliderType)
 {
 }
 

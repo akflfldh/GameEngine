@@ -17,6 +17,15 @@
 
 #include"Shader/ShaderResourceConstantBuffer.h"
 
+#include"Parser/JsonParser.h"
+
+
+#include"Core/EffectParser.h"
+
+Quad::EffectLoader::~EffectLoader()
+{
+
+}
 
 void Quad::EffectLoader::Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device)
 {
@@ -25,54 +34,72 @@ void Quad::EffectLoader::Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device)
 	InitStencilEnumUnMap();
 	InitComparisonFuncEnumUnMap();
 
+	mEffectParser = std::make_unique<EffectParser>();
+
 
 }
 
 bool Quad::EffectLoader::Load(const std::string& filePath)
 {
 
+
+
 	RawEffectDataTwo effectData;
 
 	effectData.mEffectName = Utility::GetFileNameFromPath(filePath);
 
+	mEffectParser->ReadStart(filePath);
+	mEffectParser->GetRawEffectData(effectData);
 
 
 
 
-	std::ifstream fin(filePath);
-	if (!fin.is_open())
-	{
-		//디버깅 창에출력
-		MessageBox(nullptr, L"effect파일 로드 실패", L"error", 0);
-		return false;
-	}
+	//std::ifstream fin(filePath);
+	//if (!fin.is_open())
+	//{
+	//	//디버깅 창에출력
+	//	MessageBox(nullptr, L"effect파일 로드 실패", L"error", 0);
+	//	return false;
+	//}
 
-	std::string oneLineStr;
+	//std::string oneLineStr;
 
-	std::regex passPatern("PASS[[:blank:]]*");
-	std::regex blankPatern("[[:blank:]]*");
+	//std::regex passPatern("PASS[[:blank:]]*");
+	//std::regex blankPatern("[[:blank:]]*");
 
 
-	std::getline(fin, oneLineStr);
-	while (fin.good())
-	{
+	//std::getline(fin, oneLineStr);
+	//while (fin.good())
+	//{
 
-		if (std::regex_match(oneLineStr, blankPatern))
-		{
-			std::getline(fin, oneLineStr);
-			continue;
-		}else if (std::regex_match(oneLineStr, passPatern))
-		{
-			//render pass 읽기 시작.
-			RawRenderPassDataTwo rawRenderPassDataTwo;
-			if (LoadRenderPassTwo(fin, rawRenderPassDataTwo))
-				effectData.mRenderPassDataVector.push_back(rawRenderPassDataTwo);
+	//	if (std::regex_match(oneLineStr, blankPatern))
+	//	{
+	//		std::getline(fin, oneLineStr);
+	//		continue;
+	//	}else if (std::regex_match(oneLineStr, passPatern))
+	//	{
+	//		//render pass 읽기 시작.
+	//		RawRenderPassDataTwo rawRenderPassDataTwo;
+	//		if (LoadRenderPassTwo(fin, rawRenderPassDataTwo))
+	//			effectData.mRenderPassDataVector.push_back(rawRenderPassDataTwo);
 
-		}
+	//	}
 
-		std::getline(fin, oneLineStr);
+	//	std::getline(fin, oneLineStr);
 
-	}
+	//}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -393,7 +420,7 @@ void Quad::EffectLoader::ImplementEffect(RawEffectDataTwo& effectData)
 		 {
 
 
-			 Microsoft::WRL::ComPtr<ID3DBlob> shaderByteCode = CompileShader(file, pMarco, pInclude, entryPoint, version, compileFlags1, compileFlags2);
+ 			 Microsoft::WRL::ComPtr<ID3DBlob> shaderByteCode = CompileShader(file, pMarco, pInclude, entryPoint, version, compileFlags1, compileFlags2);
 			 shader = new Shader;
 			 shader->Initialize(file, entryPoint, version, shaderMeshType, shaderByteCode, EShaderType::eVS);
 			 ShaderManager::AddShader(shader);
@@ -478,6 +505,8 @@ Microsoft::WRL::ComPtr<ID3DBlob> Quad::EffectLoader::CompileShader(const std::st
 
 	if (errorByteCode != nullptr)
 	{
+		OutputDebugStringA((char*)errorByteCode->GetBufferPointer());
+		errorByteCode->Release();
 		//디버그창에 출력
 	}
 

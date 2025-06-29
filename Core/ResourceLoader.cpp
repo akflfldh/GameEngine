@@ -9,7 +9,7 @@
 #include"ResourceManager/AnimationClipManager.h"
 
 
-#include"ObjectManager/ObjectManager.h"
+//#include"ObjectManager/ObjectManager.h"
 #include"Object/Object.h"
 #include"Asset/Skeleton/Skeleton.h"
 
@@ -342,6 +342,8 @@ namespace Quad
 
 		JsonParser::ReadFile(filePath);
 		JsonParser::ReadStart();
+
+		JsonParser::DescendIntoObjectOrArray();
 		
 		unsigned long long uniqueID = 0;
 		std::string name;
@@ -1022,6 +1024,7 @@ namespace Quad
 		mat->SetType(materialPackageRawData.mType);
 		mat->SetColor(materialPackageRawData.mColor);
 		mat->SetColorIntensity(materialPackageRawData.mColorIntensity);
+		mat->SetEmissive(materialPackageRawData.mEmissive);
 		mat->SetFresnelRO(materialPackageRawData.mFresnelR0);
 		mat->SetShiness(materialPackageRawData.mShiness);
 		
@@ -1160,7 +1163,7 @@ namespace Quad
 	{
 
 
-		BaseObjectManager* objectManager= EditObjectManager::GetInstance();
+		/*BaseObjectManager* objectManager= EditObjectManager::GetInstance();
 
 		const std::string objectMetaFilePath = "./ObjectMeta.json";
 
@@ -1182,7 +1185,7 @@ namespace Quad
 
 			newObject->DeSerialize();
 
-		}
+		}*/
 
 
 	}

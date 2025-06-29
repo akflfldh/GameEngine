@@ -1,8 +1,8 @@
 ﻿#include "Object/Line/LineBase.h"
-#include"Component/ColliderComponent.h"
+#include<Component/ColliderBaseComponent.h>
 
 Quad::LineBase::LineBase(const std::string& name, EObjectType objectType)
-	:Object(name, objectType)
+	:Object(objectType)
 {
 	mModelSubMesh.mModelMaterial.SetColor(DirectX::XMFLOAT3{1.0f,0.0f,1.0f });
 

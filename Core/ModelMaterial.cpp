@@ -110,6 +110,13 @@ void Quad::ModelMaterial::SetColorIntensity(const DirectX::XMFLOAT3& intensity)
 	mColorIntensityDirtyFlag = true;
 }
 
+void Quad::ModelMaterial::SetEmissive(const DirectX::XMFLOAT3& emissive)
+{
+	Material::SetEmissive(emissive);
+	mEmissiveDirtyFlag = true;
+
+}
+
 void Quad::ModelMaterial::SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0)
 {
 
@@ -239,7 +246,7 @@ float Quad::ModelMaterial::GetShiness() const
 	
 }
 
-const DirectX::XMFLOAT3& Quad::ModelMaterial::GetColor() const
+const DirectX::XMFLOAT3 Quad::ModelMaterial::GetColor() const
 {
 	if (mColorDirtyFlag)
 	{
@@ -252,7 +259,7 @@ const DirectX::XMFLOAT3& Quad::ModelMaterial::GetColor() const
 	// TODO: 여기에 return 문을 삽입합니다.
 }
 
-const DirectX::XMFLOAT3& Quad::ModelMaterial::GetColorIntensity() const
+const DirectX::XMFLOAT3 Quad::ModelMaterial::GetColorIntensity() const
 {
 	if (mColorIntensityDirtyFlag)
 	{
@@ -263,6 +270,20 @@ const DirectX::XMFLOAT3& Quad::ModelMaterial::GetColorIntensity() const
 		return mSourceMaterialPointer->GetColorIntensity();
 	}
 	// TODO: 여기에 return 문을 삽입합니다.
+}
+
+const DirectX::XMFLOAT3 Quad::ModelMaterial::GetEmissive() const
+{
+
+	if (mEmissiveDirtyFlag)
+	{
+		return Material::GetEmissive();
+	}
+	else
+	{
+		return mSourceMaterialPointer->GetEmissive();
+	}
+
 }
 
 const std::string& Quad::ModelMaterial::GetEffectName() const
@@ -299,6 +320,7 @@ void Quad::ModelMaterial::ResetDirtyFlag()
 	mAmbientDirtyFlag = false;
 	mColorDirtyFlag = false;
 	mColorIntensityDirtyFlag = false;
+	mEmissiveDirtyFlag = false;
 
 	mDiffuseMapDirtyFlag = false;
 	mNormalMapDirtyFlag = false;
@@ -317,6 +339,7 @@ void Quad::ModelMaterial::Serialize(const std::string& tag)
 	JsonParser::Write("ModelMaterial_AmbientDirtyFlag" + tag, mAmbientDirtyFlag);
 	JsonParser::Write("ModelMaterial_ColorDirtyFlag" + tag, mColorDirtyFlag);
 	JsonParser::Write("ModelMaterial_ColorIntensityDirtyFlag" + tag, mColorIntensityDirtyFlag);
+	JsonParser::Write("ModelMaterial_EmissiveDirtyFlag" + tag, mEmissiveDirtyFlag);
 	JsonParser::Write("ModelMaterial_DiffuseMapDirtyFlag" + tag, mDiffuseMapDirtyFlag);
 	JsonParser::Write("ModelMaterial_NormalMapDirtyFlag" + tag, mNormalMapDirtyFlag);
 	JsonParser::Write("ModelMaterial_EffectDirtyFlag" + tag, mEffectDirtyFlag);
@@ -341,6 +364,9 @@ void Quad::ModelMaterial::Serialize(const std::string& tag)
 
 	if (mColorIntensityDirtyFlag)
 		JsonParser::Write("ModelMaterial_ColorIntensity" + tag, GetColorIntensity());
+
+	if (mEmissiveDirtyFlag)
+		JsonParser::Write("ModelMaterial_Emissive" + tag, GetEmissive());
 
 	if (mDiffuseMapDirtyFlag)
 	{
@@ -382,6 +408,7 @@ void Quad::ModelMaterial::DeSerialize(const std::string& tag)
 	mAmbientDirtyFlag=JsonParser::ReadBool("ModelMaterial_AmbientDirtyFlag" + tag);
 	mColorDirtyFlag=JsonParser::ReadBool("ModelMaterial_ColorDirtyFlag" + tag);
 	mColorIntensityDirtyFlag=	JsonParser::ReadBool("ModelMaterial_ColorIntensityDirtyFlag" + tag);
+	mEmissiveDirtyFlag=	JsonParser::ReadBool("ModelMaterial_EmissiveDirtyFlag" + tag);
 	mDiffuseMapDirtyFlag=JsonParser::ReadBool("ModelMaterial_DiffuseMapDirtyFlag" + tag);
 	mNormalMapDirtyFlag=JsonParser::ReadBool("ModelMaterial_NormalMapDirtyFlag" + tag);
 	mEffectDirtyFlag=JsonParser::ReadBool("ModelMaterial_EffectDirtyFlag" + tag);
@@ -436,6 +463,16 @@ void Quad::ModelMaterial::DeSerialize(const std::string& tag)
 		JsonParser::Read("ModelMaterial_ColorIntensity" + tag, colorIntensity);
 		SetColorIntensity(colorIntensity);
 	}
+
+
+	if (mEmissiveDirtyFlag)
+	{
+		DirectX::XMFLOAT3 emissive;
+		JsonParser::Read("ModelMaterial_Emissive" + tag, emissive);
+		SetColorIntensity(emissive);
+	}
+
+
 	if (mDiffuseMapDirtyFlag)
 	{
 		unsigned long long id = 0;

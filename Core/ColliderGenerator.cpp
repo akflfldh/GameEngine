@@ -97,53 +97,25 @@ Quad::Collider* Quad::ColliderGenerator::CreateBoxCollider(const DirectX::XMFLOA
 
 	//BoxCollider* collider = new BoxCollider;
 	BoxCollider* collider = new(GetColliderBinnedAllocator(sizeof(BoxCollider))->Alloc())BoxCollider;
+	collider->Initialize();
 	DirectX::BoundingBox boxDx;
 	DirectX::XMVECTOR pt1 = DirectX::XMLoadFloat3(&minPoint);
 	DirectX::XMVECTOR pt2 = DirectX::XMLoadFloat3(&maxPoint);
 	DirectX::XMVECTOR defaultPt1 = DirectX::XMVectorSet(0.5, 0.5, 0.5, 1.0F);
 	DirectX::XMVECTOR defaultPt2 = DirectX::XMVectorSet(-0.5, -0.5, -0.5, 1.0F);
 	DirectX::BoundingBox::CreateFromPoints(boxDx, defaultPt1, defaultPt2);
-
-
-
-	//default world matrix 가필요해 
-	//처음충돌체mesh와 이 엔티티의 메시가 자치하는 공간에대해서 일치시키여함으로
-	DirectX::XMVECTOR center = DirectX::XMVectorDivide(DirectX::XMVectorAdd(pt1, pt2), DirectX::XMVectorSet(2.0f, 2.0f, 2.0f, 1.0f));
-	DirectX::XMVECTOR size = DirectX::XMVectorSubtract(pt2, pt1);	//,x,y,z,축에평행한모서리들의길이
-
-	//기본 정육면체 메시의 사이즈는 중심은 원점이고, X Y ,Z축에 평행한 모서리들의 길이는 1.0이다.
-	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(center);
-	DirectX::XMMATRIX scalingMatrix = DirectX::XMMatrixScalingFromVector(size);
-
-	DirectX::XMFLOAT4X4 defaultMatrix;
-	DirectX::XMStoreFloat4x4(&defaultMatrix, DirectX::XMMatrixMultiply(scalingMatrix, translationMatrix));
-
-
-	collider->SetDefaultMatrix(defaultMatrix);
-	Mesh* cubeMesh = MeshManager::GetMesh("Cube");
-	collider->Initialize(boxDx, cubeMesh);
-	//TextureManager::GetTexture("BoxCollider.png")
-
-//	collider->GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetDiffuseMap(TextureManager::GetTexture("BoxCollider.png"));
+	collider->mBoundingBox = boxDx;
+	
 
 	return collider;
 }
 
-Quad::Collider * Quad::ColliderGenerator::CreateFrustumCollider(FrustumCamera* caerma)
+Quad::Collider * Quad::ColliderGenerator::CreateFrustumCollider()
 {
 	//FrustumCollider* collider = new FrustumCollider;
 	FrustumCollider* collider = new (GetColliderBinnedAllocator(sizeof(FrustumCollider))->Alloc())FrustumCollider;
 	
-	DirectX::XMFLOAT4X4 projMatrixF = caerma->GetProjMatrix();
-
-	DirectX::BoundingFrustum frustum;
-	Mesh* cubeMesh = MeshManager::GetMesh("Cube");
-
-
-
-	DirectX::BoundingFrustum::CreateFromMatrix(frustum, DirectX::XMLoadFloat4x4(&projMatrixF));
-	collider->Initialize(cubeMesh,frustum);
-
+	collider->Initialize();
 	return collider;
 
 }
@@ -155,33 +127,39 @@ Quad::CameraFrustumCollider* Quad::ColliderGenerator::CreateCameraFrustumCollide
 //	CameraFrustumCollider* collider = new CameraFrustumCollider;
 	CameraFrustumCollider* collider = new (GetColliderBinnedAllocator(sizeof(CameraFrustumCollider))->Alloc())CameraFrustumCollider;
 
-
-	//vertex륾담는 uploadBuffer생성.
-	
-	UploadBuffer* vertexUploadBuffer = new UploadBuffer(instance->mDevice, sizeof(StaticVertex), 8, false);
-
-	UploadFrustumVertexVector(camera, vertexUploadBuffer);
+	collider->Initialize();
+	collider->SetProjMatrix(camera->GetProjMatrix());
+	//collider->Update(camera->); ->카메라의 속성값들을 받아서 업데이트해야한다.
 
 
-	//일반적으로 유저가 메시륾 만들면 화면에 보이지.
-	//이거는 여기서 직접만들어야하나?
-	//MeshManager::CreateMesh()
-	StaticMesh * mesh = new StaticMesh;
-	mesh->SetMeshType(EMeshType::eStaticMesh);
 
-	mesh->SetIndexBuffer(instance->GetFrustumIndexBuffer());
-//	mesh->SetVertexBuffer()
-	mesh->SetVertexUploadBuffer(vertexUploadBuffer);
-	mesh->SetVertexNum(8);
-	mesh->SetIndexNum(36);
 
-	std::vector<SubMesh> subMeshVector(1);
-	subMeshVector[0].mIndexRange = { 0,36 };
-	subMeshVector[0].mVertexNum = 8;
-	subMeshVector[0].mVertexOffset = 0;
-	subMeshVector[0].mMesh = (Mesh*)mesh;
-	subMeshVector[0].mMaterialPointer = MaterialManager::GetMaterial("Default");
-	mesh->SetSubMeshVector(std::move(subMeshVector));
+//	//vertex륾담는 uploadBuffer생성.
+//	
+//	UploadBuffer* vertexUploadBuffer = new UploadBuffer(instance->mDevice, sizeof(StaticVertex), 8, false);
+//
+//	UploadFrustumVertexVector(camera, vertexUploadBuffer);
+//
+//
+//	//일반적으로 유저가 메시륾 만들면 화면에 보이지.
+//	//이거는 여기서 직접만들어야하나?
+//	//MeshManager::CreateMesh()
+//	StaticMesh * mesh = new StaticMesh;
+//	mesh->SetMeshType(EMeshType::eStaticMesh);
+//
+//	mesh->SetIndexBuffer(instance->GetFrustumIndexBuffer());
+////	mesh->SetVertexBuffer()
+//	mesh->SetVertexUploadBuffer(vertexUploadBuffer);
+//	mesh->SetVertexNum(8);
+//	mesh->SetIndexNum(36);
+//
+//	std::vector<SubMesh> subMeshVector(1);
+//	subMeshVector[0].mIndexRange = { 0,36 };
+//	subMeshVector[0].mVertexNum = 8;
+//	subMeshVector[0].mVertexOffset = 0;
+//	subMeshVector[0].mMesh = (Mesh*)mesh;
+//	subMeshVector[0].mMaterialPointer = MaterialManager::GetMaterial("Default");
+//	mesh->SetSubMeshVector(std::move(subMeshVector));
 
 
 
@@ -190,50 +168,52 @@ Quad::CameraFrustumCollider* Quad::ColliderGenerator::CreateCameraFrustumCollide
 	//mesh생성
 
 	//update시에 vertex를 담은 uploadBuffer에 새로운 vertex upload
-	collider->Initialize(camera, mesh);
+	//collider->Initialize(camera, mesh);
 
 	return collider;
 }
 
 Quad::CameraBoxCollider* Quad::ColliderGenerator::CreateBoxCameraCollider(OrthogoanlCamera* camera)
 {
-	auto instance = GetInstance();
-	//카메라의 직교투영
-	float width = camera->GetViewWidth();
-	float height = camera->GetViewHeight();
-	float nearPlane = camera->GetNearPlane();
-	float farPlane = camera->GetFarPlane();
-	//시야공간을 기준으로하는 boxCollider
-	//CameraBoxCollider* collider = new CameraBoxCollider;
-	CameraBoxCollider* collider = new((CameraBoxCollider*)GetColliderBinnedAllocator(sizeof(CameraBoxCollider))->Alloc())CameraBoxCollider;
-	DirectX::BoundingBox boxDx;
-	DirectX::XMVECTOR pt1 = DirectX::XMVectorSet(-width / 2, -height / 2, nearPlane, 1.0f);
-	DirectX::XMVECTOR pt2 = DirectX::XMVectorSet(width / 2, height / 2, farPlane, 1.0f);
+	//auto instance = GetInstance();
+	////카메라의 직교투영
+	//float width = camera->GetViewWidth();
+	//float height = camera->GetViewHeight();
+	//float nearPlane = camera->GetNearPlane();
+	//float farPlane = camera->GetFarPlane();
+	////시야공간을 기준으로하는 boxCollider
+	////CameraBoxCollider* collider = new CameraBoxCollider;
+	//CameraBoxCollider* collider = new((CameraBoxCollider*)GetColliderBinnedAllocator(sizeof(CameraBoxCollider))->Alloc())CameraBoxCollider;
 
-	DirectX::XMVECTOR  defaultPt1 = DirectX::XMVectorSet(-0.5, -0.5, -0.5, 1.0F);
-	DirectX::XMVECTOR  defaultPt2 = DirectX::XMVectorSet(0.5, 0.5, 0.5, 1.0F);
-	DirectX::BoundingBox::CreateFromPoints(boxDx, defaultPt1, defaultPt2);
+	//
+	//DirectX::BoundingBox boxDx;
+	//DirectX::XMVECTOR pt1 = DirectX::XMVectorSet(-width / 2, -height / 2, nearPlane, 1.0f);
+	//DirectX::XMVECTOR pt2 = DirectX::XMVectorSet(width / 2, height / 2, farPlane, 1.0f);
+
+	//DirectX::XMVECTOR  defaultPt1 = DirectX::XMVectorSet(-0.5, -0.5, -0.5, 1.0F);
+	//DirectX::XMVECTOR  defaultPt2 = DirectX::XMVectorSet(0.5, 0.5, 0.5, 1.0F);
+	//DirectX::BoundingBox::CreateFromPoints(boxDx, defaultPt1, defaultPt2);
 
 
 
-	//default world matrix 가필요해 
-	//처음충돌체mesh와 이 엔티티의 메시가 자치하는 공간에대해서 일치시키여함으로
-	DirectX::XMVECTOR center = DirectX::XMVectorDivide(DirectX::XMVectorAdd(pt1, pt2),DirectX::XMVectorSet(2.0f,2.0f,2.0f,1.0f));
-	DirectX::XMVECTOR size = DirectX::XMVectorSubtract(pt2, pt1);	//,x,y,z,축에평행한모서리들의길이
+	////default world matrix 가필요해 
+	////처음충돌체mesh와 이 엔티티의 메시가 자치하는 공간에대해서 일치시키여함으로
+	//DirectX::XMVECTOR center = DirectX::XMVectorDivide(DirectX::XMVectorAdd(pt1, pt2),DirectX::XMVectorSet(2.0f,2.0f,2.0f,1.0f));
+	//DirectX::XMVECTOR size = DirectX::XMVectorSubtract(pt2, pt1);	//,x,y,z,축에평행한모서리들의길이
 
-	//기본 정육면체 메시의 사이즈는 중심은 원점이고, X Y ,Z축에 평행한 모서리들의 길이는 1.0이다.
-	DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(center);
-	DirectX::XMMATRIX scalingMatrix = DirectX::XMMatrixScalingFromVector(size);
+	////기본 정육면체 메시의 사이즈는 중심은 원점이고, X Y ,Z축에 평행한 모서리들의 길이는 1.0이다.
+	//DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslationFromVector(center);
+	//DirectX::XMMATRIX scalingMatrix = DirectX::XMMatrixScalingFromVector(size);
 
-	DirectX::XMFLOAT4X4 defaultMatrix;
-	DirectX::XMStoreFloat4x4(&defaultMatrix, DirectX::XMMatrixMultiply(scalingMatrix, translationMatrix));
+	//DirectX::XMFLOAT4X4 defaultMatrix;
+	//DirectX::XMStoreFloat4x4(&defaultMatrix, DirectX::XMMatrixMultiply(scalingMatrix, translationMatrix));
 
-	collider->SetDefaultMatrix(defaultMatrix);
-	Mesh* cubeMesh = MeshManager::GetMesh("Cube");
+	//collider->SetDefaultMatrix(defaultMatrix);
+	//Mesh* cubeMesh = MeshManager::GetMesh("Cube");
 
-	collider->Initialize(boxDx, cubeMesh);
+	//collider->Initialize(boxDx, cubeMesh);
 
-	return collider;
+	return nullptr;
 }
 
 void Quad::ColliderGenerator::UploadFrustumVertexVector(FrustumCamera* camera, UploadBuffer* vertexUploadBuffer)

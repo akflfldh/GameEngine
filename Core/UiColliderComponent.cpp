@@ -6,31 +6,10 @@
 #include"Collision/RectCollider.h"
 #include"Collision/SplineCollider.h"
 #include"Collision/ColliderGenerator.h"
-Quad::UiColliderComponent::UiColliderComponent(Object* uiEntity)
-	:ModelBaseComponent(uiEntity)
+#include "Component/UiColliderComponent.h"
+Quad::UiColliderComponent::UiColliderComponent()
 {
-	switch (uiEntity->GetObjectType())
-	{
-	case EObjectType::eUiEntity:
-	{
-		mCollider = ColliderGenerator::CreateRectCollider();
-		mCollider->SetDestObject(uiEntity);
-	}
-	break;
 
-	case EObjectType::eSpline:
-	{
-		mCollider = ColliderGenerator::CreateSplineCollider();
-		mCollider->SetDestObject(uiEntity);
-		break;
-
-	}
-
-
-
-
-
-	};
 }
 
 Quad::UiColliderComponent::~UiColliderComponent()
@@ -61,8 +40,10 @@ void Quad::UiColliderComponent::DeSerialize(const std::string& tag)
 
 }
 
-Quad::UiCollider* Quad::UiColliderComponent::GetCollider() const
-{
-
-	return mCollider;
-}
+//Quad::UiCollider* Quad::UiColliderComponent::GetCollider() const
+//{
+//
+//
+//
+//	return mCollider;
+//}

@@ -1,30 +1,5 @@
 ﻿#include "Collision/FrustumCollider.h"
 #include"Parser/JsonParser.h"
-void Quad::FrustumCollider::Initialize(Mesh * mesh,
-	float nearPlane, float farPlane, float rightSlope, float leftSlope,
-	float topSlope, float bottomSlope, const DirectX::XMFLOAT3 &origin ,const DirectX::XMFLOAT4 & orientation)
-{
-	Collider::Initialize(mesh);
-
-	mBoundingFrustum.Origin = origin;
-	mBoundingFrustum.Near = nearPlane;
-	mBoundingFrustum.Far = farPlane;
-	mBoundingFrustum.RightSlope = rightSlope;
-	mBoundingFrustum.LeftSlope =leftSlope;
-	mBoundingFrustum.TopSlope = topSlope;
-	mBoundingFrustum.BottomSlope =bottomSlope;
-	mBoundingFrustum.Orientation = orientation;
-
-	mBoundingFrustumOrigin = mBoundingFrustum;
-
-}
-
-void Quad::FrustumCollider::Initialize(Mesh * mesh , const DirectX::BoundingFrustum& boundingFrustum)
-{
-	Collider::Initialize(mesh);
-	mBoundingFrustum = boundingFrustum;
-	mBoundingFrustumOrigin = boundingFrustum;
-}
 
 const DirectX::BoundingFrustum& Quad::FrustumCollider::GetBoundingVolume() const
 {
@@ -41,30 +16,111 @@ Quad::FrustumCollider::~FrustumCollider()
 {
 }
 
-void Quad::FrustumCollider::OnEvent(Event* event)
-{
-}
 
-void Quad::FrustumCollider::Update(float deltaTime)
-{
-}
-
-void Quad::FrustumCollider::Update(float deltaTime, const DirectX::XMFLOAT4X4& transformMatrix)
+void Quad::FrustumCollider::Update(const DirectX::XMFLOAT4X4& transformMatrix)
 {
 	mBoundingFrustumOrigin.Transform(mBoundingFrustum, DirectX::XMLoadFloat4x4(&transformMatrix));
 
-	GetTransform().SetTransformWorld(transformMatrix);
+}
+
+void Quad::FrustumCollider::Update(const DirectX::XMMATRIX& transformMatrix)
+{
+	mBoundingFrustumOrigin.Transform(mBoundingFrustum, transformMatrix);
 
 }
 
-void Quad::FrustumCollider::Update(float deltaTime, const DirectX::XMMATRIX& transformMatrix)
+void Quad::FrustumCollider::SetNearPlaneLocal(float nearPlane)
 {
-	mBoundingFrustumOrigin.Transform(mBoundingFrustum, transformMatrix);
-	DirectX::XMFLOAT4X4 transformMatirxF;
-	DirectX::XMStoreFloat4x4(&transformMatirxF, transformMatrix);
+	mBoundingFrustumOrigin.Near = nearPlane;
+}
 
-	GetTransform().SetTransformWorld(transformMatirxF);
+void Quad::FrustumCollider::SetFarPlaneLocal(float farPlane)
+{
+	mBoundingFrustumOrigin.Far = farPlane;
+}
 
+void Quad::FrustumCollider::SetRightSlopeLocal(float rightSlope)
+{
+	mBoundingFrustumOrigin.RightSlope = rightSlope;
+}
+
+void Quad::FrustumCollider::SetLeftSlopeLocal(float leftSlope)
+{
+	mBoundingFrustumOrigin.LeftSlope = leftSlope;
+}
+
+void Quad::FrustumCollider::SetTopSlopeLocal(float topSlope)
+{
+	mBoundingFrustumOrigin.TopSlope = topSlope;
+}
+
+void Quad::FrustumCollider::SetBottomSlopeLocal(float bottomSlope)
+{
+	mBoundingFrustumOrigin.BottomSlope = bottomSlope;
+}
+
+void Quad::FrustumCollider::SetPositionLocal(const DirectX::XMFLOAT3& origin)
+{
+	mBoundingFrustumOrigin.Origin = origin;
+}
+
+void Quad::FrustumCollider::SetOrientationLocal(const DirectX::XMFLOAT4& orientation)
+{
+	mBoundingFrustumOrigin.Orientation = orientation;
+}
+
+float Quad::FrustumCollider::GetNearPlaneLocal() const
+{
+	return mBoundingFrustumOrigin.Near;
+}
+
+float Quad::FrustumCollider::GetFarPlaneLocal() const
+{
+	return mBoundingFrustumOrigin.Far;
+}
+
+float Quad::FrustumCollider::GetRightSlopeLocal() const
+{
+	return mBoundingFrustumOrigin.RightSlope;
+}
+
+float Quad::FrustumCollider::GetLeftSlopeLocal() const
+{
+	return mBoundingFrustumOrigin.LeftSlope;
+}
+
+float Quad::FrustumCollider::GetTopSlopeLocal() const
+{
+	return mBoundingFrustumOrigin.TopSlope;
+}
+
+float Quad::FrustumCollider::GetBottomSlopeLocal() const
+{
+	return mBoundingFrustumOrigin.BottomSlope;
+}
+
+const DirectX::XMFLOAT3  Quad::FrustumCollider::GetPositionLocal() const
+{
+	return mBoundingFrustumOrigin.Origin;
+}
+
+const DirectX::XMFLOAT4  Quad::FrustumCollider::GetOrientationLocal() const
+{
+	return mBoundingFrustumOrigin.Orientation;
+}
+
+void Quad::FrustumCollider::SetConfigLocal(float nearPlane, float farPlane, float rightSlope, float leftSlope, float topSlope, float bottomSlope, const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT4& orientation)
+{
+	mBoundingFrustumOrigin.Origin = origin;
+	mBoundingFrustumOrigin.Near = nearPlane;
+	mBoundingFrustumOrigin.Far = farPlane;
+	mBoundingFrustumOrigin.RightSlope = rightSlope;
+	mBoundingFrustumOrigin.LeftSlope = leftSlope;
+	mBoundingFrustumOrigin.TopSlope = topSlope;
+	mBoundingFrustumOrigin.BottomSlope = bottomSlope;
+	mBoundingFrustumOrigin.Orientation = orientation;
+
+	mBoundingFrustumOrigin = mBoundingFrustum;
 
 }
 
@@ -127,6 +183,4 @@ void Quad::FrustumCollider::DeSerialize()
 
 }
 
-void Quad::FrustumCollider::SetMesh(Mesh* mesh)
-{
-}
+

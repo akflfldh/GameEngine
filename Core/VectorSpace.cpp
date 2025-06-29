@@ -8,10 +8,10 @@
 //#include"FolderPanelEntity.h"
 
 //#include"DockingSelectBox.h"
-#include"Component/ColliderComponent.h"
+#include<Component/ColliderBaseComponent.h>
 
 #include"Collision/ColliderGenerator.h"
-
+#include<Component/SceneComponent.h>
 
 
 namespace Quad
@@ -125,13 +125,15 @@ namespace Quad
 	{
 		//카메라의 뷰프러스텀과의 교차판정을 통해서 처리한다.
 		//collision helepr의 메서드를 사용하자
-		const Collider* viewFrustumCollider = camera->GetViewCollider();
+		 Collider* viewFrustumCollider = camera->GetViewCollider();
 
 		for (int i = 0; i < mColliderVector.size(); ++i)
 		{
 			collider* currCollider = mColliderVector[i];
-			
-			Object* destObject = currCollider->GetDestObject();
+			SceneComponent * parentSceneComponent =	 currCollider->GetParentComponent();
+
+
+			Object* destObject = parentSceneComponent->GetDestObject();
 			if (destObject->GetName() == "AnimationStateTransitionBlendNode1")
 			{
 				int a = 2;
@@ -168,10 +170,13 @@ namespace Quad
 		{
 			float currParemeterT = FLT_MAX;
 			collider* currCollider = mColliderVector[i];
-			Object* destObject = currCollider->GetDestObject();
+			SceneComponent* parentSceneComponent = currCollider->GetParentComponent();
+
+
+			Object* destObject = parentSceneComponent->GetDestObject();
 			
-			if (destObject->GetSelectAvailableFlag())
-			{
+			//if (destObject->GetSelectAvailableFlag())
+			//{
 				if (CollisionHelper::Intersect(currCollider, ray, currParemeterT))
 				{
 					if (minT > currParemeterT)
@@ -184,7 +189,7 @@ namespace Quad
 						oCollider = currCollider;
 					}
 				}
-			}
+			//}
 		}
 		return (minT == FLT_MAX) ? false : true;
 	}

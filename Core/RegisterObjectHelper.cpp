@@ -2,6 +2,9 @@
 
 #include"ObjectFactory/ObjectFactory.h"
 #include"ObjectFactory/RuntimeObjectFactory.h"
+
+#include<Component/ComponentFactory.h>
+
 Quad::RegisterObjectHelper::RegisterObjectHelper(const std::string& className, const std::function<Object* ()>& constructor, const std::function<void(Object*)>& destructor)
 {
 	bool ret =ObjectTable::RegisterObjectClassName(className);
@@ -35,4 +38,13 @@ bool Quad::ObjectTable::RegisterObjectClassName(const std::string& name)
 	}
 
 	return false;
+}
+
+Quad::RegisterComponentHelper::RegisterComponentHelper(const std::string& className, const std::function<Quad::BaseComponent* ()>& constructor, const std::function<void(Quad::BaseComponent*)>& destructor)
+{
+
+
+	auto componentFactory =	ComponentFactory::GetInstance();
+	componentFactory->RegisterComponentCtorDtor(className, constructor, destructor);
+
 }

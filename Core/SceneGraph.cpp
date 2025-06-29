@@ -17,706 +17,546 @@
 //#include"DockingSelectBox.h"
 #include<stack>
 
-#include"ObjectManager/ObjectManager.h"
+//#include"ObjectManager/ObjectManager.h"
 
-#include"Component/ColliderComponent.h"
+#include"Component/ColliderBaseComponent.h"
+
 #include"Component/UiColliderComponent.h"
 namespace Quad
 {
-	SceneGraph::SceneGraph() :mRoot(new Node)
-		, mPauseState(false)
-	{
-		
-	}
-
-	SceneGraph::~SceneGraph()
-	{
-		delete mRoot;
-
-	}
-
-
-
-	void SceneGraph::Initialize(BaseObjectManager* objectManager, bool playMode)
-	{
-		mObjectManager = objectManager;
-		mRoot->mObject = new Entity("Root");
-		mRoot->mObject->GetTransform().Initialize();
-		Transform& transform = mRoot->mObject->GetTransform();
-		DirectX::XMFLOAT4X4 identityMatrix;
-		DirectX::XMStoreFloat4x4(&identityMatrix, DirectX::XMMatrixIdentity());
-		
-		mPlayMode = playMode;
-	}
-
-
-	void SceneGraph::Update(float deltaTime)
+	namespace Scene
 	{
 
-		//object들의 update호출
-
-
-		//순회하면서  update를 호출한다.
-		//std::vector<Node*> nodeStackcontainer;
-		//nodeStackcontainer.reserve(mObjecVector.size());
-		std::stack<Node*> nodeQueue;
-
-		Node* childNode = nullptr;
-
-		
-		//전체오브젝트들에대해서 월드행렬을 계산한다.
-		//change matrix를 초기화 
-		childNode = mRoot->mFirstChildNode;
-
-		while (childNode != nullptr)
+		SceneGraph::SceneGraph() :mRoot(new Scene::Node)
+			, mPauseState(false)
 		{
-			nodeQueue.push(childNode);
-			childNode = childNode->mNextSiblingNode;
+
 		}
 
-		while (!nodeQueue.empty())
+		SceneGraph::~SceneGraph()
 		{
+			delete mRoot;
 
-			Node* currNode = nodeQueue.top();
-			nodeQueue.pop();
-
-
-
-
-			if (currNode->mObject->GetActiveFlag())
-			{
-				Object* parentObject = currNode->mParentNode->mObject.GetPointer();
-				Object* currObject = currNode->mObject.GetPointer();
-				if (parentObject->GetTransform().GetDirtyFlag() ||
-					currObject->GetTransform().GetDirtyFlag())
-				{
-
-					DirectX::XMFLOAT4X4 parentWorldMatrix = parentObject->GetTransform().GetWorldMatrix();
-					currObject->GetTransform().UpdateWorldMatrix(parentWorldMatrix);
-				}
-
-				childNode = currNode->mFirstChildNode;
-				while (childNode != nullptr)
-				{
-					nodeQueue.push(childNode);
-					childNode = childNode->mNextSiblingNode;
-				}
-
-			}
-		}
-
-		
-
-
-		//entity들에대해서 collider update
-		childNode = mRoot->mFirstChildNode;
-
-		while (childNode != nullptr)
-		{
-			nodeQueue.push(childNode);
-			childNode = childNode->mNextSiblingNode;
-		}
-
-
-		while (!nodeQueue.empty())
-		{
-
-			Node* currNode = nodeQueue.top();
-			nodeQueue.pop();
-
-
-			if (currNode->mObject->GetActiveFlag())
-			{
-		
-				Object* ob =  currNode->mObject.GetPointer();
-					switch (ob->GetObjectType())
-					{
-					case EObjectType::eEntity:
-					case EObjectType::eLine:
-						//Entity* entity = (Entity*)ob;
-					{
-						ColliderComponent* colliderComponent = ob->GetModel()->GetColliderComponent();
-						if (ob->GetName() == "OrthogoanlCamera2")
-						{
-							int a = 2;
-						}
-						if (colliderComponent && ob->GetTransform().GetDirtyFlag())
-						{
-							Collider* collider = colliderComponent->GetCollider();
-
-							collider->Update(deltaTime);
-
-						}
-					}
-						break;
-					case EObjectType::eUiEntity:
-					{
-						UiColliderComponent* uiColliderComponent = ob->GetModel()->GetUiColliderComponent();
-						if(uiColliderComponent && ob->GetTransform().GetDirtyFlag())
-						{ 
-							UiCollider* collider = uiColliderComponent->GetCollider();
-							collider->Update(deltaTime);
-						}
-					}
-					break;
-
-
-					}
-
-
-
-				childNode = currNode->mFirstChildNode;
-				while (childNode != nullptr)
-				{
-					nodeQueue.push(childNode);
-					childNode = childNode->mNextSiblingNode;
-				}
-			}
 		}
 
 
 
-
-
-
-		//1update시에 트랜스폼에 로컬변환행렬 생성하고
-		//2여기서 부모의 월드변환행렬을가져와서 로컬변환행렬과 합쳐서 다시 트랜스폼에 월드변환행렬을 set
-		//이것들 자식들로 내려가면서 반복
-
-		//2그후에 공간분할구조 재구축
-
-		//3절두체판정
-
-		//4보여질 object들에대한 정보만 렌더링파이프라인에 입력으로 넣는다 (상수버퍼)
-		//(지금은 다보여질것이니 그리고 부모 자식관계에 해당하는 object는없을것이니 (1, 4만하면됨)
-
-
-
-
-
-	}
-
-	
-
-	void SceneGraph::ChangeParent(Object* newParent, Object* child)
-	{
-
-		//두개의 노드를 찾는게 필요 + child의 부모노드도 찾아야지
-		//find 
-
-		if (newParent == nullptr)
-			newParent = mRoot->mObject.GetPointer();
-
-		//순환구조를 방지해야한다.
-		Node* newParentNode = findNode(newParent);
-
-
-		Node* newChildNode = findNode(child);
-		if (newChildNode == nullptr)
-			return;
-
-
-		Node* preParentNode = newChildNode->mParentNode;
-
-
-		Node* preChildNode = preParentNode->mFirstChildNode;
-		Node* currChildNode = preParentNode->mFirstChildNode;
-
-		while (currChildNode != nullptr)
+		void SceneGraph::Initialize(BaseObjectManager* objectManager, bool playMode)
 		{
+			mObjectManager = objectManager;
+			mRoot->mObject = new Object;
+			//mRoot->mObject->GetTransform().Initialize();
+			Transform& transform = mRoot->mObject->GetTransform();
+			DirectX::XMFLOAT4X4 identityMatrix;
+			DirectX::XMStoreFloat4x4(&identityMatrix, DirectX::XMMatrixIdentity());
 
-			if (currChildNode == newChildNode)
-			{
-				if (currChildNode == preParentNode->mFirstChildNode)
-				{
-					preParentNode->mFirstChildNode = currChildNode->mNextSiblingNode;
-				}
-				else
-				{
-					preChildNode->mNextSiblingNode = currChildNode->mNextSiblingNode;
-				}
-
-				currChildNode->mNextSiblingNode = nullptr;
-				currChildNode->mParentNode = nullptr;
-
-				break;
-			}
-
-			preChildNode = currChildNode;
-			currChildNode = currChildNode->mNextSiblingNode;
+			mPlayMode = playMode;
 		}
 
 
-		newChildNode->mNextSiblingNode = newParentNode->mFirstChildNode;
-		newParentNode->mFirstChildNode = newChildNode;
-		newChildNode->mParentNode = newParentNode;
-
-
-		//부모와 자식간의월드정보를바탕으로 자식의 로컬transform 정보를 조정한다.
-		Transform& parentTransform = newParentNode->mObject->GetTransform();
-		Transform& childTransform = newChildNode->mObject->GetTransform();
-		
-
-		DirectX::XMFLOAT4X4 parentWorldMatrixF= parentTransform.GetWorldMatrix();
-		DirectX::XMFLOAT4X4 childWorldMatrixF = childTransform.GetWorldMatrix();
-
-		DirectX::XMMATRIX parentWorldMatrix = DirectX::XMLoadFloat4x4(&parentWorldMatrixF);
-		DirectX::XMMATRIX childWorldMatrix = DirectX::XMLoadFloat4x4(&childWorldMatrixF);
-
-		DirectX::XMMATRIX parentWorldInvMatrix =DirectX::XMMatrixIdentity();
-
-		if (childTransform.GetIndependentScaleFlag() || childTransform.GetIndependentRotationFlag() || childTransform.GetIndependentTransitionFlag())
+		void SceneGraph::Update(float deltaTime)
 		{
-			DirectX::XMVECTOR parentScaleWorld;
-			DirectX::XMVECTOR parentQuaternionWorld;
-			DirectX::XMVECTOR parentTranslationWorld;
 
-			DirectX::XMMatrixDecompose(&parentScaleWorld, &parentQuaternionWorld, &parentTranslationWorld, parentWorldMatrix);
+			//object들의 update호출
+			//순회하면서  update를 호출한다.
 
-			if (!childTransform.GetIndependentScaleFlag())
-			{
-				parentWorldMatrix = DirectX::XMMatrixScalingFromVector(parentScaleWorld);
-			}
-			else
-			{
-				parentWorldMatrix = DirectX::XMMatrixIdentity();
-			}
+			std::vector<Scene::Node*> nodeStack;
+			nodeStack.reserve(64);
 
-			if (!childTransform.GetIndependentRotationFlag())
-			{
-				parentWorldMatrix = DirectX::XMMatrixMultiply(parentWorldMatrix, DirectX::XMMatrixRotationQuaternion(parentQuaternionWorld));
-
-			}
-
-			if (!childTransform.GetIndependentTransitionFlag())
-			{
-				parentWorldMatrix = DirectX::XMMatrixMultiply(parentWorldMatrix, DirectX::XMMatrixTranslationFromVector(parentTranslationWorld));
-			}
-
-			DirectX::XMStoreFloat4x4(&parentWorldMatrixF, parentWorldMatrix);
-			parentWorldInvMatrix = DirectX::XMMatrixInverse(nullptr, parentWorldMatrix);
-		}
+			Scene::Node* childNode = nullptr;
 
 
-		DirectX::XMMATRIX childLocalMatrix = DirectX::XMMatrixMultiply(childWorldMatrix, parentWorldInvMatrix);
-		childTransform.SetTransformLocal(childLocalMatrix);
-		childTransform.UpdateWorldMatrix(parentWorldMatrixF);
-
-
-
-		return;
-	}
-
-	bool SceneGraph::Add(Object* ob)
-	{
-		AddNewObjectNode(ob);
-		return true;
-
-	}
-
-	void SceneGraph::RemoveObject(const std::wstring& name)
-	{
-
-
-
-
-
-
-
-	}
-
-	void SceneGraph::RemoveObject(Object* ob)
-	{
-		
-		//mObjectManager->KillObject(ob);
-		//mObjectIDTable.erase(ob->GetUniqueID());
-
-
-		Node* currNode = findNode(ob);
-		if (currNode == nullptr)
-			return;
-		Node* parentNode = currNode->mParentNode;
-		
-		if (parentNode->mObject.GetPointer() != mRoot->mObject.GetPointer())
-		{
-			parentNode->mObject->RemoveChildObjectInVector(ob);
-		}
-
-		//제거된 노드의 자식노드들은 , 루트노드가 부모노드가된다.
-
-
-		Node* childNode = currNode->mFirstChildNode;
-		Node* lastChildNode = childNode;
-		while (childNode != nullptr)
-		{
-			childNode->mParentNode = mRoot;
-			lastChildNode = childNode;
-			childNode = childNode->mNextSiblingNode;
-		}
-		if (lastChildNode != nullptr)
-		{
-			lastChildNode->mNextSiblingNode = mRoot->mFirstChildNode;
-			mRoot->mFirstChildNode = currNode->mFirstChildNode;
-		}
-
-
-
-		//부모노드의 자식리스트에서 제거할려는 노드를 뺸다. 
-
-		Node* preChildNode =nullptr;
-		childNode = parentNode->mFirstChildNode;
-		while (childNode != nullptr)
-		{
-			if (childNode == currNode)
-			{
-				if (currNode == parentNode->mFirstChildNode)
-				{
-					parentNode->mFirstChildNode = currNode->mNextSiblingNode;
-				}
-				else
-				{
-					preChildNode->mNextSiblingNode = currNode->mNextSiblingNode;
-				}
-				break;
-			}
-			preChildNode = childNode;
-			childNode = childNode->mNextSiblingNode;
-		}
-	
-
-		//노드제거
-		delete currNode;
-
-
-
-
-	}
-
-	/*Object* SceneGraph::FindObject(unsigned long long id) const
-	{
-		std::unordered_map<unsigned long long, Object*>::const_iterator it = mObjectIDTable.find(id);
-		return it != mObjectIDTable.end() ? it->second : nullptr;
-
-	}
-
-	Object* SceneGraph::FindObject(const std::string& name) const
-	{
-		
-		unsigned long long id = mObjectManager->GetObjectFromName(name)->GetUniqueID();
-		return FindObject(id);
-	}*/
-
-	bool SceneGraph::GetRootChildObjectVector(std::vector<Object*>& oRootChildObjectVector) const
-	{
-		return GetChildObjectVector(mRoot->mObject.GetPointer(), oRootChildObjectVector);
-	}
-
-	bool SceneGraph::GetChildObjectVector(Object* parent, std::vector<Object*>& oChildObjectVector) const
-	{
-
-		Node* parentNode = findNode(parent);
-
-		if (parentNode != nullptr)
-		{
-			Node* childNode = parentNode->mFirstChildNode;
+			//change matrix를 초기화 
+			childNode = mRoot->mFirstChildNode;
 
 			while (childNode != nullptr)
 			{
-				Entity* test = (Entity*)childNode->mObject.GetPointer();
-				oChildObjectVector.push_back(childNode->mObject.GetPointer());
-				childNode = childNode->mNextSiblingNode;
-			}
-			return true;
-		}
-
-		return false;
-	}
-
-	size_t SceneGraph::GetChildObjectNum(Object* parent) const
-	{
-		Node* parentNode = findNode(parent);
-		if (parentNode == nullptr)
-		{
-			//throw 
-			return 0;
-		}
-
-		Node* childNode = parentNode->mFirstChildNode;
-		size_t childNum = 0;
-		while (childNode != nullptr)
-		{
-			childNum++;
-			childNode = childNode->mNextSiblingNode;
-		}
-
-		return childNum;
-
-	}
-
-	const std::vector<Object*> SceneGraph::GetAllObjectVector() const
-	{
-
-		//return mObjecVector;
-	
-		std::vector<Object*> objectVector;
-
-		std::queue<SceneGraph::Node*> nodeQueue;
-		nodeQueue.push(mRoot);
-
-		while (!nodeQueue.empty())
-		{
-			SceneGraph::Node* currNode = nodeQueue.front();
-			nodeQueue.pop();
-
-
-			SceneGraph::Node* childNode = currNode->mFirstChildNode;
-			while (childNode != nullptr)
-			{
-
-				if (childNode->mObject->GetEntrieDrawFlag())
-				{
-					if (childNode->mObject->GetDrawFlag())
-					{
-						objectVector.push_back(childNode->mObject.GetPointer());
-					}
-					nodeQueue.push(childNode);
-				}
-				childNode = childNode->mNextSiblingNode;
-			}
-		}
-
-		return objectVector;
-		//return true;
-	}
- 
-
-	/*void SceneGraph::Seralize()
-	{
-
-
-
-
-	}
-
-	void SceneGraph::DeSeralize()
-	{
-
-
-
-
-	}*/
-
-
-
-	void SceneGraph::Reset()
-	{
-
-
-
-		if (mRoot == nullptr)
-			return;
-
-
-		//mObjectIDTable.clear();
-
-	
-
-		std::stack<Node*> nodeStack;
-
-		nodeStack.push(mRoot);
-		Node* parentNode = nodeStack.top();
-		nodeStack.pop();
-
-		Node* childNode = parentNode->mFirstChildNode;
-		while (childNode != nullptr)
-		{
-			nodeStack.push(childNode);
-			childNode = childNode->mNextSiblingNode;
-		}
-
-		Node* currentNode = nullptr;
-		while (!nodeStack.empty())
-		{
-			currentNode = nodeStack.top();
-			nodeStack.pop();
-			
-
-			childNode = currentNode->mFirstChildNode;
-			while (childNode != nullptr)
-			{
-				nodeStack.push(childNode);
+				nodeStack.push_back(childNode);
 				childNode = childNode->mNextSiblingNode;
 			}
 
-			//ObjectSmartPointer object = currentNode->mObject;
-			//mObjectManager->KillObject(object.GetPointer());
-			delete currentNode;
-		}
-		
-		
-		mRoot->mFirstChildNode = nullptr;
-
-		//mObjectManager->RemoveDeadObject();
-
-
-	}
-
-	SceneGraph::Node* SceneGraph::findNode(Object* object) const
-	{
-		//순회를한다.
-
-
-		//루트도 돌려줘야돼 
-		std::queue<Node*> nodeQueue;
-		nodeQueue.push(mRoot);
-
-		Node* childNode = nullptr;//mRoot->mFirstChildNode;
-		//while (childNode != nullptr)
-		//{
-		//	nodeQueue.push(childNode);
-		//	childNode = childNode->mNextSiblingNode;
-		//}
-
-
-		while (!nodeQueue.empty())
-		{
-
-			Node* currNode = nodeQueue.front();
-			nodeQueue.pop();
-
-
-			if (currNode->mObject.GetPointer() == object)
+			while (!nodeStack.empty())
 			{
-				return currNode;
-			}
 
-			childNode = currNode->mFirstChildNode;
-			while (childNode != nullptr)
-			{
-				nodeQueue.push(childNode);
-				childNode = childNode->mNextSiblingNode;
-			}
-		}
+				Scene::Node* currNode = nodeStack.back();
+				nodeStack.pop_back();
 
-		//throw ex				(없을수가없다)
-		return nullptr;
+				if (currNode->mObject->GetKilledState())
+					continue;
 
-	}
-
-
-
-	void SceneGraph::AddNewObjectNode(Object* ob)
-	{
-		//부모가 있는가
-		//있으면 부모가이미 씬에 추가되었다고생각하고 그 부모의 자식노드가 생성되는것이다.
-		Node* parentNode = mRoot;
-		if (ob->GetParentObject() != nullptr)
-		{
-			//부모오브젝트는 씬에 안넣고 자식오브젝트만 씬에 넣는다 ? 그건없을거같은데, 
-			parentNode = findNode(ob->GetParentObject());
-
-
-		}
-
-
-		//object의 자식들도 다 추가한다.
-		//초기화
-		//Node* parentNode = mRoot;
-
-		//mRoot->mFirstChildNode = newNode;
-
-		Node* newNode = new Node;
-		newNode->mFirstChildNode = nullptr;
-		newNode->mNextSiblingNode = parentNode->mFirstChildNode;
-		newNode->mObject = ob;
-		newNode->mParentNode = parentNode;
-		parentNode->mFirstChildNode = newNode;
-		
-
-		
-		ob->SetIsAddedToSceneFlag(true);
-		//mObjectIDTable.try_emplace(ob->GetUniqueID(), ob);
-
-		if (mPlayMode == false && ob->GetEnginObjectFlag())
-		{
-			//mEditUpdateObjectVector.push_back(ob);
-		}
-
-
-
-
-		//그오브젝트들의 자식들을 처리한다.
-	//	std::queue<Object*> objectQueue;
-		std::queue<Node*> nodeQueue;
-		//	objectQueue.push(ob);
-		nodeQueue.push(newNode);
-
-		Object* currObject;
-		while (!nodeQueue.empty())
-		{
-			//currObject = objectQueue.front();
-			parentNode = nodeQueue.front();
-			currObject = parentNode->mObject.GetPointer();
-
-			//objectQueue.pop();
-			nodeQueue.pop();
-
-			//mObjectIDTable.try_emplace(currObject->GetUniqueID(), currObject);
-
-			const std::vector<ObjectSmartPointer>& objectVector = currObject->GetChildObjectVector();
-
-			for (int i = 0; i < objectVector.size(); ++i)
-
-			{
-				Object* childObject = objectVector[i].GetPointer();
-				if (childObject == nullptr)
+				if (currNode->mObject->GetActiveFlag() == false)
 					continue;
 
 
-				//중복될가능성을 구조적으로 막을것이니
-				/*std::unordered_map<unsigned long long, Object*>::iterator ret = mObjectIDTable.find(childObject->GetUniqueID());
-				if (ret != mObjectIDTable.end())
-					continue;*/
+				currNode->mObject->Update(deltaTime);
 
-
-				newNode = new Node;
-				newNode->mFirstChildNode = nullptr;
-				newNode->mNextSiblingNode = parentNode->mFirstChildNode;
-				newNode->mObject = objectVector[i];
-				newNode->mParentNode = parentNode;
-				parentNode->mFirstChildNode = newNode;
-
-				//mObjectIDTable[childObject->GetUniqueID()] = childObject;
-
-
-				objectVector[i]->SetIsAddedToSceneFlag(true);
-
-				if (mPlayMode == false && childObject->GetEnginObjectFlag())
+				childNode = currNode->mFirstChildNode;
+				while (childNode != nullptr)
 				{
-					//mEditUpdateObjectVector.push_back(childObject);
+					nodeStack.push_back(childNode);
+					childNode = childNode->mNextSiblingNode;
 				}
-				//objectQueue.push(objectVector[i].GetPointer());
 
 
-				nodeQueue.push(newNode);
 			}
+
 
 		}
 
 
 
+		void SceneGraph::ChangeParent(Object* newParent, Object* child)
+		{
+
+
+
+			//두개의 노드를 찾는게 필요 + child의 부모노드도 찾아야지
+			//find 
+
+			if (newParent == nullptr)
+				newParent = mRoot->mObject;
+
+			Scene::Node* newChildNode = child->mSceneGraphNode;
+			Scene::Node* newParentNode = newParent->mSceneGraphNode;
+			//순환구조를 방지해야한다.
+
+			if (IsAncestorNode(newParentNode, newChildNode))
+			{
+				//newParent가 child의 자식관계임으로
+				//순환구조이다. 이 것은 실패한다.
+				return;
+			}
+
+
+			/*	if (newChildNode == nullptr)
+					return;*/
+
+
+			Scene::Node* preParentNode = newChildNode->mParentNode;
+			Scene::Node* preChildNode = preParentNode->mFirstChildNode;
+			Scene::Node* currChildNode = preParentNode->mFirstChildNode;
+
+			Object* preParentObject = preParentNode->mObject;
+
+
+			while (currChildNode != nullptr)
+			{
+
+				if (currChildNode == newChildNode)
+				{
+					if (currChildNode == preParentNode->mFirstChildNode)
+					{
+						preParentNode->mFirstChildNode = currChildNode->mNextSiblingNode;
+					}
+					else
+					{
+						preChildNode->mNextSiblingNode = currChildNode->mNextSiblingNode;
+					}
+
+					currChildNode->mNextSiblingNode = nullptr;
+
+
+					break;
+				}
+
+				preChildNode = currChildNode;
+				currChildNode = currChildNode->mNextSiblingNode;
+			}
+
+
+			newChildNode->mNextSiblingNode = newParentNode->mFirstChildNode;
+			newParentNode->mFirstChildNode = newChildNode;
+			newChildNode->mParentNode = newParentNode;
+
+
+
+			//기존부모와의 관계 관련데이터 업데이트
+			child->UpdateSceneComponentWorldTransformReculsivly();
+
+			std::vector<Object*>& preParentChildObjectVector = preParentObject->mChildObjectVector;
+			preParentChildObjectVector.erase(std::find(preParentChildObjectVector.begin(), preParentChildObjectVector.end(), child));
+
+
+			//새로운 부모에 상대적인 로컬계산까지는 기존부모포인터는 유지해서 최종적으로 올바른 world값을 가져와서 계산하도록한다.
+
+			//새로운 부모와의 관계구축을 위해 관련데이터 업데이트
+			child->mParentObject = newParent;
+			SceneComponent* newParentRootSceneComponent = newParent->GetRootSceneComponent();
+			newParentRootSceneComponent->UpdateNewChildComponentLocal(child->GetRootSceneComponent());//자식의 루트컴포넌트의 로컬만 올바르게 조정하면된다. 루트컴포넌트의 자식들의 로컬은 루트컴포넌트에 상대적인거니깐
+			child->UpdateSceneComponentWorldTransformReculsivly();
+			;//처음에는 모든 자식컴포넌트들을 갱신하자.
+
+
+			newParent->mChildObjectVector.push_back(child);
+
+
+			return;
+		}
+
+		bool SceneGraph::Add(Object* ob)
+		{
+
+
+			AddNewObjectNode(ob);
+			return true;
+
+		}
+
+
+		void SceneGraph::RemoveKilledObjectAll()
+		{
+			//kill상태인 최상위 object들의 부모노드는 rootNode
+			//if(이미 이 프레임에 한번호출했다면 바로 빠져나오자 return )
+
+
+
+
+			Scene::Node** ppNode = &mRoot->mFirstChildNode;
+
+			while (*ppNode)
+			{
+				if ((*ppNode)->mObject->GetKilledState())
+				{
+					Scene::Node* tempNode = *ppNode;
+					*ppNode = (*ppNode)->mNextSiblingNode;
+					RemoveNodeAll(tempNode);
+				}
+				else
+				{
+					ppNode = &((*ppNode)->mNextSiblingNode);
+				}
+			}
+
+		}
+
+		/*Object* SceneGraph::FindObject(unsigned long long id) const
+		{
+			std::unordered_map<unsigned long long, Object*>::const_iterator it = mObjectIDTable.find(id);
+			return it != mObjectIDTable.end() ? it->second : nullptr;
+
+		}
+
+		Object* SceneGraph::FindObject(const std::string& name) const
+		{
+
+			unsigned long long id = mObjectManager->GetObjectFromName(name)->GetUniqueID();
+			return FindObject(id);
+		}*/
+
+		bool SceneGraph::GetRootChildObjectVector(std::vector<Object*>& oRootChildObjectVector) const
+		{
+			return GetChildObjectVector(mRoot->mObject, oRootChildObjectVector);
+		}
+
+		bool SceneGraph::GetChildObjectVector(Object* parent, std::vector<Object*>& oChildObjectVector) const
+		{
+
+			Scene::Node* parentNode = findNode(parent);
+
+			if (parentNode != nullptr)
+			{
+				Scene::Node* childNode = parentNode->mFirstChildNode;
+
+				while (childNode != nullptr)
+				{
+					Entity* test = (Entity*)childNode->mObject;
+					oChildObjectVector.push_back(childNode->mObject);
+					childNode = childNode->mNextSiblingNode;
+				}
+				return true;
+			}
+
+			return false;
+		}
+
+		size_t SceneGraph::GetChildObjectNum(Object* parent) const
+		{
+			Scene::Node* parentNode = findNode(parent);
+			if (parentNode == nullptr)
+			{
+				//throw 
+				return 0;
+			}
+
+			Scene::Node* childNode = parentNode->mFirstChildNode;
+			size_t childNum = 0;
+			while (childNode != nullptr)
+			{
+				childNum++;
+				childNode = childNode->mNextSiblingNode;
+			}
+
+			return childNum;
+
+		}
+
+		const std::vector<Object*> SceneGraph::GetAllObjectVector() const
+		{
+
+			//return mObjecVector;
+
+			std::vector<Object*> objectVector;
+
+			std::queue<Scene::Node*> nodeQueue;
+			nodeQueue.push(mRoot);
+
+			while (!nodeQueue.empty())
+			{
+				Scene::Node* currNode = nodeQueue.front();
+				nodeQueue.pop();
+
+
+				Scene::Node* childNode = currNode->mFirstChildNode;
+				while (childNode != nullptr)
+				{
+
+					if (childNode->mObject->GetEntrieDrawFlag())
+					{
+						if (childNode->mObject->GetDrawFlag())
+						{
+							objectVector.push_back(childNode->mObject);
+						}
+						nodeQueue.push(childNode);
+					}
+					childNode = childNode->mNextSiblingNode;
+				}
+			}
+
+			return objectVector;
+			//return true;
+		}
+
+
+		/*void SceneGraph::Seralize()
+		{
+
+
+
+
+		}
+
+		void SceneGraph::DeSeralize()
+		{
+
+
+
+
+		}*/
+
+
+
+		void SceneGraph::Reset()
+		{
+
+
+
+			if (mRoot == nullptr)
+				return;
+
+			RemoveNodeAll(mRoot);
+
+
+		}
+
+		Scene::Node* SceneGraph::findNode(Object* object) const
+		{
+			//순회를한다.
+
+
+			//루트도 돌려줘야돼 
+			std::queue<Scene::Node*> nodeQueue;
+			nodeQueue.push(mRoot);
+
+			Scene::Node* childNode = nullptr;//mRoot->mFirstChildNode;
+			//while (childNode != nullptr)
+			//{
+			//	nodeQueue.push(childNode);
+			//	childNode = childNode->mNextSiblingNode;
+			//}
+
+
+			while (!nodeQueue.empty())
+			{
+
+				Scene::Node* currNode = nodeQueue.front();
+				nodeQueue.pop();
+
+
+				if (currNode->mObject == object)
+				{
+					return currNode;
+				}
+
+				childNode = currNode->mFirstChildNode;
+				while (childNode != nullptr)
+				{
+					nodeQueue.push(childNode);
+					childNode = childNode->mNextSiblingNode;
+				}
+			}
+
+			//throw ex				(없을수가없다)
+			return nullptr;
+
+		}
+
+		Quad::Scene::Node* SceneGraph::FindAncestorNode(Scene::Node* descendantNode, Object* ancestorObject)
+		{
+
+			Scene::Node* currNode = descendantNode;
+			while (currNode != nullptr)
+			{
+				currNode = currNode->mParentNode;
+				if (currNode->mObject == ancestorObject)
+					break;
+			}
+
+			return currNode;
+		}
+
+		bool SceneGraph::IsAncestorNode(Scene::Node* descendantNode, Scene::Node* ancestorObject)
+		{
+			Scene::Node* currNode = descendantNode;
+			while (currNode != nullptr)
+			{
+				currNode = currNode->mParentNode;
+				if (currNode == ancestorObject)
+					return true;
+			}
+
+			return false;
+		}
+
+		void SceneGraph::RemoveNodeAll(Scene::Node* node)
+		{
+			std::queue<Scene::Node*> nodeQueue;
+			nodeQueue.push(node);
+			while (!nodeQueue.empty())
+			{
+				Scene::Node* temp = nodeQueue.front();
+				nodeQueue.pop();
+
+				for (Scene::Node* childNode = temp->mFirstChildNode; childNode != nullptr; childNode = childNode->mNextSiblingNode)
+				{
+					nodeQueue.push(childNode);
+				}
+				delete temp;
+			}
+		}
+
+
+		void SceneGraph::AddNewObjectNode(Object* ob)
+		{
+			//부모가 있는가
+			//있으면 부모가이미 씬에 추가되었다고생각하고 그 부모의 자식노드가 생성되는것이다.
+			Scene::Node* parentNode = mRoot;
+			if (ob->GetParentObject() != nullptr)
+			{
+				//부모오브젝트는 씬에 안넣고 자식오브젝트만 씬에 넣는다 ? 그건없을거같은데, 
+				parentNode = findNode(ob->GetParentObject());
+
+
+			}
+
+
+			//object의 자식들도 다 추가한다.
+			//초기화
+			//Node* parentNode = mRoot;
+
+			//mRoot->mFirstChildNode = newNode;
+
+			Scene::Node* newNode = new Scene::Node;
+			newNode->mFirstChildNode = nullptr;
+			newNode->mNextSiblingNode = parentNode->mFirstChildNode;
+			newNode->mObject = ob;
+			newNode->mParentNode = parentNode;
+			parentNode->mFirstChildNode = newNode;
+
+
+
+			//ob->SetIsAddedToSceneFlag(true);
+			//mObjectIDTable.try_emplace(ob->GetUniqueID(), ob);
+
+			//if (mPlayMode == false && ob->GetEnginObjectFlag())
+			//{
+			//	//mEditUpdateObjectVector.push_back(ob);
+			//}
+
+			ob->mSceneGraphNode = newNode;
+
+
+			//	//그오브젝트들의 자식들을 처리한다.
+			////	std::queue<Object*> objectQueue;
+			//	std::queue<Node*> nodeQueue;
+			//	//	objectQueue.push(ob);
+			//	nodeQueue.push(newNode);
+
+			//	Object* currObject;
+			//	while (!nodeQueue.empty())
+			//	{
+			//		//currObject = objectQueue.front();
+			//		parentNode = nodeQueue.front();
+			//		currObject = parentNode->mObject.GetPointer();
+
+			//		//objectQueue.pop();
+			//		nodeQueue.pop();
+
+			//		//mObjectIDTable.try_emplace(currObject->GetUniqueID(), currObject);
+
+			//		const std::vector<ObjectSmartPointer>& objectVector = currObject->GetChildObjectVector();
+
+			//		for (int i = 0; i < objectVector.size(); ++i)
+
+			//		{
+			//			Object* childObject = objectVector[i].GetPointer();
+			//			if (childObject == nullptr)
+			//				continue;
+
+
+			//			//중복될가능성을 구조적으로 막을것이니
+			//			/*std::unordered_map<unsigned long long, Object*>::iterator ret = mObjectIDTable.find(childObject->GetUniqueID());
+			//			if (ret != mObjectIDTable.end())
+			//				continue;*/
+
+
+			//			newNode = new Node;
+			//			newNode->mFirstChildNode = nullptr;
+			//			newNode->mNextSiblingNode = parentNode->mFirstChildNode;
+			//			newNode->mObject = objectVector[i];
+			//			newNode->mParentNode = parentNode;
+			//			parentNode->mFirstChildNode = newNode;
+
+			//			//mObjectIDTable[childObject->GetUniqueID()] = childObject;
+
+
+			//			//objectVector[i]->SetIsAddedToSceneFlag(true);
+
+			//			//if (mPlayMode == false && childObject->GetEnginObjectFlag())
+			//			//{
+			//			//	//mEditUpdateObjectVector.push_back(childObject);
+			//			//}
+			//			//objectQueue.push(objectVector[i].GetPointer());
+
+
+			//			nodeQueue.push(newNode);
+			//		}
+
+			//	}
+
+
+
+
+		}
+
+		void SceneGraph::SetPauseState(bool state)
+		{
+			mPauseState = state;
+		}
+
+		bool SceneGraph::GetPauseState() const
+		{
+			return mPauseState;
+		}
 
 	}
-
-	void SceneGraph::SetPauseState(bool state)
-	{
-		mPauseState = state;
-	}
-
-	bool SceneGraph::GetPauseState() const
-	{
-		return mPauseState;
-	}
-
-
 }

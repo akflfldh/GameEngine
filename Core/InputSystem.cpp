@@ -1,58 +1,36 @@
-﻿#include "InputSystem.h"
-#include"Core/KeyBoard.h"
-#include<functional>
+﻿#include"Core/InputSystem.h"
 
-#include"Core/InputSystemImpl.h"
-namespace Quad
+Quad::InputSystem::~InputSystem()
 {
-	InputSystem::InputSystem()
-		:mImpl(InputSystemImpl::GetInstance())
+}
+
+void Quad::InputSystem::OnMouseEvent(EMouseInput mouseInput, int channel)
+{
+	InputSystem* inputSystem = GetInstance();
+
+	for (auto& callbackVector : inputSystem->mMouseInputTable[channel][mouseInput])
 	{
-
-
+		for (auto& callback : callbackVector.second)
+		{
+			callback();
+		}
 	}
 
-	InputSystem::~InputSystem()
-	{
+}
 
-	}
+void Quad::InputSystem::RegisterMouseAction(EMouseInput mouseInput, const std::string& actionTag, std::function<void()> callback,int channel)
+{
 
-	void InputSystem::Update(float deltaTime)
-	{
-		mImpl->Update(deltaTime);
+	InputSystem * inputSystem = GetInstance();
+	inputSystem->mMouseInputTable[channel][mouseInput][actionTag].push_back(std::move(callback));
 
-	}
-
-	void InputSystem::RegisterKeyBehavior(int key, EInputState inputState, const std::string& name)
-	{
-		mImpl->RegisterActionKeyBehavior(key, inputState, name);
-	}
-
-	void InputSystem::RegisterAxisBehaviorKeyValue(int key, float value, const std::string& behaviorName)
-	{
-		mImpl->RegisterAxisKeyBehavior(key, value, behaviorName);
-
-	}
-
-	void InputSystem::OnEvent(int key, EInputState inputState)
-	{
-
-		mImpl->OnEvent(key, inputState);
-
-	}
-
-	void InputSystem::RegisterEnvironment(const std::string& name)
-	{
-		mImpl->RegisterEnvironment(name);
-	}
+}
 
 
-	void InputSystem::ChangeEnvironment(const std::string& name)
-	{
+Quad::InputSystem* Quad::InputSystem::GetInstance()
+{
+	static InputSystem inputSystem;
 
-		mImpl->ChangeEnvironment(name);
-	}
-
-
+	return &inputSystem;
 
 }

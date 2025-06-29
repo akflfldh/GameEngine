@@ -2,7 +2,7 @@
 #include"Map/Map.h"
 
 #include"ObjectFactory/LineFactory.h"
-#include"Component/ColliderComponent.h"
+#include<Component/ColliderBaseComponent.h>
 #include"Collision/BoxCollider.h"
 
 Quad::Grid* Quad::Grid::Create(Map* map, int mapLayerIndex, int rowNum, int columnNum, float cellWidth, float cellHeight)
@@ -20,7 +20,7 @@ void Quad::Grid::Initialize()
 {
 	//처음dirty플래그를 켜서 씬그래프에서 update시 collider에 올바르게 속성값들이 반영되도록한다.
 	//dirty플래그가 꺼져있으면 업데이트되지않기때문이다.
-	GetTransform().SetDirtyFlag(true);
+	//GetTransform().SetDirtyFlag(true);
 	
 
 	
@@ -62,12 +62,15 @@ void Quad::Grid::InitCreating(int rowNum, int columnNum, float cellWidth, float 
 {
 	LineFactory::ChangeGrid(this, rowNum, columnNum, cellWidth, cellHeight);
 
-	ColliderComponent* colliderComponent = GetModel()->GetColliderComponent();
-	BoxCollider* boxCollider = static_cast<BoxCollider*>(colliderComponent->GetCollider());
+	//ColliderComponent* colliderComponent = GetModel()->GetColliderComponent();
 
-	boxCollider->SetWidthX(rowNum * cellWidth);
-	boxCollider->SetHeightY(10);
-	boxCollider->SetDepthZ(columnNum * cellHeight);
+	
+
+	//BoxCollider* boxCollider = static_cast<BoxCollider*>(colliderComponent->GetCollider());
+
+	//boxCollider->SetWidthX(rowNum * cellWidth);
+	//boxCollider->SetHeightY(10);
+	//boxCollider->SetDepthZ(columnNum * cellHeight);
 
 }
 
@@ -76,8 +79,8 @@ Quad::Grid::Grid(const std::string& name)
 {
 	SetEffectName("Line.effect");
 
-	Model* model = GetModel();
+	/*Model* model = GetModel();
 	model->AddComponernt(EComponentType::eColliderComponent);
 
-	ColliderComponent* colliderComponent = model->GetColliderComponent();
+	ColliderComponent* colliderComponent = model->GetColliderComponent();*/
 }

@@ -1,25 +1,25 @@
 ﻿#include "Core/DefaultMoveFrustumCamera.h"
 
 
-#include"MoveComponent.h"
-#include"LookComponent.h"
+//#include"MoveComponent.h"
+//#include"LookComponent.h"
 
 #include"Map/Map.h"
 
 Quad::DefaultMoveFrustumCamera::DefaultMoveFrustumCamera()	
 {
-	ModelBaseComponent * component =	GetModel()->GetComponent(EComponentType::eColliderComponent);
+//	ModelBaseComponent * component =	GetModel()->GetComponent(EComponentType::eColliderComponent);
 
-	if (component != nullptr)
-		int a = 2;
+	//if (component != nullptr)
+	//	int a = 2;
 }
 
 Quad::DefaultMoveFrustumCamera::~DefaultMoveFrustumCamera()
 {
-	ModelBaseComponent* component = GetModel()->GetComponent(EComponentType::eColliderComponent);
+	//ModelBaseComponent* component = GetModel()->GetComponent(EComponentType::eColliderComponent);
 
-	if (component != nullptr)
-		int a = 2;
+	//if (component != nullptr)
+	//	int a = 2;
 }
 
 void Quad::DefaultMoveFrustumCamera::Initialize()
@@ -27,12 +27,21 @@ void Quad::DefaultMoveFrustumCamera::Initialize()
 	FrustumCamera::Initialize();
 
 
-	AddComponent(new MoveComponent(this));
-	AddComponent(new LookComponent(this));
+	//AddComponent(new MoveComponent(this));
+	//MoveComponent* moveComponent =	AddComponent<MoveComponent>("MoveComponent");	//Object this
+	
 
-	MoveComponent* moveComponent = static_cast<MoveComponent*>(GetComponent(ComponentIDGenerator::GetID< MoveComponent>()));
+	//AddComponent(new LookComponent(this));
 
-	moveComponent->SetSpeed(2.0);
+	//LookComponent * lookComponent = AddComponent<LookComponent>("LookComponent");
+
+	//MoveComponent* moveComponent = static_cast<MoveComponent*>(GetComponent(ComponentIDGenerator::GetID< MoveComponent>()));
+
+	//if (moveComponent)
+	//{
+	//	moveComponent->SetSpeed(2.0);
+	//}
+
 }
 
 Quad::DefaultMoveFrustumCamera* Quad::DefaultMoveFrustumCamera::Create(Map* map, int mapLayerIndex, float fovY, float aspect)

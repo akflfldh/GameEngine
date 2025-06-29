@@ -14,8 +14,8 @@
 #include"ResourceManager/SkeletonManager.h"
 #include"RegisterAnimStateTransitionCallbackClassManager.h"
 
-Quad::AnimationComponent::AnimationComponent(SceneElement * sceneElement)
-	:ModelBaseComponent(sceneElement),mSkeleton(nullptr), mStateTransitionFlag(false), mDestAnimationState(nullptr),
+Quad::AnimationComponent::AnimationComponent()
+	:mSkeleton(nullptr), mStateTransitionFlag(false), mDestAnimationState(nullptr),
 	mCurrAnimStateTransitionTime(0.0f)
 {
 
@@ -34,6 +34,14 @@ Quad::AnimationComponent::~AnimationComponent()
 }
 
 
+
+void Quad::AnimationComponent::Initialize(Object* destObject)
+{
+	BaseComponent::Initialize(destObject);
+
+
+
+}
 
 Quad::AnimationComponent& Quad::AnimationComponent::operator=(const AnimationComponent& component)
 {
@@ -199,7 +207,7 @@ bool Quad::AnimationComponent::AddState(const std::string& stateName, AnimationC
 		//기존에 상태가없었는데 최소 하나의 에니메이션상태가 존재하게되었다. 
 		//이제 완전하게 에니메이션이 작동할수있다.
 		//따라서 map의 에니메이션Update시스템에 이 컴포넌트의 소유자인오브젝트를 추가한다.
-		Object * object= static_cast<Object*>(GetDestSceneElement());
+		Object* object = GetDestObject();
 		
 		Map * map =	object->GetMap();
 		map->AddObjectToAnimationUpdateSystem(object);
@@ -230,7 +238,7 @@ bool Quad::AnimationComponent::RemoveState(const std::string& stateName)
 		//더이상 완전하지않은 에니메이션 컴포넌트임으로 . 에니메이션 재생이 되지않는다.
 		//에니메이션업데이트시스템에서 이컴포넌트를 소유하는 Object를 제거한다.
 
-		Object* object = static_cast<Object*>(GetDestSceneElement());
+		Object* object = GetDestObject();
 
 		Map* map = object->GetMap();
 		map->RemoveObjectInAnimationUpdateSystem(object);

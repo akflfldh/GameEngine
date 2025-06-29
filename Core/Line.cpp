@@ -1,7 +1,7 @@
 ﻿#include "Object/Line/Line.h"
 
 
-#include"Component/ColliderComponent.h"
+#include<Component/ColliderBaseComponent.h>
 #include"Collision/BoxCollider.h"
 
 Quad::Line::Line(const std::string & name)
@@ -14,12 +14,12 @@ Quad::Line::Line(const std::string & name)
 	modelSubMesh->mVertexOffset = 0;
 
 
-	Model* model = GetModel();
-	model->AddComponernt(EComponentType::eColliderComponent);
+	//Model* model = GetModel();
+	//model->AddComponernt(EComponentType::eColliderComponent);
 
-	ColliderComponent * colliderComponent =	model->GetColliderComponent();
+	//ColliderComponent * colliderComponent =	model->GetColliderComponent();
 
-	BoxCollider * collider= static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
+	//BoxCollider * collider= static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
 	
 
 }
@@ -52,7 +52,7 @@ void Quad::Line::EndUpdate(float deltaTime)
 void Quad::Line::SetStartVertexPosition(const DirectX::XMFLOAT3& pos)
 {
 
-	GetTransform().SetDirtyFlag(true);
+	//GetTransform().SetDirtyFlag(true);
 	LineVertex vertex;
 	vertex.mPos = pos;
 	mStartPosition = pos;
@@ -63,14 +63,14 @@ void Quad::Line::SetStartVertexPosition(const DirectX::XMFLOAT3& pos)
 
 	vertexBuffer->CopyData(0, &pos, sizeof(vertex));
  
-	BoxCollider* collider = static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
-	collider->SetMinMaxVertex(mStartPosition, mEndPosition);
+	/*BoxCollider* collider = static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
+	collider->SetMinMaxVertex(mStartPosition, mEndPosition);*/
 
 }
 
 void Quad::Line::SetEndVertexPosition(const DirectX::XMFLOAT3& pos)
 {
-	GetTransform().SetDirtyFlag(true);
+	//GetTransform().SetDirtyFlag(true);
 	LineVertex vertex;
 	vertex.mPos = pos;
 	mEndPosition = pos;
@@ -78,8 +78,8 @@ void Quad::Line::SetEndVertexPosition(const DirectX::XMFLOAT3& pos)
 
 	vertexBuffer->CopyData(1, &pos, sizeof(vertex));
 
-	BoxCollider* collider = static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
-	collider->SetMinMaxVertex(mStartPosition, mEndPosition);
+	/*BoxCollider* collider = static_cast<BoxCollider*>(GetModel()->GetColliderComponent()->GetCollider());
+	collider->SetMinMaxVertex(mStartPosition, mEndPosition);*/
 }
 
 const DirectX::XMFLOAT3& Quad::Line::GetStartVertexPosition() const

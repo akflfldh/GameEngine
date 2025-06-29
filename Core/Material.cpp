@@ -14,7 +14,7 @@ namespace Quad
 			mTextureTransformMatrix[i] = Utility::GetIdentityMatrixF();
 	}*/
 	Material::Material(const std::string & name)
-		:Asset(name,EAssetType::eMaterial),mDiffuseMap(nullptr),mNormalMap(nullptr),mDirtyCallbackHandleTable(100,nullptr),mEffect(nullptr)
+		:Asset(name,EAssetType::eMaterial),mDiffuseMap(nullptr),mNormalMap(nullptr),mDirtyCallbackHandleTable(100,nullptr),mEffect(nullptr), mEmissive({0.0f,0.0f,0.0f})
 	{
 
 		for (int i = 0; i < _countof(mTextureTransformMatrix); ++i)
@@ -190,6 +190,12 @@ namespace Quad
 		SetDirtyFlag(true);
 	}
 
+	void Material::SetEmissive(const DirectX::XMFLOAT3& emissive)
+	{
+		mEmissive = emissive;
+
+	}
+
 	void Material::SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0)
 	{
 		mFresnelR0 = fresnelR0;
@@ -248,14 +254,19 @@ namespace Quad
 	{
 		return mShiness;
 	}
-	const DirectX::XMFLOAT3& Material::GetColor() const
+	const DirectX::XMFLOAT3 Material::GetColor() const
 	{
 		return mColor;
 		// TODO: 여기에 return 문을 삽입합니다.
 	}
-	const DirectX::XMFLOAT3& Material::GetColorIntensity() const
+	const DirectX::XMFLOAT3 Material::GetColorIntensity() const
 	{
 		return mColorIntensity;
+	}
+	const DirectX::XMFLOAT3 Material::GetEmissive() const
+	{
+		return mEmissive;
+		// TODO: 여기에 return 문을 삽입합니다.
 	}
 	const std::string& Material::GetEffectName() const
 	{
@@ -330,6 +341,7 @@ namespace Quad
 		JsonParser::Write("Material_Specular", mSpecular);
 		JsonParser::Write("Material_Color", mColor);
 		JsonParser::Write("Material_ColorIntensity", mColorIntensity);
+		JsonParser::Write("Material_Emissive", mEmissive);
 		JsonParser::Write("Material_EffectName", mEffectName);
 
 	}
@@ -345,8 +357,7 @@ namespace Quad
 		JsonParser::Read("Material_NormalMap", id);
 		mNormalMap = id;
 
-	//	JsonParser::Read("Material_DiffuseMap", mDiffuseMap);
-		//JsonParser::Read("Material_NormalMap", mNormalMap);
+		
 		JsonParser::Read("Material_Diffuse", mDiffuse);
 		JsonParser::Read("Material_Ambient", mAmbient);
 		JsonParser::Read("Material_FresnelR0", mFresnelR0);
@@ -355,7 +366,7 @@ namespace Quad
 		JsonParser::Read("Material_Specular", mSpecular);
 		JsonParser::Read("Material_Color", mColor);
 		JsonParser::Read("Material_ColorIntensity", mColorIntensity);
-
+		JsonParser::Read("Material_Emissive", mEmissive);
 		JsonParser::Read("Material_EffectName", mEffectName);
 
 

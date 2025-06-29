@@ -81,4 +81,50 @@ void Quad::CameraHelper::CalculateScreenToViewPos(DirectX::XMFLOAT2 screenPos, D
 
 }
 
+void Quad::CameraHelper::ToScreen(const DirectX::XMFLOAT3& worldPos, const D3D12_VIEWPORT& viewport, const Camera& camera, DirectX::XMFLOAT3& oScreenPos)
+{
+	ECameraType cameraType = camera.GetCameraType();
+	if (cameraType == ECameraType::ePerspectiveCamera)
+	{
+
+
+
+
+
+	}
+	else if (cameraType == ECameraType::eOrthogonalCamera)
+	{
+
+
+
+	}
+
+
+
+	const DirectX::XMFLOAT4X4 & viewProjMatrix = camera.GetViewProjMatrix();
+	DirectX::XMVECTOR posH = DirectX::XMVector3TransformCoord(DirectX::XMLoadFloat3(&worldPos), DirectX::XMLoadFloat4x4(&viewProjMatrix));
+
+	DirectX::XMVECTOR ndc =	 DirectX::XMVectorDivide(posH, DirectX::XMVectorSplatW(posH));
+
+
+	float vpW = viewport.Width;
+	float vpH = viewport.Height;
+	float vpTopLeftX = viewport.TopLeftX;
+	float vpTopLeftY = viewport.TopLeftX;
+	float vpMinZ = viewport.MinDepth;
+	float vpMaxZ = viewport.MaxDepth;
+
+	float vpW2 = vpW / 2;
+	float vpH2 = vpH / 2;
+
+	DirectX::XMMATRIX viewportMatrix = DirectX::XMMatrixSet(vpW2, 0, 0, 0,
+															 0 ,-vpH2 , 0, 0 ,
+															0,	0, vpMaxZ -vpMinZ, 0,
+														vpW2 + vpTopLeftX, vpH2 + vpTopLeftY, vpMinZ,1);
+
+
+	DirectX::XMStoreFloat3(&oScreenPos,DirectX::XMVector3TransformCoord(ndc, viewportMatrix));
+
+}
+
 

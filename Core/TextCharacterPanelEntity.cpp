@@ -1,6 +1,11 @@
 ﻿#include "Core/TextCharacterPanelEntity.h"
 #include"Map/Map.h"
 
+#include"ScissorRectComponent.h"
+
+#include<Component/UIMeshComponent.h>
+#include<Component/UiComponent.h>
+#include<Component/UIMeshComponent.h>
 
 
 Quad::TextCharacterPanelEntity::TextCharacterPanelEntity()
@@ -33,13 +38,13 @@ void Quad::TextCharacterPanelEntity::BeforeRemoveBehavior()
 void Quad::TextCharacterPanelEntity::InitCreating(float width, float height)
 {
 	PanelUiEntity::InitCreating();
+	UIMeshComponent* uiMeshComponent = GetUiMeshComponent();
 
-	SetSize(width, height);
-	SetEffect("DefaultUi.effect");
-	SetTexture("Red.png");
-	//SetEffect(L"TextCharacterPanelEntity.effect")
+	uiMeshComponent->SetWidthHeightLocal(width, height);
+	uiMeshComponent->SetTexture("Red.png");
+	AddComponent<ScissorRectComponent>("ScissorRectComponent");
 
-	//GetTransform().GetPositionWorld();
+
 
 	Map* map = GetMap();
 	mCharacterEntity = TextCharacterEntity::Create(map, GetMapLayerID());
@@ -47,13 +52,18 @@ void Quad::TextCharacterPanelEntity::InitCreating(float width, float height)
 
 	//mCharacterEntity->SetSystem(GetSystem());
 //	mCharacterEntity->Initialize();
-	mCharacterEntity->GetTransform().SetIndependentScaleFlag(true);
-	mCharacterEntity->SetSelectAvailableFlag(false);
+
+	mCharacterEntity->GetRootSceneComponent()->SetIndependentScaleFlag(true);
+	mCharacterEntity->GetUiComponent()->SetSelectAvailableFlag(false);
+
+
 	SetDrawFlag(false);
 	AddChildPanelUiEntity(mCharacterEntity);
 
 
-	mCharacterEntity->SetPosition(0, 0, -1.0f);
+	mCharacterEntity->SetObjectPositionLocal(0, 0, -1.0f);
+
+
 
 
 	//SetDrawFlag(false);
@@ -82,30 +92,19 @@ void Quad::TextCharacterPanelEntity::Update(float deltaTime)
 
 }
 
-void Quad::TextCharacterPanelEntity::OnEvent(Event* event)
-{
-	PanelUiEntity::OnEvent(event);
-
-}
 
 void Quad::TextCharacterPanelEntity::SetDrawFlag(bool flag)
 {
 	Object::SetDrawFlag(flag);
-	//mCharacterEntity.SetDrawFlag(flag);
+	mCharacterEntity->SetDrawFlag(flag);
 
 }
 
-void Quad::TextCharacterPanelEntity::SetPosition(float x, float y, float z)
-{
-	UiEntity::SetPosition(x, y, z);
-	mCharacterEntity->GetTransform().UpdateWorldMatrix(GetTransform().GetWorldMatrix());
-
-}
 
 void Quad::TextCharacterPanelEntity::SetGlyphTexture(Texture* texture)
 {
-
-	mCharacterEntity->SetTexture(texture);
+	mCharacterEntity->GetUiMeshComponent()->SetTexture(texture);
+	//mCharacterEntity->SetTexture(texture);
 }
 
 void Quad::TextCharacterPanelEntity::SetAdvanceX(float advance)
@@ -121,18 +120,31 @@ float Quad::TextCharacterPanelEntity::GetAdvanceX() const
 void Quad::TextCharacterPanelEntity::SetGlyphMetrics(const GlyphMetrics& metrics ,float advance, float baselineLocalPosY)
 {
 
-	mAdvanceX = metrics.mHoriAdvance;
-	float panelHeight  = GetHeight();
-	SetSize(mAdvanceX, panelHeight);
+	UIMeshComponent * meshComponent =	GetUiMeshComponent();
 
-	mCharacterEntity->SetSize(metrics.mWidth, metrics.mHeight);
+	mAdvanceX = metrics.mHoriAdvance;
+	float panelHeight  = meshComponent->GetHeightLocal();
+	meshComponent->SetWidthLocal(mAdvanceX);
+
+
+	//SetSize(mAdvanceX, panelHeight);
+
+	UIMeshComponent * characterEntityMeshComponent = 	mCharacterEntity->GetUiMeshComponent();
+	characterEntityMeshComponent->SetWidthHeightLocal(metrics.mWidth, metrics.mHeight);
+
+
+	//mCharacterEntity->SetSize(metrics.mWidth, metrics.mHeight);
 
 
 	float characterEntityLocalPosX = -1.0f * mAdvanceX / 2  +metrics.mHoriBearingX + metrics.mWidth / 2;
 	float characterEntityLocalPosY =(baselineLocalPosY+ metrics.mHoriBearingY  + baselineLocalPosY  + (metrics.mHoriBearingY - metrics.mHeight))/2;
 
-	mCharacterEntity->SetPosition(characterEntityLocalPosX, characterEntityLocalPosY,-1.0f);
-	mCharacterEntity->GetTransform().UpdateWorldMatrix(GetTransform().GetWorldMatrix());
+
+	characterEntityMeshComponent->GetTransform().SetPositionLocal(characterEntityLocalPosX, characterEntityLocalPosY, -1.0f);
+
+
+	//mCharacterEntity->SetPosition(characterEntityLocalPosX, characterEntityLocalPosY,-1.0f);
+	//mCharacterEntity->GetTransform().UpdateWorldMatrix(GetTransform().GetWorldMatrix());
 
 }
 

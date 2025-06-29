@@ -5,6 +5,7 @@
 #include"Object/Camera/Camera.h"
 
 
+
 Quad::CollisionWorld::CollisionWorld(SpacePartitioningStructure<Collider>* partitioingStructure)
 	:mPartitioningStructure(partitioingStructure)
 {
@@ -78,10 +79,7 @@ void Quad::CollisionWorld::AddCollider(Collider* collider)
 {
 	//단일 충돌체만 추가
 	mPartitioningStructure->AddCollider(collider);
-	if (collider->GetDestObject()->GetName() == "OrthogoanlCamera2")
-	{
-		int a = 2;
-	}
+
 
 }
 
@@ -105,8 +103,13 @@ bool Quad::CollisionWorld::RayCasting(std::vector<Object*>& oObjectVector, const
 	
 
 	oObjectVector.reserve(colliderVector.size());
-	std::for_each(colliderVector.begin(), colliderVector.end(), 
-		[&oObjectVector](Collider* collider) {oObjectVector.push_back(collider->GetDestObject()); });
+	//std::for_each(colliderVector.begin(), colliderVector.end(),
+	//	[&oObjectVector](Collider* collider) {
+
+
+	//		MeshComponent* meshComponent = collider->GetDestMeshComponent();
+	//		Object* object = meshComponent->GetDestObject();
+	//		oObjectVector.push_back(object); });
 
 	return ret;
 
@@ -119,7 +122,8 @@ bool Quad::CollisionWorld::RayCastingFirst(Object*& oObject,  Ray& ray)
 	bool ret = mPartitioningStructure->RayCastingFirst(collider, ray); //그 collider을 가지고있는게 맞을거같은데? 공간분할구조가 근데 어차피 object이긴하지.
 	if (ret)
 	{
-		oObject = collider->GetDestObject();
+		//oObject = 	collider->GetDestMeshComponent()->GetDestObject();
+		//oObject = collider->GetDestObject();
 	}
 	return ret;
 
@@ -141,19 +145,21 @@ void Quad::CollisionWorld::FrsutumCullingObjects(std::vector<Object*>& oObjectVe
 	//	{  oObjectVector.push_back(collider->GetDestObject());  });
 
 
-	for (int i = 0; i < colliderVector.size(); ++i)
-	{
-		Object* object = colliderVector[i]->GetDestObject();
-		
-		
+	//for (int i = 0; i < colliderVector.size(); ++i)
+	//{
+	//	Object* object = colliderVector[i]->GetDestMeshComponent()->GetDestObject();
 
-		if (object->GetDrawFlag())
-		{
-			
-			oObjectVector.push_back(object);
+	//	//Object* object = colliderVector[i]->GetDestObject();
+	//	
+	//	
 
-		}
-	}
+	//	if (object->GetDrawFlag())
+	//	{
+	//		
+	//		oObjectVector.push_back(object);
+
+	//	}
+	//}
 
 
 	return;

@@ -9,11 +9,11 @@ namespace Quad
 		:Event(name), mGlobalEventFlag(true)
 	{
 
-		Object* capturedObject = Mouse::GetCapturedObject();
+	/*	Object* capturedObject = Mouse::GetCapturedObject();
 		if (capturedObject == nullptr)
 			return;
 
-		SetSystemID(capturedObject->GetSystem()->GetSystemID());
+		SetSystemID(capturedObject->GetSystem()->GetSystemID());*/
 
 
 	}
@@ -105,5 +105,14 @@ namespace Quad
 	int MouseEvent::GetWheelShift() const
 	{
 		return mWheelShift;
+	}
+	void MouseEvent::SetData(const MouseInputData& data)
+	{
+		mData = data;
+	}
+	const MouseInputData& MouseEvent::GetData()
+	{
+		return mData;
+		// TODO: 여기에 return 문을 삽입합니다.
 	}
 }

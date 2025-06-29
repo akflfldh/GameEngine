@@ -11,9 +11,9 @@
 #include"Collision/FrustumCollider.h"
 #include"Collision/SphereCollider.h"
 #include"Collision/OrientedCollider.h"
-#include"Component/ColliderComponent.h"
 #include"Collision/UiCollider.h"
 #include"Collision/RectCollider.h"
+//#include"Component/MeshComponent.h"
 
 namespace Quad
 {
@@ -78,7 +78,107 @@ namespace Quad
 
 	}
 
-	bool CollisionHelper::Intersect(const Collider* colliderA, const Collider* colliderB)
+
+
+
+	bool CollisionHelper::Intersect(BaseCollider* colliderA, BaseCollider* colliderB)
+	{
+		EBaseColliderType baseColliderTypeA = colliderA->GetBaseColliderType();
+		EBaseColliderType baseColliderTypeB = colliderB->GetBaseColliderType();
+
+		
+		Collider* collider3DA = nullptr;
+		Collider * collider3DB =nullptr;
+
+		UiCollider* colliderUiA = nullptr;
+		UiCollider* colliderUiB = nullptr;
+		
+		if (baseColliderTypeA == EBaseColliderType::eCollider)
+		{
+			collider3DA = static_cast<Collider*>(colliderA);
+		}
+		else
+		{
+			colliderUiA = static_cast<UiCollider*>(colliderA);
+		}
+
+
+		if (baseColliderTypeB == EBaseColliderType::eCollider)
+		{
+			collider3DB = static_cast<Collider*>(colliderB);
+		}
+		else
+		{
+			colliderUiB = static_cast<UiCollider*>(colliderB);
+		}
+
+
+		if (collider3DA !=nullptr )
+		{
+			if (collider3DB != nullptr)
+			{
+				return IntersectCC(collider3DA, collider3DB);
+
+			}
+			else
+			{
+				return IntersectUC(colliderUiB, collider3DA);
+			}
+		}
+		else
+		{
+			if (collider3DB != nullptr)
+			{
+				return IntersectUC(colliderUiA, collider3DB);
+
+			}
+			else
+			{
+				return false;		//일단 여기는 구현하지않았다. 후에 생각할것
+				//return Intersect(colliderUiB, collider3DA);
+			}
+
+
+
+		}
+
+
+
+
+
+	}
+
+
+
+	bool CollisionHelper::Intersect( BaseCollider* collider, const Ray& ray, float& oParameterT)
+	{
+		
+		EBaseColliderType baseColliderType = collider->GetBaseColliderType();
+
+		if (baseColliderType == EBaseColliderType::eCollider)
+		{
+			return IntersectCR(static_cast<Collider*>(collider), ray, oParameterT);
+
+		}
+		else
+		{
+			return IntersectUCR(static_cast<UiCollider*>(collider), ray, oParameterT);
+
+		}
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+	bool CollisionHelper::IntersectCC(const Collider* colliderA, const Collider* colliderB)
 	{
 
 
@@ -90,7 +190,7 @@ namespace Quad
 	
 	}
 
-	bool CollisionHelper::Intersect(const Collider* collider,const Ray& ray, float& oParameterT)
+	bool CollisionHelper::IntersectCR(const Collider* collider,const Ray& ray, float& oParameterT)
 	{
 		
 		EColliderType colliderType = collider->GetColliderType();
@@ -136,7 +236,7 @@ namespace Quad
 		return false;
 	}
 
-	bool CollisionHelper::Intersect(const UiCollider* collider, const Ray& ray, float& oParameterT)
+	bool CollisionHelper::IntersectUCR(const UiCollider* collider, const Ray& ray, float& oParameterT)
 	{
 		EUiColliderType uiColliderType = collider->GetColliderType();
 		
@@ -171,10 +271,7 @@ namespace Quad
 
 			//r = q - p0
 			DirectX::XMVECTOR r = DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&rayOrigin), DirectX::XMLoadFloat3(&p0));
-			if (rayOrigin.y > -14.0f)
-			{
-				int a = 2;
-			}
+		
 			
 
 			//r * v1 
@@ -219,7 +316,7 @@ namespace Quad
 		return false;
 	}
 
-	bool CollisionHelper::Intersect(const UiCollider* uiCollider, const Collider* collider)
+	bool CollisionHelper::IntersectUC(const UiCollider* uiCollider, const Collider* collider)
 	{
 		//rect Collider , box Collider == <ui, orthogonalCamera>
 
@@ -268,7 +365,7 @@ namespace Quad
 		return true;
 	}
 
-	Entity* CollisionHelper::Intersect(const std::vector<Entity*>& objectVector, const Ray& ray, float& oParameter)
+	/*Entity* CollisionHelper::Intersect(const std::vector<Entity*>& objectVector, const Ray& ray, float& oParameter)
 	{
 		float minT = FLT_MAX;
 
@@ -279,7 +376,7 @@ namespace Quad
 			float t = FLT_MAX;
 
 
-			Collider* collider = objectVector[i]->GetModel()->GetColliderComponent()->GetCollider();
+			BaseCollider* collider = objectVector[i]->GetComponent("MeshComponent")
 			if (collider == nullptr)
 				continue;
 
@@ -298,7 +395,7 @@ namespace Quad
 		return entity;
 
 
-	}
+	}*/
 
 
 	bool CollisionHelper::IntersectBoxX2(const Collider* colliderA, const Collider* colliderB)

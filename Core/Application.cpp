@@ -78,317 +78,14 @@
 #include"Core/CollisionWorldFactory.h"
 
 
+#include"GlobalAppHelper.h"
+
 #undef EngineMode
 
 namespace Quad
 {
 
-LRESULT CALLBACK
-WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    return   Application::GetInstance()->Proc(hwnd,msg,wParam,lParam);
-}
 
-
-
-LRESULT Application::Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-
-    switch (msg)
-    {
-    case WM_CREATE:
-        //첫 위치정보가져올수도있고, 움직일경우에도 화면상에서의 윈도우의 위치정보가져올수있다.
-        //그러면 도킹되어진 창들도 같이 움직이게 한다는거지.
-        //당연히 분리된 창들은 영향을 안받는거고
-
-
-        return 0;
-
-    case WM_SIZE:
-        mClientWidth = LOWORD(lParam);
-        mClientHeight = HIWORD(lParam);
-        //최대 최소
-        //사이즈가변화고있을땐 onresize호출하지않는다.
-        if (mDevice)
-        {
-            /*mFileUiWindowWidth = mClientWidth;
-
-            MoveWindow(mFileHwnd, 0, mClientHeight - mFileUiWindowHeight, mFileUiWindowWidth, mFileUiWindowHeight, true);
-
-
-            mRenderWindowHeight = mClientHeight - mFileUiWindowHeight;
-            mRenderWindowWidth= mRenderWindowHeight * 23 / 20;
-
-            MoveWindow(mRenderHwnd, (mClientWidth - mRenderWindowWidth) / 2, 0, mRenderWindowWidth, mRenderWindowHeight,false);
-
-            mResourceController.Resize();*/
-
-            //SendMessage(mFileHwnd, WM_SIZE, wParam, lParam);
-
-            if (wParam == SIZE_MAXIMIZED)
-            {
-                mIsMinimized = false;
-                mIsMaximized = true;
-               // OnResize();
-            }
-            else if (wParam == SIZE_MINIMIZED)
-            {
-                mIsMinimized = true;
-                mIsMaximized = false;
-                //OnResize();
-
-            }
-            else if (wParam == SIZE_RESTORED)
-            {
-
-                if (mIsMinimized)
-                {
-                    mIsMinimized = false;
-                   // OnResize();
-                }
-                else if (mIsMaximized)
-                {
-                    mIsMaximized = false;
-                    //OnResize();
-                }
-                else if (mIsResizing)
-                {
-
-
-
-
-                }
-                else// API call such as SetWindowPos or mSwapChain->SetFullscreenState.
-                {
-                   // OnResize();
-                }
-            }
-        }
-        return 0;
-        //return DefFrameProc(hwnd, mHwndClient, msg, wParam, lParam);
-    case WM_ENTERSIZEMOVE ://창의크기조절테투리를 클릭할때 전달되는 메시지
-        mGameTimer.Stop();
-        mIspaused = true;
-        mIsResizing = true;
-        return 0;
-    case WM_EXITSIZEMOVE ://창의크기조절테두리에서 마우스를 땟을때 
-        mGameTimer.Start();
-        mIspaused = false;
-        mIsResizing = false;
-        //OnResize();
-        return 0;
-
-    case WM_GETMINMAXINFO:
-        ((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
-        ((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200;
-        return 0;
-
-    case WM_LBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-        MouseDown(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-
-        return 0;
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-        MouseUp(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        return 0;
-
-    case WM_MOUSEMOVE:
-        MouseMove(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        return 0;
-
-    case WM_DROPFILES:
-    
-      //  SendMessage(mFileHwnd, WM_DROPFILES, wParam, lParam);
-
-    //    int count = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, nullptr, 0);
-    //    wchar_t filePath[MAX_PATH];
-    //    std::wstring filePathAll;
-    //    for (int i = 0; i < count; ++i)
-    //    {
-    //        int characterCount = DragQueryFile((HDROP)wParam, i, filePath, MAX_PATH);
-    //        //filePath[characterCount] = '\0';
-
-    //        if (!(GetFileAttributes(filePath) & FILE_ATTRIBUTE_DIRECTORY))
-    //        {
-    //            filePathAll += filePath;
-
-
-    //            IWICBitmapDecoder* pDecoder = NULL;
-    //            IWICBitmapFrameDecode* pSource = NULL;
-    //            IWICStream* pStream = NULL;
-    //            IWICFormatConverter* pConverter = NULL;
-    //            IWICBitmapScaler* pScaler = NULL;
-
-    //            HRESULT hr = mIWICFactory->CreateDecoderFromFilename(
-    //                filePath,
-    //                NULL,
-    //                GENERIC_READ,
-    //                WICDecodeMetadataCacheOnLoad,
-    //                &pDecoder
-    //            );
-
-
-    //            if (SUCCEEDED(hr))
-    //            {
-    //                // Create the initial frame.
-    //                hr = pDecoder->GetFrame(0, &pSource);
-    //            }
-
-    //            if (SUCCEEDED(hr))
-    //            {
-
-    //                // Convert the image format to 32bppPBGRA
-    //                // (DXGI_FORMAT_B8G8R8A8_UNORM + D2D1_ALPHA_MODE_PREMULTIPLIED).
-    //                hr = mIWICFactory->CreateFormatConverter(&pConverter);
-
-    //            }
-
-
-    //            if (SUCCEEDED(hr))
-    //            {
-    //                hr = pConverter->Initialize(
-    //                    pSource,
-    //                    GUID_WICPixelFormat32bppPBGRA,
-    //                    WICBitmapDitherTypeNone,
-    //                    NULL,
-    //                    0.f,
-    //                    WICBitmapPaletteTypeMedianCut
-    //                );
-    //            }
-
-    //            if (SUCCEEDED(hr))
-    //            {
-    //                IWICBitmap* pWicBitmap;
-    //                HRESULT hr = mIWICFactory->CreateBitmapFromSource(
-    //                    pConverter,  // IWICBitmapFrameDecode 인터페이스
-    //                    WICBitmapCacheOnDemand,
-    //                    &pWicBitmap
-    //                );
-
-    //                ID2D1RenderTarget* ID21Rendertarget;
-    //                pFactory->CreateWicBitmapRenderTarget(pWicBitmap, D2D1::RenderTargetProperties(), &ID21Rendertarget);
-    //                // Create a Direct2D bitmap from the WIC bitmap.
-    //             /*   hr = ID21Rendertarget->CreateBitmapFromWicBitmap(
-    //                    pConverter,
-    //                    NULL,
-    //                    pWicBitmap
-    //                );*/
-
-    //                ID2D1Bitmap* bitmap=nullptr;
-    //                hr = ID21Rendertarget->CreateBitmapFromWicBitmap(pConverter, &bitmap);
-    //                auto size =bitmap->GetSize();
-    //                D2D1_RECT_F rt;
-    //                rt.top = 0;
-    //                rt.bottom =500;
-    //                rt.left = 0;
-    //                rt.right = 500;
-    //                
-    //                PAINTSTRUCT ps;
-    //                HDC hdc = GetDC(mFileHwnd);
-    //                m_pRenderTarget->BeginDraw();
-    //                m_pRenderTarget->DrawBitmap(bitmap, rt, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
-    //                    rt);
-    //                hr= m_pRenderTarget->EndDraw();
-    //                ReleaseDC(mFileHwnd,hdc);
-    //                InvalidateRect(mFileHwnd, NULL, FALSE);
-    //                UpdateWindow(mFileHwnd);
-    //                int a = 2;
-    //            }
-
-    //            SafeRelease(&pDecoder);
-    //            SafeRelease(&pSource);
-    //            SafeRelease(&pStream);
-    //            SafeRelease(&pConverter);
-    //            SafeRelease(&pScaler);
-
-    //            return hr;
-    //        }
-
-
-    //    }
-    //    MessageBox(hwnd, filePathAll.c_str(), L"asd", MB_OK);
-    //}
-
-
-    return 0;
-
-
-
-
-    case WM_DESTROY://창이 파괴될때 전달되는 메시지
-        PostQuitMessage(0);
-        return 0;
-    }
-
-   // return DefWindowProc(hwnd, msg, wParam, lParam);
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-
-//LRESULT Application::FileWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-//{
-//    HDC hdc;
-//    PAINTSTRUCT ps;
-//
-//    switch (msg)
-//    {
-//    case WM_DROPFILES:
-//    {
-//        int count = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, nullptr, 0);
-//        wchar_t filePath[MAX_PATH];
-//        std::wstring filePathAll;
-//        for (int i = 0; i < count; ++i)
-//        {
-//            int characterCount = DragQueryFile((HDROP)wParam, i, filePath, MAX_PATH);
-//            //filePath[characterCount] = '\0';
-//
-//            if (!(GetFileAttributes(filePath) & FILE_ATTRIBUTE_DIRECTORY))
-//            {
-//                DragAndDropEvent* pEvent = new DragAndDropEvent(EventType::eDragAndDrop);
-//                pEvent->SetFilePath(filePath);
-//                mResourceController.AddEvent(pEvent);
-//                filePathAll += filePath;
-//            }
-//
-//        }
-//        MessageBox(hwnd, filePathAll.c_str(), L"asd", MB_OK);
-//
-//    }
-//        break;
-//    case WM_PAINT:
-//       /*hdc= BeginPaint(hwnd, &ps);
-//        TextOut(hdc, 100, 100, _T("aaa"), _tcslen(_T("aaa")));
-//        EndPaint(hwnd, &ps);*/
-//
-//        break;
-//
-//    case WM_SIZE:
-//       /* if (m_pRenderTarget != NULL)
-//        {
-//           
-//            InvalidateRect(hwnd, NULL, FALSE);
-//        }*/
-//        if (mDevice)
-//        {
-//            mUiRenderSystem.OnResize(mFileUiWindowWidth, mFileUiWindowHeight);
-//            mFileUiSystem.Resize(mFileUiWindowWidth, mFileUiWindowHeight);
-//
-//
-//        }
-//          break;
-//    case WM_CREATE:
-//        
-//        break;
-//
-//    case WM_DESTROY:
-//        PostQuitMessage(0);
-//        return 0;
-//    }
-//
-//    return DefMDIChildProc(hwnd, msg, wParam, lParam);
-//
-//}
 
 Application::Application()
 {
@@ -412,6 +109,9 @@ bool Application::Initialize(AppInitData& appInitData)
 
     mHinstance = appInitData.hInstance;
     mShowcmd = appInitData.nShowCmd;
+
+    GlobalAppHelper * globalAppHelper =    GlobalAppHelper::GetInstance();
+    globalAppHelper->Initialize(mHinstance);
     //if (!InitFrameWindow())
     //    return false;
 
@@ -442,11 +142,10 @@ bool Application::Initialize(AppInitData& appInitData)
 
    // HarfBuzzTest();
 
+    mRootSignatureGeneratorHelper.Initialize(mDevice);
+    mGraphicPipelineStateGeneratorHelper.Initialize(mDevice);
 
-
-
-
-     InitSystems();
+    InitSystems();
     
 
 
@@ -834,6 +533,12 @@ void Application::InitSystems()
    // mResourceLoader.LoadProjectData();
 
  //   SpacePartitioningStructureFactory<UiCollider>::GetInstance();
+
+
+    CreateDefaultCoreResource();
+
+
+
     mProgramDirector->Initialize();
 
 
@@ -907,8 +612,8 @@ void Application::InitCommonSystems()
     mLineFactory.Initialize(mDevice);
 
 
-    mKeyBoard.Initialize();
-    mMouse.Initlaize(mHinstance);
+   // mKeyBoard.Initialize();
+ //   mMouse.Initlaize(mHinstance);
 
     mCollisionHelper.Initialize();
     mColliderGenerator.Initialize(mDevice, &mGraphicCommandObject);
@@ -2211,7 +1916,7 @@ void Application::PreUpdate(GameTimer& timer)
     float deltaTime = timer.GetDeltaTime();
     mResourceController.Update();
 
-    mInputSystem.Update(deltaTime);
+    //mInputSystem.Update(deltaTime);
 
     mProgramDirector->PreUpdate(deltaTime);
 }
@@ -2239,12 +1944,16 @@ void Application::EndUpdate(GameTimer& timer)
     float deltaTime = timer.GetDeltaTime();
     mProgramDirector->EndUpdate(deltaTime);
 
-    mMouse.EndUpdate();
+   // mMouse.EndUpdate();
 
-    mEditGameObjectManager.RemoveDeadObject();
-    mEditObjectManager.RemoveDeadObject();
-    mRuntimeGameObjectManager.RemoveDeadObject();
-    mRuntimeObjectManager.RemoveDeadObject();
+
+
+
+
+    //mEditGameObjectManager.RemoveDeadObject();
+   // mEditObjectManager.RemoveDeadObject();
+   //mRuntimeGameObjectManager.RemoveDeadObject();
+   // mRuntimeObjectManager.RemoveDeadObject();
 
 }
 
@@ -2397,6 +2106,74 @@ void Application::AddEffect(RenderSystem* renderSystem, Effect* effect)
     renderSystem->AddEffect(*effect, ESystemType::eDockingSystem);
     //renderSystem->AddEffect(*effect, ESystemType::eUiSystem);
     renderSystem->AddEffect(*effect, ESystemType::eWindowLayoutSystem);
+
+}
+
+void Application::CreateDefaultCoreResource()
+{
+
+    if (mGraphicCommandObject.GetCloseState())
+        mGraphicCommandObject.ResetCommandList(nullptr);
+
+    StaticMesh * defaultCoreRect = static_cast<StaticMesh*>(mMeshManager.CreateMeshFromFile("DefaultEntireRect3", EMeshType::eStaticMesh,10));
+    defaultCoreRect->SetEngineContentItemFlag(true);
+
+    std::vector<StaticVertex>defaultCoreRectVertexVector(4);
+    defaultCoreRectVertexVector[0].mPos = { -1,1,1 };
+    defaultCoreRectVertexVector[1].mPos = { -1,-1,1 };
+    defaultCoreRectVertexVector[2].mPos = { 1,-1,1 };
+    defaultCoreRectVertexVector[3].mPos = { 1,1,1 };
+
+
+    defaultCoreRectVertexVector[0].mTex = { 0,0 };
+    defaultCoreRectVertexVector[1].mTex = { 1,0 };
+    defaultCoreRectVertexVector[2].mTex = { 0,1 };
+    defaultCoreRectVertexVector[3].mTex = { 1,1 };
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexUploadBuffer;
+    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexDefaultBuffer =   Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectVertexVector.data(), sizeof(StaticVertex), 4,
+        defaultCoreRectVertexUploadBuffer);
+
+
+    defaultCoreRect->SetVertexBuffer(defaultCoreRectVertexDefaultBuffer);
+    defaultCoreRect->SetVertexNum(4);
+
+
+    std::vector<MeshIndexType> defaultCoreRectIndexVector(6);
+    defaultCoreRectIndexVector[0] = 0;
+    defaultCoreRectIndexVector[1] = 1;
+    defaultCoreRectIndexVector[2] = 2;
+
+    defaultCoreRectIndexVector[3] = 1;
+    defaultCoreRectIndexVector[4] = 3;
+    defaultCoreRectIndexVector[5] = 2;
+
+
+    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexUploadBuffer;
+    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexDefaultBuffer = Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectIndexVector.data(), sizeof(MeshIndexType), 6,
+        defaultCoreRectIndexUploadBuffer);
+
+
+    defaultCoreRect->SetIndexBuffer(defaultCoreRectIndexDefaultBuffer);
+    defaultCoreRect->SetIndexNum(6);
+
+    std::vector<SubMesh> defaultCoreRectSubMeshVector(1);
+    defaultCoreRectSubMeshVector[0].mID = 0;
+    defaultCoreRectSubMeshVector[0].mIndexRange.first = 0;
+    defaultCoreRectSubMeshVector[0].mIndexRange.second = 6;
+    defaultCoreRectSubMeshVector[0].mMesh = defaultCoreRect;
+    defaultCoreRectSubMeshVector[0].mVertexNum = 4;
+    defaultCoreRectSubMeshVector[0].mVertexOffset = 0;
+
+
+    defaultCoreRect->SetSubMeshVector(std::move(defaultCoreRectSubMeshVector));
+
+  //  defaultCoreRect->SetVertexNum(4);
+
+    mGraphicCommandObject.ExecuteCommandList();
+    mGraphicCommandObject.FlushCommandQueue();
+
+
 
 }
 

@@ -107,7 +107,7 @@ void Quad::CameraFixWindowResizeEventComponent::AdjustCameraPos()
 	{
 		posWorldY += cameraViewHeight / 2;
 	}
-	DirectX::XMFLOAT3 beforePosW = mDestCamera->GetTransform().GetPositionWorld();
+	DirectX::XMFLOAT3 beforePosW = mDestCamera->GetObjectPositionWorld();
 
 	beforePosW.x = posWorldX;
 	beforePosW.y = posWorldY;

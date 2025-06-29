@@ -3,7 +3,7 @@
 namespace Quad
 {
 	Texture::Texture(const std::string & name)
-		:Asset(name,EAssetType::eTexture)
+		:Asset(name,EAssetType::eTexture),mTextureType(ETextureType::eDefaultTexture)
 	{
 	}
 
@@ -33,16 +33,16 @@ namespace Quad
 		return mViewIndex;
 	}
 
-	void Texture::SetTextureFormat(ETextureFormat format)
+	void Texture::SetTextureColorFormat(EColorFormat format)
 	{
-		mTextureFormat = format;
+		mTextureColorFormat = format;
 
 
 	}
 
-	ETextureFormat Texture::GetTextureFormat() const
+	EColorFormat Texture::GetTextureColorFormat() const
 	{
-		return mTextureFormat;
+		return mTextureColorFormat;
 	}
 
 	void Texture::SetTextureType(ETextureType type)
@@ -53,6 +53,17 @@ namespace Quad
 	ETextureType Texture::GetTextureType() const
 	{
 		return mTextureType;
+	}
+
+	void Texture::SetTextureFormat(ETextureFormat format)
+	{
+
+		mTextureFormat = format;
+	}
+
+	ETextureFormat Texture::GetTextureFormat() const
+	{
+		return mTextureFormat;
 	}
 
 	void Texture::Serialize(const std::string& tag )

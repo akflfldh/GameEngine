@@ -17,7 +17,7 @@ void Quad::AnimationUpdateSystem::Update(float deltaTime)
 		if (objectElement->GetStartObjectFlag())
 			continue;
 
-		AnimationComponent * animationComponent = objectElement->GetModel()->GetAnimationComponent();
+		AnimationComponent* animationComponent = objectElement->GetComponent<AnimationComponent>("AnimationComponent");
 		animationComponent->Update(deltaTime);
 	}
 

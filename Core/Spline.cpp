@@ -15,7 +15,7 @@ Quad::Spline::Spline(const std::string& name)
 	SetEffectName("Spline.effect");
 
 
-	GetModel()->AddComponernt(Quad::EComponentType::eUiColliderComponent);
+	//GetModel()->AddComponernt(Quad::EComponentType::eUiColliderComponent);
 
 }
 
@@ -177,7 +177,7 @@ void Quad::Spline::Evaulate()
 	//ColliderComponent * colliderComponent =	GetModel()->GetColliderComponent();
 //	BoxCollider* boxCollider = static_cast<BoxCollider*>(colliderComponent->GetCollider());
 	////boxCollider->SetMinMaxVertex(minPos, maxPos);
-	GetTransform().SetDirtyFlag(true);
+	//GetTransform().SetDirtyFlag(true);
 
 
 }

@@ -1,5 +1,7 @@
 ﻿#include "Collision/OrientedCollider.h"
 
+#include<Parser/JsonParser.h>
+
 Quad::OrientedBoxCollider::OrientedBoxCollider()
 	:Collider(EColliderType::eOrientedBox)
 {
@@ -9,34 +11,21 @@ Quad::OrientedBoxCollider::~OrientedBoxCollider()
 {
 }
 
-void Quad::OrientedBoxCollider::OnEvent(Event* event)
+void Quad::OrientedBoxCollider::Update(const DirectX::XMFLOAT4X4& transformMatrix)
 {
+}
 
+void Quad::OrientedBoxCollider::Update(const DirectX::XMMATRIX& transformMatrix)
+{
+}
 
-
+void Quad::OrientedBoxCollider::SetPositionLocal(const DirectX::XMFLOAT3& pos)
+{
+	mBoundingOrientedBoxOrigin.Center = pos;
 
 }
 
-void Quad::OrientedBoxCollider::Update(float deltaTime)
-{
 
-
-
-}
-
-void Quad::OrientedBoxCollider::Update(float deltaTime, const DirectX::XMFLOAT4X4& transformMatrix)
-{
-
-
-
-}
-
-void Quad::OrientedBoxCollider::Update(float deltaTime, const DirectX::XMMATRIX& transformMatrix)
-{
-
-
-
-}
 
 void Quad::OrientedBoxCollider::Serialize()
 {
@@ -57,22 +46,7 @@ void Quad::OrientedBoxCollider::DeSerialize()
 
 }
 
-void Quad::OrientedBoxCollider::SetMesh(Mesh* mesh)
-{
-}
 
-
-void Quad::OrientedBoxCollider::Initialize(Mesh * mesh ,const DirectX::XMFLOAT3 & origin, const DirectX::XMFLOAT3 & extents)
-{
-	Collider::Initialize(mesh );
-
-
-	mBoundingOrientedBox.Center = origin;
-	mBoundingOrientedBox.Extents =  extents;
-	//mBoundingOrientedBox.Orientation 방향을 나타내는단위쿼터니언
-
-
-}
 
 const DirectX::BoundingOrientedBox& Quad::OrientedBoxCollider::GetBoundingVolume() const
 {

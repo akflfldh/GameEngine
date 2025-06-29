@@ -9,10 +9,13 @@
 
 #include"Parser/JsonParser.h"
 #include"Core/CameraEventComponentFactory.h"
+
+#include"Component/SceneComponent.h"
+//#include "SceneComponent.h"
 namespace Quad
 {
 	Camera::Camera(const std::string& name, ECameraType cameraType)
-		:Object(name,EObjectType::eCamera),mType(cameraType), mNear(1.0f), mFar(100000.0f)
+		:Object(EObjectType::eCamera),mType(cameraType), mNear(1.0f), mFar(100000.0f)
 	{
 
 		//카메라 종류에따라 콜라이더 적절히 얻고 설정
@@ -39,26 +42,6 @@ namespace Quad
 		System* system = GetSystem();
 		if (system != nullptr)
 			system->RegisterEntityToEvent("WindowResizeEvent", this);
-
-
-		//if (mType == ECameraType::ePerspectiveCamera)
-		//{
-		//	DirectX::XMStoreFloat4x4(&mProjMatrix, DirectX::XMMatrixPerspectiveFovLH(mFovY, mAspect, mNear, mFar));
-		//	mViewFrustumCollider = ColliderGenerator::CreateCameraFrustumCollider(this);
-		//	mViewFrustumCollider->SetSystem(system);
-		//}
-		//else
-		//{
-		//	//DirectX::XMStoreFloat4x4(&mProjMatrix, DirectX::XMMatrixOrthographicLH(mViewWidth, mViewHeight, mNear, mFar));
-		//	DirectX::XMStoreFloat4x4(&mProjMatrix, DirectX::XMMatrixOrthographicLH(clientWidth, clientHeight, mNear, mFar));
-		//	mOrthogonalViewCollider = ColliderGenerator::CreateBoxCameraCollider(this);
-		//	mOrthogonalViewCollider->SetSystem(system);
-
-		//}
-		mTransform.Initialize();//위험하다.
-		//UpdateViewMatrix();
-
-
 
 	}
 
@@ -197,9 +180,10 @@ namespace Quad
 
 	void Camera::SetPositionWorld(float x, float y, float z)
 	{
-		GetTransform().SetPositionWorld({ x,y,z });
+		SetPositionWorld({ x,y,z });
 
 	}
+
 
 	void Camera::SetPosition(const DirectX::XMFLOAT3& pos)
 	{
@@ -207,20 +191,21 @@ namespace Quad
 		GetTransform().SetPositionLocal(pos);
 	}
 
+
 	void Camera::SetPositionWorld(const DirectX::XMFLOAT3& pos)
 	{
-		GetTransform().SetPositionWorld(pos);
-
+		mRootSceneComponent->SetPositionWorld(pos);
 	}
+
 
 
 	void Camera::UpdateViewMatrix()
 	{
 		Transform& transform = GetTransform();
-		DirectX::XMFLOAT3 lookWorld = transform.GetLookWorld();
-		DirectX::XMFLOAT3 rightWorld = transform.GetRightWorld();
-		DirectX::XMFLOAT3 upWorld = transform.GetUpWorld();
-		DirectX::XMFLOAT3 posWorld = transform.GetPositionWorld();
+		DirectX::XMFLOAT3 lookWorld = GetObjectLookWorld();
+		DirectX::XMFLOAT3 rightWorld = GetObjectRightWorld();
+		DirectX::XMFLOAT3 upWorld = GetObjectUpWorld();
+		DirectX::XMFLOAT3 posWorld = GetObjectPositionWorld();
 
 
 		DirectX::XMFLOAT4X4 viewMatrix;

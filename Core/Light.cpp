@@ -3,7 +3,7 @@
 #include"Parser/JsonParser.h"
 
 Quad::Light::Light(const std::string& name, ELightType type)
-	:Object(name,EObjectType::eLight),mLightType(type), mLight({ 1.0f,1.0f,1.0f }), mSpotDegreeRange(DirectX::XM_PI / 4.0f)
+	:Object(EObjectType::eLight),mLightType(type), mLight({ 1.0f,1.0f,1.0f }), mSpotDegreeRange(DirectX::XM_PI / 4.0f)
 {
 }
 
@@ -43,7 +43,7 @@ ELightType Quad::Light::GetLightType() const
 
 DirectX::XMFLOAT3 Quad::Light::GetLightDirect() const
 {
-	return GetTransform().GetLookWorld();
+	return GetTransform().GetLookLocal();
 }
 
 DirectX::XMFLOAT3 Quad::Light::GetLight() const
@@ -51,10 +51,6 @@ DirectX::XMFLOAT3 Quad::Light::GetLight() const
 	return mLight;
 }
 
-DirectX::XMFLOAT3 Quad::Light::GetPosition() const
-{
-	return GetTransform().GetPositionWorld();
-}
 
 float Quad::Light::GetSpotDegree() const
 {

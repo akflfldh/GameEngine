@@ -13,7 +13,7 @@ Quad::SplineCollider::~SplineCollider()
 
 }
 
-void Quad::SplineCollider::Update(float deltaTime)
+void Quad::SplineCollider::Update(const DirectX::XMFLOAT4X4& transformMatrix)
 {
 
 

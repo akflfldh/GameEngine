@@ -5,7 +5,7 @@
 #include"Map/Map.h"
 
 
-#include"Component/MeshComponent.h"
+#include"Component/StaticMeshComponent.h"
 #include"Core/Event.h"
 
 
@@ -14,11 +14,13 @@ namespace Quad
 
 
 	Entity::Entity(const std::string& name)
-		:Object(name, EObjectType::eEntity)
+		:Object(EObjectType::eEntity)
 	{
 
-		GetModel()->AddComponernt(EComponentType::eMeshComponent);
-		GetModel()->AddComponernt(EComponentType::eColliderComponent);
+		AddComponent<StaticMeshComponent>("StaticMeshComponent");
+
+	//	GetModel()->AddComponernt(EComponentType::eMeshComponent);
+		//GetModel()->AddComponernt(EComponentType::eColliderComponent);
 	}
 
 
@@ -63,12 +65,6 @@ namespace Quad
 
 	void Entity::Update(float deltaTime)
 	{
-
-		//유저의 업데이트
-		mTransform.Update();
-		//if(mModel!=nullptr)
-		//	mModel->Update(deltaTime);
-
 		Object::Update(deltaTime);
 		//유저업데이트 끝
 	}
@@ -183,11 +179,6 @@ namespace Quad
 	void Entity::InitCreating()
 	{
 	
-		Quad::Model* model = GetModel();
-		Quad::MeshComponent* meshComponent = model->GetMeshComponent();
-		meshComponent->SetMesh(MeshManager::GetMesh("Cube"));
-
-
 
 	}
 

@@ -4,26 +4,35 @@
 Quad::SphereCollider::SphereCollider()
 	:Collider(EColliderType::eSphere)
 {
+	mBoundingSphere.Center = { 0,0,0 };
+	mBoundingSphere.Radius = 1.0f;
+
+
 }
 
 Quad::SphereCollider::~SphereCollider()
 {
 }
 
-void Quad::SphereCollider::OnEvent(Event* event)
+
+void Quad::SphereCollider::Update(const DirectX::XMFLOAT4X4& transformMatrix)
 {
 }
 
-void Quad::SphereCollider::Update(float deltaTime)
+void Quad::SphereCollider::Update(const DirectX::XMMATRIX& transformMatrix)
 {
 }
 
-void Quad::SphereCollider::Update(float deltaTime, const DirectX::XMFLOAT4X4& transformMatrix)
+void Quad::SphereCollider::SetRadiusLocal(float radius)
 {
+	mBoundingSphereOrigin.Radius = radius;
+
 }
 
-void Quad::SphereCollider::Update(float deltaTime, const DirectX::XMMATRIX& transformMatrix)
+void Quad::SphereCollider::SetPositionLocal(const DirectX::XMFLOAT3& pos)
 {
+	mBoundingSphereOrigin.Center = pos;
+
 }
 
 void Quad::SphereCollider::Serialize()
@@ -45,18 +54,8 @@ void Quad::SphereCollider::DeSerialize()
 
 }
 
-void Quad::SphereCollider::SetMesh(Mesh* mesh)
-{
-}
 
-void Quad::SphereCollider::Initialize(Mesh * mesh ,const DirectX::XMFLOAT3 & center, float radius)
-{
-	Collider::Initialize(mesh);
 
-	mBoundingSphere.Center = center;
-	mBoundingSphere.Radius = radius;
-
-}
 
 const DirectX::BoundingSphere& Quad::SphereCollider::GetBoundingVolume() const
 {

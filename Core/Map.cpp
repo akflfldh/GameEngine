@@ -19,8 +19,6 @@
 
 #include"Parser/JsonParser.h"
 #include"SpacePartitioningStructureFactory.h"
-#include"Component/ColliderComponent.h"
-#include"ObjectManager/RuntimeObjectManager.h"
 
 #include"CollisionWorldFactory.h"
 #include"Component/UiColliderComponent.h"
@@ -29,15 +27,20 @@
 
 
 #include"RegisterAnimStateTransitionCallbackClassManager.h"
-
 #include<sstream>
 #include"RegisterAnimStateTransitionCallbackClassManager.h"
+
+
+#include<BaseComponent.h>
+#include<Component/IMeshComponent.h>
+#include<Component/ColliderBaseComponent.h>
 
 namespace Quad
 {
 
 	Quad::Map::Map()
-		:mObjectManager(nullptr), mAnimationUpdateSystem(new AnimationUpdateSystem), mRegisterAnimStateTransitionCallbackClassManager(new RegisterAnimStateTransitionCallbackClassManager(this))
+		/*:mObjectManager(nullptr), mAnimationUpdateSystem(new AnimationUpdateSystem), mRegisterAnimStateTransitionCallbackClassManager(new RegisterAnimStateTransitionCallbackClassManager(this))*/
+		:mObjectManager(nullptr), mAnimationUpdateSystem(new AnimationUpdateSystem), mRegisterAnimStateTransitionCallbackClassManager(nullptr)
 
 	{
 		
@@ -49,20 +52,6 @@ namespace Quad
 		delete mRegisterAnimStateTransitionCallbackClassManager;
 	}
 
-
-	void Map::PrintObjectName()
-	{
-
-		OutputDebugStringA("ssssssssssssssssssssssssssssss\n");
-		for (auto& element : mObjectVector)
-		{
-			std::stringstream ss;
-			ss << element->GetName() << "\n";
-			OutputDebugStringA(ss.str().c_str());
-		}
-		OutputDebugStringA("sssssssssssssssssssssssssssssss\n");
-
-	}
 
 	void Map::Initialize(System* system, bool playMode, DirectX::XMFLOAT3 backgroundColor)
 	{
@@ -87,7 +76,7 @@ namespace Quad
 	void Map::Start()
 	{
 		//mEditSceneGraph.Start();
-		mRegisterAnimStateTransitionCallbackClassManager->Start();
+	//	mRegisterAnimStateTransitionCallbackClassManager->Start();
 
 
 
@@ -144,7 +133,6 @@ namespace Quad
 		
 
 
-
 		//default UI
 
 		VectorSpace<UiCollider>* mainSpacePartitionStructureUi = static_cast<VectorSpace<UiCollider>*>(SpacePartitioningStructureFactory<UiCollider>::CreateSpacePartitioningStructure("VectorSpace"));
@@ -164,7 +152,6 @@ namespace Quad
 		SetMainCamera(uiMainCamera, 0);
 
 		//default 3D
-
 
 
 		VectorSpace<Collider>* mainSpacePartitionStructure = static_cast<VectorSpace<Collider>*>(SpacePartitioningStructureFactory<Collider>::CreateSpacePartitioningStructure("VectorSpace"));
@@ -201,6 +188,10 @@ namespace Quad
 
 			}
 		}*/
+
+
+
+
 	}
 
 	//Gizmo* Map::GetGizmo() const
@@ -263,6 +254,11 @@ namespace Quad
 		return mMapLayerOptionVector[mapLayerIndex].mViewportAutoFlag;
 	}
 
+	void Map::NotifyResizeMapLayer(int mapLayerIndex)
+	{
+		mSystem->NotifyResizeMapLayer(mapLayerIndex, mMapLayerVector[mapLayerIndex].mViewPort, mMapLayerVector[mapLayerIndex].mViewPortGlobal);
+	}
+
 	/*void Map::SetMainUserCamera()
 	{
 		for(int i=0; i<mMapLayerVector.size(); ++i)
@@ -295,7 +291,9 @@ namespace Quad
 
 		//scene graph Add
 		if (mEditSceneGraph.Add(object) == false)
-			return; //?대? ?ㅼ뼱媛??ㅻ툕?앺듃.
+			return; //
+
+		object->mMap = this;
 
 
 		if (object->GetObjectType() == EObjectType::eUiEntity || object->GetObjectType()==EObjectType::eSpline)
@@ -309,18 +307,6 @@ namespace Quad
 			//object->SetMapLayer(mapLayerID);
 		}
 
-		//coliiderWorld
-
-
-
-
-		std::queue<Object*> objectQueue;
-		objectQueue.push(object);
-		
-		while (!objectQueue.empty())
-		{
-			Object * object =objectQueue.front();
-			objectQueue.pop();
 
 			switch (object->GetObjectType())
 			{
@@ -328,9 +314,7 @@ namespace Quad
 
 			{
 				Entity* entity = (Entity*)object;
-				Collider* collider = entity->GetModel()->GetColliderComponent()->GetCollider();
-				if (collider != nullptr)
-					mDefault3DCollisionWorld->AddCollider(collider);
+				
 			}
 			break;
 
@@ -347,47 +331,26 @@ namespace Quad
 
 			case EObjectType::eLine:
 			{
-				ColliderComponent * colliderComponent = object->GetModel()->GetColliderComponent();
-				if (colliderComponent != nullptr)
-				{
-					mDefault3DCollisionWorld->AddCollider(colliderComponent->GetCollider());
-					//	mLineBaseVector.push_back((LineBase*)object);
-				}
+				//ColliderComponent * colliderComponent = object->GetModel()->GetColliderComponent();
+				//if (colliderComponent != nullptr)
+				//{
+				//	mDefault3DCollisionWorld->AddCollider(colliderComponent->GetCollider());
+				//	//	mLineBaseVector.push_back((LineBase*)object);
+				//}
 			}
 			break;
 			case EObjectType::eUiEntity:
 			case EObjectType::eSpline:
 			{
-				UiColliderComponent* uiColliderComponent = object->GetModel()->GetUiColliderComponent();
-				if (uiColliderComponent != nullptr)
-				{
-					mDefaultUiCollisionWorld->AddCollider(uiColliderComponent->GetCollider());
-					//	mLineBaseVector.push_back((LineBase*)object);
-				}
+				//UiColliderComponent* uiColliderComponent = object->GetModel()->GetUiColliderComponent();
+				//if (uiColliderComponent != nullptr)
+				//{
+				//	mDefaultUiCollisionWorld->AddCollider(uiColliderComponent->GetCollider());
+				//	//	mLineBaseVector.push_back((LineBase*)object);
+				//}
 			}
 			break;
 			}
-
-
-
-			const std::vector<ObjectSmartPointer>  & childObjectVector = object->GetChildObjectVector();
-
-			for_each(childObjectVector.begin(), childObjectVector.end(), [&objectQueue](const ObjectSmartPointer & object)
-				{  objectQueue.push(object.GetPointer()); });
-
-		}
-
-
-
-
-
-
-	
-
-
-
-
-		object->mMap = this;
 
 
 
@@ -397,34 +360,23 @@ namespace Quad
 
 	bool Map::RemoveObject(Object* object)
 	{
+		//한번호출했으면 더이상 호출안함
+		mEditSceneGraph.RemoveKilledObjectAll();
 
-		mEditSceneGraph.RemoveObject(object);
-
-
-	
-		//CollisionWorld * currentCollisionWorld = mMapLayerVector[object->GetMapLayerID()].mCollisionWorld;
-
-	
-
-		//	mSceneGraph
-	//	mEditSceneGraph.RemoveObject(object);
-		
-
-
-		Collider* collider = nullptr;
-		UiCollider* uiCollider = nullptr;
 		EObjectType objectType = object->GetObjectType();
+
+
 		switch (objectType)
 		{
 		case EObjectType::eEntity:
 		{
-			collider = ((Entity*)object)->GetModel()->GetColliderComponent()->GetCollider();
+			//collider = ((Entity*)object)->GetModel()->GetColliderComponent()->GetCollider();
 		}
 			break;
 		case EObjectType::eCamera:
 		{
 
-			collider = ((Camera*)object)->GetModel()->GetColliderComponent()->GetCollider();
+			//collider = ((Camera*)object)->GetModel()->GetColliderComponent()->GetCollider();
 		}
 			break;
 		case EObjectType::eLight:
@@ -434,55 +386,222 @@ namespace Quad
 			break;
 		case EObjectType::eLine:
 		{
-			ColliderComponent* colliderComponent = object->GetModel()->GetColliderComponent();
+			/*ColliderComponent* colliderComponent = object->GetModel()->GetColliderComponent();
 			if (colliderComponent)
-				collider = colliderComponent->GetCollider();
+				collider = colliderComponent->GetCollider();*/
 		}
 			break;
 		case EObjectType::eUiEntity:
 		case EObjectType::eSpline:
 		{
-			UiColliderComponent* colliderComponent = object->GetModel()->GetUiColliderComponent();
+	/*		UiColliderComponent* colliderComponent = object->GetModel()->GetUiColliderComponent();
 			if (colliderComponent)
-				uiCollider = colliderComponent->GetCollider();
+				uiCollider = colliderComponent->GetCollider();*/
 		}
 			break;
 
 		}
-
-
-
-
-		//if (collider != nullptr)
-		//{
-			if (uiCollider  &&  (objectType == EObjectType::eUiEntity || objectType ==EObjectType::eSpline) )
-			{
-				mDefaultUiCollisionWorld->RemoveCollider(uiCollider);
-			}
-			else if(collider)
-			{
-				mDefault3DCollisionWorld->RemoveCollider(collider);
-
-			}
-
-		//}
 
 		auto objectIt = std::find(mObjectVector.begin(), mObjectVector.end(), object);
 		if (objectIt != mObjectVector.end())
 		{
 			mObjectVector.erase(objectIt);
 		}
-		
 
 
-
-		AnimationComponent* animComponent = object->GetModel()->GetAnimationComponent();
+	/*	AnimationComponent* animComponent = object->GetComponent<AnimationComponent>();
 		if (animComponent)
 		{
 			mRegisterAnimStateTransitionCallbackClassManager->Release(animComponent);
-		}
+		}*/
 
 		return true;
+	}
+
+	void Map::SerializeObject(const std::vector<Object*>& objectVector)
+	{
+
+		unsigned long long objectNum = mObjectVector.size();
+
+		//object 관련 Serialize
+		JsonParser::StartWriteObject();
+
+		JsonParser::Write("ObjectNum", objectNum);
+
+		int num = 0;
+		for (auto element : mObjectVector)
+		{
+
+			JsonParser::StartWriteObject("Object" + std::to_string(num));
+			element->Serialize();
+			num++;
+			JsonParser::AscendOutofObjectOrArray();
+			
+		}
+
+		JsonParser::AscendOutofObjectOrArray();
+
+	}
+
+	void Map::SerializeMapLayer()
+	{
+
+		//mapLayer 관련 Serialize
+		JsonParser::StartWriteObject();
+		JsonParser::Write("MapLayerNum", mMapLayerVector.size());
+
+		for (size_t mapLayerIndex = 0; mapLayerIndex < mMapLayerVector.size(); ++mapLayerIndex)
+		{
+			MapLayerOption& mapLayerOption = mMapLayerOptionVector[mapLayerIndex];
+			MapLayer& mapLayer = mMapLayerVector[mapLayerIndex];
+
+			JsonParser::StartWriteObject("MapLayer"+std::to_string(mapLayerIndex));
+
+			JsonParser::Write("MapLayer_OptionViewportAutoFlag", mapLayerOption.mViewportAutoFlag);
+			JsonParser::Write("MapLayer_ID", mapLayer.mID);
+			JsonParser::Write("MapLayer_DepthPriority", mapLayer.mDepthPriority);
+			JsonParser::Write("MapLayer_Width", mapLayer.mViewPort.Width);
+			JsonParser::Write("MapLayer_Height", mapLayer.mViewPort.Height);
+			JsonParser::Write("MapLayer_TopLeftX", mapLayer.mViewPort.TopLeftX);
+			JsonParser::Write("MapLayer_TopLeftY", mapLayer.mViewPort.TopLeftY);
+			JsonParser::Write("MapLayer_MinDepth", mapLayer.mViewPort.MinDepth);
+			JsonParser::Write("MapLayer_MaxDepth", mapLayer.mViewPort.MaxDepth);
+
+
+			unsigned long long cameraID = 0;
+			if (mapLayer.mCamera != nullptr)
+				cameraID = mapLayer.mCamera->GetUniqueID();
+			JsonParser::Write("MapLayer_CameraID", cameraID);
+
+
+			JsonParser::AscendOutofObjectOrArray();
+
+		}
+
+
+		JsonParser::Write("MapLayer_DefaultUiCollisionWorldClassName", mDefaultUiCollisionWorld->GetSpacePartitioningClassName());
+		JsonParser::Write("MapLayer_Default3DCollisionWorldClassName", mDefault3DCollisionWorld->GetSpacePartitioningClassName());
+
+		JsonParser::AscendOutofObjectOrArray();
+
+	}
+
+	void Map::DeSerializeObject()
+	{
+
+		JsonParser::DescendIntoObjectOrArray();
+
+
+
+		unsigned long long objectNum = 0;
+		JsonParser::Read("ObjectNum", objectNum);
+
+
+		mObjectVector.reserve(objectNum);
+		std::vector<Object*> objectVector(objectNum, nullptr);
+
+		JsonParser::IncrementCurrentIndex();
+
+		//최소한의 정보만으로 오브젝트를생성
+		for (unsigned long long i = 0; i < objectNum; ++i)
+		{
+			JsonParser::DescendIntoObjectOrArray();
+
+			std::string className;
+			std::string objectName;
+			unsigned long long id = 0;
+			JsonParser::Read("ClassName", className);
+			JsonParser::Read("Object_Name", objectName);
+			JsonParser::Read("Object_ID", id);
+
+			Object* object = mObjectManager->CreateObjectFromFile(className, objectName, id);
+
+			object->SetSystem(GetSystem());
+			object->Initialize();
+			mObjectVector.push_back(object);
+
+			JsonParser::AscendOutofObjectOrArray();
+		}
+
+
+		JsonParser::SetCurrentIndex(1);
+		//완전한 역직렬화수행
+		for (auto& element : mObjectVector)
+		{
+			JsonParser::DescendIntoObjectOrArray();
+
+			element->DeSerialize();
+			element->mStartObjectFlag = false;	//역직렬화(로드)되는 오브젝트들은 다음프레임까지 기다릴필요없이 바로 update된다.
+
+			JsonParser::AscendOutofObjectOrArray();
+		}
+
+
+		JsonParser::AscendOutofObjectOrArray();
+
+
+	};
+
+	void Map::DeSerializeMapLayer()
+	{
+		//mapLayer정보를담은 object요소로 들어간다.
+		JsonParser::DescendIntoObjectOrArray();
+
+
+
+
+		int mapLayerNum = 0;
+		JsonParser::Read("MapLayerNum", mapLayerNum);
+		//mMapLayerVector.resize(mapLayerNum);
+		//mMapLayerOptionVector.resize(mapLayerNum);
+		JsonParser::IncrementCurrentIndex();
+		std::vector<MapLayerOption> mapLayerOptionVector(mapLayerNum);
+		MapLayer mapLayer;
+
+		for (size_t i = 0; i < mapLayerNum; ++i)
+		{
+			JsonParser::DescendIntoObjectOrArray();
+			MapLayerOption & mapLayerOption = mapLayerOptionVector[i];
+		
+			mapLayerOption.mViewportAutoFlag = JsonParser::ReadBool("MapLayer_OptionViewportAutoFlag");
+			JsonParser::Read("MapLayer_ID", mapLayer.mID);
+			JsonParser::Read("MapLayer_DepthPriority", mapLayer.mDepthPriority);
+			JsonParser::Read("MapLayer_Width", mapLayer.mViewPort.Width);
+			JsonParser::Read("MapLayer_Height", mapLayer.mViewPort.Height);
+			JsonParser::Read("MapLayer_TopLeftX", mapLayer.mViewPort.TopLeftX);
+			JsonParser::Read("MapLayer_TopLeftY", mapLayer.mViewPort.TopLeftY);
+			JsonParser::Read("MapLayer_MinDepth", mapLayer.mViewPort.MinDepth);
+			JsonParser::Read("MapLayer_MaxDepth", mapLayer.mViewPort.MaxDepth);
+			unsigned long long mainCameraID = 0;
+			JsonParser::Read("MapLayer_CameraID", mainCameraID);
+			Camera* camera = nullptr;
+			if (mainCameraID != 0)
+				camera = static_cast<Camera*>(mObjectManager->GetObjectFromID(mainCameraID));
+
+			CreateMapLayer(mapLayer.mID, mapLayer.mDepthPriority, mapLayer.mCamera, mapLayer.mViewPort, mapLayerOptionVector[i]);
+
+			JsonParser::AscendOutofObjectOrArray();
+		}
+		std::string defaultUiCollisionSpaceClassName;
+		std::string default3DCollisionSpaceClassName;
+
+		JsonParser::Read("MapLayer_DefaultUiCollisionWorldClassName", defaultUiCollisionSpaceClassName);
+		JsonParser::Read("MapLayer_Default3DCollisionWorldClassName", default3DCollisionSpaceClassName);
+
+
+
+		SpacePartitioningStructure<UiCollider>* defaultUiSpacePartitioningSstructure = SpacePartitioningStructureFactory< UiCollider>::CreateSpacePartitioningStructure(defaultUiCollisionSpaceClassName);
+		mDefaultUiCollisionWorld = CollisionWorldFactory::CreateUiCollisionWorld(defaultUiSpacePartitioningSstructure);
+		mDefaultUiCollisionWorld->Initialize();
+
+
+		SpacePartitioningStructure<Collider>* default3DSpacePartitioningSstructure = SpacePartitioningStructureFactory< Collider>::CreateSpacePartitioningStructure(default3DCollisionSpaceClassName);
+		mDefault3DCollisionWorld = CollisionWorldFactory::CreateCollisionWorld(default3DSpacePartitioningSstructure);
+		mDefault3DCollisionWorld->Initialize();
+
+
+		JsonParser::AscendOutofObjectOrArray();
+
 	}
 
 	bool Map::RequestRemoveObject(Object* object)
@@ -493,6 +612,9 @@ namespace Quad
 
 		if (object->GetKilledState())
 			return false;	//이미 제거플래그가 켜진상태
+
+
+		mEditSceneGraph.ChangeParent(nullptr,object);	//부모를 루트로 설정한다,기존부모가 더이상 kill상태의 자식데이터를 가지지않게된다..
 
 
 		std::stack<Object*> objectStack;	//자식이 맨위에 존재하도록하여 자식부터 삭제요청이되도록한다.
@@ -510,7 +632,7 @@ namespace Quad
 			Object* childObject = nullptr;
 			for (auto childObjectPtr : parentObject->GetChildObjectVector())
 			{
-				childObject = childObjectPtr.GetPointer();
+				childObject = childObjectPtr;
 				if(childObject!=nullptr)
 					objectQueue.push(childObject);
 			}
@@ -527,6 +649,7 @@ namespace Quad
 			mObjectManager->KillObject(removeObject);
 		}
 
+	
 
 
 
@@ -581,12 +704,12 @@ namespace Quad
 
 	
 
-	const SceneGraph* Quad::Map::GetSceneGraph() const
+	const Scene::SceneGraph* Quad::Map::GetSceneGraph() const
 	{
 		return &mEditSceneGraph;
 	}
 
-	SceneGraph* Map::GetSceneGraph()
+	Scene::SceneGraph* Map::GetSceneGraph()
 	{
 		return &mEditSceneGraph;
 	}
@@ -601,6 +724,11 @@ namespace Quad
 	CollisionWorld* Map::GetCollisionWorld()
 	{
 		return  mDefault3DCollisionWorld;
+	}
+
+	UiCollisionWorld* Map::GetUiCollisionWorld() const
+	{
+		return mDefaultUiCollisionWorld;
 	}
 
 	bool Map::RayCastingFirst(Ray& ray, Object*& oObject)
@@ -624,10 +752,14 @@ namespace Quad
 		const MapLayer& mapLayerUi = mMapLayerVector[0];
 		const MapLayer& mapLayer3D = mMapLayerVector[1];
 		bool ret = false;
+
+	//	System* destSystem = GetSystem();
+		//D3D12_VIEWPORT systemViewport = destSystem->GetViewPort();
+
 		if (mapLayerUi.mCamera)
 		{
 			Ray ray;
-			CameraHelper::CalculateRay(screenPos, mapLayerUi.mViewPort, *mapLayerUi.mCamera, true, ray);
+			CameraHelper::CalculateRay(screenPos, mapLayerUi.mViewPortGlobal, *mapLayerUi.mCamera, true, ray);
 
 			ret = mDefaultUiCollisionWorld->RayCastingFirst(oObject, ray);
 		}
@@ -638,7 +770,7 @@ namespace Quad
 			if (mapLayer3D.mCamera)
 			{
 				Ray ray;
-				CameraHelper::CalculateRay(screenPos, mapLayer3D.mViewPort, *mapLayer3D.mCamera, true, ray);
+				CameraHelper::CalculateRay(screenPos, mapLayer3D.mViewPortGlobal, *mapLayer3D.mCamera, true, ray);
 				ret = mDefault3DCollisionWorld->RayCastingFirst(oObject, ray);
 			}
 		}
@@ -770,28 +902,84 @@ namespace Quad
 		return mMapLayerVector[MapLayerID].mCamera;
 	}
 
-	void Map::SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT width, FLOAT height, FLOAT minDepth, FLOAT maxDepth , int mapLayer )
+	void Map::SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT widthRate, FLOAT heightRate, FLOAT minDepth, FLOAT maxDepth , int mapLayerIndex)
 	{
 
-		D3D12_VIEWPORT& viewport = mMapLayerVector[mapLayer].mViewPort;
+		D3D12_VIEWPORT& viewport = mMapLayerVector[mapLayerIndex].mViewPort;
 
 		viewport.TopLeftX = topLeftX;
 		viewport.TopLeftY = topLeftY;
-		viewport.Width = width;
-		viewport.Height = height;
+		viewport.Width = widthRate;
+		viewport.Height = heightRate;
 		viewport.MinDepth = minDepth;
 		viewport.MaxDepth = maxDepth;
 	
+
+		UpdateViewPortGlobal(mapLayerIndex);
+		NotifyResizeMapLayer(mapLayerIndex);
+
 		//mRunTimeMapLayerVector[mapLayer].mViewPort = viewport;
 	
 
 		//GetGameCamera()->SetAspect(mViewPort.Width / mViewPort.Height);
 	}
 
+	void Map::SetSystemViewPortAll()
+	{
+
+		for (int i = 0; i < mMapLayerVector.size(); ++i)
+		{
+			if (GetViewportAutoFlag(i))
+			{
+				UpdateViewPortGlobal(i);
+				NotifyResizeMapLayer(i);
+			}
+		}
+
+	}
+
+	void Map::UpdateViewPortGlobal(int mapLayerIndex)
+	{
+
+		System* system = GetSystem();
+		D3D12_VIEWPORT destSystemViewport = system->GetViewPortGlobal();
+
+		D3D12_VIEWPORT& viewportG = mMapLayerVector[mapLayerIndex].mViewPortGlobal;
+		D3D12_VIEWPORT& viewportL = mMapLayerVector[mapLayerIndex].mViewPort;
+
+
+		viewportG.TopLeftX = viewportL.TopLeftX * destSystemViewport.Width + destSystemViewport.TopLeftX;
+		viewportG.TopLeftY = viewportL.TopLeftY * destSystemViewport.Height + destSystemViewport.TopLeftY;
+
+		viewportG.Width = viewportL.Width * destSystemViewport.Width;
+		viewportG.Height = viewportL.Height * destSystemViewport.Height;
+
+		viewportG.MinDepth = 0.0F;
+		viewportG.MaxDepth = 1.0F;
+
+
+
+
+
+
+		//depth 는 일단 보류 
+	
+
+	}
+
+
 	D3D12_VIEWPORT Map::GetViewPort(int mapLayer) const
 	{
 		return mMapLayerVector[mapLayer].mViewPort;
 		//return mViewPort;
+	}
+
+	D3D12_VIEWPORT Map::GetViewPortGlobal(int mapLayer) const
+	{
+
+
+		return mMapLayerVector[mapLayer].mViewPortGlobal;
+
 	}
 
 
@@ -805,7 +993,7 @@ namespace Quad
 		return mObjectManager;
 	}
 
-	void Map::CreateMapLayer(int id, int depthPriority ,Camera * camera,D3D12_VIEWPORT viewport, RenderTargetTexture * texture,Texture * depthStencilBuffer)
+	void Map::CreateMapLayer(int id, int depthPriority, Camera* camera, D3D12_VIEWPORT viewport, MapLayerOption mapLayerOption,  RenderTargetTexture * texture, Texture* depthStencilBuffer)
 	{
 
 		MapLayer mapLayer;
@@ -815,12 +1003,20 @@ namespace Quad
 		//mapLayer.mCollisionWorld = initCollisionWorld;
 
 
-		mapLayer.mViewPort = viewport;
+		mapLayer.mViewPortGlobal = viewport;
 		mapLayer.mRenderTarget = texture;
 		mapLayer.mDepthStencilBuffer = depthStencilBuffer;
 		mMapLayerVector.push_back(mapLayer);
 
-		mMapLayerOptionVector.push_back(MapLayerOption{});
+		mMapLayerOptionVector.push_back(mapLayerOption);
+
+
+		UpdateViewPortGlobal(mMapLayerVector.size() - 1);
+
+		//system에게 mapLayer를 생성했다는것을 알린다.
+		System* destSystem = GetSystem();
+
+		destSystem->NotifyCreatingMapLayer(mMapLayerVector.back().mViewPort,mMapLayerVector.back().mViewPortGlobal);
 
 
 	}
@@ -895,7 +1091,7 @@ namespace Quad
 
 
 
-		mRegisterAnimStateTransitionCallbackClassManager->Clear();
+		//mRegisterAnimStateTransitionCallbackClassManager->Clear();
 		for (auto& element : mObjectVector)
 		{
 		
@@ -923,74 +1119,12 @@ namespace Quad
 
 		JsonParser::StartWrite();
 
+		SerializeObject(mObjectVector);
 
-		//scene graph seralize();
-		//const std::unordered_map<unsigned long long, Object*>& objectIDTable = mEditSceneGraph.GetObjectIDTable();
-
-
-
-		//unsigned long long objectNum = objectIDTable.size();
-		unsigned long long objectNum = mObjectVector.size();
-		for (auto& element : mObjectVector)
-		{
-			if (element->GetEnginObjectFlag() == true)
-				objectNum--;
-		}
+		SerializeMapLayer();
 
 
-
-
-
-
-
-		JsonParser::StartWriteObject();
-		JsonParser::Write("ObjectNum", objectNum);
-
-
-		for (auto element : mObjectVector)
-		{
-			if (element->GetEnginObjectFlag() != true)
-			{
-				JsonParser::StartWriteObject();
-				element->Serialize();
-			}
-		}
-
-
-		JsonParser::StartWriteObject();
-		JsonParser::Write("MapLayerNum", mMapLayerVector.size());
-
-		for (auto& element : mMapLayerOptionVector)
-		{
-			JsonParser::StartWriteObject();
-			JsonParser::Write("MapLayer_OptionViewportAutoFlag", element.mViewportAutoFlag);
-		}
-
-		
-
-		for (auto& element : mMapLayerVector)
-		{
-			JsonParser::StartWriteObject();
-			JsonParser::Write("MapLayer_ID", element.mID);
-			JsonParser::Write("MapLayer_DepthPriority", element.mDepthPriority);
-			JsonParser::Write("MapLayer_Width", element.mViewPort.Width);
-			JsonParser::Write("MapLayer_Height", element.mViewPort.Height);
-			JsonParser::Write("MapLayer_TopLeftX", element.mViewPort.TopLeftX);
-			JsonParser::Write("MapLayer_TopLeftY", element.mViewPort.TopLeftY);
-			JsonParser::Write("MapLayer_MinDepth", element.mViewPort.MinDepth);
-			JsonParser::Write("MapLayer_MaxDepth", element.mViewPort.MaxDepth);
-			
-
-			unsigned long long cameraID = 0;
-			if (element.mCamera != nullptr)
-				cameraID = element.mCamera->GetUniqueID();
-			JsonParser::Write("MapLayer_CameraID", cameraID);
-		}
-		JsonParser::Write("MapLayer_DefaultUiCollisionWorldClassName", mDefaultUiCollisionWorld->GetSpacePartitioningClassName());
-		JsonParser::Write("MapLayer_Default3DCollisionWorldClassName", mDefault3DCollisionWorld->GetSpacePartitioningClassName());
-
-
-		mRegisterAnimStateTransitionCallbackClassManager->Serialize();
+		//mRegisterAnimStateTransitionCallbackClassManager->Serialize();
 
 
 	}
@@ -999,136 +1133,29 @@ namespace Quad
 	{
 	
 
-
-
 		JsonParser::ReadStart();
 
-		unsigned int currentObjectIndex = 0;
+		DeSerializeObject();
 
-
-		unsigned long long objectNum = 0;
-		JsonParser::Read("ObjectNum", objectNum);
-		currentObjectIndex++;
-
-
-		mObjectVector.reserve(objectNum);
-		std::vector<Object*> objectVector(objectNum,nullptr);
-
-		if (objectNum != 3)
-		{
-			int a = 2;
-		}
-		for (unsigned long long i = 0; i < objectNum; ++i)
-		{
-			JsonParser::SetCurrentIndex(currentObjectIndex);
-			
-			std::string className;
-			std::string objectName;
-			unsigned long long id = 0;
-			JsonParser::Read("ClassName", className);
-			JsonParser::Read("Object_Name", objectName);
-			JsonParser::Read("Object_ID", id);
-
-
-
-			
-			Object * object = mObjectManager->CreateObjectFromFile(className, objectName, id);
-
-
-
-
-
-
-			object->SetSystem(GetSystem());
-			object->Initialize();
-			mObjectVector.push_back(object);
-
-			currentObjectIndex++;
-		}
-
-		currentObjectIndex = 1;
-		for (auto& element : mObjectVector)
-		{
-			JsonParser::SetCurrentIndex(currentObjectIndex);
-			
-			element->DeSerialize();
-			element->mStartObjectFlag = false;	//역직렬화(로드)되는 오브젝트들은 다음프레임까지 기다릴필요없이 바로 update된다.
-			currentObjectIndex++;
-		}
+		DeSerializeMapLayer();
 		
-
-
-		JsonParser::SetCurrentIndex(currentObjectIndex++);
-		int mapLayerNum = 0;
-		JsonParser::Read("MapLayerNum", mapLayerNum);
-		mMapLayerVector.resize(mapLayerNum);
-		mMapLayerOptionVector.resize(mapLayerNum);
-
-
-		for (auto& element : mMapLayerOptionVector)
-		{
-			JsonParser::SetCurrentIndex(currentObjectIndex++);
-			element.mViewportAutoFlag = JsonParser::ReadBool("MapLayer_OptionViewportAutoFlag");
-
-		}
 		
-
-
-		for (auto& element : mMapLayerVector)
-		{
-			JsonParser::SetCurrentIndex(currentObjectIndex++);
-
-			JsonParser::Read("MapLayer_ID", element.mID);
-			JsonParser::Read("MapLayer_DepthPriority", element.mDepthPriority);
-			JsonParser::Read("MapLayer_Width", element.mViewPort.Width);
-			JsonParser::Read("MapLayer_Height", element.mViewPort.Height);
-			JsonParser::Read("MapLayer_TopLeftX", element.mViewPort.TopLeftX);
-			JsonParser::Read("MapLayer_TopLeftY", element.mViewPort.TopLeftY);
-			JsonParser::Read("MapLayer_MinDepth", element.mViewPort.MinDepth);
-			JsonParser::Read("MapLayer_MaxDepth", element.mViewPort.MaxDepth);
-			unsigned long long mainCameraID = 0;
-			JsonParser::Read("MapLayer_CameraID", mainCameraID);
-			Camera* camera = nullptr;
-			if(mainCameraID != 0)
-				camera = static_cast<Camera*>(mObjectManager->GetObjectFromID(mainCameraID));
-			//element.mCamera = camera;
-			SetMainCamera(camera, element.mID);
-		}
-		std::string defaultUiCollisionSpaceClassName;
-		std::string default3DCollisionSpaceClassName;
-		
-		JsonParser::Read("MapLayer_DefaultUiCollisionWorldClassName", defaultUiCollisionSpaceClassName);
-		JsonParser::Read("MapLayer_Default3DCollisionWorldClassName", default3DCollisionSpaceClassName);
-
-
-
-		SpacePartitioningStructure<UiCollider>* defaultUiSpacePartitioningSstructure = SpacePartitioningStructureFactory< UiCollider>::CreateSpacePartitioningStructure(defaultUiCollisionSpaceClassName);
-		mDefaultUiCollisionWorld = CollisionWorldFactory::CreateUiCollisionWorld(defaultUiSpacePartitioningSstructure);
-		mDefaultUiCollisionWorld->Initialize();
-		
-
-		SpacePartitioningStructure<Collider>* default3DSpacePartitioningSstructure = SpacePartitioningStructureFactory< Collider>::CreateSpacePartitioningStructure(default3DCollisionSpaceClassName);
-		mDefault3DCollisionWorld = CollisionWorldFactory::CreateCollisionWorld(default3DSpacePartitioningSstructure);
-		mDefault3DCollisionWorld->Initialize();
-
-
-
 
 		for (auto& element : mObjectVector)
 		{
 			AddObject(element,element->GetMapLayerID());
 
-			AnimationComponent* animComponent = element->GetModel()->GetAnimationComponent();
+			/*AnimationComponent* animComponent = element->GetComponent<AnimationComponent>();
 			if (animComponent!=nullptr && animComponent->GetAnimationComponentState())
 			{
 				AddObjectToAnimationUpdateSystem(element);
-			}
+			}*/
 			//element->Start();
 
 		}
 
 
-		mRegisterAnimStateTransitionCallbackClassManager->DeSerialize();
+		//mRegisterAnimStateTransitionCallbackClassManager->DeSerialize();
 		//RegisterAnimStateTransitionCallbackClassManager::Start();
 
 

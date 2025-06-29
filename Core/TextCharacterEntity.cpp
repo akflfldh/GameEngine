@@ -1,8 +1,14 @@
 ﻿#include "Core/TextCharacterEntity.h"
 #include"Map/Map.h"
+
+#include"ScissorRectComponent.h"
+
+#include<Component/UIMeshComponent.h>
+
 Quad::TextCharacterEntity::TextCharacterEntity()
 	:UiEntity("")
 {
+	AddComponent<ScissorRectComponent>("ScissorRectComponent");
 }
 
 Quad::TextCharacterEntity::~TextCharacterEntity()
@@ -24,20 +30,13 @@ Quad::TextCharacterEntity* Quad::TextCharacterEntity::Create(Map* map, int mapLa
 	ob->InitCreating();
 	return ob;
 
-	return ob;
 }
 
 void Quad::TextCharacterEntity::Update(float deltaTime)
 {
 }
 
-void Quad::TextCharacterEntity::OnEvent(Event* event)
-{
-	UiEntity::OnEvent(event);
 
-
-
-}
 
 void Quad::TextCharacterEntity::SetCh(wchar_t ch)
 {
@@ -47,5 +46,10 @@ void Quad::TextCharacterEntity::SetCh(wchar_t ch)
 void Quad::TextCharacterEntity::InitCreating()
 {
 	UiEntity::InitCreating();
-	SetEffect("TextCharacter.effect");
+	GetUiMeshComponent()->SetEffect("TextCharacter.effect");
+//	SetEffect("TextCharacter.effect");
+
+
+	
+
 }

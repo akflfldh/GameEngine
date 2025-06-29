@@ -43,7 +43,7 @@ Quad::Object* Quad::BaseObjectManager::CreateObjectFromFile(const std::string& c
 		return nullptr;
 
 
-	Object* object = mObjectFactory->CreateObject(className);
+	Object* object = mObjectFactory->CreateObject(className);	
 	object->SetName(name);
 	mUniqueIDTable.RegisterFromFile(object, id);
 	mNameTable.Register(name, id);

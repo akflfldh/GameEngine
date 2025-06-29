@@ -2,19 +2,22 @@
 #include"ResourceManager/MeshManager.h"
 #include"ResourceManager/TextureManager/TextureManager.h"
 #include"MouseEvent.h"
-#include"Component/MeshComponent.h"
+#include"Component/UiColliderComponent.h"
 #include"Map/Map.h"
+
+#include"Component/UiComponent.h"
+#include"Component/UIMeshComponent.h"
+
 
 
 namespace Quad
 {
 	UiEntity::UiEntity(const std::string& name)
-		:Object(name,EObjectType::eUiEntity),mDefaultTexture(nullptr),mHoverTexture(nullptr),mHoverSelectTexture(nullptr), mNotHoverSelectTexture(nullptr)
+		:Object(EObjectType::eUiEntity)
 	{
-
-		GetModel()->AddComponernt(Quad::EComponentType::eMeshComponent);
-		GetModel()->AddComponernt(Quad::EComponentType::eUiColliderComponent);
-
+		UiComponent * uiComponent =AddComponent<UiComponent>("UiComponent");
+		mUiMeshComponent = AddComponent<UIMeshComponent>("MeshComponent");
+		uiComponent->RegisterCallback(&UiEntity::HandleUiComponentCallback, this);
 
 	}
 	UiEntity::~UiEntity()
@@ -57,154 +60,16 @@ namespace Quad
 		
 	}
 
-	void UiEntity::OnEvent(Event* event)
+	void UiEntity::SetWidthHeightLocal(float width, float height)
 	{
-		//Entity::OnEvent(event);
 
-		std::string eventName = event->GetName();
-		if (eventName == "LButtonDown")
-		{
-		
-			HandleLButtonDown(event);
-			
-		}
-		else if (eventName == "LButtonUp")
-		{
-			HandleLButtonUp(event);
-		}
-		else if (eventName == "Select")
-		{
-			//HandleSelectEvent(event);
-			
-		}
-		else if (eventName == "ReleaseSelect")
-		{
-			SetCurrentTexture(mDefaultTexture);
-		}
-		else if (eventName == "Hover")
-		{
-			HandleHover(event);
-		}
-		else
-		{
-			HandleDefaultEvent(event);
-		}
-
-
+		mUiMeshComponent->SetWidthHeightLocal(width, height);
 
 	}
 
-	
-	//디폴트텍스처는 무조건지정해야됌
-	void UiEntity::SetTexture(const std::string& name, EUiEntityMouseState uiEntityMouseState )
+	void UiEntity::SetWidthHeightWorld(float width, float height)
 	{
-		switch (uiEntityMouseState)
-		{
-		case EUiEntityMouseState::eDefault:
-			mDefaultTexture = TextureManager::GetTexture(name);
-
-			GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetDiffuseMap(mDefaultTexture);
-			break;
-		case EUiEntityMouseState::eHover:
-			mHoverTexture = TextureManager::GetTexture(name);
-
-			break;
-		case EUiEntityMouseState::eHoverSelect:
-			mHoverSelectTexture = TextureManager::GetTexture(name);
-			break;
-		case EUiEntityMouseState::eNotHoverSelect:
-			mNotHoverSelectTexture = TextureManager::GetTexture(name);
-
-			break;
-		}
-
-	}
-
-	void UiEntity::SetTexture(Texture* texture, EUiEntityMouseState uiEntityMouseState)
-	{
-
-		switch (uiEntityMouseState)
-		{
-		case EUiEntityMouseState::eDefault:
-			mDefaultTexture = texture;
-			GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetDiffuseMap(mDefaultTexture);
-			break;
-		case EUiEntityMouseState::eHover:
-			mHoverTexture = texture;
-
-			break;
-		case EUiEntityMouseState::eHoverSelect:
-			mHoverSelectTexture = texture;
-			break;
-		case EUiEntityMouseState::eNotHoverSelect:
-			mNotHoverSelectTexture = texture;
-
-			break;
-		}
-
-
-	}
-
-	void UiEntity::SetSize(float width, float height)
-	{
-
-		mWidth = width;
-		mHeight = height;
-
-		GetTransform().SetScaleLocal({ width,height,1.0f });
-
-	}
-
-	void UiEntity::SetPosition(float x, float y, float z)
-	{
-
-		GetTransform().SetPositionLocal({ x,y,z });
-		
-
-	}
-
-	void UiEntity::SetPosition(const DirectX::XMFLOAT3& posLocal)
-	{
-		GetTransform().SetPositionLocal(posLocal);
-	}
-
-	void UiEntity::SetColorItensity(const DirectX::XMFLOAT3& itensity)
-	{
-		GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetColorIntensity(itensity);
-	}
-
-	void UiEntity::SetColor(const DirectX::XMFLOAT3& color)
-	{
-		GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetColor(color);
-
-	}
-
-	void UiEntity::SetTextureTransform(const DirectX::XMFLOAT4X4& transform)
-	{
-		GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetTextureTransformMatrix(0, transform);
-	}
-
-	float UiEntity::GetWidth() const
-	{
-		return mWidth;
-	}
-
-	float UiEntity::GetHeight() const
-	{
-		return mHeight;
-	}
-
-	void UiEntity::SetEffect(const std::string& name)
-	{
-		GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetEffectName(name);
-	}
-
-	void UiEntity::SetDrawFlag(bool flag)
-	{
-		
-		Object::SetDrawFlag(flag);
-
-
+		//mUiMeshComponent->sETwIDTHhEIGHTwORLD
 	}
 
 	void UiEntity::Serialize()
@@ -217,24 +82,67 @@ namespace Quad
 		Object::DeSerialize();
 	}
 
+	void UiEntity::HandleUiComponentCallback(const MouseInputData& mouseInputData)
+	{
+		switch (mouseInputData.mMouseInputType)
+		{
+		case EMouseInput::eLButtonDown:
+			HandleLButtonDown(mouseInputData);
+			break;
+
+		case EMouseInput::eLButtonUp:
+			HandleLButtonUp(mouseInputData);
+			break;
+
+		case EMouseInput::eRButtonDown:
+			HandleRButtonDown(mouseInputData);
+
+			break;
+
+		case EMouseInput::eRButtonUp:
+			HandleRButtonUp(mouseInputData);
+
+			break;
+
+		case EMouseInput::eMouseMove:
+			HandleMouseMove(mouseInputData);
+
+			break;
+		}
+
+
+
+
+
+
+
+
+	}
+
+	Quad::UiComponent* UiEntity::GetUiComponent() const
+	{
+		return mUiComponent;
+	}
+
+	UIMeshComponent* UiEntity::GetUiMeshComponent() const
+	{
+		return mUiMeshComponent;
+	}
+
 
 	void UiEntity::InitCreating()
 	{
-		GetModel()->GetMeshComponent()->SetMesh(MeshManager::GetMesh("Rectangle"));
-		//Initialize(MeshManager::GetMesh("Rectangle"));
-		mWidth = 1.0f;
-		mHeight = 1.0f;
+
 	}
 
-	void UiEntity::SetCurrentTexture(Texture* texture)
+	void UiEntity::HandleHover(const MouseInputData& mouseInputData)
 	{
-		GetModel()->GetMeshComponent()->GetSubMesh()[0].mModelMaterial.SetDiffuseMap(texture);
+
 	}
-
-	void UiEntity::HandleLButtonDown(Event* pEvent)
+	void UiEntity::HandleLButtonDown(const MouseInputData& mouseInputData)
 	{
 
-		StateComponent* stateComponent = GetStateComponent();
+	/*	StateComponent* stateComponent = GetComponent<StateComponent>();
 
 
 		if (stateComponent->GetHoverState())
@@ -244,41 +152,58 @@ namespace Quad
 				SetCurrentTexture(mHoverSelectTexture);
 
 			stateComponent->SetSelectState(true, true);
-		}
+		}*/
 
 	}
 
-	void UiEntity::HandleLButtonUp(Event* pEvent)
+	void UiEntity::HandleLButtonUp(const MouseInputData& mouseInputData)
 	{
-
-		StateComponent* stateComponent = GetStateComponent();
-		stateComponent->SetLButtonDownState(false);
-
-		if (stateComponent->GetHoverState())
-		{
-
-			if (mHoverSelectTexture != nullptr)
-			{
-				SetCurrentTexture(mHoverSelectTexture);
-			}
-		}
-		else
-		{
-			if (mNotHoverSelectTexture != nullptr)
-			{
-				SetCurrentTexture(mNotHoverSelectTexture);
-			}
-				
-		}
-
-		stateComponent->SetSelectState(false, false);
 
 	}
 
-
-	void UiEntity::HandleHover(Event* pEvent)
+	void UiEntity::HandleRButtonDown(const MouseInputData& mouseInputData)
 	{
-		StateComponent* stateComponent = GetStateComponent();
+	}
+
+	void UiEntity::HandleRButtonUp(const MouseInputData& mouseInputData)
+	{
+	}
+
+	void UiEntity::HandleMouseMove(const MouseInputData& mouseInputData)
+	{
+	}
+
+	//void UiEntity::HandleLButtonUp(Event* pEvent)
+	//{
+
+	//	StateComponent* stateComponent = GetComponent<StateComponent>();
+	//	stateComponent->SetLButtonDownState(false);
+
+	//	if (stateComponent->GetHoverState())
+	//	{
+
+	//		if (mHoverSelectTexture != nullptr)
+	//		{
+	//			SetCurrentTexture(mHoverSelectTexture);
+	//		}
+	//	}
+	//	else
+	//	{
+	//		if (mNotHoverSelectTexture != nullptr)
+	//		{
+	//			SetCurrentTexture(mNotHoverSelectTexture);
+	//		}
+	//			
+	//	}
+
+	//	stateComponent->SetSelectState(false, false);
+
+	//}
+
+
+	/*void UiEntity::HandleHover(Event* pEvent)
+	{
+		StateComponent* stateComponent = GetComponent<StateComponent>();
 		MouseEvent* mouseEvent = (MouseEvent*)pEvent;
 	
 	
@@ -301,26 +226,26 @@ namespace Quad
 
 
 		
-	}
+	}*/
 
-	Texture* UiEntity::GetDefaultTexture() const
-	{
-		return mDefaultTexture;
-	}
+	//Texture* UiEntity::GetDefaultTexture() const
+	//{
+	//	return mDefaultTexture;
+	//}
 
-	Texture* UiEntity::GetHoverTexture() const
-	{
-		return mHoverTexture;
-	}
+	//Texture* UiEntity::GetHoverTexture() const
+	//{
+	//	return mHoverTexture;
+	//}
 
-	Texture* UiEntity::GetHoverSelectTexture() const
-	{
-		return mHoverSelectTexture;
-	}
+	//Texture* UiEntity::GetHoverSelectTexture() const
+	//{
+	//	return mHoverSelectTexture;
+	//}
 
-	Texture* UiEntity::GetNotHoverSelectTexture() const
-	{
-		return mNotHoverSelectTexture;
-	}
+	//Texture* UiEntity::GetNotHoverSelectTexture() const
+	//{
+	//	return mNotHoverSelectTexture;
+	//}
 
 }

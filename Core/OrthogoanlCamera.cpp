@@ -1,7 +1,7 @@
 ﻿#include "Object/Camera/OrthogoanlCamera.h"
 #include"Collision/CameraBoxCollider.h"
 #include"Collision/ColliderGenerator.h"
-#include"Component/ColliderComponent.h"
+#include<Component/ColliderBaseComponent.h>
 #include"Map/Map.h"
 
 Quad::OrthogoanlCamera::OrthogoanlCamera(const std::string& name)
@@ -21,30 +21,6 @@ void Quad::OrthogoanlCamera::Initialize()
 	Camera::Initialize();
 	mOrthogonalViewCollider = ColliderGenerator::CreateBoxCameraCollider(this);
 
-
-	GetTransform().SetTransformChangeEventFlag(true);
-	GetTransform().RegisterTransformChangeCallback([collider= mOrthogonalViewCollider , dstCamera =  this ](){
-
-		const Transform& cameraTransform = dstCamera->GetTransform();
-
-		//카메라와 동일한방향
-		const DirectX::XMFLOAT4 & orientation  = cameraTransform.GetQuaternionWorld();
-		collider->GetTransform().SetQuaternionWorld(orientation);
-
-
-
-		DirectX::XMFLOAT3  posWorld = dstCamera->GetTransform().GetPositionWorld();
-		//카메라의 위치에서 look 방향으로 이동조정을 해준다
-		DirectX::XMFLOAT3 lookWorld = cameraTransform.GetLookWorld();
-		float toCenterLength = dstCamera->GetNearPlane() + (dstCamera->GetNearPlane() + dstCamera->GetFarPlane()) / 2;
-		
-		DirectX::XMFLOAT3 center;
-		DirectX::XMStoreFloat3(&center, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&posWorld),DirectX::XMVectorScale(DirectX::XMLoadFloat3(&lookWorld), toCenterLength)));
-
-		collider->GetTransform().SetPositionLocal(center);
-		collider->UpdateCollider();
-		
-		});
 
 
 }
@@ -74,16 +50,16 @@ void Quad::OrthogoanlCamera::SetNearPlane(float nearZ)
 	Camera::SetNearPlane(nearZ);
 
 	Transform& cameraTransform = GetTransform();
-	Transform & viewColliderTransform	=	mOrthogonalViewCollider->GetTransform();
+	//Transform & viewColliderTransform	=	mOrthogonalViewCollider->GetTransform();
 
-	viewColliderTransform.SetScaleLocal({ mViewWidth,mViewHeight,{GetFarPlane() - nearZ} });
+	//viewColliderTransform.SetScaleLocal({ mViewWidth,mViewHeight,{GetFarPlane() - nearZ} });
 
-	ReCalculateViewColliderPosition();
+	//ReCalculateViewColliderPosition();
 
-	EvaluateProjMatrix();
+	//EvaluateProjMatrix();
 
 
-	mOrthogonalViewCollider->UpdateCollider();
+//	mOrthogonalViewCollider->UpdateCollider();
 }
 
 void Quad::OrthogoanlCamera::SetFarPlane(float farZ)
@@ -91,7 +67,7 @@ void Quad::OrthogoanlCamera::SetFarPlane(float farZ)
 
 	Camera::SetFarPlane(farZ);
 
-	Transform& cameraTransform = GetTransform();
+	/*Transform& cameraTransform = GetTransform();
 	Transform& viewColliderTransform = mOrthogonalViewCollider->GetTransform();
 
 	viewColliderTransform.SetScaleLocal({ mViewWidth,mViewHeight,{farZ - GetNearPlane()}});
@@ -101,7 +77,7 @@ void Quad::OrthogoanlCamera::SetFarPlane(float farZ)
 	EvaluateProjMatrix();
 
 
-	mOrthogonalViewCollider->UpdateCollider();
+	mOrthogonalViewCollider->UpdateCollider();*/
 }
 
 void Quad::OrthogoanlCamera::SetViewWidth(float viewWidth)
@@ -109,13 +85,13 @@ void Quad::OrthogoanlCamera::SetViewWidth(float viewWidth)
 	mViewWidth = viewWidth;
 	
 
-	mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
+//	mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
 
 	EvaluateProjMatrix();
 
 
 
-	mOrthogonalViewCollider->UpdateCollider();
+	//mOrthogonalViewCollider->UpdateCollider();
 
 }
 
@@ -123,12 +99,12 @@ void Quad::OrthogoanlCamera::SetViewHeight(float viewHeight)
 {
 	mViewHeight = viewHeight;
 	
-	mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
+	//mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
 
 	EvaluateProjMatrix();
 
 
-	mOrthogonalViewCollider->UpdateCollider();
+//	mOrthogonalViewCollider->UpdateCollider();
 }
 
 void Quad::OrthogoanlCamera::SetViewWidthAndHeight(float viewWidth, float viewHeight)
@@ -136,12 +112,12 @@ void Quad::OrthogoanlCamera::SetViewWidthAndHeight(float viewWidth, float viewHe
 	mViewWidth = viewWidth;
 	mViewHeight = viewHeight;
 
-	mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
+	//mOrthogonalViewCollider->GetTransform().SetScaleLocal({ mViewWidth,mViewHeight,GetFarPlane() - GetNearPlane() });
 
 	EvaluateProjMatrix();
 
 
-	mOrthogonalViewCollider->UpdateCollider();
+	//mOrthogonalViewCollider->UpdateCollider();
 
 }
 
@@ -208,16 +184,16 @@ void Quad::OrthogoanlCamera::EvaluateProjMatrix()
 void Quad::OrthogoanlCamera::Serialize()
 {
 	Camera::Serialize();
-	JsonParser::Write("OrthogoanlCamera_ViewWidth", mViewWidth);
-	JsonParser::Write("OrthogoanlCamera_ViewHeight", mViewHeight);
+	//JsonParser::Write("OrthogoanlCamera_ViewWidth", mViewWidth);
+	//JsonParser::Write("OrthogoanlCamera_ViewHeight", mViewHeight);
 
 }
 
 void Quad::OrthogoanlCamera::DeSerialize()
 {
 	Camera::DeSerialize();
-	JsonParser::Read("OrthogoanlCamera_ViewWidth", mViewWidth);
-	JsonParser::Read("OrthogoanlCamera_ViewHeight", mViewHeight);
+	//JsonParser::Read("OrthogoanlCamera_ViewWidth", mViewWidth);
+	//JsonParser::Read("OrthogoanlCamera_ViewHeight", mViewHeight);
 
 	EvaluateProjMatrix();
 	UpdateViewMatrix();
@@ -243,8 +219,8 @@ void Quad::OrthogoanlCamera::InitCreating(UINT width, UINT height)
 
 	Transform& cameraTransform = GetTransform();
 
-	mOrthogonalViewCollider->GetTransform().SetScaleLocal({ (float)width,(float)height,GetFarPlane() - GetNearPlane() });
-	mOrthogonalViewCollider->GetTransform().SetQuaternionLocal(GetTransform().GetQuaternionLocal());
+	//mOrthogonalViewCollider->GetTransform().SetScaleLocal({ (float)width,(float)height,GetFarPlane() - GetNearPlane() });
+	//mOrthogonalViewCollider->GetTransform().SetQuaternionLocal(GetTransform().GetQuaternionLocal());
 
 	ReCalculateViewColliderPosition();
 
@@ -253,7 +229,7 @@ void Quad::OrthogoanlCamera::InitCreating(UINT width, UINT height)
 	EvaluateProjMatrix();
 	UpdateViewMatrix();
 
-	mOrthogonalViewCollider->UpdateCollider();
+	//mOrthogonalViewCollider->UpdateCollider();
 
 }
 
@@ -261,12 +237,12 @@ void Quad::OrthogoanlCamera::ReCalculateViewColliderPosition()
 {
 	Transform& cameraTransform = GetTransform();
 
-	DirectX::XMFLOAT3 pos = cameraTransform.GetPositionWorld();
-	DirectX::XMFLOAT3 look = cameraTransform.GetLookWorld();
+	//DirectX::XMFLOAT3 pos = cameraTransform.GetPositionWorld();
+	//DirectX::XMFLOAT3 look = cameraTransform.GetLookWorld();
 	float toCenterDistance = GetNearPlane() + (GetFarPlane() - GetNearPlane()) / 2;
-	DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&look), toCenterDistance)));
+	//DirectX::XMStoreFloat3(&pos, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&pos), DirectX::XMVectorScale(DirectX::XMLoadFloat3(&look), toCenterDistance)));
 
-	mOrthogonalViewCollider->GetTransform().SetPositionLocal(pos);
+	//mOrthogonalViewCollider->GetTransform().SetPositionLocal(pos);
 }
 
 void Quad::OrthogoanlCamera::HandleWindowResizeEvent(Event* pEvent)

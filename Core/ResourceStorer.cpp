@@ -954,6 +954,7 @@ namespace Quad
 		materialPackageRawData.mAmbient = material->GetAmbient();
 		materialPackageRawData.mColor = material->GetColor();
 		materialPackageRawData.mColorIntensity = material->GetColorIntensity();
+		materialPackageRawData.mEmissive = material->GetEmissive();
 		materialPackageRawData.mFresnelR0 = material->GetFresnelR0();
 		materialPackageRawData.mShiness = material->GetShiness();
 		
