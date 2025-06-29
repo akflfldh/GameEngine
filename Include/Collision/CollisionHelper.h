@@ -5,9 +5,13 @@
 #include<functional>
 #include"Singleton.h"
 #include"Core/CoreDllExport.h"
+//
+//#include"Collision/Collider.h"
+//#include"Collision/UiCollider.h"
+
 namespace Quad
 {
-
+	class BaseCollider;
 	class CORE_API_LIB CollisionHelper:public Singleton<CollisionHelper>
 	{
 	public:
@@ -18,18 +22,24 @@ namespace Quad
 
 		void Initialize();
 
-		static bool Intersect(const Collider* colliderA, const Collider* colliderB);
-		static bool Intersect(const Collider* collider,const Ray& ray, float& oParameterT);
-		static bool Intersect(const UiCollider* collider, const Ray& ray, float& oParameterT);
-		static bool Intersect(const UiCollider* uiCollider, const Collider* boxCollider);
+		static bool Intersect( BaseCollider* colliderA,  BaseCollider* colliderB);
+		static bool Intersect( BaseCollider* collider, const Ray& ray, float& oParameterT);
 
 
-		static Entity* Intersect(const std::vector<Entity*>& objectVector, const Ray& ray, float& oParameter);
+
+		//이거는 루트 씬컴포넌트에대해서만 수행하는것으로 변경되어야한다. 
+		//static Entity* Intersect(const std::vector<Entity*>& objectVector, const Ray& ray, float& oParameter);
 		//static Entity* Intersect(const std::vector<Object*>& objectVector, const Ray& ray, float& oParameter);
 
 
 
 	private:
+
+		static bool IntersectCC(const Collider* colliderA, const Collider* colliderB);
+		static bool IntersectCR(const Collider* collider, const Ray& ray, float& oParameterT);
+		static bool IntersectUCR(const UiCollider* collider, const Ray& ray, float& oParameterT);
+		static bool IntersectUC(const UiCollider* uiCollider, const Collider* boxCollider);
+
 
 
 	
@@ -46,6 +56,9 @@ namespace Quad
 		static bool IntersectSpF(const Collider* boundingColliderA, const Collider* boundingColliderB);
 		static bool IntersectSpOBox(const Collider* boundingColliderA, const Collider* boundingColliderB);
 		static bool IntersectFOBox(const Collider* boundingColliderA, const Collider* boundingColliderB);
+
+
+		
 
 
 	private:

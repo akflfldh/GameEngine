@@ -22,7 +22,7 @@ namespace Quad
 		static TextCharacterEntity* Create(Map* map, int mapLayerIndex = 0);
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
+		
 		CLASSNAME(TextCharacterEntity)
 		CLASSSIZE(TextCharacterEntity)
 	//	void SetGlyphMetrics(const GlyphMetrics& metrics);

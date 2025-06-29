@@ -19,8 +19,12 @@ namespace Quad
 
 	enum class EEventID
 	{
-		eSelectEvent=1
-		
+		eSelectEvent=1,
+		eMouseLButtonDownEvent,
+		eMouseLButtonUpEvent,
+		eMouseRButtonDownEvent,
+		eMouseRButtonUpEvent,
+		eMouseMoveEvent
 	};
 
 

@@ -610,6 +610,9 @@ void Quad::FbxParser::LoadMaterials(FbxMesh* mesh, std::vector<RawMaterialData>&
 		rawMaterialData.mAmbient.y = lambertMaterial->Ambient.Get().mData[1] * ambientFactor;
 		rawMaterialData.mAmbient.z = lambertMaterial->Ambient.Get().mData[2] * ambientFactor;
 
+		rawMaterialData.mEmissive.x = lambertMaterial->Emissive.Get().mData[0];
+		rawMaterialData.mEmissive.y = lambertMaterial->Emissive.Get().mData[1];
+		rawMaterialData.mEmissive.z = lambertMaterial->Emissive.Get().mData[2];
 
 		if (material->ShadingModel.Get() == "Phong")
 		{
@@ -620,6 +623,9 @@ void Quad::FbxParser::LoadMaterials(FbxMesh* mesh, std::vector<RawMaterialData>&
 			rawMaterialData.mSpecular.z = phongMaterial->Specular.Get().mData[2] * specularFactor;
 
 			rawMaterialData.mShiness = phongMaterial->Shininess;
+
+	
+
 		}
 
 		//텍스처가 겹칠수있다.

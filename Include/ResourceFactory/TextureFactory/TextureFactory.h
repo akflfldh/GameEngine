@@ -32,8 +32,22 @@ namespace Quad
 		static Texture* CreateTexture();		//처음생성하면 Mesh에 아무것도 설정되지않을상태
 		
 
+		//실제 리소스생성
+		static Texture* CreateTexture(int width, int height, ETextureFormat textureFormat =ETextureFormat::DXGI_FORMAT_R8G8B8A8_UNORM);
+
+		//실제 리소스생성
 		static RenderTargetTexture* CreateRenderTargetTexture(int width, int height);
+		
+
+
 		static Texture* CreateDepthStencilBuffer(int width, int height);
+
+
+		//static void CreateTextureResource(Texture * texture ,int width, int height);
+		static void CreateRenderTargetTextureResource(RenderTargetTexture* renderTargetTexture, int width, int height);
+		static void CreateDepthStencilBufferResource(Texture* depthStencilBuffer, int width, int height);
+
+
 
 		static void CreateSrvTex2D(Texture* texure);
 
@@ -43,12 +57,16 @@ namespace Quad
 
 
 
+		//texture의 내부 리소스,view만 제거한다.
+		static void ReleaseTextureResource(Texture* texture);
+
+
 	private:
 
 		
 		static D3D12_SRV_DIMENSION ConvertSRVDimensionEnum(D3D12_RESOURCE_DIMENSION dimension);
 		static void FillSRVTEX2DDesc(D3D12_SHADER_RESOURCE_VIEW_DESC& oSrv, Microsoft::WRL::ComPtr<ID3D12Resource> resource);
-		static ETextureFormat ConvertTextureFormatEnum(DXGI_FORMAT format);
+		static EColorFormat ConvertTextureFormatEnum(DXGI_FORMAT format);
 		
 
 
@@ -63,7 +81,7 @@ namespace Quad
 
 
 
-		std::unordered_map<std::string ,std::function<void(Texture*)>> mDtorTable;
+		std::unordered_map<ETextureType ,std::function<void(Texture*)>> mDtorTable;
 
 
 

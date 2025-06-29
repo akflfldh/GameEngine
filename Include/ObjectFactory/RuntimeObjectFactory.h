@@ -42,8 +42,8 @@ namespace Quad
 		std::unordered_map<std::string, std::function<Object* ()>> mConstructorTable;
 		std::unordered_map<std::string, std::function<void (Object *)>>mDestructorTable;
 
-		UniqueIDTable<Object> mUniqueIDTable;
-		NameTable mNameTable;
+		//UniqueIDTable<Object> mUniqueIDTable;
+		//NameTable mNameTable;
 	};
 
 }

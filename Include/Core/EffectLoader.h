@@ -8,14 +8,18 @@
 #include"header.h"
 #include"Shader/ShaderResource.h"
 #include"Core/CoreDllExport.h"
+
+
+#include"Core/EffectParser.h"
 namespace Quad
 {
+	class EffectParser;
 
 	class CORE_API_LIB EffectLoader
 	{	
 	public:
 		EffectLoader() = default;
-		~EffectLoader() = default;
+		~EffectLoader();
 
 		void Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device);
 
@@ -96,6 +100,10 @@ namespace Quad
 		std::unordered_map<std::string, D3D12_BLEND_OP > mBlendOpEnumUnMap;
 		std::unordered_map<std::string, D3D12_STENCIL_OP> mStencilOpEnumUnMap;
 		std::unordered_map<std::string, D3D12_COMPARISON_FUNC> mComparisonFuncEnumUnMap;
+
+
+		std::unique_ptr<EffectParser> mEffectParser;
+
 	};
 }
 

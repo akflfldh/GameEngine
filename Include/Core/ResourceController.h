@@ -356,7 +356,7 @@ namespace Quad
 		ERenderPassID ConvertRenderPassID(const std::wstring& str) const;
 		D3D12_BLEND_OP ConvertD3DBlendOpEnum(const std::wstring& str);
 
-		ETextureFormat ConvertTextureFormatEnum(DXGI_FORMAT format);
+		EColorFormat ConvertTextureFormatEnum(DXGI_FORMAT format);
 
 
 		void FillSRVTEX2DDesc(D3D12_SHADER_RESOURCE_VIEW_DESC& oSrv, Microsoft::WRL::ComPtr<ID3D12Resource>resource);

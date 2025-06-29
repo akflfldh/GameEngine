@@ -3,20 +3,20 @@
 
 
 
-#include"Component.h"
-#include"UiComponent.h"
+#include"BaseComponent.h"
 
 namespace Quad
 {
 
 
-	class ClickableComponent :public Component<ClickableComponent>
+	class ClickableComponent :public BaseComponent
 	{
 	public:
 
 		ClickableComponent();
 		virtual ~ClickableComponent() = default;
 
+		virtual void Start() override;
 		void Update(float delta= 0) override;
 
 

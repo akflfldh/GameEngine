@@ -14,6 +14,8 @@
 
 #include"Object/UiEntity.h"
 #include"Core/CoreDllExport.h"
+#include<InputType.h>
+
 namespace Quad
 {
 
@@ -58,8 +60,7 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
-		virtual void SetSize(float width, float height) override;
+		void SetSize(float width, float height);
 		CLASSNAME(TextBox)
 		CLASSSIZE(TextBox)
 
@@ -108,11 +109,11 @@ namespace Quad
 		//virtual void HandleLButtonDown(Event* pEvent);
 	//	virtual void HandleLButtonUp(Event* pEvent);
 
-		virtual void HandleHover(Event* pEvent) override;
+		virtual void HandleHover(const MouseInputData& mouseInputData);
 		void HandleKeyDown(Event* pEvent);
-		void HandleLButtonDown(Event* pEvent) override;
-		void HandleMouseMove(Event* pEvent);
-		void HandleLButtonUp(Event* pEvent) override;
+		void HandleLButtonDown(const MouseInputData& mouseInputData) override;
+		void HandleMouseMove(const MouseInputData& mouseInputData);
+		void HandleLButtonUp(const MouseInputData& mouseInputData) override;
 		void HandleWindowActive(Event* pEvent);
 
 		void SetOneLineFlag(bool flag);
@@ -158,7 +159,7 @@ namespace Quad
 		void SetVisibleLine();
 
 
-		void SetCursorPosition(MouseEvent* mouseEvent);
+		void SetCursorPosition(const MouseInputData& mouseInputData);
 		void ReSetDragRegion();
 
 

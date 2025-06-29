@@ -36,8 +36,8 @@ namespace Quad
 	private:
 
 
-		virtual void HandleMouseMove(Event* pEvent) override;
-		virtual void HandleLButtonUp(Event* pEvent) override;
+		virtual void HandleMouseMove(const MouseInputData & mouseInputData) override;
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData) override;
 
 		//Line* mLine;
 		//AnimationStateTransitionStartNode* mStartNode;

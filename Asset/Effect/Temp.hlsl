@@ -1,4 +1,3 @@
-
 #include"DefaultLight.hlsl"
 
 cbuffer ObjectConstant:register(b0)
@@ -26,6 +25,7 @@ cbuffer MaterialConstant:register(b2)
 	float gShiness;
 	float3 gSpecular;
 	float3 gAmbient;
+	float3 gEmissive;
 
 }
 
@@ -157,7 +157,7 @@ VertexOut VS(VertexIn vin)
 
 float4 PS(VertexOut pin) :SV_Target
 {
-	//����ó��
+	
 	 // 조명 처리
     float3 lightVector = normalize(-1.0f * gDirectionalLight[0].gDirection);
     float3 normal = normalize(pin.mNormal);
@@ -169,8 +169,11 @@ float4 PS(VertexOut pin) :SV_Target
     float3 eyeVector = normalize(gEye - pin.mPosW); // 정규화 추가
     color = CaculateLight(eyeVector, lightIntensity, lightVector, normal, color.rgb, gFresnelR0, gShiness,gSpecular);
 
+	//float4 test = float4(1.0f,1.0f,1.0f,0.0f);
+	color += float4(gEmissive,0.0f);
 
-     color =  pow(color ,1 / 2.2f); // 감마 보정 수정
+	
+    color =  pow(color ,1 / 2.2f); // 감마 보정 수정
     color.a = 1.0f;
    
     return color;

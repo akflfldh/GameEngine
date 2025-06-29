@@ -8,6 +8,7 @@
 #include"Core/Transform.h"
 
 #include"Core/CoreDllExport.h"
+#include<String>
 
 namespace Quad
 {
@@ -23,7 +24,7 @@ namespace Quad
 	class CORE_API_LIB SceneElement
 	{
 	public:
-		SceneElement(ESceneElementType sceneElementType);
+		SceneElement(std::string name,ESceneElementType sceneElementType);
 		~SceneElement();
 
 		virtual  Map* GetMap() const = 0;
@@ -34,13 +35,13 @@ namespace Quad
 		virtual System* GetSystem() const =0;
 
 
-		const Model* GetModel() const;
-		Model* GetModel();
-
 		virtual Transform& GetTransform() = 0;
 		virtual const Transform& GetTransform() const = 0;
 
 
+		const std::string GetName() const;
+		void SetName(const std::string& name);
+		
 		ESceneElementType GetSceneElementType() const;
 		 
 	protected:
@@ -48,9 +49,9 @@ namespace Quad
 		void DeSerialize(const std::string& tag="");
 
 	private:
-		Model mModel;
+		//Model mModel;
 		ESceneElementType mSceneElementType;
-
+		std::string mName;
 	};
 
 }

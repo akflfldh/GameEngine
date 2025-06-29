@@ -1,18 +1,19 @@
 ﻿#pragma once
 
 #include"Predeclare.h"
-#include"UiSystem.h"
+#include"System.h"
 #include"Object/Object.h"
 #include"Singleton.h"
 namespace Quad
 {
-	class AttributeUiSystem:public UiSystem,public Singleton<AttributeUiSystem>
+	class AttributeUiSystem:public System,public Singleton<AttributeUiSystem>
 	{
 	public:
 		AttributeUiSystem();
 		virtual ~AttributeUiSystem()=default;
 
-		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
+		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map * runtimeMap ) override;
+		virtual void Start() override;
 		virtual void Update(float deltaTime,bool playMode);
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
 

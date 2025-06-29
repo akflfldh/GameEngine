@@ -67,7 +67,7 @@ void Quad::AnimationStateTransitionNode::InitCreating()
 
 }
 
-void Quad::AnimationStateTransitionNode::HandleMouseMove(Event* pEvent)
+void Quad::AnimationStateTransitionNode::HandleMouseMove(const MouseInputData& mouseInputData)
 {
 
 	
@@ -127,7 +127,7 @@ void Quad::AnimationStateTransitionNode::HandleMouseMove(Event* pEvent)
 	//}
 }
 
-void Quad::AnimationStateTransitionNode::HandleLButtonUp(Event* pEvent)
+void Quad::AnimationStateTransitionNode::HandleLButtonUp(const MouseInputData& mouseInputData)
 {
 
 	//if (mIsCreating)

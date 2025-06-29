@@ -12,6 +12,7 @@ namespace Quad
 		std::vector<LightItem*> mSpotLightItemVector;
 		std::vector<LightItem*> mPointSpotLightItemVector;
 
+		D3D12_VIEWPORT mViewPort;
 
 	};
 }

@@ -28,13 +28,13 @@ namespace Quad
 		virtual void Update(float deltaTime)override;
 		virtual void OnEvent(Event* event) override;
 
-		virtual void SetSize(float width, float height) override;
+		//virtual void SetSize(float width, float height) override;
 
 		void SetStateName(const std::string& name);
 		const std::string& GetStateName() const;
 
-		virtual void SetPosition(const DirectX::XMFLOAT3& posL) override;
-		virtual void SetPosition(float x, float y, float z) override;
+	//	virtual void SetPosition(const DirectX::XMFLOAT3& posL) override;
+	//	virtual void SetPosition(float x, float y, float z) override;
 
 
 		bool RayCastingLinkEndRectNode(Ray& ray);
@@ -66,10 +66,10 @@ namespace Quad
 
 	private:
 
-		virtual void HandleLButtonDown(Event* pEvent) override;
-		virtual void HandleLButtonUp(Event* pEvent) override;
-		virtual void HandleMouseMove(Event* pEvent)override;
-		virtual void HandleHover(Event* pEvent)override;
+		virtual void HandleLButtonDown(const MouseInputData & mouseInputData) override;
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData) override;
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData)override;
+		virtual void HandleHover(const MouseInputData& mouseInputData)override;
 
 
 		std::vector< AnimationStateLinkRectNode*> mLinkNodeVector;// 0 : left - inputRectNode , 1 :right - outputRectNode

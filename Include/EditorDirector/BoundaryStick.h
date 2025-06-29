@@ -20,7 +20,7 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime) override;
-		virtual void OnEvent(Event* event) override;
+		//virtual void OnEvent(Event* event) override;
 
 		void SetDstEntity(UiEntity* entity);
 
@@ -28,9 +28,9 @@ namespace Quad
 
 		//event
 
-		void HandleSelectEvent(Event * event);
-		void HandleReleaseSelectEvent(Event* event);
-		void HandleMouseMoveEvent(Event* event);
+		void HandleSelectEvent(const MouseInputData& mouseInputData);
+		void HandleReleaseSelectEvent(const MouseInputData& mouseInputData);
+		void HandleMouseMoveEvent(const MouseInputData& mouseInputData);
 
 	protected:
 		void InitCreating(int direction);

@@ -17,7 +17,7 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
+		
 
 		virtual void SetStencilRefValue(unsigned char value) override;
 
@@ -34,8 +34,8 @@ namespace Quad
 		void InitCreating(Map* map, int mapLayerIndex,const std::string& className, float width, float height);
 
 	private:
-		virtual void HandleHover(Event* event) override;
-		virtual void HandleLButtonDown(Event* event)override;
+		virtual void HandleHover(const MouseInputData & mouseInputData) override;
+		virtual void HandleLButtonDown(const MouseInputData& mouseInputData)override;
 
 
 		TextBoxPanel* mTextBoxPanel;

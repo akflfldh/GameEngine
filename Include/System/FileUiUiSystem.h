@@ -27,7 +27,10 @@ namespace Quad
 		FileUiUiSystem();
 		virtual ~FileUiUiSystem();
 
-		void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map) override;
+		void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap) override;
+		virtual void Start() override;
+
+
 		void Update(float deltaTime,bool playMode) override;
 
 		void OnResize(UINT clientWidth, UINT clientHeight) override;

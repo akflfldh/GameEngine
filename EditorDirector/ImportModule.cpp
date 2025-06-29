@@ -262,7 +262,7 @@ Quad::Material* Quad::ImportModule::CreateMaterial(Quad::RawMaterialData& rawMat
 		material->SetEffectName(rawMaterialData.mEffectName);
 		material->SetSpecular(rawMaterialData.mSpecular);
 		material->SetShiness(rawMaterialData.mShiness);
-
+		material->SetEmissive(rawMaterialData.mEmissive);
 
 		std::string diffuseMapUniqueName = logicalFolderPath + rawMaterialData.mDiffuseMapName;
 

@@ -403,7 +403,8 @@ namespace Quad
 		eOpaque,
 		eTransparent,
 		eGizmo,
-
+		eEmissiveWrite,
+		eBloom
 
 	};
 
@@ -527,7 +528,7 @@ namespace Quad
 
 	class SceneElement;
 	class MeshComponent;
-	class ColliderComponent;
+	class ColliderBaseComponent;
 	class AnimationComponent;
 
 	class BaseObjectFactory;

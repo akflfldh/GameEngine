@@ -43,8 +43,8 @@ namespace Quad
 		
 
 	protected:
-		virtual void HandleMouseMove(Event* pEvent) override;
-		virtual void HandleLButtonDown(Event* pEvent) override;
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData) override;
+		virtual void HandleLButtonDown(const MouseInputData& mouseInputData) override;
 
 	private:
 		unsigned long long mNodeID; 

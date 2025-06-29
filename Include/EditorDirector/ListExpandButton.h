@@ -21,8 +21,7 @@ namespace Quad
 
 
 		void Update(float deltaTime) override;
-		virtual void OnEvent(Event * event) override;
-		
+
 
 		CLASSNAME(ListExpandButton)
 		CLASSSIZE(ListExpandButton)
@@ -35,10 +34,10 @@ namespace Quad
 		void InitCreating();
 	
 	private:
-		void HandleHover(Event* pEvent);
-		void HandleMouseMove(Event* pEvent);
-		void HandleLButtonDown(Event* pEvent);
-		void HandleLButtonUp(Event* pEvent);
+		void HandleHover(const MouseInputData & mouseInputData);
+		void HandleMouseMove(const MouseInputData& mouseInputData);
+		void HandleLButtonDown(const MouseInputData& mouseInputDatat);
+		void HandleLButtonUp(const MouseInputData& mouseInputData);
 
 		DirectX::XMFLOAT4X4 mExpandTransformTexMatrixF;
 

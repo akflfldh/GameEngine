@@ -1,22 +1,26 @@
 ﻿#pragma once
 
-#include"Component.h"
+#include"BaseComponent.h"
 #include"Core/CoreDllExport.h"
 
 namespace Quad
 {
 
 	class Object;
-	class CORE_API_LIB LookComponent :public Component<LookComponent>
+	class CORE_API_LIB LookComponent :public BaseComponent
 	{
 	public:
-		LookComponent(Object * destObject);
+		LookComponent();
 		virtual ~LookComponent();
-
-		virtual void Update(float delta);
+		
+		virtual void Start() override;
+		virtual void Update(float delta) override;
 
 		void TurnPitchInput(float value);
 		void TurnYawInput(float value);
+
+		CLASSNAME(LookComponent)
+		CLASSNAMESTATIC(LookComponent)
 
 	private:
 
@@ -33,4 +37,5 @@ namespace Quad
 		float mRotationScreenX;
 		float mRotationScreenY;
 	};
+	REGISTERCOMPONENTCLASS(LookComponent)
 }

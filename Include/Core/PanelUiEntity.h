@@ -5,7 +5,11 @@
 
 #include"Core/CoreDllExport.h"
 
+
+
 #include<vector>
+
+
 namespace Quad
 {
 	class CORE_API_LIB PanelUiEntity:public UiEntity
@@ -20,7 +24,6 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
 		virtual void AddChildPanelUiEntity(UiEntity* childPanel);
 
 
@@ -40,12 +43,12 @@ namespace Quad
 
 
 
-		virtual void HandleLButtonDown(Event* pEvent);
-		virtual void HandleLButtonUp(Event* pEvent);
-		virtual void HandleRButtonDown(Event* pEvent);
-		virtual void HandleRButtonUp(Event* pEvent);
-		virtual void HandleMouseMove(Event* pEvent);
-		virtual void HandleHover(Event* pEvent);
+		virtual void HandleLButtonDown(const MouseInputData & mouseInputData);
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData);
+		virtual void HandleRButtonDown(const MouseInputData& mouseInputData);
+		virtual void HandleRButtonUp(const MouseInputData& mouseInputData);
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData);
+		virtual void HandleHover(const MouseInputData& mouseInputData);
 
 
 		void InitCreating();
@@ -59,6 +62,9 @@ namespace Quad
 		Object* mHoverChildObject = nullptr;
 
 
+
+
+		
 
 
 

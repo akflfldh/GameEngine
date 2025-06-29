@@ -16,7 +16,8 @@ namespace Quad
 		FrameWindowDockingSystem();
 		virtual ~FrameWindowDockingSystem() = default;
 
-		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map * map) override;
+		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap) override;
+		virtual void Start() override;
 		virtual void Update(float deltaTime, bool playMode) override;
 		virtual void OnResize(UINT clientWidth, UINT clientHeight) override;
 

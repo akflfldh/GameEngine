@@ -4,7 +4,6 @@
 #include"Predeclare.h"
 
 #include"Core/SceneElement.h"
-#include"Core/Transform.h"
 #include<unordered_map>
 #include<string>
 #include<vector>
@@ -17,6 +16,8 @@
 #include"Utility/UniqueIDTable.h"
 #include"Object/ObjectSmartPointer.h"
 
+#include<type_traits>
+
 
 #include"Core/CoreDllExport.h"
 #include"Collision/Collider.h"
@@ -24,11 +25,20 @@
 
 
 
-
 namespace Quad
 {
+	namespace Scene
+	{
+		class SceneGraph;
+		struct Node;
+	}
 	template<typename T>
 	class SpacePartitioningStructure;
+	
+
+	class SceneComponent;
+	
+	//typename class SceneGraph::Node;
 
 	class CORE_API_LIB Object:public SceneElement
 	{
@@ -36,7 +46,7 @@ namespace Quad
 		friend class GamePlayWindowController;
 		friend class CollisionHelper;
 		friend class Map;
-		friend class SceneGraph;
+		friend class Scene::SceneGraph;
 		friend class SpacePartitioningStructure<Collider>;
 		//friend class SpacePartitioningStructure<UiCollider>;
 		friend class DockingWindowController;
@@ -44,7 +54,7 @@ namespace Quad
 		friend class UniqueIDTable<Object>;
 
 
-		Object(const std::string& name,EObjectType objectType);
+		Object(EObjectType objectType = EObjectType::eObject);
 		virtual ~Object() ;
 
 
@@ -52,23 +62,47 @@ namespace Quad
 		virtual const Transform& GetTransform() const override;
 
 
-
-		void SetTransform(Transform& transform);
-
-		virtual void Initialize() = 0;
+		virtual void Initialize();
 
 		//Initialize()호출후, Default로초기화하는경우
 		//엔진에서 사용함으로 유저는다음을 작성한다.
-		virtual void DefaultCreatingInitialize() = 0; 
+		virtual void DefaultCreatingInitialize(); 
 				
 
 
-		virtual void OnEvent(Event* event) = 0;
+		virtual void OnEvent(Event* event);
 		virtual void Start();
-		virtual void Update(float deltaTime) = 0;
-		virtual void EndUpdate(float deltaTime) = 0;
+		virtual void Update(float deltaTime);
+		virtual void EndUpdate(float deltaTime);
 
 	
+		void SetObjectPositionLocal(const DirectX::XMFLOAT3& pos);
+		void SetObjectPositionLocal(float x, float y, float z);
+		void SetObjectPositionWorld(const DirectX::XMFLOAT3& pos);
+		void SetObjectPositionWorld(float x, float y, float z);
+		
+
+		DirectX::XMFLOAT3 GetObjectPositionLocal() const;
+		DirectX::XMFLOAT3 GetObjectPositionWorld() const;
+		
+
+
+
+		DirectX::XMFLOAT4 GetObjectQuaternionLocal() const;
+		DirectX::XMFLOAT4 GetObjectQuaternionWorld() const;
+		void SetObjectQuaternionWorld(const DirectX::XMFLOAT4& quaternion);
+
+
+
+		DirectX::XMFLOAT3 GetObjectLookWorld() const;
+		DirectX::XMFLOAT3 GetObjectRightWorld() const;
+		DirectX::XMFLOAT3 GetObjectUpWorld() const;
+
+
+
+
+
+
 
 
 		virtual void SetDrawFlag(bool flag);
@@ -77,16 +111,11 @@ namespace Quad
 		void SetEntireDrawFlag(bool flag);
 		bool GetEntrieDrawFlag()const;
 
-
 		virtual void SetActiveFlag(bool flag);
 		bool GetActiveFlag()const;
 
-		void SetSelectFlag(bool flag);
-		void SendSelectEvent(bool state,bool exclusiveEventHandleFlag = false);
-		bool GetSelectFlag()const;
-
 		bool AddChildObject(Object* childObject);
-
+		
 
 		//파생클래스에서 개별적으로 childOject리스트를 유지한다면 이 메서드들을 오버라이딩해야한다.
 		//부모자식관계를 끊는다. (자식은 씬그래프의 루트노드가 부모가 된다)
@@ -94,7 +123,7 @@ namespace Quad
 		//child vector에서 childObject만 제거하는메서드
 		virtual bool RemoveChildObjectInVector(Object* childObject);
 
-		const std::vector<ObjectSmartPointer>& GetChildObjectVector() const;
+		const std::vector<Object*>& GetChildObjectVector() const;
 
 		virtual void SetStencilRefValue(unsigned char value);
 		unsigned char GetStencilRefValue()const;
@@ -106,34 +135,8 @@ namespace Quad
 		virtual System* GetSystem() const override;
 
 
-		const std::string GetName()const;
-		void SetName(const std::string& name);
-
-		//?????? ->id?? ?????? ???????.???????????? ??????????.
-		//?? ?????? ?????(name)?? ????.
-		void SetIDState(bool state);
-		bool GetIDState()const;
-
-		void SetSelectKeepingFlag(bool flag);
-		bool GetSelectKeepingFlag()const;
-		
-		void SetSelectAvailableFlag(bool flag);
-		bool GetSelectAvailableFlag()const;
-
-		void SetSelectBlockFlag(bool flag);
-		bool GetSelectBlockFlag()const;
-
-		void SetEntireSelectAvailableFlag(bool flag);
-		bool GetEntireSelectAvailableFlag()const;
-
-
 		EObjectType GetObjectType()const;
 
-		const StateComponent* GetStateComponent() const ;
-		StateComponent* GetStateComponent();
-
-
-		//?? ?????? ????????????? ?????????????? ???.
 		virtual bool InnerDetectCollsion(Collider* colliderA, Collider* colliderB) ;
 		virtual bool InnerDetectRayHit(const Ray& ray) ;
 
@@ -141,33 +144,25 @@ namespace Quad
 
 		void RegisterAcceptEvent(const std::string& eventName);
 		void RemoveAcceptEvent(const std::string& eventName);
-	//	void RegisterAcceptEvent(int eventID);
 
 
-		
-		void RegisterEventCallback(const std::string& eventName, const std::function<void(Event* pEvent)> & callback);
-		std::function<void(Event*)> * GetEventCallback(const std::string& name,int index=0);
-		void CallEventCallback(const std::string& name, Event* pEvent);
+		template<typename T> 
+		T* AddComponent(const char * componentName);					//몇몇 component들은 추가할려면 object가 componentChannel을 가질것을 필요로한다..
 
-
-		void SetUpdateCallback(const std::function<void(Object * object, float deltaTime)>& callback);
-		const std::function<void(Object * object, float deltaTime)> * GetUpdateCallback()const;
-
-
-		void HandleDefaultEvent(Event* pEvent);
-		//unsigned long long GetID() const;
-
-
-
-
-
-		void AddComponent(BaseComponent * component);
-		BaseComponent* GetComponent(int componentID)const;
+		template<typename T>
+		T* GetComponent(const char * componentName)const;
 		
 		
+		//최상위component들에대해서만 작동
+		void RemoveComponent(const char* componentName);
+
+
+
 		//CLASSNAME(Object)
-		virtual const char* GetClassTypeName() const = 0;
-		CLASSSIZE(Object);
+		CLASSNAME(Object)
+		CLASSNAMESTATIC(Object)
+		//virtual const char* GetClassTypeName() const ;
+		CLASSSIZE(Object)
 
 
 		void SetMapLayer(int mapLayerID);
@@ -181,14 +176,8 @@ namespace Quad
 		virtual  Map* GetMap() override; 
 
 
-		virtual void Serialize() = 0;
-		virtual void DeSerialize() = 0;
-
-
-
-		//유저는 건들지 말것 (기즈모 등를위한것)
-		bool GetEnginObjectFlag() const;
-		void SetEngineObjectFlag(bool flag);
+		virtual void Serialize();
+		virtual void DeSerialize();
 
 
 		bool GetKilledState() const;
@@ -204,84 +193,53 @@ namespace Quad
 		void SetMap(Map* map);
 
 
-		
+
+	public:
+		DirectX::XMFLOAT4X4 GetTransformWorldMatrix() const;
+		SceneComponent* GetRootSceneComponent() const;
+
 
 	protected:
-		Transform mTransform;
-		std::string mName;
-
-		//std::unordered_map <std::string,
-
-		Map* mMap=nullptr;					//?????????? ??????? map
-
 		
 
-		void SetIsAddedToSceneFlag(bool state);
-		bool GetIsAddedToSceneFlag() const;
+		Map* mMap=nullptr;				
+		SceneComponent* mRootSceneComponent;
 		
-		void UpdateComponent(float delta);
+		//void UpdateComponent(float delta);
 	
 	private:
 		void SetUniqueID(unsigned long long id);
 		void SetKilledState(bool state);
 
+		BaseComponent* AddComponent(const char* componentTypeName,const char* componentName);
+		BaseComponent* GetComponent(const char * componentName) const;
 
+
+		void UpdateSceneComponentWorldTransformReculsivly();
 
 
 
 
 		unsigned long long mUniqueID;
-		//QOBHANDLE mObjectHandle;
 
-		System* mSystem;	// ?????? map??????????? ??????? ??????? ?? map????????????? ?????????????.
+		System* mSystem;	
 		
-
-		//Object* mParentObject;
-		ObjectSmartPointer mParentObject;
-		//std::vector<Object*> mChildObjectVector;
-		std::vector<ObjectSmartPointer> mChildObjectVector;
+		Object* mParentObject;
+		std::vector<Object*> mChildObjectVector;
 
 		bool mDrawFlag;
 		bool mEntireDrawFlag;
 		bool mActiveFlag;
-		bool mSelectFlag;		//?????????? ????.
-		bool mIDState = true;		//??????id???????.
-
-		//?????????? LButtonUp???????? ??????? select?????? ?????????????
-		bool mSelectKeepingFlag = true;	
-		//?????????????????? ??????
-		bool mSelectAvailableFlag = true;
-		//??????????? ??????????? ????????? ?????????????? ???? 
-		bool mSelectBlockFlag = true;
-		
-		bool mEntireSelectAvailableFlag = true;
-
 		unsigned char mStencilRefValue = 0;
 		EObjectType mObjectType;
-
-
-		StateComponent mStateComponent;
-
 		bool mIsAddedToSceneState =false;
 
-
-
-
-		std::function<void(Object * object ,float deltaTime)> mUpdateCallback = nullptr;
-		std::unordered_map<std::string, std::vector<std::function<void(Event* pEvent)>>> mEventCallbackUnMap;
-
-
-							//componentID, 
-		std::unordered_map<int, BaseComponent*> mComponentTable;
+							//componentName, 
+		std::unordered_map<std::string, BaseComponent*> mComponentTable;
 
 
 		int mMapLayerID = 0;
 		
-		
-
-
-		bool mIsEngineObject=false ;
-
 		bool mIsKilledState = false;
 
 
@@ -291,6 +249,53 @@ namespace Quad
 		bool mStartObjectFlag;
 
 
+
+
+
+
+		Quad::Scene::Node * mSceneGraphNode;//sceneGraph에서 여러가지 node작업을수행할시 빠른 작업을위해 캐싱한다
+		//이렇게얻는이점이 커플링 정도의 증가보다 훨씬 이득임으로,적절한 등가교환이다.
+
+
 	};
+	REGISTERCLASS(Object)
+
+
+
+
+
+	template<typename T>
+	inline T * Object::AddComponent(const char * componentName)
+	{
+		static_assert(std::is_base_of<BaseComponent, T>::value,
+			"Component타입이 아니다.\n");
+
+
+		
+		T* component = nullptr;
+
+		component = static_cast<T*>(AddComponent(T::GetClassTypeNameStatic(), componentName));
+
+		
+
+
+
+		return component;
+
+	}
+
+	template<typename T>
+	inline T* Object::GetComponent(const char* componentName) const
+	{
+		static_assert(std::is_base_of<BaseComponent, T>::value,
+			"Component타입이 아니다.\n");
+
+
+	
+		T* component = dynamic_cast<T*>(GetComponent(componentName));
+		
+
+		return component;
+	}
 
 }

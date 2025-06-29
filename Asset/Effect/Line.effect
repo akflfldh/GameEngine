@@ -1,30 +1,39 @@
+[
 
 
+  {
+    "TYPE":"PASS",
+    "SHADER" : 
+    {
 
-PASS 
-{
+      "VS":
+      {
+        "File":"Line.hlsl",
 
-VS
-{
-  File:"Line.hlsl"
+        "EntryPoint":"VS",
 
-  EntryPoint:"VS"
-
-  Version:"vs_5_1"
-}
-
-
-PS
-{
-  File:"Line.hlsl"
-
-  EntryPoint:"PS"
-
-  Version:"ps_5_1"
-}
+        "Version":"vs_5_1"
+      },
 
 
-PRIMITIVETOPOLOGYTYPE : LINELIST
+      "PS" :
+      {
+        "File":"Line.hlsl",
+
+        "EntryPoint":"PS",
+
+        "Version":"ps_5_1"
+      }
+
+    },
+
+    "CONFIG":
+    {
+
+       "PRIMITIVETOPOLOGYTYPE" : "LINELIST"
+
+    }
 
 
-}
+  }
+]

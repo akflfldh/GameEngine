@@ -13,7 +13,7 @@ namespace Quad
 		//void SetDestUiEntity(UiEntity* destUiEntity);
 		//UiEntity* GetDestUiEntity() const;
 
-		virtual void Update(float deltaTime) override;
+		virtual void Update(const DirectX::XMFLOAT4X4& transformMatrix) override;
 
 
 		const DirectX::XMFLOAT3& GetTopLeftPoint() const;

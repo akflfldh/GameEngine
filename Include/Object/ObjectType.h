@@ -19,12 +19,14 @@ enum class ELightType
 
 enum class EObjectType
 {
-	eEntity=0,
+	eEntity = 0,
 	eUiEntity,
 	eLight,
 	eCamera,
 	eLine,
 	eSpline,
-	eCollider
+	eCollider,
+	eObject
+	
 
 };

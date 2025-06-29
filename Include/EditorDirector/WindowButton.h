@@ -4,6 +4,7 @@
 
 
 #include"WindowControlEntity.h"
+#include<InputType.h>
 
 namespace Quad
 {
@@ -47,10 +48,10 @@ namespace Quad
 
 
 	private:
-		virtual void HandleMouseMove(Event * pEvent);
-		virtual void HandleLButtonUp(Event* pEvent) override;
-		virtual void HandleHover(Event* pEvent) override;
-		virtual void HandleLButtonDown(Event* pEvent) override;
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData);
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData) override;
+		virtual void HandleHover(const MouseInputData& mouseInputData) override;
+		virtual void HandleLButtonDown(const MouseInputData& mouseInputData) override;
 
 
 		bool mSelectState = false;

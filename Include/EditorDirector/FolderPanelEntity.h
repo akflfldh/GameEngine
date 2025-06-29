@@ -51,12 +51,12 @@ namespace Quad
 
 	private:
 
-		void HandleHover(Event* pEvent) override;
-		void HandleLButtonDown(Event* pEvent) override;
-		void HandleLButtonUp(Event* pEvent) override;
-		void HandleMouseMove(Event* pEvent) override;
-		void HandleRButtonUp(Event* pEvent) override;
-		void HandleRButtonDown(Event* pEvent) override;
+		void HandleHover(const MouseInputData& mouseInputData) override;
+		void HandleLButtonDown(const MouseInputData& mouseInputData) override;
+		void HandleLButtonUp(const MouseInputData& mouseInputData) override;
+		void HandleMouseMove(const MouseInputData& mouseInputData) override;
+		void HandleRButtonUp(const MouseInputData& mouseInputData) override;
+		void HandleRButtonDown(const MouseInputData& mouseInputData) override;
 	
 		const FolderListPanelEntity* GetFolderListPanelEntity()const;
 		FolderListPanelEntity* GetFolderListPanelEntity();

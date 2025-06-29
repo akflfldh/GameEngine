@@ -8,6 +8,10 @@ namespace Quad
 
 	}
 
+	void ClickableComponent::Start()
+	{
+	}
+
 	void ClickableComponent::Update(float delta)
 	{
 

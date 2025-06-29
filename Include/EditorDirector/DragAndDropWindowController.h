@@ -5,20 +5,22 @@
 
 
 #include"Predeclare.h"
-#include"Core/Controller.h"
+#include"Core/BaseWindowController.h"
 #include"Object/UiEntity.h"
 #include"Core/RenderSystem.h"
 #include"Utility/Singleton.h"
 namespace Quad
 {
-	class DragAndDropWindowController:public Controller,public Singleton<DragAndDropWindowController>
+	class DragAndDropWindowController:public BaseWindowController,public Singleton<DragAndDropWindowController>
 	{
 	public:
-		DragAndDropWindowController() = default;
+		DragAndDropWindowController(RenderSystem* renderSystem);
 		~DragAndDropWindowController();
 
-		virtual void Initialize(DragAndDropWindow * dragAndDropWindow, DragAndDropSystem* uiSystem,
-			RenderSystem* renderSystem);
+		virtual void Initialize(DragAndDropWindow * dragAndDropWindow, DragAndDropSystem* uiSystem);
+
+		virtual BaseWindow* GetWindow() const override;
+
 		void Update(float deltaTime);
 		void EndUpdate(float deltaTime);
 		void UploadObjectToRenderSystem();
@@ -30,7 +32,7 @@ namespace Quad
 		static bool GetWindowRunningState();
 		static bool GetWindowShowState();
 		static void SetShowState(bool state);
-		static BaseWindow* GetWindow() ;
+		//static BaseWindow* GetWindow(int i=0) ;
 		static void SetContentItemUiEntity(ContentItemUiEntity * contentItemUiEntity);
 
 	private:

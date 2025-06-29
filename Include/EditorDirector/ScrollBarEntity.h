@@ -25,7 +25,7 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
+		
 
 		CLASSNAME(ScrollBarEntity)
 		CLASSSIZE(ScrollBarEntity)
@@ -63,10 +63,10 @@ namespace Quad
 
 	private:
 
-		void HandleLButtonDown(Event* pEvent)override;
+	/*	void HandleLButtonDown(Event* pEvent)override;
 		void HandleMouseMove(Event *pEvent) override;
 		void HandleLButtonUp(Event* pEvent) override;
-		void HandleWheel(Event* pEvent);
+		void HandleWheel(Event* pEvent);*/
 
 
 

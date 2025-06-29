@@ -40,12 +40,13 @@ namespace Quad
 	{
 		MaterialType mType;
 
-		DirectX::XMFLOAT4 mDiffuse = { 1.0f,1.0f,1.0f,1.0f };
-		DirectX::XMFLOAT3 mFresnelR0 = { 0.1f,0.1f,0.1f };
-		DirectX::XMFLOAT3 mSpecular = { 0.5f,0.5f,0.5f };
-		DirectX::XMFLOAT3 mAmbient = { 0.2f,0.2f,0.2f };
-		DirectX::XMFLOAT3 mColor = { 1.0f,1.0f,1.0f };
-		DirectX::XMFLOAT3 mColorIntensity = { 1.0f,1.0f,1.0f };
+		DirectX::XMFLOAT4 mDiffuse;
+		DirectX::XMFLOAT3 mFresnelR0;
+		DirectX::XMFLOAT3 mSpecular;
+		DirectX::XMFLOAT3 mAmbient;
+		DirectX::XMFLOAT3 mColor;
+		DirectX::XMFLOAT3 mColorIntensity;
+		DirectX::XMFLOAT3 mEmissive;
 		unsigned long long  mDiffuseMapID;
 		unsigned long long mNormalMapID;
 		unsigned long long mEffectID;

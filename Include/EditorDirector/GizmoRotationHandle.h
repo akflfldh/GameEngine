@@ -3,6 +3,9 @@
 #include"Predeclare.h"
 #include"Entity.h"
 #include"EditorMacro.h"
+
+#include"InputType.h"
+
 namespace Quad
 {
 	
@@ -32,10 +35,10 @@ namespace Quad
 
 
 	private:
-		void HandleLButtonDown(Event * pEvent);
-		void HandleLButtonUp(Event * pEvent);
-		void HandleHover(Event * pEvent);
-		void HandleMouseMove(Event * pEvent);
+		void HandleLButtonDown(const MouseInputData& mouseInputData);
+		void HandleLButtonUp(const MouseInputData& mouseInputData);
+		void HandleHover(const MouseInputData& mouseInputData);
+		void HandleMouseMove(const MouseInputData& mouseInputData);
 
 
 

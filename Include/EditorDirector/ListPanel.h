@@ -32,8 +32,8 @@ namespace Quad
 		float CalcChildPanelUiEntityPosLocalY(int childPanelUiEntityIndex);
 
 
-		virtual void HandleHover(Event* pEvent) override;
-		virtual void HandleMouseMove(Event* pEvent) override;
+		virtual void HandleHover(const MouseInputData & moustInputData) override;
+		virtual void HandleMouseMove(const MouseInputData& moustInputData) override;
 
 		int mChildListItemMaxNum;
 		int mChildListCurrentNum;

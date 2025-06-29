@@ -2,28 +2,27 @@
 
 #include"Predeclare.h"
 
-#include"ModelBaseComponent.h"
+#include"Component/ColliderBaseComponent.h"
 #include"Core/CoreDllExport.h"
+
+
 
 namespace Quad
 {
 
 
-	class CORE_API_LIB UiColliderComponent:public ModelBaseComponent
+	class CORE_API_LIB UiColliderComponent:public ColliderBaseComponent
 	{
 	public:
-		UiColliderComponent(Object* uiEntity);
-		virtual ~UiColliderComponent();
+		UiColliderComponent();
+		virtual ~UiColliderComponent() = 0;
 
 		virtual void Update(float deltaTime) override;
 
 		virtual void Serialize(const std::string& tag = "") override;
 		virtual void DeSerialize(const std::string& tag = "") override;
 
-		UiCollider* GetCollider() const;
-
 	private:
-		UiCollider* mCollider;
 
 	};
 

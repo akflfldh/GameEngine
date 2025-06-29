@@ -37,7 +37,11 @@ bool Quad::JsonParser::ReadFile(const std::string& fileName)
 
     FileReadStream is(fp, buffer, sizeof(buffer));
 
+
+
     auto instance = GetInstance();
+    //instance->mDocument.SetArray();
+
     instance->mDocument.ParseStream(is);
     fclose(fp);
 
@@ -47,40 +51,57 @@ bool Quad::JsonParser::ReadFile(const std::string& fileName)
 unsigned int Quad::JsonParser::GetObjectNum()
 {
     auto instance = GetInstance();
-    return instance->mDocument.Size();
+
+   // int objectNum = instance->mDocument.GetArray().Size();
+    if (instance->mDocument.IsArray())
+    {
+        rapidjson::SizeType objectNum = instance->mDocument.Size();
+
+
+       //auto array = instance->mDocument.GetArray();
+       //std::string name = array[0].MemberBegin()->name.GetString();
+
+        return objectNum;
+    }
+
+    return 0;
+  //  return instance->mDocument.Size();
 }
 
 void Quad::JsonParser::SetCurrentIndex(unsigned int index)
 {
     auto instance = GetInstance();
-    instance->mCurrentReadObjectIndex = index;
+    instance->mCurrentElementNode.mCurrentIndex = index;
+   
 }
 
 unsigned int Quad::JsonParser::GetCurrentIndex()
 {
     auto instance = GetInstance();
-    return instance->mCurrentReadObjectIndex;
+    return     instance->mCurrentElementNode.mCurrentIndex++;
     
 }
 
 void Quad::JsonParser::IncrementCurrentIndex()
 {
     auto instance = GetInstance();
-    instance->mCurrentReadObjectIndex++;
+    
+    instance->mCurrentElementNode.mCurrentIndex++;
+
 
 }
 
-const std::string Quad::JsonParser::GetClassName(unsigned int index)
-{
-    auto instance = GetInstance();
-    std::string className = instance->mDocument[index].FindMember("ClassName")->value.GetString();
-    return className;
-}
+
 
 void Quad::JsonParser::ReadStart()
 {
     auto instance = GetInstance();
-    instance->mCurrentReadObjectIndex = 0;
+
+    std::stack<ElementNode> tempStack;
+    instance->mElementNodeStack.swap(tempStack);
+
+    instance->mCurrentElementNode.mCurrentElementValue = &instance->mDocument;
+    instance->mCurrentElementNode.mCurrentIndex = 0;
 }
 
 void Quad::JsonParser::Read(const std::string& key, std::string& member)
@@ -171,6 +192,112 @@ void Quad::JsonParser::Read(const std::string& key, DirectX::XMFLOAT4X4& member)
 
 }
 
+size_t Quad::JsonParser::GetMemeberNum()
+{
+    auto instance = GetInstance();
+    return instance->mCurrentElementNode.mCurrentElementValue->GetObject().MemberCount();
+
+
+}
+
+rapidjson::Type Quad::JsonParser::GetCurrIndexValueType()
+{
+    auto instance = GetInstance();
+
+   
+
+    rapidjson::Value* pCurrValue = instance->mCurrentElementNode.mCurrentElementValue;
+    rapidjson::Type currValueType = pCurrValue->GetType();
+
+    int index  = instance->mCurrentElementNode.mCurrentIndex;
+    if (currValueType == rapidjson::Type::kArrayType)
+    {
+       return pCurrValue->GetArray()[index].GetType();
+    }
+    else if (currValueType == rapidjson::Type::kObjectType)
+    {
+        return pCurrValue->MemberBegin()[index].value.GetType();
+    }
+
+
+}
+
+std::string Quad::JsonParser::GetCurrMemberKey()
+{
+    auto instance = GetInstance();
+
+    return instance->mCurrentElementNode.mCurrentElementValue->MemberBegin()[instance->mCurrentElementNode.mCurrentIndex].name.GetString();
+
+
+}
+
+void Quad::JsonParser::DescendIntoObjectOrArray()
+{
+
+    auto instance = GetInstance();
+    rapidjson::Value* pCurrValue = instance->mCurrentElementNode.mCurrentElementValue;
+
+    rapidjson::Type currValueType = pCurrValue->GetType();
+ 
+
+    rapidjson::Type currIndexValueType =  GetCurrIndexValueType();
+
+    //현재 index의 value타입이 array, object가 아니다.
+    if (!(currIndexValueType == rapidjson::kArrayType || currIndexValueType == rapidjson::kObjectType))
+        return;
+
+
+
+    instance->mElementNodeStack.push(instance->mCurrentElementNode);
+  
+    int currIndex = instance->mCurrentElementNode.mCurrentIndex;
+    if (currValueType == rapidjson::Type::kArrayType)
+    {     
+        instance->mCurrentElementNode.mCurrentElementValue = &instance->mCurrentElementNode.mCurrentElementValue->GetArray()[currIndex];
+
+    }
+    else if (currValueType == rapidjson::Type::kObjectType)
+    {
+        instance->mCurrentElementNode.mCurrentElementValue = &instance->mCurrentElementNode.mCurrentElementValue->MemberBegin()[currIndex].value;
+    }
+    instance->mCurrentElementNode.mCurrentIndex = 0;
+
+
+
+
+}
+
+void Quad::JsonParser::DescendIntoObjectOrArray(const std::string& key)
+{
+
+    auto instance = GetInstance();
+    rapidjson::Value* pCurrValue = instance->mCurrentElementNode.mCurrentElementValue;
+
+    rapidjson::Type currValueType = pCurrValue->GetType();
+
+    instance->mElementNodeStack.push(instance->mCurrentElementNode);
+
+   
+    instance->mCurrentElementNode.mCurrentElementValue = &pCurrValue->FindMember(key.c_str())->value;
+
+    instance->mCurrentElementNode.mCurrentIndex = 0;
+
+}
+
+void Quad::JsonParser::AscendOutofObjectOrArray()
+{
+    auto instance = GetInstance();
+    if (instance->mElementNodeStack.empty())
+        return;
+
+
+    instance->mCurrentElementNode   =  instance->mElementNodeStack.top();
+    instance->mElementNodeStack.pop();
+
+    instance->mCurrentElementNode.mCurrentIndex++;
+
+}
+
 bool Quad::JsonParser::ReadBool(const std::string& key)
 {
     Value::MemberIterator itr = GetMemberIterator(key);
@@ -185,6 +312,44 @@ rapidjson::Value::ConstArray Quad::JsonParser::ReadArray(const std::string& key)
 
 }
 
+void Quad::JsonParser::Read(std::string& value)
+{
+
+    Value * elementValue =GetCurrentArrayElementValue();
+    value = elementValue->GetString();
+
+}
+
+void Quad::JsonParser::Read(int& value)
+{
+    Value* elementValue = GetCurrentArrayElementValue();
+    value = elementValue->GetInt();
+
+}
+
+void Quad::JsonParser::Read(unsigned long long& value)
+{
+    Value* elementValue = GetCurrentArrayElementValue();
+    value = elementValue->GetUint64();
+}
+
+void Quad::JsonParser::Read(unsigned int& value)
+{
+    Value* elementValue = GetCurrentArrayElementValue();
+    value = elementValue->GetUint();
+}
+
+void Quad::JsonParser::Read(float& value)
+{
+    Value* elementValue = GetCurrentArrayElementValue();
+    value = elementValue->GetFloat();
+}
+
+
+
+
+
+
 
 
 
@@ -196,28 +361,55 @@ rapidjson::Value::ConstArray Quad::JsonParser::ReadArray(const std::string& key)
 void Quad::JsonParser::StartWrite()
 {
     auto instance = GetInstance();
-   // Document newDocument(kArrayType);
-  //  instance->mDocument.Swap(newDocument);
+    Document newDocument(kArrayType);
+    instance->mDocument.Swap(newDocument);
     instance->mDocument.SetArray();
  /*   GenericMemberIterator v = newDocument[0].FindMember("as");
     v->value.IsArray();*/
 
+    std::stack<ElementNode> tempStack;
+    instance->mElementNodeStack.swap(tempStack);
+    instance->mCurrentElementNode.mCurrentElementValue = &instance->mDocument;
+    instance->mCurrentElementNode.mCurrentIndex = 0;
+
+}
+
+void Quad::JsonParser::StartWriteObject(const std::string& key)
+{
+    auto instance = GetInstance();
+    instance->mCurrentElementNode.mCurrentElementValue->AddMember(Value(key.c_str(), instance->mDocument.GetAllocator()), Value(kObjectType), instance->mDocument.GetAllocator());
+
+
+    instance->mElementNodeStack.push(instance->mCurrentElementNode);
+    instance->mCurrentElementNode.mCurrentElementValue = &instance->mCurrentElementNode.mCurrentElementValue->FindMember(key.c_str())->value;
+
+    instance->mCurrentElementNode.mCurrentIndex = 0;
 
 }
 
 void Quad::JsonParser::StartWriteObject()
 {
     auto instance = GetInstance();    
-    instance->mDocument.PushBack(Value(kObjectType), instance->mDocument.GetAllocator());
+    instance->mCurrentElementNode.mCurrentElementValue->PushBack(Value(kObjectType),instance->mDocument.GetAllocator());
+
+
+
+
+    instance->mElementNodeStack.push(instance->mCurrentElementNode);
+    size_t size = instance->mCurrentElementNode.mCurrentElementValue->GetArray().Size();
+
+    instance->mCurrentElementNode.mCurrentElementValue = &instance->mCurrentElementNode.mCurrentElementValue->GetArray()[size-1];
+    instance->mCurrentElementNode.mCurrentIndex = 0;
+
+
 
 }
 
 void Quad::JsonParser::Write(const std::string& key, const std::string& value)
 {
     auto instance = GetInstance();
-    Document& document = instance->mDocument;
-    document[document.Size() - 1].AddMember(Value(key.c_str(), document.GetAllocator()), 
-        Value(value.c_str(), document.GetAllocator()), document.GetAllocator());
+    Value va(value.c_str(), instance->mDocument.GetAllocator());
+    WriteMember(key, va);
 
     
 
@@ -358,15 +550,22 @@ void Quad::JsonParser::Save(const std::string& fileName)
 Quad::Value::MemberIterator Quad::JsonParser::GetMemberIterator(const std::string& key)
 {
     auto instance = GetInstance();
-    Value::MemberIterator itr = instance->mDocument[instance->mCurrentReadObjectIndex].FindMember(key.c_str());
+    Value::MemberIterator itr = instance->mCurrentElementNode.mCurrentElementValue->FindMember(key.c_str());
     return itr;
 }
 
-void Quad::JsonParser::WriteMember(const std::string& key, const Value &  value)
+Quad::Value* Quad::JsonParser::GetCurrentArrayElementValue()
+{
+    auto instance = GetInstance();
+    Value* pValue = instance->mCurrentElementNode.mCurrentElementValue;
+    return  &pValue->GetArray()[instance->mCurrentElementNode.mCurrentIndex];
+}
+
+void Quad::JsonParser::WriteMember(const std::string& key,  Value & value)
 {
     auto instance = GetInstance();
     Document& document = instance->mDocument;
-    document[document.Size() - 1].AddMember(Value(key.c_str(), document.GetAllocator()), const_cast<Value &>(value), document.GetAllocator());
+    instance->mCurrentElementNode.mCurrentElementValue->AddMember(Value(key.c_str(), document.GetAllocator()), value, document.GetAllocator());
 
 }
 

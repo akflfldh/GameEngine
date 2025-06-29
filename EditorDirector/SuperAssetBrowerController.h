@@ -1,0 +1,31 @@
+﻿#pragma once
+
+
+
+#include"SuperController.h"
+#include<Windows.h>
+namespace Quad
+{
+	class BaseWindow;
+
+	class SuperAssetBrowerController:public SuperController
+	{
+		public:
+			static SuperAssetBrowerController* GetInstance();
+			virtual ~SuperAssetBrowerController() ;
+			virtual void Initialize() override ;
+
+			virtual BaseWindow* GetWindow() override;
+
+
+			void TestRButtonDown();
+
+	private:
+		LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+		SuperAssetBrowerController();
+	private:
+		BaseWindow* mWindow;
+	};
+
+}

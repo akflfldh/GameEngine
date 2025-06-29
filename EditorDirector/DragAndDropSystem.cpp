@@ -8,12 +8,18 @@ Quad::DragAndDropSystem::DragAndDropSystem()
 
 }
 
-void Quad::DragAndDropSystem::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map)
+void Quad::DragAndDropSystem::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap)
 {
 
-	System::Initialize(clientWidth, clientHeight, map);
-	OnRuntimeMode();
+	System::Initialize(clientWidth, clientHeight, nullptr, runtimeMap);
+
 	//SetPlayModeState(true);
+}
+
+void Quad::DragAndDropSystem::Start()
+{
+	System::Start();
+	OnRuntimeMode();
 }
 
 void Quad::DragAndDropSystem::Update(float deltaTime, bool playMode)

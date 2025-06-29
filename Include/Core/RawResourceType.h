@@ -104,6 +104,7 @@ namespace Quad
 		MaterialType mType;
 		DirectX::XMFLOAT3 mSpecular;
 		DirectX::XMFLOAT3 mAmbient;
+		DirectX::XMFLOAT3 mEmissive;
 		float mShiness =0.0f;
 		std::string mEffectName="Default.effect";
 

@@ -11,7 +11,7 @@ namespace Quad
 		SplineCollider();
 		virtual ~SplineCollider();
 
-		virtual void Update(float deltaTime) override;
+		virtual void Update(const DirectX::XMFLOAT4X4& transformMatrix) override;
 
 
 	private:

@@ -40,6 +40,7 @@ namespace Quad
 
 		virtual void ObjectUpdate(float deltaTime) override;
 
+		virtual void SerializeObject(const std::vector<Object*>& objectVector) override;
 
 	private:
 

@@ -23,6 +23,7 @@ namespace Quad
 	};
 
 
+	class UiPickingRaySystem;
 
 
 	class CORE_API_LIB System
@@ -33,7 +34,13 @@ namespace Quad
 
 		virtual ~System() = 0;
 
-		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
+		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staitcMap, Quad::Map* runtimeMap);
+		virtual void Start();
+	
+
+
+
+
 		virtual void Update(float deltaTime,bool playMode= true);
 		virtual void EndUpdate(float deltaTime) ;
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
@@ -50,12 +57,16 @@ namespace Quad
 
 		RECT GetClientRect()const;
 
-		void SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT width,
+		void SetViewPortLocal(FLOAT topLeftX, FLOAT topLeftY, FLOAT width,
 			FLOAT height, FLOAT minDepth, FLOAT maxDepth);
-		void SetViewPort(const D3D12_VIEWPORT & viewport) ;
+		void SetViewPortLocal(const D3D12_VIEWPORT & viewport) ;
+		void FixTopLeftGlobalX(float topleftX);
+		void FixTopLeftGlobalY(float topleftY);
 
 
-		D3D12_VIEWPORT GetViewPort() const;
+
+		D3D12_VIEWPORT GetViewPortLocal() const;
+		D3D12_VIEWPORT GetViewPortGlobal() const;
 
 		bool GetEventFocusFlag() const;
 		void SetEventFocusFlag(bool flag);
@@ -91,40 +102,17 @@ namespace Quad
 		BaseWindow* GetWindow()const;
 
 
-
-
 		void OnRuntimeMode();
 		void OffRunTimeMode();
 
 		bool GetRuntimeModeState() const;
 
 
-
-
-
-		
 		void SetPause(bool state);
 		bool GetPause()const;
 
-
-
-
 		void SetSelectObject(Object* object);
 		Object* GetSelectObject()const;
-
-
-	//	void OnGizmo(Object* object);
-	///	void OffGizmo();
-		//const Gizmo* GetGizmo() const;
-
-		
-		
-		void AddTransformDirtyObject(SceneElement* object);
-		//void AddMaterialDirtyObject(Object* object);
-		
-		//const std::vector<Object*>& GetTransformDirtyObjectVector() const;
-
-
 
 		void SetActiveState(bool flag);
 		bool GetActiveState() const;
@@ -137,6 +125,12 @@ namespace Quad
 		ESystemMode GetSystemMode() const;
 
 
+		void NotifyCreatingMapLayer(D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal);
+		void NotifyResizeMapLayer(int mapLayerIndex, D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal);
+
+
+		void UpdateViewportGlobal();
+
 	protected:
 		SystemState* GetSystemState() const;
 		void SetSystemState(SystemState* systemState);
@@ -144,9 +138,12 @@ namespace Quad
 		
 
 
-		void SetInitSetting(bool isUserGameSystem);
-		bool GetIsUserGameSystem() const;
+		//void SetInitSetting(bool isUserGameSystem);
+	//	bool GetIsUserGameSystem() const;
 
+
+		//fixedTopleftx,y값이 변경거나,resize시  local viewport을 다시계산한다.
+		void UpdateViewportLocal();
 
 	private:
 		std::string mName;
@@ -157,7 +154,13 @@ namespace Quad
 		UINT mClientWidth;
 		UINT mClientHeight;
 		RECT mClientRect;
-		D3D12_VIEWPORT mViewPort;
+
+		D3D12_VIEWPORT mViewPortLocal;
+		D3D12_VIEWPORT mViewPortGlobal;
+		float mFixedViewportGlobalTopLeftX;
+		float mFixedViewportGlobalTopLeftY;
+
+
 		Quad::Map* mEditMap;
 		Quad::Map* mRuntimeMap;
 		Quad::Map* mCurrentMap;
@@ -177,14 +180,7 @@ namespace Quad
 		//Gizmo* mGizmo;//모든 맵에서 사용한다.
 
 
-
-
-		//더티플래그가 켜진 오브젝트들에대한 리스트 (매프레임마지막에 이리스트의 오브젝트들의 더티플래그가 초기화될것이다(그런용도))
-							//<object handle, ,object unique id >
-	//	std::vector<std::pair<QOBHANDLE, unsigned long long>> mTransformDirtyObjectVector;
-	//	std::vector<ObjectSmartPointer> mTransformDirtyObjectVector;
-		std::vector<SceneElement*> mTransformDirtyObjectVector;
-		std::vector<Object*> mMaterialDirtyObjectVector;
+		//std::vector<Object*> mMaterialDirtyObjectVector;
 
 
 		bool mIsUserGameSystem = false;
@@ -194,6 +190,9 @@ namespace Quad
 
 
 		ESystemMode mSystemMode;
+
+
+		UiPickingRaySystem* mUiPickingRaySystem;
 
 	};
 

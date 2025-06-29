@@ -3,14 +3,22 @@
 
 #include"header.h"
 
-struct EntityConstant
+//struct EntityConstant
+//{
+//	DirectX::XMFLOAT4X4 mWorld;
+//};
+//
+//
+//struct PassConstant
+//{
+//	DirectX::XMFLOAT4X4 mViewProj;
+//};
+
+
+enum class EShaderResourceDescriptorType
 {
-	DirectX::XMFLOAT4X4 mWorld;
+	eShaderResourceCbv= 0,
+	eShaderResourceSrv,
+	eShaderResourceUav,
+	eShaderResourceRtv
 };
-
-
-struct PassConstant
-{
-	DirectX::XMFLOAT4X4 mViewProj;
-};
-

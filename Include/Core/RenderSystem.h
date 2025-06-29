@@ -16,7 +16,7 @@
 
 
 #include"Asset/Mesh/MeshType.h"
-
+#include"Core/MapLayerRenderData.h"
 
 #include"Core/CoreDllExport.h"
 //ui 엔티티들이 들어오는데 
@@ -24,28 +24,26 @@
 //물론 일반적인 엔티티들,ui엔티티들 모두 각각의 다른 그래픽파이프라인을 사용할수있기에 (보통 메터리얼이 관련될거고,)
 //ui ,일반적 엔티티들은 서로다른 viewproj, 서로다른/
 
+
+
 namespace Quad
 {
-	
+	class IMeshComponent;
+
 	struct CORE_API_LIB RenderItem
 	{
-		SceneElement* mSceneElement;
-		EObjectType mObjectType;
-		//SubMesh mSubMesh;
-		//const ModelSubMesh * mSubMesh;
-		const BaseModelSubMesh* mSubMesh;
-		
+		IMeshComponent* mMeshComponent;
 		int mInstanceCount = 1;
 		int mStencilRefValue = 0;	//인스턴싱의경우에도 모든인스턴스들에게 동일한값적용
-		//instancing
+	
 		int mSubMeshIndex = -1;
-		// shader resource structuredbuffer ,bufferindex
-		//std::vector<std::pair<ShaderResourceStructuredBuffer*, int>> mStructuredBufferIndexVector;
-		//bool instancing flag;
 
 		//인덱스를 사용하는지 안하는지에대한여부도있어야된다.
 		bool mIndexBufferUsageFlag = true;
 
+	
+		bool mScissorRectUsageFlag = false;
+		RECT mScissorRect;
 
 	};
 
@@ -69,7 +67,10 @@ namespace Quad
 	{
 
 		Camera* mCamera = nullptr;
-		D3D12_VIEWPORT mViewPort;
+		D3D12_VIEWPORT mViewPort;			//최종 후면버퍼에대한 mapLayer의 렌더타켓 전역 viewport	
+		D3D12_VIEWPORT mViewPortLocal;		//topleftX,Y가 0인 mapLayer의 렌더타켓의 local viewport
+		RECT mScissorRectLocal;				//viewportLocal에 맞는 값을 가진다.
+
 		RenderTargetTexture* mRenderTarget = nullptr;
 		Texture* mDepthStencilBuffer = nullptr;
 	};
@@ -97,25 +98,21 @@ namespace Quad
 		void PreUpdate();
 		void Update();
 		void Draw();
-	//	void DrawEffect(const Effect* effect, const std::vector<RenderItem*>& renderItemVector,const RenderSettingItem & renderSettingItem, ESystemType systemType);
-		//void DrawRenderPass(const Effect* effect,const RenderPassTwo* renderPass, const std::vector<RenderItem*> & renderItemVector,
-		//	const RenderSettingItem& renderSettingItem, ESystemType systemType);
-		/*void BindShaderResource(const std::vector<ShaderResource*>& shaderResourceVector, RenderItem* renderItem,
-			int elementIndex, ESystemType systemType, bool objectOrPassFlag);*/
 
-		void AddEntity(Object* entity);
-		void SetEntityVector(const std::vector<Object*>& entityVector, ESystemType systemType, int mapLayerIndex);
+		void SetRenderItemToPassSystem(const std::vector<RenderItem*>& renderItemVector, ESystemType systemType, int mapLayerIndex);
+
+		//renderPassSystem에 mapLayer에대한 값을 설정한다.
 		void SetMapLayerVector(const std::vector<MapLayer>& mapLayerVector, ESystemType systemType);
 
+
+		//mapLayerRenderData에 viewport값을 설정한다.
+		void SetMapLayerViewportRenderData(const std::vector<MapLayer>& mapLayerVector, ESystemType systemType);
 
 
 	//	void SetUiEntityVector(const std::vector<Object*>& entityVector);
 		void UploadEntityData();
 		void UploadEntityDataPerSystem(ESystemType systemType);
 
-		//void UploadEntityDataConstantBuffer(ShaderResourceConstantBuffer* shaderResourceConstantBuffer,const std::vector<RenderItem*> &renderItemVectorPerEffect,
-		//	const PassData& passData, ESystemType systemType);
-		//void IncreaseConstantBufferViewIndexOffset(ShaderResourceConstantBuffer* shaderResourceConstantBuffer, ESystemType systemType);
 
 		void ResetResource();//PreUpdate에서 호출,매프레임렌더링하기전 데이터들을초기화수행ex)renderItem을 다반환,viewIndex=0초기화
 		
@@ -127,6 +124,7 @@ namespace Quad
 		void SetRenderSettingItem(RenderSettingItem& renderSettingItem, ESystemType systemType);
 		void SetRenderUiSettingItem(RenderSettingItem& renderUiSettingItem);
 		void OnResize(UINT clientWidth, UINT clientHeight);
+		
 
 		void SetBackgroundColor(float r, float g, float b, float a);
 		
@@ -135,7 +133,7 @@ namespace Quad
 		bool GetRenderState()const;
 
 		void AddEffect(const Effect& effect, ESystemType systemType);
-		Effect* GetEffect(const std::string& name, ESystemType systemType)const;
+		Effect* GetEffect(const std::string& name, ESystemType systemType, int mapLayerIndex)const;
 
 		void SetColliderWorldRenderState(bool state);
 		bool GetColliderWorldRenderState() const;
@@ -143,6 +141,13 @@ namespace Quad
 
 		void SetColliderDrawFlag(bool flag); 
 		bool GetColliderDrawFlag() const;
+
+
+
+		void NotifyCreatingMapLayer(ESystemType systemType, D3D12_VIEWPORT viewportLocal, D3D12_VIEWPORT viewportGlobal);
+		void NotifyResizeMapLayer(ESystemType systemType, int mapLayerIndex ,D3D12_VIEWPORT viewportLocal, D3D12_VIEWPORT viewportGlobal);
+
+		void ReigsterDefaultEffect(ESystemType systemType, const std::string& effectName);
 
 	private:
 		bool InitD3d();
@@ -152,6 +157,37 @@ namespace Quad
 		//void CreateDescriptorHeaps();
 		void CreateSwapChainRtv();
 		//void CreateSwapchainDsv();		//깊이*스텐실버퍼도 함께만든다.
+
+		RenderTargetTexture* CreateDefaultRenderTargetTexture(int width, int height);
+		Texture* CreateDefaultDepthStencilBuffer(int width, int height);
+
+
+		//mapLayer들의 rendertarget의 resource를 만드는 메서드
+		void CreateMapLayerDefaultRenderTargetTextureResource(RenderTargetTexture* renderTargetTexture,
+			int width, int height);
+		void CreateMapLayerDefaultRenderTargetTextureResourceAll();
+
+
+		void CreateMapLayerDefaultDepthStencilBufferResource(Texture* depthStencilBuffer,int width, int height);
+		//mapLayer들의 깊이버퍼 resource를 만드는 메서드
+		void CreateMapLayerDefaultDepthStencilBufferResourceAll();
+
+
+
+		//renderTargetTexture 자체는 살아있다 .
+		void ReleaseMapLayerDefaultRenderTargetTextureResource(RenderTargetTexture *);
+		void ReleaseMapLayerDefaultDepthStencilBufferResource(Texture* depthstencilBuffer);
+
+
+		//renderTargetTexture class자체는 살아있다.
+		void ReleaseMapLayerDefaultRenderTargetTextureResourceAll();
+		void ReleaseMapLayerDefaultDepthStencilBufferResourceAll();
+
+
+
+		//mapLayer들의 default renderTarget, depthstencilBuffer에 대해서 resize
+	
+
 
 
 		ID3D12Resource* GetCurrentBackBuffer()const;
@@ -173,11 +209,39 @@ namespace Quad
 		void ResetRenderPassResource(const std::vector<RenderPassTwo*>& renderPassVector);
 
 
+
+		void OnResizeMapLayerRenderData(UINT clientWidth, UINT clientHeight);
+
+		void SetDefaultRenderTargetAndDepthStencilToRenderPassSystem();
+
+
+		void InitializeDefaultRenderItem();
+
+
+
+		void SetRenderItemToPassSystem_FixedPass(RenderPassSystem* renderPassSystem,
+			const std::vector<RenderItem*>& renderItemVector, int mapLayerIndex, ESystemType systemType);
+		void SetRenderItemToPassSystem_CommonPass(RenderPassSystem* renderPassSystem,
+			const std::vector<RenderItem*>& renderItemVector, int mapLayerIndex, ESystemType systemType);
+
+
+
+
+		//renderItem 생성시, scissorRect컴포넌트가있다면 scissorRectUsageFlag를 true로  ,rect를설정한다.
+		void SetScissorRectUsage(RenderItem& renderItem, Object* object);
+
+		
+
 	private:
 		RenderItem* FindInstancingRenderItem(const std::vector<RenderItem*> & renderItemVector, const Mesh* mesh, int subMeshIndex);
 		
+		//effect별 텍스처들을 생성
+		void CreateEffectTexture(Effect* effect);
 
+		void InitMapLayerRenderDataTable();
 
+		void CreateRenderItem(const std::vector<Object*>& objectVector, std::vector<RenderItem*>& oRenderItemVector);
+			
 	private:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mFactory;
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
@@ -195,10 +259,18 @@ namespace Quad
 		int mCurrBackBufferIndex = 0;
 
 		Microsoft::WRL::ComPtr<ID3D12Resource>mSwapchainBuffer[mSwapchainBufferCount];
-		Microsoft::WRL::ComPtr<ID3D12Resource> mSwapchainDepthStencilBuffer;
+		Microsoft::WRL::ComPtr<ID3D12Resource> mSwapchainDepthStencilBufferResource;
+		//Microsoft::WRL::ComPtr<ID3D12Resource> mDefaultRenderTargetTextureResource;
 
+		//RenderTargetTexture mDefaultRenderTargetTexture;
+		 
 		ViewIndex mSwapChainBufferRtvIndex[mSwapchainBufferCount];
 		ViewIndex mSwapChainDsvIndex;
+
+	//	ViewIndex mDefaultRenderTargetTextureSrvIndex;
+		//ViewIndex mDefaultRenderTargetTextureRtvIndex;
+
+
 		DXGI_FORMAT mBackBufferForamt = DXGI_FORMAT_R8G8B8A8_UNORM;
 		DXGI_FORMAT mSwapchainDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		UINT m4xmsaaQuality;
@@ -210,6 +282,7 @@ namespace Quad
 		UINT mClientHeight;
 
 		FLOAT mBackgroundColor[4];
+		FLOAT mDefaultMapLayerRenderTargetColor[4];
 
 		UINT mRtvdescriptorSize;
 		UINT mDsvdescriptorSize;
@@ -241,7 +314,21 @@ namespace Quad
 
 		//system별로 effectTable이있어야겠다.
 		//0 gameplayWindow, 1, LayouyWindow, 2 WindowDocking
-		std::unordered_map<ESystemType,	std::unordered_map<std::string, Effect*>> mEffectTablePerSystem;
+		//( effect table) per mapLayer 
+		//std::unordered_map<ESystemType, std::vector<std::unordered_map<std::string, Effect*>>> mEffectTablePerSystem;
+
+
+
+		std::unordered_map<ESystemType, std::vector<MapLayerRenderData>> mMapLayerRenderDataTable;
+
+
+		//system별 effect list 
+		std::unordered_map<ESystemType, std::vector<std::string>> mEffectNameVectorPerSystemTable;
+
+
+
+
+
 
 		std::vector<RenderItem*> mRenderItemVector;//전체렌더아이템을유지하고 해제하기 위한컨테이너역할
 
@@ -257,6 +344,28 @@ namespace Quad
 		bool mColliderWorldRenderState =false;
 
 		bool mColliderDrawFlag = false;
+
+
+
+
+
+
+
+
+
+
+		static std::unique_ptr<ModelSubMesh> mDefaultEntireRectModelSubMesh;
+		static RenderItem mDefaultEntireRectRenderItem;
+
+		
+		//모든 렌더시스템 인스턴스들에서사용할 최종 backbuffer로 복사하는 effect 
+		static Effect* mRenderTargetToBackBufferEffect; 
+
+
+
+
+
+
 
 	};
 

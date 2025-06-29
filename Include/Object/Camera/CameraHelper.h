@@ -20,6 +20,9 @@ namespace Quad
 		static void CalculateScreenToViewPos(DirectX::XMFLOAT2 screenPos, D3D12_VIEWPORT viewPort,
 			const Camera& camera, bool optionToWolrd, DirectX::XMFLOAT3& oPos);
 
+		static void ToScreen(const DirectX::XMFLOAT3& worldPos, const D3D12_VIEWPORT& viewport, const Camera& camera,
+			DirectX::XMFLOAT3& oScreenPos);
+
 
 	private:
 

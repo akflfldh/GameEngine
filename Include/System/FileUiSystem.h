@@ -14,6 +14,7 @@ namespace Quad
 		virtual ~FileUiSystem();
 
 		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
+		virtual void Start() override;
 		virtual void Update(float deltaTime,bool playMode);
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
 

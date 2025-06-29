@@ -4,6 +4,7 @@
 #include"Object/Object.h"
 #include"Collision/Collider.h"
 
+#include"Component/SceneComponent.h"
 
 
 Quad::EditorSpacePartitioningStructure::EditorSpacePartitioningStructure(SpacePartitioningStructure* implSpaceStructure)
@@ -74,10 +75,10 @@ bool Quad::EditorSpacePartitioningStructure::RayCastingFirst(Collider*& oCollide
 	{
 		float currParemeterT = FLT_MAX;
 		Collider* currCollider = gizmoColliderVector[i];
-		Object* destObject = currCollider->GetDestObject();
+		Object* destObject = currCollider->GetParentComponent()->GetDestObject();
 
-		if (destObject->GetSelectAvailableFlag())
-		{
+		//if (destObject->GetSelectAvailableFlag())
+		//{
 			if (CollisionHelper::Intersect(currCollider, ray, currParemeterT))
 			{
 				if (minT > currParemeterT)
@@ -90,7 +91,7 @@ bool Quad::EditorSpacePartitioningStructure::RayCastingFirst(Collider*& oCollide
 					minT = currParemeterT;
 					oCollider = currCollider;
 				}
-			}
+		//	}
 		}
 	}
 	if (minT != FLT_MAX)

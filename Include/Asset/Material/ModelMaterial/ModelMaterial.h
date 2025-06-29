@@ -34,6 +34,7 @@ namespace Quad
 		virtual void SetShiness(float shiness)override;
 		virtual void SetColor(const DirectX::XMFLOAT3& color)override;
 		virtual void SetColorIntensity(const DirectX::XMFLOAT3& intensity) override;
+		virtual void SetEmissive(const DirectX::XMFLOAT3& emissive) override;
 		virtual void SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0)override;
 		virtual void SetDiffuse(const DirectX::XMFLOAT4& diffuse) override;
 		virtual void SetEffectName(const std::string& effectName)override;
@@ -47,8 +48,9 @@ namespace Quad
 		virtual DirectX::XMFLOAT3 GetSpecular() const override;
 		virtual DirectX::XMFLOAT3 GetAmbient() const override;
 		virtual float GetShiness() const override;
-		virtual const DirectX::XMFLOAT3& GetColor() const override;
-		virtual const DirectX::XMFLOAT3& GetColorIntensity()const override;
+		virtual const DirectX::XMFLOAT3 GetColor() const override;
+		virtual const DirectX::XMFLOAT3 GetColorIntensity()const override;
+		virtual const DirectX::XMFLOAT3 GetEmissive() const override;
 
 		virtual const std::string& GetEffectName() const;
 
@@ -76,12 +78,13 @@ namespace Quad
 		bool mAmbientDirtyFlag=false;
 		bool mColorDirtyFlag=false;
 		bool mColorIntensityDirtyFlag=false;
-		
+		bool mEmissiveDirtyFlag = false;
+
 		bool mDiffuseMapDirtyFlag=false;
 		bool mNormalMapDirtyFlag=false;
 
 		bool mEffectDirtyFlag=false;	
-
+	
 
 		MaterialSmartPointer mSourceMaterialPointer;
 

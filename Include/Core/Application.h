@@ -63,10 +63,8 @@
 #include"ResourceManager/EffectManager/EffectManager.h"
 #include"ObjectFactory/ObjectFactory.h"
 
-#include"ObjectManager/ObjectManager.h"
-#include"ObjectManager/RuntimeObjectManager.h"
-#include"ObjectManager/RuntimeGameObjectManager.h"
-#include"ObjectManager/EditGameObjectManager.h"
+#include"ObjectManager/BaseObjectManager.h"
+
 
 #include"Core/InputSystem.h"
 
@@ -96,6 +94,9 @@ using namespace Microsoft::WRL;
 
 #include"SpacePartitioningStructureFactory.h"
 
+#include"CoreEffectInstaller.h"
+#include"Core/GraphicPipelineStateGeneratorHelper.h"
+#include"Core/RootSignatureGeneratorHelper.h"
 
 namespace Quad
 {
@@ -280,6 +281,8 @@ namespace Quad
 
 
 
+		//필요한 핵심 object들을 생성 ex) 화면전체렌더링을 위한 직사각형 메시와 object
+		void CreateDefaultCoreResource();
 
 
 
@@ -312,10 +315,10 @@ namespace Quad
 	//	EffectManager mEffectManager;
 		MapManager mMapManager;
 		LineFactory mLineFactory;
-		EditObjectManager mEditObjectManager;
-		EditGameObjectManager mEditGameObjectManager;
-		RuntimeObjectManager mRuntimeObjectManager;
-		RuntimeGameObjectManager mRuntimeGameObjectManager;
+	//	EditObjectManager mEditObjectManager;
+		//EditGameObjectManager mEditGameObjectManager;
+		//RuntimeObjectManager mRuntimeObjectManager;
+		//RuntimeGameObjectManager mRuntimeGameObjectManager;
 		//ObjectFactory mObjectFactory;
 		EditObjectFactory* mEditObjectFactory;
 		
@@ -390,8 +393,8 @@ namespace Quad
 
 
 		TextFactory mTextFactory;
-		KeyBoard mKeyBoard;
-		Mouse mMouse;
+		//KeyBoard mKeyBoard;
+	//	Mouse mMouse;
 
 
 
@@ -430,10 +433,14 @@ namespace Quad
 
 
 
-		InputSystem mInputSystem;
+		//InputSystem mInputSystem;
 		IProgramDirector* mProgramDirector;
 
 		CurveFactory mCurveFactory;
+
+		RootSignatureGeneratorHelper mRootSignatureGeneratorHelper;
+		GraphicPipelineStateGeneratorHelper mGraphicPipelineStateGeneratorHelper;
+		CoreEffectInstaller mCoreEffectInstaller;
 
 		
 	};

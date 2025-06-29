@@ -50,13 +50,15 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) :SV_Target
 {
 
+	
+
 	float4 color = gDiffuseMap.Sample(gSamMinMagMipLinearBorder,pin.mTex);
 	
 	clip(color.w == 0.0f ? -1 : 1);
 
 	color =color*float4(gColorIntensity,1.0f) * float4(gColor,1.0f);
 
-
+	
 
 	color= pow(color,(1/2.2));
 	//color.w=1.0f;

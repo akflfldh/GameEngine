@@ -1,24 +1,28 @@
 ﻿#pragma once
 
-#include"Component.h"
+#include"BaseComponent.h"
 #include"Core/CoreDllExport.h"
 
 
 namespace Quad
 {
 	class Object;
-	class CORE_API_LIB MoveComponent:public Component<MoveComponent>
+	class CORE_API_LIB MoveComponent:public BaseComponent
 	{
 	public:
-		MoveComponent(Object * destObject);
+		MoveComponent();
 		virtual ~MoveComponent();
 
+		
+		virtual void Start() override;
 		virtual void Update(float deltaTime);
 		
 		void SetSpeed(float speed);
 
 		void MoveForwardInput(float axis);
 		void MoveSideInput(float axis);
+		CLASSNAME(MoveComponent)
+		CLASSNAMESTATIC(MoveComponent)
 
 	private:
 
@@ -38,5 +42,6 @@ namespace Quad
 
 
 	};
+	REGISTERCOMPONENTCLASS(MoveComponent)
 
 }

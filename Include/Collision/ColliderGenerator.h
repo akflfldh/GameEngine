@@ -20,8 +20,9 @@ namespace Quad
 		void Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device, GraphicCommand* graphicsCommandObject);
 
 		static Collider* CreateBoxCollider(Mesh* mesh);
-		static Collider* CreateBoxCollider(const DirectX::XMFLOAT3& minPoint, const DirectX::XMFLOAT3 & maxPoint);
-		static Collider* CreateFrustumCollider(FrustumCamera* caerma);
+		static Collider* CreateBoxCollider(const DirectX::XMFLOAT3& minPoint={-1,-1,-1}, const DirectX::XMFLOAT3& maxPoint={1,1,1});
+		static Collider* CreateFrustumCollider();
+
 		static CameraFrustumCollider* CreateCameraFrustumCollider(FrustumCamera* camera);
 
 		static CameraBoxCollider* CreateBoxCameraCollider(OrthogoanlCamera* camera);

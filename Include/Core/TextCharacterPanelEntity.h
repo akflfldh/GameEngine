@@ -29,7 +29,7 @@ namespace Quad
 
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
+	
 		virtual void SetDrawFlag(bool flag)override;
 
 
@@ -37,7 +37,6 @@ namespace Quad
 		CLASSSIZE(TextCharacterPanelEntity)
 
 
-		void SetPosition(float x, float y, float z)override;
 
 		void SetGlyphTexture(Texture* texture);
 

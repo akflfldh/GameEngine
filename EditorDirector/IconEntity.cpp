@@ -39,5 +39,5 @@ void Quad::IconEntity::OnEvent(Event* event)
 void Quad::IconEntity::InitCreating()
 {
 	UiEntity::InitCreating();
-	SetEffect("DefaultUi.effect");
+	//SetEffect("DefaultUi.effect");
 }

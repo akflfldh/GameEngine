@@ -1,24 +1,31 @@
+[
 
 
 
+	{
+		"TYPE":"PASS",
+		"SHADER":
+		{
 
-PASS 
-{
+			"VS":
+			{
+				"File":"WindowLayout.hlsl",
+				"EntryPoint":"VS",
+				"Version":"vs_5_1"
+			},
 
-VS
-{
-	File:"WindowLayout.hlsl"
-	EntryPoint:"VS"
-	Version:"vs_5_1"
-}
+			"PS" : 
+			{
+				"File":"WindowLayout.hlsl",
+				"EntryPoint":"PS",
+				"Version":"ps_5_1"
+			}
 
-PS
-{
-	File:"WindowLayout.hlsl"
-	EntryPoint:"PS"
-	Version:"ps_5_1"
-}
+		},
+		"CONFIG":
+		{
 
+		}
+	}
 
-}
-
+]

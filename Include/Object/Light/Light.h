@@ -34,7 +34,7 @@ namespace Quad
 
 		DirectX::XMFLOAT3 GetLightDirect() const;
 		DirectX::XMFLOAT3 GetLight() const;
-		DirectX::XMFLOAT3 GetPosition() const;
+		//DirectX::XMFLOAT3 GetPosition() const;
 		float GetSpotDegree() const;
 		
 		void SetLight(float r, float g, float b);

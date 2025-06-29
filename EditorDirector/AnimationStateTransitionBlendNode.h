@@ -24,7 +24,7 @@ namespace Quad
 
 		virtual void Update(float deltaTime)override;
 		virtual void OnEvent(Event* event) override;
-		virtual void SetSize(float width, float height) override;
+	//	virtual void SetSize(float width, float height) override;
 
 		bool RayCastingLinkEndRectNode(Ray& ray);
 		void SetLinkEndRectNodeHighLight(const DirectX::XMFLOAT3& colorIntensity);
@@ -36,8 +36,8 @@ namespace Quad
 		AnimationStateNode* GetSourceAnimationStateNode() const;
 		AnimationStateNode* GetDestAnimationStateNode() const;
 
-		virtual void SetPosition(const DirectX::XMFLOAT3& posL) override;
-		virtual void SetPosition(float x, float y, float z) override;
+		//virtual void SetPosition(const DirectX::XMFLOAT3& posL) override;
+	//	virtual void SetPosition(float x, float y, float z) override;
 
 
 		void SetTransitionDuration(float t);

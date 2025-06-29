@@ -70,9 +70,9 @@ const unsigned long long Quad::AnimationStateTransitionBaseNode::GetNodeID() con
 
 void Quad::AnimationStateTransitionBaseNode::Serialize()
 {
-	//위치만저장
-	const DirectX::XMFLOAT3 posW = GetTransform().GetPositionWorld();
-	JsonParser::Write("AnimationStateTransitionBaseNode_PositionWorld", posW);
+	////위치만저장
+	//const DirectX::XMFLOAT3 posW = GetTransform().GetPositionWorld();
+	//JsonParser::Write("AnimationStateTransitionBaseNode_PositionWorld", posW);
 
 
 }
@@ -80,64 +80,64 @@ void Quad::AnimationStateTransitionBaseNode::Serialize()
 void Quad::AnimationStateTransitionBaseNode::DeSerialize()
 {
 
-	DirectX::XMFLOAT3 posW ;
+	/*DirectX::XMFLOAT3 posW ;
 	JsonParser::Read("AnimationStateTransitionBaseNode_PositionWorld", posW);
 	
 	GetTransform().SetPositionWorld(posW);
+*/
+
+}
+
+void Quad::AnimationStateTransitionBaseNode::HandleMouseMove(const MouseInputData& mouseInputData)
+{
+
+	//StateComponent* stateComponent = GetStateComponent();
+	//bool moveFlag = true;
+	//for (auto uiEntity : GetChildPanelUiEntityVector())
+	//{
+	//	if (uiEntity->GetStateComponent()->GetLButtonDownState())
+	//	{
+	//		//자식이 클릭되었다면 움직이는게 아니다.
+	//		moveFlag = false;
+	//		break;
+	//	}
+	//}
+
+	//if (moveFlag && stateComponent->GetLButtonDownState())
+	//{
+	//	MouseEvent* mouseEvent = static_cast<MouseEvent*>(pEvent);
+
+	//	float shiftX = mouseEvent->GetClientPositionX() - mouseEvent->GetPreClientPositionX();
+	//	float shiftY = mouseEvent->GetClientPositionY() - mouseEvent->GetPreClientPositionY();
+
+	//	DirectX::XMFLOAT3 posL = GetTransform().GetPositionLocal();
+	//	posL.x += shiftX;
+	//	posL.y -= shiftY;
+
+	//	SetPosition(posL);
+	//}
+	//else
+	//{
+	//	PanelUiEntity::HandleMouseMove(mouseInputData);
+	//}
+
+
 
 
 }
 
-void Quad::AnimationStateTransitionBaseNode::HandleMouseMove(Event* pEvent)
+void Quad::AnimationStateTransitionBaseNode::HandleLButtonDown(const MouseInputData& mouseInputData)
 {
+	//PanelUiEntity::HandleLButtonDown(mouseInputData);
 
-	StateComponent* stateComponent = GetStateComponent();
-	bool moveFlag = true;
-	for (auto uiEntity : GetChildPanelUiEntityVector())
-	{
-		if (uiEntity->GetStateComponent()->GetLButtonDownState())
-		{
-			//자식이 클릭되었다면 움직이는게 아니다.
-			moveFlag = false;
-			break;
-		}
-	}
+	//StateComponent* stateComponent = GetStateComponent();
 
-	if (moveFlag && stateComponent->GetLButtonDownState())
-	{
-		MouseEvent* mouseEvent = static_cast<MouseEvent*>(pEvent);
+	//if (stateComponent->GetHoverState())
+	//{
+	//	//nodeEditDetailMainPanel에게 알린다.
+	//	AnimationStateTransitionNodeEditDetailMainPanel::NotifySelectNode(this);
 
-		float shiftX = mouseEvent->GetClientPositionX() - mouseEvent->GetPreClientPositionX();
-		float shiftY = mouseEvent->GetClientPositionY() - mouseEvent->GetPreClientPositionY();
-
-		DirectX::XMFLOAT3 posL = GetTransform().GetPositionLocal();
-		posL.x += shiftX;
-		posL.y -= shiftY;
-
-		SetPosition(posL);
-	}
-	else
-	{
-		PanelUiEntity::HandleMouseMove(pEvent);
-	}
-
-
-
-
-}
-
-void Quad::AnimationStateTransitionBaseNode::HandleLButtonDown(Event* pEvent)
-{
-	PanelUiEntity::HandleLButtonDown(pEvent);
-
-	StateComponent* stateComponent = GetStateComponent();
-
-	if (stateComponent->GetHoverState())
-	{
-		//nodeEditDetailMainPanel에게 알린다.
-		AnimationStateTransitionNodeEditDetailMainPanel::NotifySelectNode(this);
-
-	}
+	//}
 
 
 }

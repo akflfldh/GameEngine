@@ -2,7 +2,7 @@
 
 
 #include"System.h"
-#include"Gizmo.h"
+//#include"Gizmo.h"
 #include"Singleton.h"
 namespace Quad
 {
@@ -12,7 +12,8 @@ namespace Quad
 		GamePlaySystem();
 		~GamePlaySystem() = default;
 
-		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
+		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap) override;
+		virtual void Start()override;
 		virtual void Update(float deltaTime, bool playMode)override;
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
 

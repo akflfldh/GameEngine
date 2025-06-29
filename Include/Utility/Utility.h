@@ -66,6 +66,7 @@ namespace Quad
 		static std::string SetNewCurrentDirectory(const std::string& newDirectory);
 
 
+		static std::unique_ptr<char[]> ReadBinaryFileAll(const char* filePath, size_t& fileSize);
 
 
 

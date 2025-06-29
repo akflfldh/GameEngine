@@ -28,11 +28,14 @@ namespace Quad
 
 		
 
-		void SetTextureFormat(ETextureFormat format);
-		ETextureFormat GetTextureFormat()const;
+		void SetTextureColorFormat(EColorFormat format);
+		EColorFormat GetTextureColorFormat()const;
 
 		void SetTextureType(ETextureType type);
 		ETextureType GetTextureType()const;
+
+		void SetTextureFormat(ETextureFormat format);
+		ETextureFormat GetTextureFormat() const;
 
 
 		virtual  void Serialize(const std::string& tag = "") override;
@@ -53,11 +56,11 @@ namespace Quad
 		ViewIndex mViewIndex =-1;
 
 
-
-		ETextureFormat mTextureFormat;
+		
+		EColorFormat mTextureColorFormat;
 		ETextureType mTextureType;
 
-
+		ETextureFormat mTextureFormat;
 
 
 

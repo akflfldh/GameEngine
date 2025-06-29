@@ -32,7 +32,7 @@ bool Quad::EditorCollisionWorld::RayCastingFirstNotIncludeEditorObject(Object*& 
 
 	if (ret)
 	{
-		oObject = collider->GetDestObject();
+		//oObject = collider->GetMeshComponent()->GetDestObject();
 	}
 	return ret;
 }

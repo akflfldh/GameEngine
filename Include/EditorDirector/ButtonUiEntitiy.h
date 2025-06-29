@@ -21,7 +21,7 @@ namespace Quad
 		
 		CLASSNAME(ButtonUiEntity)
 		CLASSSIZE(ButtonUiEntity)
-		virtual void OnEvent(Event* event) override;
+
 
 		//유저가 이 버튼이 눌렸을떄 떼어졌을떄 동작에대해서는 
 // 이 clickableComponent를 상속해서 유저만의 컴포넌트를만들고(결국 그 clickDown,clickUp 오버라이딩)
@@ -46,10 +46,10 @@ namespace Quad
 		const std::function<void()>* GetReleaseHoverCallback() const;
 
 	private:
-		virtual void HandleHover(Event* pEvent);
-		virtual void HandleLButtonDown(Event* pEvent);
-		virtual void HandleLButtonUp(Event* pEvent);
-		virtual void HandleMouseMove(Event* pEvent);
+		virtual void HandleHover(const MouseInputData& mouseInputData);
+		virtual void HandleLButtonDown(const MouseInputData& mouseInputData);
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData);
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData);
 
 	protected:
 

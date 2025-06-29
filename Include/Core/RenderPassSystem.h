@@ -14,12 +14,17 @@ namespace Quad
 	struct RenderPassItem
 	{
 		RenderPassTwo* mRenderPass;
-		std::vector<std::vector<RenderItem*>> mRenderItemVector;
+		std::vector<std::vector<RenderItem*>> mRenderItemVector;	//mapLayer별로 구분
 	};
 
+	class RenderPassCommand;
+
+	class MapLayerRenderData;
 
 	class CORE_API_LIB RenderPassSystem
 	{
+		
+
 	public:
 
 		RenderPassSystem() = default;
@@ -34,7 +39,16 @@ namespace Quad
 
 		void UploadData(const PassData& passData);
 		//void SetRenderSettingItem(RenderSettingItem* renderSettingItem);
-		void SetMapLayerVector(const std::vector<MapLayer> & mapLayerVector);
+		void SetMapLayerVector(const std::vector<MapLayer> & mapLayerVector, const  std::vector<MapLayerRenderData>& mapLayerRenderDataVector);
+
+		const std::vector<RenderSettingItem>& GetMapLayerSettingVector() const;
+
+
+
+
+		void SetDefaultRenderTargetAndDepthStencil(RenderTargetTexture* renderTargetTexture, Texture* depthStencilBuffer);
+		
+
 
 
 		void Draw(bool stencilDrawFlag);
@@ -48,6 +62,11 @@ namespace Quad
 	private:
 
 		void BeforeDraw(int mapLayerIndex,bool stencilDrawFlag);
+
+		void PreRenderPass(const RenderPassItem& renderPass, int mapLayerindex);
+		void PostRenderPass(const RenderPassItem& renderPass, int mapLayerIndex, bool stencilDrawFlag);
+		void ExecuteRenderPassCommand(Effect* effect ,const std::vector<RenderPassCommand*> & renderPassCommandVector, int mapLayerIndex);
+
 		void AfterDraw(int mapLayerIndex,bool stencilDrawFlag);
 
 		void UploadDataToRenderPassShaderResource(RenderPassTwo* renderPass, std::vector<RenderItem*>& renderItemVector,
@@ -59,19 +78,24 @@ namespace Quad
 			int elementIndex, bool objectOrPassFlag);
 
 
-		void DrawEntityRenderItem(RenderItem* renderItem);
+		void DrawRenderItem(RenderItem* renderItem);
 		void DrawLineBaseRenderItem(RenderItem* renderItem);
 
 
 		void UploadDataToConstantBuffer(ShaderResourceConstantBuffer * shaderConstantBuffer, RenderItem* renderItem,const PassData& passData);
 		void UploadLightStructData(ShaderResourceConstantBuffer* shaderResourceConstantBuffer, int variableIndex, const ShaderResourceStructTypeDesc* pShaderResourceStructTypeDesc, int elementNum, int structOffset, const PassData& passData, ELightType lightType);
 
+
+
+		void SetScissorRect(const RenderItem& renderItem, int mapLayerIndex);
+
+
 	private:
 
 		GraphicCommand* mGraphicsCommandObject;
 		DescriptorHeapManagerMaster* mDescriptorHeapManagerMaster;
-				//占싹댐옙 10 占쌤곤옙占?크占쏙옙 占쏙옙占쏙옙占싻쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙.
-				//占쏙옙 占쌤계에占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙占쏙옙占싻쏙옙占쏙옙占쏙옙 占쏙옙載ο옙占쏙옙甄占?占쎌선占쏙옙占쏙옙占쏙옙占쏙옙占쏙옙 
+			
+
 		std::array<std::vector<RenderPassItem>, 10> mRenderPassItemContainer;
 
 
@@ -81,6 +105,11 @@ namespace Quad
 
 
 		std::vector<RenderSettingItem> mMapLayerSettingItemVector;
+
+
+
+		RenderTargetTexture* mDefaultRenderTargetTexture =nullptr;
+		Texture* mDefaultDepthStencilBuffer =nullptr; 
 
 		D3D12_CPU_DESCRIPTOR_HANDLE mCurrentDefaultRtv;
 		D3D12_CPU_DESCRIPTOR_HANDLE mCurrentDefaultDsv;

@@ -11,9 +11,9 @@ Quad::Game3DSystem::~Game3DSystem()
 {
 }
 
-void Quad::Game3DSystem::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map)
+void Quad::Game3DSystem::Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap)
 {
-	System::Initialize(clientWidth, clientHeight, map);
+	System::Initialize(clientWidth, clientHeight, nullptr,runtimeMap);
 	OnRuntimeMode();
 
 

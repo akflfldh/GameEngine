@@ -1,32 +1,34 @@
+[
+  {
+    "TYPE":"PASS",
+
+    "SHADER" : {
+    
+        "VS" : 
+        {
+          "File":"Temp.hlsl",
+
+          "EntryPoint":"VS",
+
+          "Version":"vs_5_1"
+        },
 
 
-PASS 
-{
+        "PS" :
+        {
+          "File":"Temp.hlsl",
 
-VS
-{
-  File:"Temp.hlsl"
+          "EntryPoint":"PS",
 
-  EntryPoint:"VS"
-
-  Version:"vs_5_1"
-}
+          "Version":"ps_5_1"
+        }
+    },
 
 
-PS
-{
-  File:"Temp.hlsl"
+    "CONFIG":
+    {
 
-  EntryPoint:"PS"
+    }
 
-  Version:"ps_5_1"
-}
-
-
-}
-
-
-
-
-
-
+  }
+]

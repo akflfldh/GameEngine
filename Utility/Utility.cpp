@@ -64,7 +64,7 @@ namespace Quad
 
 
 		CD3DX12_HEAP_PROPERTIES uploadHeapProperties(D3D12_HEAP_TYPE_UPLOAD);
-		HRESULT hresult = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+		HRESULT hresult = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc, D3D12_RESOURCE_STATE_COPY_SOURCE,
 			nullptr, IID_PPV_ARGS(&mUploadBuffer));
 
 		
@@ -340,6 +340,28 @@ namespace Quad
 		return Utility::ConvertToString(currDirectory,true);
 
 		
+	}
+
+	std::unique_ptr<char[]> Utility::ReadBinaryFileAll(const char* filePath,size_t & fileSize )
+	{
+
+
+		std::ifstream fin(filePath, std::ios::binary| std::ios::ate);
+		if (!fin.is_open())
+		{
+			return nullptr;
+		}
+
+		std::streamsize size =	fin.tellg();
+		fileSize = size;
+		fin.seekg(std::ios::beg);
+
+		std::unique_ptr<char[]> ptr(new char[size]);
+
+		fin.read(ptr.get(), size);
+
+
+		return ptr;
 	}
 
 	

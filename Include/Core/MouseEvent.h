@@ -5,7 +5,7 @@
 #include"Core/Ray.h"
 
 #include"Core/CoreDllExport.h"
-
+#include"InputType.h"
 namespace Quad
 {
 	class CORE_API_LIB MouseEvent :public Event
@@ -45,7 +45,13 @@ namespace Quad
 		void SetWheelShift(int shift);
 		int GetWheelShift() const;
 
+	
+		void SetData(const MouseInputData& data);
+		const MouseInputData& GetData();
+
 	private:
+		MouseInputData mData;
+
 		int mClientPositionX;
 		int mClientPositionY;
 		int mScreenPositionX;

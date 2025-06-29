@@ -19,7 +19,7 @@ namespace Quad
 		static ScrollListPanel* Create(Map* map, int mapLayerIndex, float width, float height, int maxNum);
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
+		void OnEvent(Event* event) ;
 		CLASSNAME(ScrollListPanel)
 		CLASSSIZE(ScrollListPanel)
 		virtual void AddChildPanelUiEntity(UiEntity* childPanel) override;
@@ -50,10 +50,10 @@ namespace Quad
 		void InitCreating(float width, float height, int maxNum);
 
 	private:
-		void HandleMouseMove(Event* pEvent) override;
-		void HandleHover(Event* pEvent) override;
-		void HandleLButtonDown(Event* pEvent) override;
-		void HandleWheel(Event* pEvent);
+		void HandleMouseMove(const MouseInputData & mouseInputData) override;
+		void HandleHover(const MouseInputData& mouseInputData) override;
+		void HandleLButtonDown(const MouseInputData& mouseInputData) override;
+		void HandleWheel(const MouseInputData& mouseInputData);
 
 	//	ScrollBarEntity* mScrollbar;
 

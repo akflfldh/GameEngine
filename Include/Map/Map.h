@@ -33,7 +33,13 @@ namespace Quad
 		int mDepthPriority = 0;
 
 		Camera* mCamera = nullptr;
-		D3D12_VIEWPORT mViewPort = { 0,0,0,0,0,0 };
+
+		//mapLayer의 width, height는 0.0~1.0f까지가 유효하다.
+		//system의 클라이언트 영역에대한 비례값으로 표현
+		D3D12_VIEWPORT mViewPort = { 0,0,1.0f,1.0f,0,1.0f };
+
+		//전역 값을 가지는 viewport
+		D3D12_VIEWPORT mViewPortGlobal = { 0,0,0,0,0,0 };
 		 
 		std::vector<Object*> mRenderObjectVector;
 
@@ -55,7 +61,7 @@ namespace Quad
 	class CORE_API_LIB Map
 	{
 		friend class System;
-		friend class EditorSystem;
+		friend class EditorMapManager;
 		/*friend class EditObjectManager;
 		friend class RuntimeObjectManager;
 		friend class RuntimeGameObjectManager;
@@ -78,11 +84,9 @@ namespace Quad
 			UINT clientWidth, UINT clientHeight, Camera* gameCamera,DirectX::XMFLOAT3 backgroundColor = { 0.1f,0.1f,0.6f });*/
 
 
-		void PrintObjectName();
-
 		void Initialize(System* system, bool playMode = false, DirectX::XMFLOAT3 backgroundColor = { 0.1f,0.1f,0.6f });
 
-		//map??泥섏쓬?쒖옉?좊븣, 媛숈씠 議댁옱?섎뒗 object?ㅼ쓽 start?몄텧
+
 		void Start();
 
 		
@@ -92,9 +96,9 @@ namespace Quad
 
 
 
-		//??쭅?ы솕?섏??딄퀬, ?덈줈 留듭쓣 留뚮뱶?붽꼍?곗뿉 ?ㅼ쓬硫붿꽌?쒕? ?몄텧?섏뿬 湲곕낯map layer瑜?援ъ텞?쒕떎.
+		
 		void CreateDefaultMapLayer();
-									//gameWindow占쏙옙 占쏙옙占쏙옙占싹곤옙, 占쏙옙占쏙옙占쏙옙window占쏙옙占쏙옙 占쌓삼옙true占싹곤옙
+									
 		//void Update(float deltaTime, bool gamePlayMode  =true );
 		void OnResize(UINT clientWidth, UINT clientHeight);
 
@@ -112,13 +116,14 @@ namespace Quad
 		//void DeleteObject(const std::string & name);
 
 
-		const SceneGraph* GetSceneGraph()const;
-		SceneGraph* GetSceneGraph();
+
 	//	SpacePartitioningStructure* GetSpaceParitioningStructure() const;
 		const CollisionWorld* GetCollisionWorld()const;
 		CollisionWorld* GetCollisionWorld();
 
-		//ui,3d ?듯빀
+		UiCollisionWorld* GetUiCollisionWorld() const;
+
+		
 		bool RayCastingFirst(Ray& ray, Object*& oObject);
 		bool RayCastingFirst(const DirectX::XMFLOAT2 & screenPos, Object*& oObject);
 
@@ -134,17 +139,33 @@ namespace Quad
 
 		Camera* GetMainCamera(int mapLayerIndex =0)const;
 
+		//지역적
+		void SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT widthRate,
+			FLOAT heightRate, FLOAT minDepth, FLOAT maxDepth, int mapLayer=0);
 
-		void SetViewPort(FLOAT topLeftX, FLOAT topLeftY, FLOAT width,
-			FLOAT height, FLOAT minDepth, FLOAT maxDepth, int mapLayer=0);
+
+		//system viewport를 바탕으로 지역적 viewport값에 따라서 전역값설정
+		void SetSystemViewPortAll();
+
+	
+		//mapLayer의 viewport 전역을 갱신한다.
+		void UpdateViewPortGlobal(int mapLayerIndex);
+
+
+
+		//void SetViewPortLayerAll(float topLeftX, float topLeftY, float widthRate, float heightRate, float minDepth, float maxDepth);
+
+		//지역적 비례값
 		D3D12_VIEWPORT GetViewPort(int mapLayer=0) const;
-		
+
+		//전역 값 
+		D3D12_VIEWPORT GetViewPortGlobal(int mapLayer = 0) const;
 
 
 		System* GetSystem() const;
 		BaseObjectManager* GetObjectManager() const;
 
-		void CreateMapLayer(int mID, int mDepthPriority, Camera* camera, D3D12_VIEWPORT viewport, RenderTargetTexture* texture= nullptr, Texture* depthStencilBuffer=nullptr);
+		void CreateMapLayer(int mID, int mDepthPriority, Camera* camera, D3D12_VIEWPORT viewport, MapLayerOption mapLayerOption = MapLayerOption{}, RenderTargetTexture* texture= nullptr, Texture* depthStencilBuffer=nullptr);
 
 
 		MapLayer& GetMapLayer(int index) ;
@@ -153,7 +174,6 @@ namespace Quad
 
 		//void SetMainEngineCamera(Camera* camera, int mapLayerIndex = 0);
 
-		//?먰븿??紐⑤몢 userCamera?먮쭔 ?대떦?섎뒗 ?⑥닔?대떎
 		virtual void SetMainCamera(Camera* camera,int mapLayerIndex = 0);
 		virtual void SetMainCamera(unsigned long long id,int mapLayerIndex = 0);
 		
@@ -202,6 +222,9 @@ namespace Quad
 
 		void SetViewportAutoFlag(bool flag, int mapLayerIndex);
 		const bool GetViewportAutoFlag(int mapLayerIndex) const;
+
+
+		void NotifyResizeMapLayer(int mapLayerIndex);
 #ifdef EditorMode
 		//void SetMainUserCamera();
 	//	void SetMainEngineCamera();
@@ -211,14 +234,39 @@ namespace Quad
 		RegisterAnimStateTransitionCallbackClassManager* GetRegisterAnimStateTransitionCallbackClassManager() const;
 
 
+
+
 	protected:
+		const Scene::SceneGraph* GetSceneGraph()const;
+		Scene::SceneGraph* GetSceneGraph();
+
+
+
 		void SetRuntimeMapFlag(bool flag);
 		void AddObject(Object* object, int mapLayer = 0);
-		bool RemoveObject(Object* object);
+		bool RemoveObject(Object* object);//object manager가 kill상태의 object를 완전히 제거할떄사용
+
+
+
+
+		virtual void SerializeObject(const std::vector<Object*>& objectVector);
+		void SerializeMapLayer();
+
+		virtual void DeSerializeObject();
+		void DeSerializeMapLayer();
+
+
+
+
+
+
+
+
+	protected:
 
 
 		std::string mName;
-		SceneGraph mEditSceneGraph;
+		Scene::SceneGraph mEditSceneGraph;
 		//SceneGraph mEngineSceneGraph;	
 
 		//map layer蹂꾨줈 light?멸굅媛숈?
@@ -232,29 +280,27 @@ namespace Quad
 		System* mSystem;
 
 
-		int mRuntimeMapFlag = 0;//0?대㈃ edit map, 0???꾨땲硫?runtime map  
+		int mRuntimeMapFlag = 0;//
 
-		//BaseObjectFactory* mObjectFactory;
+
 		BaseObjectManager* mObjectManager;
 
 		
 		std::unique_ptr<AnimationUpdateSystem> mAnimationUpdateSystem;
 
 
+
+		//map내에있는 object들의 정보유지
 		//id 
 		std::unordered_map<unsigned long long, Object*> mObjectIDTable;
 
 		std::vector<Object*> mObjectVector;
 		std::vector<Object*> mStartObjectVector;
 
-
 		UiCollisionWorld* mDefaultUiCollisionWorld;		//0
 		CollisionWorld* mDefault3DCollisionWorld;		//1
 
-
 		RegisterAnimStateTransitionCallbackClassManager* mRegisterAnimStateTransitionCallbackClassManager;
-
-
 
 	};
 

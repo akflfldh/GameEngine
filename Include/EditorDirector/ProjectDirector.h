@@ -17,8 +17,8 @@ namespace Quad
 	class ProjectDirector :public Singleton<ProjectDirector>
 	{
 	public:
-		ProjectDirector();
-		~ProjectDirector();
+		ProjectDirector() =default;
+		~ProjectDirector()= default;
 
 		//프로젝트메타파일로드하기, 화면 프로젝트 선택씬 구성하기 등 초기작업수행 //프레임윈도우초기화이후 초기화수행 
 		void Initialize(FrameWindow* frameWindow, std::vector<DockingWindowController*> normalWindowControllerVector, PopupWindowController* popupWindowController,FrameWindowController* frameWindowController,FrameWindowUiSystem * frameWindowUiSystem);

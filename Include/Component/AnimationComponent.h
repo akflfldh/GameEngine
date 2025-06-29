@@ -9,6 +9,10 @@
 #include<unordered_map>
 #include"Component/ModelBaseComponent.h"
 
+
+#include"BaseComponent.h"
+
+
 #include"CoreDllExport.h"
 #include"Core/BoneAnimSRT.h"
 
@@ -115,20 +119,25 @@ namespace Quad
 	};
 
 
-	class CORE_API_LIB AnimationComponent:public ModelBaseComponent
+	class CORE_API_LIB AnimationComponent:public BaseComponent
 	{
 	
 
-
-
 	public:
-		AnimationComponent(SceneElement * sceneElement);
+		AnimationComponent();
 		~AnimationComponent();
+
+
+
+		virtual void Initialize(Object * destObject) override;
 
 
 		AnimationComponent & operator=(const AnimationComponent& component);
 
-		void Start();
+
+
+
+		virtual void Start() override;
 		virtual void Update(float deltaTime) override;
 
 	
@@ -182,6 +191,8 @@ namespace Quad
 
 
 		CLASSSIZE(AnimationComponent)
+		CLASSNAME(AnimationComponent)
+		CLASSNAMESTATIC(AnimationComponent)
 	private:
 		void CacluateFinalTransformMatrix(const std::vector<DirectX::XMFLOAT4X4>& boneAnimationMatrixVector);
 		
@@ -224,7 +235,7 @@ namespace Quad
 		float mCurrAnimStateTransitionTime;
 
 	};
-
+	REGISTERCOMPONENTCLASS(AnimationComponent)
 
 }
 

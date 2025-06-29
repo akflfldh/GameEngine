@@ -14,7 +14,8 @@ namespace Quad
 		PopupWindowUiSystem();
 		virtual ~PopupWindowUiSystem();
 
-		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* map);
+		virtual void Initialize(UINT clientWidth, UINT clientHeight, Quad::Map* staticMap, Quad::Map* runtimeMap) override;
+		virtual void Start() override;
 		virtual void Update(float deltaTime, bool playMode = true);
 		virtual void OnResize(UINT clientWidth, UINT clientHeight);
 		virtual void AddEntity(Object* object, int mapLayer = 0, bool egineEditObject = false) override;

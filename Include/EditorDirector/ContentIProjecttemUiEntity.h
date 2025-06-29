@@ -27,12 +27,12 @@ namespace Quad
 	protected:
 		void InitCreating(ContentItem* item);
 
-		virtual void HandleLButtonDown(Event* pEvent) override;
-		virtual void HandleLButtonUp(Event* pEvent) override;
+		virtual void HandleLButtonDown(const MouseInputData & mouseInputData) override;
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData) override;
 		//virtual void HandleRButtonDown(Event* pEvent)  override;
 		//virtual void HandleRButtonUp(Event* pEvent) override;
 		//virtual void HandleMouseMove(Event* pEvent) override;
-		virtual void HandleHover(Event* pEvent) override;
+		virtual void HandleHover(const MouseInputData& mouseInputData) override;
 		void HandleLButtonDownDouble(Event* pEvent);
 
 	private:

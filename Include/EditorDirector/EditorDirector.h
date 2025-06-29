@@ -4,10 +4,7 @@
 #include"Core/IProgramDirector.h"
 #include"Core/GraphicCommand.h"
 #include"Core/RenderSystem.h"
-#include"ObjectManager/ObjectManager.h"
-#include"ObjectManager/RuntimeObjectManager.h"
-#include"ObjectManager/EditGameObjectManager.h"
-#include"ObjectManager/RuntimeGameObjectManager.h"
+
 
 #include"EditorDirector/ProjectDirector.h"
 #include"EditorDirector/FrameWindowMenuDirector.h"
@@ -23,6 +20,9 @@ namespace Quad
 	class FileUiSystem;
 	class ImportModule;
 
+
+	class SuperFrameController;
+	class SuperAssetBrowerController;
 	class EditorDirector:public IProgramDirector ,public Singleton<EditorDirector>
 	{
 	public:
@@ -54,6 +54,11 @@ namespace Quad
 		static void SetSwitchWindowSceneModeFlag(int flag);
 		
 		const int GetSwitchWindowSceneModeFlag()const;
+
+
+	private:
+		SuperFrameController* mSuperFrameController;
+		SuperAssetBrowerController* mSuperAssetBrowerController;
 
 
 	private:
@@ -157,7 +162,7 @@ namespace Quad
 
 	private:
 
-		void AddEffect(RenderSystem* renderSystem, Effect* effect);
+		void AddEffect(RenderSystem* renderSystem, Effect* effect,  ESystemType systemType);
 
 
 
@@ -175,66 +180,66 @@ namespace Quad
 		//RuntimeObjectManager mRuntimeObjectManager;
 		//RuntimeGameObjectManager mRuntimeGameObjectManager;
 
-		RenderSystem mRenderSystem;
-		RenderSystem mUiRenderSystem;
-		RenderSystem mDragAndDropRenderSystem;
-		RenderSystem mPopupRenderSystem;
-		FrameWindowUiSystem* mFrameWindowUiSystem;
-		WindowChromeSystem* mGamePlayWindowChromeSystem;
+		//RenderSystem mRenderSystem;
+		//RenderSystem mUiRenderSystem;
+		//RenderSystem mDragAndDropRenderSystem;
+		//RenderSystem mPopupRenderSystem;
+		//FrameWindowUiSystem* mFrameWindowUiSystem;
+		//WindowChromeSystem* mGamePlayWindowChromeSystem;
 
-		int mCurrentActiveWindow = 0;
-
-
-
-		
-		//controller//
-		DockingWindowController* mGameWindowPlayController;
-		DockingWindowController* mFileUiWindowController;
-		DockingWindowController* mAttributeWindowController;
-		FrameWindowController* mFrameWindowController;
-		PopupWindowController* mPopupWindowController;
-
-		//window//
-		GameRenderWindow* mRenderWindowTest;
-		FrameWindow* mFrameWindow;
-		AttributeWindow* mAttributeWindow;
-		FileUiWindow* mFileUiWindow; //초기화
-		DragAndDropWindow* mDragAndDropWindow;
-		PopupWindow* mPopupWindow;
-		////
+		//int mCurrentActiveWindow = 0;
 
 
 
-		bool mPlayModeState = false;
+		//
+		////controller//
+		//DockingWindowController* mGameWindowPlayController;
+		//DockingWindowController* mFileUiWindowController;
+		//DockingWindowController* mAttributeWindowController;
+		//FrameWindowController* mFrameWindowController;
+		//PopupWindowController* mPopupWindowController;
 
-		
-		//CreatingProjectDirector mCreatingProjectDirector;
-		ProjectDirector mProjectDirector;
-
-
-		FrameWindowMenuDirector mFrameWindowMenuDirector;
-		EditorModeDirector mEditorModeDirector;
-
-
-
-		ImportModule* mImportMoudle;
-
-
-
-		BuildModule mBuildModule;
-
-
-		//에디터 실행파일이 존재하는 경로(editor.exe는 포함안됨)
-		std::string mEditorPathA;
-		std::wstring mEditorPathW;
+		////window//
+		//GameRenderWindow* mRenderWindowTest;
+		//FrameWindow* mFrameWindow;
+		//AttributeWindow* mAttributeWindow;
+		//FileUiWindow* mFileUiWindow; //초기화
+		//DragAndDropWindow* mDragAndDropWindow;
+		//PopupWindow* mPopupWindow;
+		//////
 
 
 
+		//bool mPlayModeState = false;
 
-		//0 : 상태유지 , 1:단독프레임윈도우모드로 전환, 2 : 일반에디터모드
-		int mFrameWindowSceneSwitch;
-		bool mWindowSwitchRenderFlag;//윈도우들을 스위치할때, 클리어,렌더가 수행되었으니, 창들을 띄워도된다는것을 나타내는 상태플래그
-		
+		//
+		////CreatingProjectDirector mCreatingProjectDirector;
+		//ProjectDirector mProjectDirector;
+
+
+		//FrameWindowMenuDirector mFrameWindowMenuDirector;
+		//EditorModeDirector mEditorModeDirector;
+
+
+
+		//ImportModule* mImportMoudle;
+
+
+
+		//BuildModule mBuildModule;
+
+
+		////에디터 실행파일이 존재하는 경로(editor.exe는 포함안됨)
+		//std::string mEditorPathA;
+		//std::wstring mEditorPathW;
+
+
+
+
+		////0 : 상태유지 , 1:단독프레임윈도우모드로 전환, 2 : 일반에디터모드
+		//int mFrameWindowSceneSwitch;
+		//bool mWindowSwitchRenderFlag;//윈도우들을 스위치할때, 클리어,렌더가 수행되었으니, 창들을 띄워도된다는것을 나타내는 상태플래그
+		//
 
 
 

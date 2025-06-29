@@ -17,7 +17,6 @@ namespace Quad
 		static TextCursorEntity* Create(Map* map, int mapLayerIndex = 0);
 
 		virtual void Update(float deltaTime)override;
-		virtual void OnEvent(Event* event) override;
 		CLASSNAME(TextCursorEntity)
 		CLASSSIZE(TextCursorEntity)
 		int GetPositionInText() const;

@@ -10,6 +10,7 @@
 namespace Quad
 {
 	class Object;
+	class BaseComponent;
 
 	class CORE_API_LIB RegisterObjectHelper
 	{
@@ -20,6 +21,22 @@ namespace Quad
 	private:
 
 	};
+
+
+	class CORE_API_LIB RegisterComponentHelper
+	{
+	public:
+		RegisterComponentHelper(const std::string& className, const std::function<Quad::BaseComponent* ()>& constructor, const std::function<void(Quad::BaseComponent*)>& destructor);
+		~RegisterComponentHelper() = default;
+		
+	private:
+
+
+	};
+
+
+
+
 
 
 	//유저의 오브젝트 클래스 테이블

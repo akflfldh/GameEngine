@@ -36,6 +36,11 @@
             1.0,
             1.0
         ],
+        "Material_Emissive":[
+            0.0,
+            0.0,
+            0.0
+        ],
         "Material_EffectName": "Default.effect"
     }
 ]

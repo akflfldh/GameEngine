@@ -63,7 +63,7 @@ void Quad::ChromeSystemCamera::HandleWindowResizeEvent(Event* pEvent)
 //	SetViewWidth(windowWidth);
 
 //	SetViewHeight(windowHeight);
-	GetTransform().SetPositionWorld({ windowWidth / 2.0f, 3000 - windowHeight / 2.0f,0.0f });
+	//GetTransform().SetPositionWorld({ windowWidth / 2.0f, 3000 - windowHeight / 2.0f,0.0f });
 	SetViewWidthAndHeight(windowWidth, windowHeight);
 
 	UpdateViewMatrix();

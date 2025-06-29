@@ -8,6 +8,7 @@
 #include<string>
 #include"DirectXMath.h"
 #include <type_traits>
+#include<stack>
 
 
 
@@ -42,16 +43,18 @@ namespace Quad
 		
 		static bool ReadFile(const std::string& fileName);
 		
-
+		//최상위 오브젝트들의 개수
 		static unsigned int GetObjectNum() ;
 		static void SetCurrentIndex(unsigned int index);
 		static unsigned int GetCurrentIndex() ;
 		static void IncrementCurrentIndex();
-		static const std::string GetClassName(unsigned int index);
+
 
 
 		static void ReadStart();
 
+
+		//currElementNode의 value type이 object인경우에만 유효하다. 사용자가 올바르게호출할것
 		static void Read(const std::string& key, std::string& member); 
 		static void Read(const std::string& key, int& member); 
 		static void Read(const std::string& key, unsigned long long& memeber);
@@ -66,11 +69,38 @@ namespace Quad
 
 		//현재currentIndex의 해당하는 object의 속성중 array속성에값을 읽는것
 		static rapidjson::Value::ConstArray ReadArray(const std::string& key);
+
+	
+		
+		//currElementNode value type이 array인경우에 유효
+		//현재 index에해당하는 value값을 읽는다.
+		static void Read(std::string & value);
+		static void Read(int & value);
+		static void Read(unsigned long long & value);
+		static void Read(unsigned int & value);
+		static void Read(float & value);
 		
 
-		//static void ReadObjectProperty(const rapidjson::Value& object, const std::string& key);
+
+		//현재 ElementNode 타입이 Object일때 멤버개수리턴
+		static size_t GetMemeberNum();
+
+		//현재 오브젝트,또는 배열의 현재 Index에 해당하는 요소의 타입
+		static rapidjson::Type GetCurrIndexValueType();
+		
+		//현재 ElementNode타입이 object일때 유효
+		static std::string GetCurrMemberKey();
 
 
+		//현재 object의 member or array의 value가 object,array 타입이면 안으로 들어간다. 
+		static void DescendIntoObjectOrArray();
+		//key에 해당하는 object memeber로 들어간다.
+		static void DescendIntoObjectOrArray(const std::string & key);
+
+
+		//이전 object or array로 되돌아간다.
+		static void AscendOutofObjectOrArray();
+		
 
 
 		//컨테이너공간이존재해야한다.
@@ -80,16 +110,22 @@ namespace Quad
 		static bool ReadBool(const std::string& key);
 
 
+
+
 		//새로운 파일에 작성하기시작한다면 StartWrite를 먼저호출할것이다.
-		static void StartWrite();
-		static void StartWriteObject();
+		static void StartWrite();	//object,array 로 시작하도록 설정할수있게 하자.
+
+
+		//현재 ElementNode의 타입이 object인경우 object 타입의 새로운 member추가하는 함수 . 그 object로 들어간다. 따라서 
+		static void StartWriteObject(const std::string& key); //빠져나올려면 AscendOutOfObejctOrArray호출
+
+		//ElementNode 타입이 array의 경우에 object타입의 요소를 추가하는 함수 , 그 object로 들어간다. 따라서 
+		static void StartWriteObject(); //빠져나올려면 AscendOutOfObejctOrArray호출
+
+
+
+		//ElementNode의 타입이 object라고 가정하고 member를 추가한다.
 		static void Write(const std::string& key, const std::string& value);
-		//static void Write(const std::string& key, int value);
-		//static void Write(const std::string& key, double value);
-		//static void Write(const std::string& key, unsigned long long value);
-		//static void Write(const std::string& key, unsigned int value);
-		//static void Write(const std::string& key, float value);
-		//static void Write(const std::string& key, bool flag);
 
 		template<typename T>
 		static void Write(const std::string& key, T value);
@@ -118,7 +154,8 @@ namespace Quad
 
 		JsonParser();
 		static Value::MemberIterator  GetMemberIterator(const std::string& key);
-		static void WriteMember(const std::string& key, const Value & value);
+		static Value* GetCurrentArrayElementValue();
+		static void WriteMember(const std::string& key, Value & value);
 
 	
 		static int GetValue(Value& value,int);
@@ -129,11 +166,30 @@ namespace Quad
 
 
 		Document mDocument;
-		int mCurrentReadObjectIndex = 0;
+		//최상위 오브젝트의 인덱스값
+		//int mCurrentReadObjectIndex = 0;
 
+
+
+		//array , object에대해서만 다룬다.계층구조처리를위해서
+		struct ElementNode
+		{
+			rapidjson::Value * mCurrentElementValue;			//array 혹은 object이다.
+			int mCurrentIndex;						//array의 index이거나, object의 memberIndex이다.
+		};
+		
+		ElementNode mCurrentElementNode;
+		std::stack<ElementNode> mElementNodeStack;
 
 
 	};
+
+
+
+
+
+
+
 
 	template<typename Iter>
 	inline void JsonParser::Read(const std::string& key, Iter begin, Iter end)
@@ -146,7 +202,7 @@ namespace Quad
 			Document& document = instance->mDocument;
 			
 
-			GenericMemberIterator memberIt = document[instance->mCurrentReadObjectIndex].FindMember(key.c_str());
+			GenericMemberIterator memberIt = instance->mCurrentElementNode.mCurrentElementValue->FindMember(key.c_str());
 			if (!memberIt->value.IsArray())
 				return;
 
@@ -168,13 +224,14 @@ namespace Quad
 	{
 
 		if(std::is_fundamental<T>::value)
-		{ 
-			WriteMember(key, Value(va));
+		{
+			Value value(va);
+			WriteMember(key, value);
 		}
 
 	}
 
-	template<typename Iter>
+	template<typename Iter>//현재 ElementNode타입이 object일때 유효
 	inline void JsonParser::Write(const std::string& key, Iter begin, Iter end)
 	{
 
@@ -190,7 +247,12 @@ namespace Quad
 				arrayValue.PushBack(*it,document.GetAllocator());
 			}
 
-			document[document.Size() - 1].AddMember(Value(key.c_str(), document.GetAllocator()), arrayValue, document.GetAllocator());
+
+
+			if (instance->mCurrentElementNode.mCurrentElementValue->IsObject())
+			{
+				instance->mCurrentElementNode.mCurrentElementValue->AddMember(Value(key.c_str(), document.GetAllocator()), arrayValue, document.GetAllocator());
+			}
 		}
 	}
 

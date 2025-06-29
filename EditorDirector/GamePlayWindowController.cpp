@@ -1,6 +1,6 @@
 ﻿#include "GamePlayWindowController.h"
 
-Quad::GamePlayWindowController::GamePlayWindowController(RenderSystem* renderSystem)
-	:DockingWindowController(renderSystem)
-{
-}
+//Quad::GamePlayWindowController::GamePlayWindowController(RenderSystem* renderSystem)
+//	:DockingWindowController(renderSystem)
+//{
+//}

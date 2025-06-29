@@ -16,32 +16,25 @@ namespace Quad
         friend class CollisionHelper;
 
     public:
+        BoxCollider();
         ~BoxCollider();
-        virtual void OnEvent(Event* event) override;
-        virtual void Update(float deltaTime) override;
-        virtual void Update(float deltaTime, const DirectX::XMFLOAT4X4& transformMatrix) override;
-        virtual void Update(float deltaTime, const DirectX::XMMATRIX& transformMatrix)override;
+        virtual void Update(const DirectX::XMFLOAT4X4& transformMatrix) override;
+        virtual void Update(const DirectX::XMMATRIX& transformMatrix)override;
         CLASSNAME(BoxCollider)
         CLASSSIZE(BoxCollider)
 
         virtual void Serialize() override;
         virtual void DeSerialize() override;
-        virtual void SetMesh(Mesh* mesh) override;
-        void SetMinMaxVertex(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max);
+        void SetMinMaxVertexLocal(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max);
+        void SetMinMaxVertexLocal(const std::pair<DirectX::XMFLOAT3,DirectX::XMFLOAT3> & mimMax);
 
-        virtual void SetWidthX(float width);
-        virtual void SetHeightY(float height);
-        virtual void SetDepthZ(float depth);
+        virtual void SetWidthLocalX(float width);
+        virtual void SetHeightLocalY(float height);
+        virtual void SetDepthLocalZ(float depth);
 
-        virtual void SetPosition(const DirectX::XMFLOAT3& pos);
-
+        void SetPositionLocal(const DirectX::XMFLOAT3& pos) ;
 
     protected:
-        void Initialize(const DirectX::XMFLOAT3 & center, const DirectX::XMFLOAT3& extents,Mesh * mesh);
-
-        void Initialize(const DirectX::BoundingBox& boundingBox,Mesh * mesh);
-
-        BoxCollider();
 
         const DirectX::BoundingBox& GetBoundingVolume() const;
     protected:

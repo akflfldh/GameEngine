@@ -1,34 +1,39 @@
+[
+
+  {
+    "TYPE" : "PASS",
+
+    "SHADER": 
+    {
+
+        "VS" :
+        {
+          "File":"DefaultCollider.hlsl",
+
+          "EntryPoint" : "VS",
+
+          "Version" : "vs_5_1"
+        },
 
 
-PASS
-{
+        "PS" :
+        {
+          "File":"DefaultCollider.hlsl",
 
-VS
-{
-  File:"DefaultCollider.hlsl"
+          "EntryPoint" : "PS",
 
-  EntryPoint : "VS"
+          "Version" : "ps_5_1"
+        }
+    },
 
-  Version : "vs_5_1"
-}
+    "CONFIG":
+    {
 
-
-PS
-{
-  File:"DefaultCollider.hlsl"
-
-  EntryPoint : "PS"
-
-  Version : "ps_5_1"
-}
+    }
 
 
+  }
 
-
-}
-
-
-
-
+]
 
 

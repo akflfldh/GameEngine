@@ -62,11 +62,11 @@ namespace Quad
 	private:
 		//handle event
 		
-		virtual void HandleHover(Event* pEvent) override;
-		virtual void HandleMouseMove(Event* pEvnet) override;
-		virtual void HandleLButtonDown(Event* pEvent) override;
-		virtual void HandleLButtonUp(Event* pEvent) override;
-		void HandleLButtonDownDouble(Event* pEvent);
+		virtual void HandleHover(const MouseInputData & mouseInputData) override;
+		virtual void HandleMouseMove(const MouseInputData& mouseInputData) override;
+		virtual void HandleLButtonDown(const MouseInputData& mouseInputData) override;
+		virtual void HandleLButtonUp(const MouseInputData& mouseInputData) override;
+		void HandleLButtonDownDouble(const MouseInputData& mouseInputData);
 
 		
 		void InitCreating(ContentItem* item, EType type);

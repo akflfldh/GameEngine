@@ -1,10 +1,9 @@
 [
     {
-        "NextAvailableUniqueID": 434
-    },
-    {
+        "NextAvailableUniqueID": 434,
         "TextureNum": 57
     },
+
     {
         "FileName": "189_Button.png",
         "AssetUniqueName": "Button.png",

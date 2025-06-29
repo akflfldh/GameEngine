@@ -51,6 +51,7 @@ namespace Quad
 		virtual void SetShiness(float shiness);
 		virtual void SetColor(const DirectX::XMFLOAT3& color);
 		virtual void SetColorIntensity(const DirectX::XMFLOAT3& intensity);
+		virtual void SetEmissive(const DirectX::XMFLOAT3& emissive);
 		virtual void SetFresnelRO(const DirectX::XMFLOAT3& fresnelR0);
 		virtual void SetDiffuse(const DirectX::XMFLOAT4& diffuse);
 
@@ -66,12 +67,10 @@ namespace Quad
 		virtual DirectX::XMFLOAT3 GetSpecular() const;
 		virtual DirectX::XMFLOAT3 GetAmbient() const;
 		virtual float GetShiness() const;
-		virtual const DirectX::XMFLOAT3& GetColor() const;
-		virtual const DirectX::XMFLOAT3& GetColorIntensity()const;
-
-
-
-
+		virtual const DirectX::XMFLOAT3 GetColor() const;
+		virtual const DirectX::XMFLOAT3 GetColorIntensity()const;
+		virtual const DirectX::XMFLOAT3 GetEmissive() const;
+		
 		
 
 
@@ -122,6 +121,7 @@ namespace Quad
 		DirectX::XMFLOAT3 mAmbient = { 0.2f,0.2f,0.2f };
 		DirectX::XMFLOAT3 mColor = { 1.0f,1.0f,1.0f };
 		DirectX::XMFLOAT3 mColorIntensity = { 1.0f,1.0f,1.0f };
+		DirectX::XMFLOAT3 mEmissive;
 		bool mDirtyFlag = true;
 		//Texture* mDiffuseMap;		
 		//Texture* mNormalMap ;

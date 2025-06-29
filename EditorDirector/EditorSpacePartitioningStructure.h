@@ -2,6 +2,8 @@
 
 
 #include"SpacePartitioningStructure.h"
+#include"Collision/Collider.h"
+#include"Collision/UiCollider.h"
 namespace Quad
 {
 	

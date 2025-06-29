@@ -1,32 +1,40 @@
+[
+  {
+    "TYPE":"PASS",
+    "SHADER" :
+    {
+
+        "VS":
+        {
+          "File":"GizmoRotation.hlsl",
+
+          "EntryPoint":"VS",
+
+          "Version":"vs_5_1"
+        },
 
 
-PASS
-{
+        "PS":
+        {
+          "File":"GizmoRotation.hlsl",
+
+          "EntryPoint":"PS",
+
+          "Version":"ps_5_1"
+        }
+    },
+
+    "CONFIG":
+    {
+        "DEPTHFUNC":"ALWAYS",
+        "RENDERPASSID" : "GIZMO",
+        "CULLMODE": "NONE"
+    }
+  }
 
 
-VS
-{
-  File:"GizmoRotation.hlsl"
-
-  EntryPoint:"VS"
-
-  Version:"vs_5_1"
-}
 
 
-PS
-{
-  File:"GizmoRotation.hlsl"
-
-  EntryPoint:"PS"
-
-  Version:"ps_5_1"
-}
 
 
-DEPTHFUNC:ALWAYS
-RENDERPASSID : GIZMO
-CULLMODE: NONE
-
-
-}
+]

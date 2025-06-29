@@ -1,32 +1,38 @@
+[
 
 
-PASS
-{
+  {
+    "TYPE":"PASS",
+    "SHADER":
+    {
+
+      "VS":
+      {
+        "File":"Gizmo.hlsl",
+
+        "EntryPoint":"VS",
+
+        "Version":"vs_5_1"
+      },
 
 
-VS
-{
-  File:"Gizmo.hlsl"
+      "PS":
+      {
+        "File":"Gizmo.hlsl",
 
-  EntryPoint:"VS"
+        "EntryPoint":"PS",
 
-  Version:"vs_5_1"
-}
+        "Version":"ps_5_1"
+      }
 
+    },
 
-PS
-{
-  File:"Gizmo.hlsl"
+    "CONFIG" :
+    {
+      "DEPTHFUNC":"ALWAYS",
+      "RENDERPASSID" : "GIZMO"
+    }
 
-  EntryPoint:"PS"
+  }
 
-  Version:"ps_5_1"
-}
-
-
-DEPTHFUNC:ALWAYS
-RENDERPASSID : GIZMO
-
-
-
-}
+]

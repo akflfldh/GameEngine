@@ -1,4 +1,3 @@
-
 struct Light
 {
 	float3 gLight;
@@ -35,24 +34,13 @@ float4 CaculateLight(float3 eyeVector, float3 lightIntensity,float3 lightVector,
 
 
 
-
-
 	//return float4(1.0f, 1.0f, 1.0f, 1.0f);
-	return float4(lambertFactor * lightIntensity * (  specularTerm + diffuseTerm),1.0f);
+	float3 color =lambertFactor * lightIntensity * (  specularTerm + diffuseTerm);
+	color =max(color, float3(0,0,0));
 
-
-
-
-
-
+	return float4(color,1.0f);
 
 
 
 }
-
-
-
-
-
-
 

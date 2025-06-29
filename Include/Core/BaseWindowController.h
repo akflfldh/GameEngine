@@ -5,6 +5,7 @@
 #include"Core/Controller.h"
 #include"Core/CoreDllExport.h"
 #include<vector>
+#include<d3d12.h>
 namespace Quad
 {
 	
@@ -42,6 +43,12 @@ namespace Quad
 
 		RenderSystem* GetRenderSystem() ;
 		const RenderSystem* GetRenderSystem() const;
+
+
+		void NotifyCreatingMapLayer(ESystemType systemType, D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal);
+		void NotifyResizeMapLayer(ESystemType systemType, int mapLayerIndex ,D3D12_VIEWPORT viewport, D3D12_VIEWPORT viewportGlobal);
+
+
 	private:
 		bool mMousePositionState;
 		std::vector<BaseWindowMsgHandlerComponent*> mWindowMsgHandlerComponentVector;

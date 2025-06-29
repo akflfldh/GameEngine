@@ -36,7 +36,7 @@
     <ClCompile Include="EditorResourceMediator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EditorSystem.cpp">
+    <ClCompile Include="EditorMapManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="FileUiEntity.cpp">
@@ -162,9 +162,6 @@
     <ClCompile Include="AttributeUiSystem.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="AttributeWindow.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="AttrUiSystemSelectObjectComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -199,9 +196,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GameObjectSelectEvent.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="UiComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="BoundaryRect.cpp">
@@ -420,6 +414,33 @@
     <ClCompile Include="ComboBoxPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectEditorComponentTableSystem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorRuntimeUserObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorStaticUserObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorEngineObjectManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorCoreComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperController.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperFrameController.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SuperAssetBrowerController.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EditorMap.h">
@@ -465,9 +486,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\System\GamePlayUiSystem.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\EditorDirector\AttributeWindow.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\EditorDirector\AttrUiSystemSelectObjectComponent.h">
@@ -548,7 +566,7 @@
     <ClInclude Include="..\Include\EditorDirector\EditorModeDirector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\EditorDirector\EditorSystem.h">
+    <ClInclude Include="..\Include\EditorDirector\EditorMapManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\EditorDirector\EngineModeDirector.h">
@@ -707,9 +725,6 @@
     <ClInclude Include="..\Include\EditorDirector\AssetImageFrameEntity.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="UiComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\System\FileUiSystem.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -828,6 +843,33 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ComboBoxPanel.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectEditorComponentTableSystem.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorRuntimeUserObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorStaticUserObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorEngineObjectManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorCoreComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperController.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperFrameController.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperAssetBrowerController.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

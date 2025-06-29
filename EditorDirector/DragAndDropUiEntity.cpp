@@ -37,9 +37,9 @@ void Quad::DragAndDropUiEntity::InitCreating()
 	UiEntity::InitCreating();
 
 
-	SetTexture("Blue.png");
-	SetEffect("DefaultUi.effect");
-	SetSize(200, 200);
-	SetPosition(0, 0, 10.0f);
+	//SetTexture("Blue.png");
+	//SetEffect("DefaultUi.effect");
+	//SetSize(200, 200);
+	//SetPosition(0, 0, 10.0f);
 }
 

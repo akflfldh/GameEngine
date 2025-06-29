@@ -13,6 +13,7 @@ namespace Quad
 		~FileUiSystemCamera() = default;
 
 		virtual void Initialize();
+		
 		static FileUiSystemCamera* Create(Map* map, int mapLayerIndex,UINT width, UINT height);
 
 

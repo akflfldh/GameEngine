@@ -8,7 +8,7 @@ Quad::DropFileHandlerComponent::DropFileHandlerComponent(DockingWindowController
 
 LRESULT Quad::DropFileHandlerComponent::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,bool & ret)
 {
-    switch (msg)
+    /*switch (msg)
     {
 
     case WM_DROPFILES:
@@ -30,7 +30,7 @@ LRESULT Quad::DropFileHandlerComponent::HandleMessage(HWND hwnd, UINT msg, WPARA
         ret = true;
     }
 
-    }
+    }*/
 
     return 0;
 

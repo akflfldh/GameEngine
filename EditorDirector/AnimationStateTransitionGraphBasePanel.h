@@ -52,8 +52,8 @@ namespace Quad
 	
 	protected:
 		void InitCreating();
-		virtual void HandleRButtonDown(Event* pEvent) override;
-		virtual void HandleRButtonUp(Event* pEvent) override;
+		virtual void HandleRButtonDown(const MouseInputData & inputData) override;
+		virtual void HandleRButtonUp(const MouseInputData& inputData) override;
 
 		void InitGraphDefaultSetting(AnimationStateTransitionGraph* graph);
 
