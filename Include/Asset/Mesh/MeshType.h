@@ -9,6 +9,8 @@
 #include"Asset/Material/LineBaseMaterial.h"
 
 #include"Core/CoreDllExport.h"
+
+//#include<CoreMath.h>
 namespace Quad
 {
 	enum class EMeshType:int
@@ -17,6 +19,29 @@ namespace Quad
 		eSknningMesh,
 		eLine
 	};
+
+	//struct UIVertex
+	//{
+	//	CoreMath::Vector3 mPos;
+	//	CoreMath::Vector2 mTex;
+	//};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	struct StaticVertex

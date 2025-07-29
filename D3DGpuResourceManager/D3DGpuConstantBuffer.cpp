@@ -5,6 +5,10 @@ D3DGRM::D3DGpuConstantBuffer::D3DGpuConstantBuffer(Microsoft::WRL::ComPtr<ID3D12
 {
 }
 
+D3DGRM::D3DGpuConstantBuffer::~D3DGpuConstantBuffer()
+{
+}
+
 void D3DGRM::D3DGpuConstantBuffer::SetDescriptorHandleVector(const std::vector<D3DDescriptorHandle>& handleVector)
 {
 	mDescriptorHandleVector = handleVector;

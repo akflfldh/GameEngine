@@ -21,6 +21,8 @@ namespace Quad
 		TextureLoader() = default;
 		~TextureLoader() = default;
 
+
+
 		void Initialize(Microsoft::WRL::ComPtr<ID3D12Device> device,
 			GraphicCommand* graphicsCommandObject);
 

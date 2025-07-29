@@ -2,32 +2,46 @@
 #include"header.h"
 #include"Predeclare.h"
 #include"Core/IProgramDirector.h"
-#include"Core/GraphicCommand.h"
-#include"Core/RenderSystem.h"
+//#include"Core/GraphicCommand.h"
+//#include"Core/RenderSystem.h"
 
 
-#include"EditorDirector/ProjectDirector.h"
-#include"EditorDirector/FrameWindowMenuDirector.h"
-#include"EditorDirector/EditorModeDirector.h"
+//#include"EditorDirector/ProjectDirector.h"
+//#include"EditorDirector/FrameWindowMenuDirector.h"
+//#include"EditorDirector/EditorModeDirector.h"
 
-#include"Utility/Singleton.h"
-#include"BuildModule.h"
+//#include"BuildModule.h"
 
 #define EngineMode
 
+
+namespace SystemInitializer { class ISystemInitializer; }
+namespace QuadLF { class LogicalFileSystem; }
+namespace QuadPF { class PhysicalFileSystem; }
+
+namespace CoreAsset {
+	class AssetLoader;
+}
+
+
 namespace Quad
 {
-	class FileUiSystem;
-	class ImportModule;
+//	class FileUiSystem;
+	//class ImportModule;
 
 
 	class SuperFrameController;
 	class SuperAssetBrowerController;
-	class EditorDirector:public IProgramDirector ,public Singleton<EditorDirector>
+	class EditorTextureImporter;
+	class EditorProjectInitializer;
+	class EditorShaderImporter;
+
+	class EditorDirector:public IProgramDirector
 	{
 	public:
+		static EditorDirector* GetInstance();
 		EditorDirector();
-		~EditorDirector()=default;
+		virtual ~EditorDirector();
 
 
 		virtual void Initialize() override; 
@@ -61,53 +75,93 @@ namespace Quad
 		SuperAssetBrowerController* mSuperAssetBrowerController;
 
 
+
+
+		
+
+
+
 	private:
-		void InitGamePlayWindow();
-		void InitFileUiWindow();
-		void InitAttributeWindow();
-		void InitFrameWindow();
-		void InitDragAndDropWindow();
-		void InitPopupWindow();
 
 
-		void InitGameProject(TaskWindow* window, DockingWindowController* controller,
-			GamePlaySystem* gamePlaySystem, 
-			WindowChromeSystem* windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem);
-		void InitGamePlaySystem(TaskWindow* window, GamePlaySystem* system);
-		void InitGamePlayUiSystem(TaskWindow* window, GamePlayUiSystem* system);
-		//void InitAttributeSystem(TaskWindow* window, AttributeSystem* system);
-		void InitAttributeUiSystem(TaskWindow* window, AttributeUiSystem* system);
-		void InitFileUiUiSystem(TaskWindow* windows, FileUiUiSystem* system);
-		void InitFileUiSystem2(TaskWindow* windows, FileUiSystem* system);
-
-		//void test(TaskWindow* windows, FileUiSystem* system);
-
-		//void InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system);
-		void InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system);
-
-
-
-
-		void InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-		void InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-		void InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-		void InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-
-
-		void InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system);
-		void InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system);
-
-
-
-		//gamePlaySystem말고, 다른 window들의 시스템들의 맵 초기화 (맵 레이어생성,충돌공간생성,설정)
-		void initDefaultMapSetting(TaskWindow* window, Map* currMap);
+		//Sub Init Method
+		//시스템들을 초기화한다.
+		void InitSystem();
 
 
 
 
 
 
-		void AddVisibleEditorAssetToFileWindow(const std::string& configFilePath);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		//void InitGamePlayWindow();
+		//void InitFileUiWindow();
+		//void InitAttributeWindow();
+		//void InitFrameWindow();
+		//void InitDragAndDropWindow();
+		//void InitPopupWindow();
+
+
+		//void InitGameProject(TaskWindow* window, DockingWindowController* controller,
+		//	GamePlaySystem* gamePlaySystem, 
+		//	WindowChromeSystem* windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem);
+		//void InitGamePlaySystem(TaskWindow* window, GamePlaySystem* system);
+		//void InitGamePlayUiSystem(TaskWindow* window, GamePlayUiSystem* system);
+		////void InitAttributeSystem(TaskWindow* window, AttributeSystem* system);
+		//void InitAttributeUiSystem(TaskWindow* window, AttributeUiSystem* system);
+		//void InitFileUiUiSystem(TaskWindow* windows, FileUiUiSystem* system);
+		//void InitFileUiSystem2(TaskWindow* windows, FileUiSystem* system);
+
+		////void test(TaskWindow* windows, FileUiSystem* system);
+
+		////void InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system);
+		//void InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system);
+
+
+
+
+		//void InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
+		//void InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
+		//void InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
+		//void InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
+
+
+		//void InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system);
+		//void InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system);
+
+
+
+		////gamePlaySystem말고, 다른 window들의 시스템들의 맵 초기화 (맵 레이어생성,충돌공간생성,설정)
+		//void initDefaultMapSetting(TaskWindow* window, Map* currMap);
+
+
+
+
+
+
+		//void AddVisibleEditorAssetToFileWindow(const std::string& configFilePath);
 
 
 
@@ -145,7 +199,7 @@ namespace Quad
 		UINT mRenderWindowWidth;
 		UINT mRenderWindowHeight;
 
-		GraphicCommand*  mGraphicCommandObject;
+		//GraphicCommand*  mGraphicCommandObject;
 
 
 
@@ -162,7 +216,7 @@ namespace Quad
 
 	private:
 
-		void AddEffect(RenderSystem* renderSystem, Effect* effect,  ESystemType systemType);
+		//void AddEffect(RenderSystem* renderSystem, Effect* effect,  ESystemType systemType);
 
 
 
@@ -170,7 +224,7 @@ namespace Quad
 
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
 		Microsoft::WRL::ComPtr<IDXGIFactory4> mFactory;
-		DescriptorHeapManagerMaster* mDescriptorHeapManagerMaster;
+		//DescriptorHeapManagerMaster* mDescriptorHeapManagerMaster;
 		
 
 	private:
@@ -244,6 +298,16 @@ namespace Quad
 
 
 
+		std::unique_ptr<EditorTextureImporter> mTextureImporter;
+		std::unique_ptr< QuadLF::LogicalFileSystem> mLogicalFileSystem;
+		std::unique_ptr< EditorProjectInitializer> mProjectInitializer;
+
+
+		QuadPF::PhysicalFileSystem* mPhysicalFileSystem;
+
+
+		CoreAsset::AssetLoader* mAssetLoader;
+		std::unique_ptr<EditorShaderImporter> mEditorShaderImporter;
 	};
 
 

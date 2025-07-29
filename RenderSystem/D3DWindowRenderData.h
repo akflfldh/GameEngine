@@ -8,9 +8,12 @@
 #include<d3d12.h>
 #include<wrl.h>
 #include<dxgi.h>
-namespace GRM { class IGpuResourceManager; }
+#include"GpuTypes.h"
+#include<GRMPtr.h>
+namespace GRM { class IGpuResourceManager; class GRMPtr; }
+namespace D3DGRM { class D3DGpuTexture; class D3DGpuResourceManager; }
 
-namespace D3DX
+namespace D3DRender
 {
 
 	class D3DWindowRenderManager;
@@ -22,10 +25,29 @@ namespace D3DX
 		~D3DWindowRenderData();
 
 		void ResizeWindow();
+		
+
+		//스왑체인,후면/깊이버퍼
+		GRM::GRMPtr GetBackBuffer(int index) const; // index : 0 ,1
+		GRM::GRMPtr GetDepthStencilBuffer() const;
+
+		int GetCurrentBackBufferIndex() const;
+		void IncrementBackBufferIndex();
+		Microsoft::WRL::ComPtr<IDXGISwapChain> GetSwapChain() const;
+
+
+		//펜스
+		Microsoft::WRL::ComPtr<ID3D12Fence> GetFence() const;
+		size_t GetCurrentFenceValue() const;
+		void IncrementFenceValue();
+		HANDLE GetFenceEventHandle();
+
+
 	private:
 		void CreateSwapChain(const Render::CreationRenderChannelInfo& creationInfo);
 		void ResizeBackBuffer(UINT clientWidth, UINT clientHeight);
-		void CreateDepthStencilBuffer(UINT clientWidth, UINT clientHeight);
+		void ResizeDepthStencilBuffer(UINT clientWidth, UINT clientHeight);
+		void CreateDepthStencilBuffer(const Render::CreationRenderChannelInfo& creationInfo);
 
 
 	private:
@@ -34,14 +56,26 @@ namespace D3DX
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
 		Microsoft::WRL::ComPtr<IDXGIFactory> mFactory;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
+		Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
+		size_t mCurrentFenceValue;
+
+		//Microsoft::WRL::ComPtr<ID3D12Resource> mBackBuffer[2];
 		
-		Microsoft::WRL::ComPtr<ID3D12Resource> mBackBuffer[2];
+
 
 		HWND mWindowHandle;
 		DXGI_FORMAT mBackBufferForamt;
 
-		GRM::IGpuResourceManager* mGpuResourceManager;
+		D3DGRM::D3DGpuResourceManager* mGpuResourceManager;
 
+		GRM::GRMPtr mBackBuffer[2];
+		GRM::GRMPtr mDepthStencilBuffer;
+
+
+		GRM::TextureDesc mDepthStencilDesc;
+
+		int mCurrentBackBufferIndex;
+		HANDLE mFenceEventHandle;
 	};
 
 	

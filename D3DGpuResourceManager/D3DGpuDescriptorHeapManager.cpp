@@ -12,7 +12,7 @@ D3DGRM::D3DGpuDescriptorHeapManager::D3DGpuDescriptorHeapManager(Microsoft::WRL:
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
 	heapDesc.Type = type;
 	heapDesc.NodeMask = 0;
-	heapDesc.NumDescriptors = descriptorNum;
+	heapDesc.NumDescriptors = (UINT)descriptorNum;
 	heapDesc.Flags = mHeapFlag;
 
 	mDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(mDescriptorHeap.GetAddressOf()));
@@ -70,4 +70,10 @@ void D3DGRM::D3DGpuDescriptorHeapManager::Free(D3DDescriptorHandle handle)
 	mFreeDecriptorOffsetVector.push_back(offset);
 
 
+}
+
+
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> D3DGRM::D3DGpuDescriptorHeapManager::GetDescriptorHeap() const
+{
+	return mDescriptorHeap;
 }

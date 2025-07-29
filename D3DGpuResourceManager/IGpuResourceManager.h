@@ -2,69 +2,64 @@
 
 
 #include"IGpuResource.h"
+#include"GpuTypes.h"
+#include"GpuResourceDllMacro.h"
 
 namespace GRM
 {
 
-	enum class EBufferUsage
-	{
-		eDefault = 0,          // 일반 GPU 리소스 (DEFAULT)
-		eVertexBuffer,         // 정점 버퍼 
-		eIndexBuffer,          // 인덱스 버퍼
-		eConstantBuffer,       // 상수 버퍼
-	};
-
-	enum class EBufferMemoryAccess
-	{
-		eGpuOnly=0,		//GPU 전용(default 힙)
-		eCpuWriteOnly	//CPU 쓰기(upload힙)
-	};
-
-	//상수버퍼: ElementDatasSIZE상수버퍼하나에들어가는데이터크기 -> 정렬
-	//ElementDataNum은 연속된 상수버퍼의 개수
-	//mData를 nullptr로 초반에 넘긴다.
-	//상수버퍼의 경우에는 연속된것으로 제공하자
+	class GRMPtr;
 
 
-	struct BufferDesc
-	{ 
-		char* mData = nullptr; //데이터
-		size_t mElementDataNum = 0; //데이터요소의수			//vertexbuffer의경우 vertex의 수
-		size_t mElementDataSize = 0;//한 데이터요소의 크기		//vertexbuffer의 경우 vertex하나의 크기
-
-		size_t mBufferSize = 0;	//buffer의최종크기
-
-
-
-		EBufferUsage mBufferUsage = EBufferUsage::eDefault;
-		EBufferMemoryAccess mBufferMemoryAccess = EBufferMemoryAccess::eGpuOnly;
-	};
-
-
-
-
-
-
-	
-
-
-	
-	class IGpuResourceManager
+	class GPURESOURCE_MANAGER_API IGpuResourceManager
 	{
 	public:
 	
 		virtual ~IGpuResourceManager() = 0;
 	
 
-		virtual IGpuResource* CreateBuffer(const BufferDesc & bufferDesc) = 0;
+		virtual GRMPtr CreateBuffer(const BufferDesc & bufferDesc) = 0;
 
-		virtual IGpuResource* Create2DTextureResource() = 0;
-
+		virtual GRMPtr CreateTexture(const TextureDesc & textureDesc) = 0;
+	
 		static IGpuResourceManager* GetInstance();
 		static void SetGpuResourceManagerImpl(IGpuResourceManager* pImpl);
 
-		virtual void RegisterSwapChainBackBufferView(void* resoure) = 0;
-		virtual void ReleaseSwapChainBackBufferView(void* resoure) = 0;
+		virtual GRMPtr RegisterSwapChainBackBuffer(void* innerResoure) = 0;
+		virtual void ResizeSwapChainBackBuffer(const GRMPtr & resource, void* InnerResoure)= 0;
+		virtual void ReleaseSwapChainBackBuffer(const GRMPtr &  resoure) = 0;
+
+
+		//외부사용자는 신경쓸거없이 사용만하면되고 내부 엔진시스템들은 기존내부리소스들이 모두 무효화된다는것을 인지할것
+		virtual void ChangeTextureData(const GRMPtr & texture, const TextureDesc& textureDesc) = 0;
+
+
+
+		virtual bool UploadBufferData(const GRMPtr &  buffer, void* data, size_t elementSize, size_t elementNum,
+			size_t bufferOffset = 0) = 0;
+
+
+
+
+
+		//여러가지설정을받을수있다.//현재는 그냥 디폴트
+		virtual GRMPtr CreateSampler() =0;
+
+		//void UploadDataToBuffer(buffer, data)
+
+
+
+
+
+
+		//일반적으로 IGpuResource를참조하는 외부에서 IGpuResource의 release를 호출하면된다.
+		//그러면 내부적으로 manager의 Release함수를 호출
+		//이함수는 그렇게 Release요청을받은 gpuResource들을 모은다.
+		virtual void Release(IGpuResource* resource) = 0;
+
+		virtual void FlushGarbageCollect() = 0;
+
+
 
 
 

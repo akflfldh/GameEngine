@@ -4,9 +4,14 @@
 #include"SuperController.h"
 
 #include<Windows.h>
+
+namespace UI { class UISystem; }
+
+
 namespace Quad
 {
 	class BaseWindow;
+	
 
 	class SuperFrameController:public SuperController
 	{
@@ -16,6 +21,17 @@ namespace Quad
 		virtual ~SuperFrameController();
 
 		void Initialize() override;
+
+		virtual void PreUpdate() override;
+
+		virtual void Update(float deltaTime) override;
+		
+		virtual void EndUpdate() override;
+
+		virtual void Draw() override;
+
+
+
 		virtual BaseWindow* GetWindow() override;
 	
 
@@ -30,6 +46,8 @@ namespace Quad
 		SuperFrameController() = default;
 		BaseWindow* mWindow;
 
+
+		UI::UISystem* mUISystem;
 	};
 
 }

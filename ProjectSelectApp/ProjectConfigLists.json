@@ -1,0 +1,17 @@
+{
+    "ProjectNum":2,
+    "ProjectList": 
+    [
+        {
+            "Path" :"C:Users/dongd/Desktop/RefactoringProject",
+            "Version":"1.0",
+            "Name":"RefactoringProject"
+        },
+        {
+            "Path" :"aa",
+            "Version":"aa",
+            "Name":"aa"
+        }
+
+    ]
+}

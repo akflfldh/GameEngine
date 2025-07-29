@@ -1,13 +1,15 @@
 ﻿#pragma once
 
 #include"D3DGpuBuffer.h"
+#include"GpuResourceDllMacro.h"
 namespace D3DGRM
 {
 
-	class D3DGpuIndexBuffer:public D3DGpuBuffer
+	class GPURESOURCE_MANAGER_API D3DGpuIndexBuffer:public D3DGpuBuffer
 	{
 	public:
 		D3DGpuIndexBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> bufffer,size_t indexNum, size_t indexSize);
+		virtual ~D3DGpuIndexBuffer();
 
 		D3D12_INDEX_BUFFER_VIEW GetIndexBufferView() const;
 

@@ -1,5 +1,6 @@
 ﻿#include "IGpuResourceManager.h"
-
+#include<assert.h>
+#include<Logger.h>
 
 GRM::IGpuResourceManager* GRM::IGpuResourceManager::mImplManager = nullptr;
 
@@ -17,7 +18,8 @@ GRM::IGpuResourceManager* GRM::IGpuResourceManager::GetInstance()
 	if (mImplManager == nullptr)
 	{
 		//에러출력
-
+		LOG_MESSAGE_CRITICAL("GpuResourceManager", "IGpuResourceManagerImpl이 설정되지않았습니다. SetGpuResourceManagerImpl호출을 확인하세요.");
+		assert(0);
 		return nullptr;
 	}
 	else

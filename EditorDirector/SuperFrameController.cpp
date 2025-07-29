@@ -6,6 +6,7 @@
 
 
 #include<Core/InputSystem.h>
+#include<UISystem.h>
 
 
 Quad::SuperFrameController::~SuperFrameController()
@@ -33,9 +34,33 @@ void Quad::SuperFrameController::Initialize()
 	mWindow->CreateWindowClass(L"FrameWindow",L"FrameWindow");
 
 
-
     InputSystem* inputSystem = InputSystem::GetInstance();
     inputSystem->RegisterMouseAction(Quad::EMouseInput::eLButtonDown, "Test", this, &SuperFrameController::TestLButtonDownCallback,1);
+
+  //  mUISystem = UI::UISystem::GetInstance();
+
+}
+
+void Quad::SuperFrameController::PreUpdate()
+{
+}
+
+void Quad::SuperFrameController::Update(float deltaTime)
+{
+
+
+
+
+}
+
+void Quad::SuperFrameController::EndUpdate()
+{
+}
+
+void Quad::SuperFrameController::Draw()
+{
+
+
 
 
 

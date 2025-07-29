@@ -39,6 +39,25 @@ void Quad::SuperAssetBrowerController::Initialize()
 
 }
 
+void Quad::SuperAssetBrowerController::PreUpdate()
+{
+}
+
+void Quad::SuperAssetBrowerController::Update(float deltaTime)
+{
+
+
+}
+
+void Quad::SuperAssetBrowerController::EndUpdate()
+{
+}
+
+void Quad::SuperAssetBrowerController::Draw()
+{
+
+}
+
 Quad::BaseWindow* Quad::SuperAssetBrowerController::GetWindow()
 {
 	return mWindow;

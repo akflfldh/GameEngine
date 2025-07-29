@@ -5,6 +5,10 @@ D3DGRM::D3DGpuIndexBuffer::D3DGpuIndexBuffer(Microsoft::WRL::ComPtr<ID3D12Resour
 {
 }
 
+D3DGRM::D3DGpuIndexBuffer::~D3DGpuIndexBuffer()
+{
+}
+
 
 
 D3D12_INDEX_BUFFER_VIEW D3DGRM::D3DGpuIndexBuffer::GetIndexBufferView() const
@@ -14,7 +18,7 @@ D3D12_INDEX_BUFFER_VIEW D3DGRM::D3DGpuIndexBuffer::GetIndexBufferView() const
 
 	view.BufferLocation = GetResource()->GetGPUVirtualAddress();
 	view.Format = DXGI_FORMAT_R32_UINT;
-	view.SizeInBytes = mIndexSize*mIndexNum;
+	view.SizeInBytes = (UINT)(mIndexSize*mIndexNum);
 
 	return view;
 }

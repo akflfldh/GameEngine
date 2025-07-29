@@ -1,0 +1,63 @@
+﻿#pragma once
+
+#include<string>
+#include"AssetType.h"
+#include<unordered_map>
+#include"CoreAssetDLLMacro.h"
+
+
+namespace CoreAsset
+{
+	class Asset;
+
+	class CORE_ASSET_API AssetIDTable
+	{
+	public:
+		AssetIDTable();
+		~AssetIDTable();
+
+
+
+		bool HasName(const std::string& name) const;
+		bool HasID(AssetID id)const;
+
+
+
+
+		AssetID GetAssetID(const std::string& name) const;
+		const std::string GetAssetName(AssetID id) const; 
+		Asset* GetAsset(AssetID id) const;
+		Asset* GetAsset(const std::string& name) const;
+
+
+
+
+
+
+
+		bool SetAsset(const std::string& name, AssetID id, Asset * asset);
+
+
+
+	private:
+
+		using AssetNameIDTableType = std::unordered_map<std::string, AssetID>;
+
+
+														//id ,assetName
+		using AssetIDNameTableType = std::unordered_map<AssetID, std::string>;
+														//id asset
+		using AssetIDPtrTableType = std::unordered_map<AssetID, Asset*>;
+
+
+		AssetNameIDTableType mNameIDTable;
+		AssetIDNameTableType mIDNameTable;
+		AssetIDPtrTableType mIDPtrTable;
+
+
+
+
+	};
+
+
+}

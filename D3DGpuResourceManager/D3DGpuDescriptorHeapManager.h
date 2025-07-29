@@ -6,6 +6,7 @@
 #include<vector>
 
 #include"D3DGpuType.h"
+#include"GpuResourceDllMacro.h"
 namespace D3DGRM
 {
 	
@@ -13,7 +14,7 @@ namespace D3DGRM
 
 
 
-	class D3DGpuDescriptorHeapManager
+	class GPURESOURCE_MANAGER_API D3DGpuDescriptorHeapManager
 	{
 	public:
 		D3DGpuDescriptorHeapManager(Microsoft::WRL::ComPtr<ID3D12Device> device, D3D12_DESCRIPTOR_HEAP_TYPE type, size_t descriptorNum,
@@ -23,6 +24,8 @@ namespace D3DGRM
 	
 		D3DDescriptorHandle Allocate();
 		void Free(D3DDescriptorHandle handle);
+
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap() const;
 			 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;

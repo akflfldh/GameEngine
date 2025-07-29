@@ -6,16 +6,13 @@ Render::IRenderSystem::~IRenderSystem()
 {
 }
 
-void Render::IRenderSystem::SetGpuResourceManagerImpl(IRenderSystem* pImpl)
+void Render::IRenderSystem::SetRenderSystemImpl(IRenderSystem* pImpl)
 {
 	mImpl = pImpl;
 
 }
 
-bool Render::IRenderSystem::RegisterRenderChannel(const CreationRenderChannelInfo& creationChannelInfo)
-{
-	return false;
-}
+
 
 Render::IRenderSystem::IRenderSystem()
 {

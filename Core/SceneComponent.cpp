@@ -1,4 +1,5 @@
-﻿#include "Component/SceneComponent.h"
+﻿#include "UIRectTransform.h"
+#include "Component/SceneComponent.h"
 #include"Object/Object.h"
 
 

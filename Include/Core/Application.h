@@ -1,140 +1,71 @@
 ﻿#pragma once
-#include"Core/resource.h"
 #include"header.h"
 #include"Core/GameTimer.h"
-#include"Utility/DoException.h"
-#include"Utility/Singleton.h"
-
 #include"Predeclare.h"
-
-
-
-#include"HeapManager/DescriptorHeapManagerMaster.h"
-#include"HeapManager/CbvSrvUavHeapManager.h"
-#include"HeapManager/DsvHeapManager.h"
-#include"HeapManager/RtvHeapManager.h"
-#include"HeapManager/SamplerHeapManager.h"
-
-
-
-#include"Core/ResourceController.h"
-//#include"GamePlayWindowController.h"
-
-
-#include"Core/MapController.h"
-#include"ResourceManager/MeshManager.h"
-#include"ResourceManager/MaterialManager/MaterialManager.h"
-#include"ResourceManager/TextureManager/TextureManager.h"
-#include"MapManager.h"
-#include"RenderSystem.h"
-#include"ResourceLoader.h"
-#include"ResourceStorer.h"
-//#include"FileUISystem.h"
-#include"Map/Map.h"
-#include"Event/EventTable.h"
-#include"Core/GraphicCommand.h"
-#include"ObjectFactory/LineFactory.h"
-
-
-
-//#include"GameRenderWindow.h"
-//#include"PopupWindow.h"
-
-//#include"WorldEditEntityFactory.h"
-
-
-#include"Core/KeyBoard.h"
-#include"Core/Mouse.h"
-
-
-#include"harfBuzzsrc/hb.h"
-#include"harfBuzzsrc/hb-ft.h"
-#include"ft2build.h"
-#include FT_FREETYPE_H
-#include"ObjectFactory/TextFactory.h"
-
-#include"Collision/CollisionHelper.h"
-#include"Collision/ColliderGenerator.h"
-#include"Core/EventDispatcher.h"
-#include"ResourceFactory/TextureFactory/TextureFactory.h"
-
-#include"Utility/HandleTable.h"
-
-#include"ResourceManager/EffectManager/EffectManager.h"
-#include"ObjectFactory/ObjectFactory.h"
-
-#include"ObjectManager/BaseObjectManager.h"
-
-
-#include"Core/InputSystem.h"
-
-#include"Core/BoneFactory.h"
-//#include"CreatingProjectDirector.h"
-//#include"ProjectDirector.h"
-
-
-//#include"FrameWindowMenuDirector.h"
-//#include"EditorModeDirector.h"
 
 
 using namespace Microsoft::WRL;
 
 //#pragma comment(lib,"d2d1_1.lib")
 
-//한메인스레드에서 여러창을 띄울수있는데
-//그럼이것을 싱글톤으로 만들어서는안된다.
-//근데 windows메세지처리에서 인스턴스에대한 포인터를 가져올방법이 있나?
-//쉽지않아.
-//창의 분리,결합
-
-#include"Core/CameraEventComponentFactory.h"
-
 #include"Core/CoreDllExport.h"
-#include"Core/CurveFactory.h"
 
-#include"SpacePartitioningStructureFactory.h"
+namespace SystemInitializer { class ISystemInitializer; }
+namespace UI { class UISystem; }
 
-#include"CoreEffectInstaller.h"
-#include"Core/GraphicPipelineStateGeneratorHelper.h"
-#include"Core/RootSignatureGeneratorHelper.h"
+namespace CoreAsset {
+	class TextureManager;
+}
+
+namespace Import
+{
+	class TextureImporter;
+
+
+}
+
+
+
 
 namespace Quad
 {
 	template<typename collider>
 	class SpacePartitioningStructureFactory; 
+	class UIRenderItemBuilder;
 
 
 	struct AppInitData
 	{
 		HINSTANCE hInstance;
 		int nShowCmd;
-		IProgramDirector* programDirector;
-		ICollisionWorldFactoryImpl* collisionWorldFactoryImpl;
-		ISpacePartitioningStructureFactoryImpl* spacePartitoingStructureFactoryImpl;
+		class IProgramDirector* programDirector;
+		/*ICollisionWorldFactoryImpl* collisionWorldFactoryImpl;
+		ISpacePartitioningStructureFactoryImpl* spacePartitoingStructureFactoryImpl;*/
 
 	};
 
 
 
-	class CORE_API_LIB Application :public Singleton<Application>
+	class CORE_API_LIB Application
 	{
 	public:
+		static Application* GetInstance();
 		Application();
 		~Application();
 
 		bool Initialize(AppInitData & appInitData);
 		int Run();
-		LRESULT Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	//	LRESULT Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 		//LRESULT FileWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		//void SetPlayModeState(bool state);
 	//	static bool GetPlayModeState();
 
 
-		Microsoft::WRL::ComPtr<ID3D12Device> GetD3D12Device() const;
-		Microsoft::WRL::ComPtr<IDXGIFactory4> GetD3DFactory() const;
-		GraphicCommand& GetGraphicCommand();
-		DescriptorHeapManagerMaster* GetDescriptorHeapManagerMaster() ;
+		//Microsoft::WRL::ComPtr<ID3D12Device> GetD3D12Device() const;
+		//Microsoft::WRL::ComPtr<IDXGIFactory4> GetD3DFactory() const;
+		//GraphicCommand& GetGraphicCommand();
+		//DescriptorHeapManagerMaster* GetDescriptorHeapManagerMaster() ;
 		HINSTANCE GetHinstance() const;
 
 	protected:
@@ -237,28 +168,28 @@ namespace Quad
 
 
 
-		ComPtr<IDXGIFactory4> mFactory;
-		ComPtr<ID3D12Device> mDevice;
-		ComPtr<ID3D12Fence> mFence;
-		UINT64 mCurrentFence = 0;
+		//ComPtr<IDXGIFactory4> mFactory;
+		//ComPtr<ID3D12Device> mDevice;
+		//ComPtr<ID3D12Fence> mFence;
+		//UINT64 mCurrentFence = 0;
 
-		ComPtr<ID3D12CommandQueue> mCommandQueue;
-		ComPtr<ID3D12CommandAllocator>mCommandAllocator;
-		ComPtr<ID3D12GraphicsCommandList>mGraphicscommandList;
-		GraphicCommand mGraphicCommandObject;
-
-
-
-		UINT mRtvdescriptorSize;
-		UINT mDsvdescriptorSize;
-		UINT mCbvsrvdescriptorSize;
-		UINT mSamplerdescriptorSize;
-
-		UINT m4xmsaaQuality;
+		//ComPtr<ID3D12CommandQueue> mCommandQueue;
+		//ComPtr<ID3D12CommandAllocator>mCommandAllocator;
+		//ComPtr<ID3D12GraphicsCommandList>mGraphicscommandList;
+		//GraphicCommand mGraphicCommandObject;
 
 
-		DXGI_FORMAT mBackBufferForamt = DXGI_FORMAT_R8G8B8A8_UNORM;
-		DXGI_FORMAT mSwapchainDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+		//UINT mRtvdescriptorSize;
+		//UINT mDsvdescriptorSize;
+		//UINT mCbvsrvdescriptorSize;
+		//UINT mSamplerdescriptorSize;
+
+		//UINT m4xmsaaQuality;
+
+
+		//DXGI_FORMAT mBackBufferForamt = DXGI_FORMAT_R8G8B8A8_UNORM;
+		//DXGI_FORMAT mSwapchainDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 
 		GameTimer mGameTimer;
@@ -293,67 +224,67 @@ namespace Quad
 
 
 	private:
-		DescriptorHeapManagerMaster mDescriptorHeapManagerMaster;
-		CbvSrvUavHeapManager mCbvSrvUavHeapManager;
-		DsvHeapManager mDsvHeapManager;
-		RtvHeapManager mRtvHeapManager;
-		SamplerHeapManager mSamplerHeapManager;
+	//	DescriptorHeapManagerMaster mDescriptorHeapManagerMaster;
+	//	CbvSrvUavHeapManager mCbvSrvUavHeapManager;
+	//	DsvHeapManager mDsvHeapManager;
+	//	RtvHeapManager mRtvHeapManager;
+	//	SamplerHeapManager mSamplerHeapManager;
 
 
-		//HandleTable<Object*> mObjectHandleTable;
-
-
-
-		CollisionHelper mCollisionHelper;
-		ColliderGenerator mColliderGenerator;
-
-		ResourceController mResourceController;
-		MapController mMapController;
-		MeshManager mMeshManager;
-		MaterialManager mMaterialManager;
-		TextureManager mTextureManager;
-	//	EffectManager mEffectManager;
-		MapManager mMapManager;
-		LineFactory mLineFactory;
-	//	EditObjectManager mEditObjectManager;
-		//EditGameObjectManager mEditGameObjectManager;
-		//RuntimeObjectManager mRuntimeObjectManager;
-		//RuntimeGameObjectManager mRuntimeGameObjectManager;
-		//ObjectFactory mObjectFactory;
-		EditObjectFactory* mEditObjectFactory;
-		
-
-		BoneFactory mBoneFactory;
-
-		RenderSystem mRenderSystem;
-		RenderSystem mUiRenderSystem;
-		RenderSystem mDragAndDropRenderSystem;
-		RenderSystem mPopupRenderSystem;
-
-
-		//FrameWindowUiSystem* mFrameWindowUiSystem;
-		//WindowChromeSystem* mGamePlayWindowChromeSystem;
-
-		//int mCurrentActiveWindow = 0;
-
-
-		ResourceLoader mResourceLoader;
-		ResourceStorer mResourceStorer;
-		//FileUISystem mFileUiSystem;
-		//GamePlayUiSystem* mGamePlayUiSystem;
-
-
-		//Quad::Map* mCurrMap;
+	//	//HandleTable<Object*> mObjectHandleTable;
 
 
 
+	//	CollisionHelper mCollisionHelper;
+	//	ColliderGenerator mColliderGenerator;
+
+	//	ResourceController mResourceController;
+	//	MapController mMapController;
+	//	MeshManager mMeshManager;
+	//	MaterialManager mMaterialManager;
+	//	TextureManager mTextureManager;
+	////	EffectManager mEffectManager;
+	//	MapManager mMapManager;
+	//	LineFactory mLineFactory;
+	////	EditObjectManager mEditObjectManager;
+	//	//EditGameObjectManager mEditGameObjectManager;
+	//	//RuntimeObjectManager mRuntimeObjectManager;
+	//	//RuntimeGameObjectManager mRuntimeGameObjectManager;
+	//	//ObjectFactory mObjectFactory;
+	//	EditObjectFactory* mEditObjectFactory;
+	//	
+
+	//	BoneFactory mBoneFactory;
+
+	//	RenderSystem mRenderSystem;
+	//	RenderSystem mUiRenderSystem;
+	//	RenderSystem mDragAndDropRenderSystem;
+	//	RenderSystem mPopupRenderSystem;
 
 
-		SpacePartitioningStructureFactory<Collider>* m3DSpacePartitioningStructureFactory;
-		SpacePartitioningStructureFactory<UiCollider>* mUiSpacePartitioningStructureFactory;
-		CollisionWorldFactory* mCollisionWorldFactory;
+	//	//FrameWindowUiSystem* mFrameWindowUiSystem;
+	//	//WindowChromeSystem* mGamePlayWindowChromeSystem;
 
-		CameraEventComponentFactory mCameraEventComponentFactory;
+	//	//int mCurrentActiveWindow = 0;
+
+
+	//	ResourceLoader mResourceLoader;
+	//	ResourceStorer mResourceStorer;
+	//	//FileUISystem mFileUiSystem;
+	//	//GamePlayUiSystem* mGamePlayUiSystem;
+
+
+	//	//Quad::Map* mCurrMap;
+
+
+
+
+
+	//	SpacePartitioningStructureFactory<Collider>* m3DSpacePartitioningStructureFactory;
+	//	SpacePartitioningStructureFactory<UiCollider>* mUiSpacePartitioningStructureFactory;
+	//	CollisionWorldFactory* mCollisionWorldFactory;
+
+	//	CameraEventComponentFactory mCameraEventComponentFactory;
 
 		//////////////////////////////////
 
@@ -383,16 +314,16 @@ namespace Quad
 		
 
 
-		void CreateBitMap(FT_Bitmap bitmap);
-		void HarfBuzzTest();
+		//void CreateBitMap(FT_Bitmap bitmap);
+		//void HarfBuzzTest();
 
-		void BitmapToTextureResource(FT_Bitmap bitmap);
+		//void BitmapToTextureResource(FT_Bitmap bitmap);
 	
-		Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
-		Microsoft::WRL::ComPtr<ID3D12Resource> mTextTexture;
+		//Microsoft::WRL::ComPtr<ID3D12Resource> uploadBuffer;
+		//Microsoft::WRL::ComPtr<ID3D12Resource> mTextTexture;
 
 
-		TextFactory mTextFactory;
+	//	TextFactory mTextFactory;
 		//KeyBoard mKeyBoard;
 	//	Mouse mMouse;
 
@@ -400,7 +331,7 @@ namespace Quad
 
 	
 
-		EventDispatcher mEventDispatcher;
+		//EventDispatcher mEventDispatcher;
 		//TextureFactory mTextureFactory;
 
 
@@ -436,13 +367,24 @@ namespace Quad
 		//InputSystem mInputSystem;
 		IProgramDirector* mProgramDirector;
 
-		CurveFactory mCurveFactory;
+	//	CurveFactory mCurveFactory;
 
-		RootSignatureGeneratorHelper mRootSignatureGeneratorHelper;
-		GraphicPipelineStateGeneratorHelper mGraphicPipelineStateGeneratorHelper;
-		CoreEffectInstaller mCoreEffectInstaller;
+	//	RootSignatureGeneratorHelper mRootSignatureGeneratorHelper;
+	//	GraphicPipelineStateGeneratorHelper mGraphicPipelineStateGeneratorHelper;
+	//	CoreEffectInstaller mCoreEffectInstaller;
 
 		
+
+
+
+
+		std::unique_ptr<SystemInitializer::ISystemInitializer> mSystemInitializer;
+	//	std::unique_ptr< UIRenderItemBuilder> mUIRenderItemBuilder;
+	//	std::unique_ptr<UI::UISystem> mUISystem;
+
+
+		std::unique_ptr<CoreAsset::TextureManager> mTextureManager;
+
 	};
 
 

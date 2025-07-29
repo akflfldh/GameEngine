@@ -1,9 +1,11 @@
 ﻿#include "D3DWindowRenderManager.h"
 
 #include"D3DWindowRenderData.h"
-#include<assert.h>
 
-#include<iostream>
+
+
+
+
 D3DRender::D3DWindowRenderManager* D3DRender::D3DWindowRenderManager::mInstance =nullptr;
 
 D3DRender::D3DWindowRenderManager::D3DWindowRenderManager(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory> factory)
@@ -38,10 +40,20 @@ bool D3DRender::D3DWindowRenderManager::RegisterWindow(const Render::CreationRen
 	{
 
 		//이미있다는 로그
-		return true;
+		return false;
 	}
 
-	mWindowRenderDataTable[windowHandle]=  std::make_unique<D3DWindowRenderData>(this,mDevice,mFactory, creationChannelInfo);
+	mWindowRenderDataTable[windowHandle]=  std::make_shared<D3DWindowRenderData>(this,mDevice,mFactory, creationChannelInfo);
 
+	return true;
+
+}
+
+std::shared_ptr<D3DRender::D3DWindowRenderData> D3DRender::D3DWindowRenderManager::GetWindowRenderData(HWND hwnd)  const
+{
+	auto it =mWindowRenderDataTable.find(hwnd);
+
+
+	return it != mWindowRenderDataTable.cend() ? it->second : nullptr;
 
 }

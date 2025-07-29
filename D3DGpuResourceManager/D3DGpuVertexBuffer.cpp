@@ -12,8 +12,8 @@ D3D12_VERTEX_BUFFER_VIEW D3DGRM::D3DGpuVertexBuffer::GetVertexBufferView() const
 
 	D3D12_VERTEX_BUFFER_VIEW view;
 	view.BufferLocation = GetResource()->GetGPUVirtualAddress();
-	view.SizeInBytes = mVertexNum * mVertexSize;
-	view.StrideInBytes = mVertexSize;
+	view.SizeInBytes = (UINT)(mVertexNum * mVertexSize);
+	view.StrideInBytes = (UINT)mVertexSize;
 	
 	return view;
 }

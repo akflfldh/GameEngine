@@ -1,4 +1,5 @@
-﻿
+﻿#include "BinaryReader.h"
+
 #include "Parser/JsonParser.h"
 #include"rapidjson/stringbuffer.h"
 #include"rapidjson/writer.h"
@@ -319,6 +320,8 @@ void Quad::JsonParser::Read(std::string& value)
     value = elementValue->GetString();
 
 }
+
+
 
 void Quad::JsonParser::Read(int& value)
 {

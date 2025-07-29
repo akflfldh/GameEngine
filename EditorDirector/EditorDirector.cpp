@@ -3,116 +3,72 @@
 #include <crtdbg.h>
 #endif
 
+#include <Core/ProjectConfig.h>
 #include "EditorDirector/EditorDirector.h"
-
-#include"EditorDirector/FileUiWindow.h"
-#include"EditorDirector/FileUiWindowContoller.h"
-#include"EditorDirector/DockingWindowController.h"
-#include"EditorDirector/DragAndDropWindowController.h"
-#include"EditorDirector/PopupWindowController.h"
-#include"EditorDirector/FrameWindowController.h"
-
-
-#include"EditorDirector/FrameWindow.h"
-#include"EditorDirector/DragAndDropWindow.h"
-#include"EditorDirector/GameRenderWindow.h"
-#include"EditorDirector/AttributeWindow.h"
-#include"EditorDirector/PopupWindow.h"
-
+#include<Utility.h>
 #include"Core/Application.h"
-#include"HeapManager/DescriptorHeapManagerMaster.h"
-#include"ResourceManager/EffectManager/EffectManager.h"
-#include"System/FileUiSystem.h"
-#include"System/FileUiUiSystem.h"
-#include"System/WindowChromeSystem.h"
-#include"System/ChildWindowDockingSystem.h"
-#include"System/GamePlaySystem.h"
-#include"System/GamePlayUiSystem.h"
-#include"System/AttributeSystem.h"
-#include"System/AttributeUiSystem.h"
-#include"System/DragAndDropSystem.h"
-#include"System/PopupWindowUiSystem.h"
-
-#include"EditorDirector/EditorMapManager.h"
-#include"System/FrameWindowSystem.h"
-#include"System/FrameWindowUiSystem.h"
-#include"System/FrameWindowDockingSystem.h"
-
-#include"Core/GraphicCommand.h"
-#include"ResourceManager/MeshManager.h"
-#include"ResourceManager/MaterialManager/MaterialManager.h"
-#include"ResourceManager/TextureManager/TextureManager.h"
-#include"ResourceManager/EffectManager/EffectManager.h"
-#include"Core/MapManager.h"
-#include"Core/EventDispatcher.h"
-
-#include"Object/Camera/FrustumCamera.h"
-#include"Object/Camera/OrthogoanlCamera.h"
-
-#include"EditorDirector/PopupSystemCamera.h"
-#include"EditorDirector/ChromeSystemCamera.h"
-#include"EditorDirector/DockingSystemCamera.h"
-
-#include"Collision/CollisionWorld.h"
-
-#include"Core/VectorSpace.h"
-
-#include"Map/Map.h"
 
 
-#include"DockingWindowController.h"
-#include"EditorDirector/Window.h"
-
-
-//#include"EditorDirector/WindowCloseButton.h"
-//#include"EditorDirector/WindowMinButton.h"
-//#include"EditorDirector/WindowMaxRestoreButton.h"
-
-
-#include"Asset/Texture/RenderTargetTexture.h"
-
-#include"EditorMap.h"
-#include"Parser/JsonParser.h"
-
-
-//#include"ContentItemUiEntity.h"
-
-#include"EditorAssetImportVersionModule.h"
-#include"ImportModule.h"
-
-
-#include"EditorSpacePartitioningStructrureFactoryImpl.h"
-#include"EditorCollisionWorldFactoryImpl.h"
-
-#include"CameraEventComponentFactory.h"
-
-#include"Core/CameraFixWIndowResizeEventComponent.h"
-
-#include"SpacePartitioningStructureFactory.h"
-#include"SpacePartitioningStructure.h"
-#include"CollisionWorldFactory.h"
-#include"KeyBoard.h"
-#include"Core/CoreEffectInstaller.h"
-#include"DockingWindowController.h"
-
-
-
-
-
-
-
-
-
-
-
-
+#include<AssetCommon.h>
+#include<AssetMetaDataManager.h>
+#include<AssetLoader.h>
+#include<BinaryReader.h>
+#include<EditorTextureImporter.h>
+#include"EditorProjectInitializer.h"
+#include"EditorShaderImporter.h"
+#include<PhysicalFileSystem.h>
 #include"SuperFrameController.h"
 #include"SuperAssetBrowerController.h"
+#include"SerializedAssetContainer.h"
+#include<TextureImporter.h>
+#include<TextureManager.h>
+#include<TextureStorer.h>
+#include<Texture.h>
+#include<IMaterialManager.h>
+#include<memory>
 
+
+
+
+#include<LogicalFileSystem.h>
+#include<LogicalFile.h>
+#include<LogicalFolder.h>
+#include<Logger.h>
+
+
+
+
+
+#pragma comment(lib,"ImportModule.lib")
+
+#define D3DX
+
+
+#ifdef D3DX
+
+
+#include<ISystemInitializer.h>
+#include<D3DSystemInitializer.h>
+#endif
+
+
+
+#include<fstream>
 
 
 
 #undef EngineMode
+
+std::string testProjectPath = "C:/Users/dongd/gitproject/GameEngine";
+
+
+Quad::EditorDirector* Quad::EditorDirector::GetInstance()
+{
+    static EditorDirector instance;
+    return &instance;
+}
+
+
 Quad::EditorDirector::EditorDirector()
    /* :mFrameWindowSceneSwitch(0), mWindowSwitchRenderFlag(false)*/
 {
@@ -124,15 +80,18 @@ Quad::EditorDirector::EditorDirector()
   //  mEditorPathA = Utility::ConvertToString(mEditorPathW, true);
 
 }
+Quad::EditorDirector::~EditorDirector()
+{
+}
 //#define EngineMode
 void Quad::EditorDirector::Initialize()
 {
 
     auto app = Application::GetInstance();
-    mDevice = app->GetD3D12Device();
+   /* mDevice = app->GetD3D12Device();
     mFactory = app->GetD3DFactory();
     mGraphicCommandObject = &app->GetGraphicCommand();
-    mDescriptorHeapManagerMaster = app->GetDescriptorHeapManagerMaster();
+    mDescriptorHeapManagerMaster = app->GetDescriptorHeapManagerMaster();*/
     mHinstance = app->GetHinstance();
   //  mImportMoudle = new ImportModule;
   
@@ -140,42 +99,133 @@ void Quad::EditorDirector::Initialize()
   //  CoreEffectInstaller * coreEffectInstaller =  CoreEffectInstaller::GetInstance();
    // coreEffectInstaller->Initialize(app->GetD3D12Device(), mEditorPathA+"\\Asset\\Effect");
 
-#ifdef EngineMode
+//#ifdef EngineMode
+//
+//    ImportModule importModule;
+//
+//    //default texture
+//    EditorAssetImortVersionModule::ImportTexture("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Resource\\RawAsset\\Texture");
+//
+//    //create default material
+//    CreateDefaultMaterial();
+//    
+//    CreateDefaultMesh();
+//
+//
+//    EditorAssetImortVersionModule::ImportMesh("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Resource\\RawAsset\\Mesh");
+//
+//
+//    EditorAssetImortVersionModule::SaveAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
+//
+//    int a = 2;
+//#else
 
-    ImportModule importModule;
 
-    //default texture
-    EditorAssetImortVersionModule::ImportTexture("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Resource\\RawAsset\\Texture");
+    //import module test
 
-    //create default material
-    CreateDefaultMaterial();
+
     
-    CreateDefaultMesh();
-
-
-    EditorAssetImortVersionModule::ImportMesh("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Resource\\RawAsset\\Mesh");
-
-
-    EditorAssetImortVersionModule::SaveAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
-
-    int a = 2;
-#else
 
 
 
+
+    InitSystem();
+
+
+
+    mProjectInitializer->Initialize();
+
+
+    {
+
+        //에셋 임포트, 저장 테스트 , 
 
    
 
+        bool ret = true;
+        //논리적 폴더 테스트
+        bool logicalFolderCreationTestFlag = false;
+        if (logicalFolderCreationTestFlag)
+        {
+
+            //논리적 폴더생성 ,저장 테스트
+
+            mLogicalFileSystem->CreateFolder("MYTEST", mLogicalFileSystem->GetRootFolder(), true);
+            QuadRW::BinaryWriter writer;
+            ret = mLogicalFileSystem->SaveLogicalDirectoryStructureAsBinaryWriter(writer, testProjectPath, "testLDSFile");
+
+        }
 
 
+
+
+        //2025 - 07 - 14
+        //텍스처 임포트, 매니저, 리소스매니저 테스트 :Good
+
+        bool testImport = false;
+        if (testImport)
+        {
+
+
+            //텍스처 임포트 테스트
+            std::ifstream fin("C:\\Users\\dongd\\gitproject\\GameEngine\\TestAssetPathFile.txt");
+            std::string assetFilePath;
+            fin >> assetFilePath;
+
+            //현재 논리적폴더에서 해당 파일과 동일한 이름을 가진 논리적파일이존재하면실패하도록한다.
+            //Check Logical File Name
+
+            //없으면 임포트수행
+            CoreAsset::Texture* texture = mTextureImporter->Import(assetFilePath, "Asset\\");
+
+
+            //임포트를수행한후에는 논리적파일만 생성한다.
+
+
+            //후에 저장버튼을 누르면 
+            //논리적 파일(물리적파일)을 생성
+            //따라서 저장하지않고 에디터를 종료하면 임포트한 에셋들은 증발한다.    
+            
+            QuadLF::LogicalFileAssetInfo texturelogicalFileInfo;
+            texturelogicalFileInfo.mAssetID = texture->GetID();
+            texturelogicalFileInfo.mAssetType = CoreAsset::EAssetType::eTexture;
+            texturelogicalFileInfo.mName = texture->GetName();
+
+            QuadLF::LogicalFile* textureLogicalFile = mLogicalFileSystem->MakeFile(texturelogicalFileInfo, texture->GetName(), mLogicalFileSystem->GetRootFolder(), true);
+
+
+
+            //텍스처 저장 테스트
+            CoreAsset::TextureStorer* textureStorer = CoreAsset::TextureStorer::GetInstance();
+            CoreAsset::AssetMetaDataManager* assetMetaManager = CoreAsset::AssetMetaDataManager::GetInstance();
+
+            CoreAsset::TextureMetaData* textureMetaData = assetMetaManager->GetTextureMetaData(texture->GetID());
+            std::string physicalFilePath = mLogicalFileSystem->GetPhysicalFullPath(textureLogicalFile);
+            ret = textureStorer->Store(texture, textureMetaData, physicalFilePath);
+
+
+
+            std::string rawTextureName = CoreAsset::GetAssetRawFileName(textureLogicalFile->GetFullPath());
+            std::string rawTexturePhysicalPath = testProjectPath + "/" + rawTextureName;
+            ret = textureStorer->StoreTextureRaw(rawTexturePhysicalPath, *texture->GetRawData());
+
+
+        }
+
+    }
 
 
     mSuperFrameController = SuperFrameController::GetInstance();
     mSuperFrameController->Initialize();
-    
+
    
-    mSuperAssetBrowerController = SuperAssetBrowerController::GetInstance();
-    mSuperAssetBrowerController->Initialize();
+
+
+
+
+   
+   /* mSuperAssetBrowerController = SuperAssetBrowerController::GetInstance();
+    mSuperAssetBrowerController->Initialize();*/
 
 
 
@@ -184,7 +234,7 @@ void Quad::EditorDirector::Initialize()
 
     //std::vector<Asset*> editorDefaultAssetVector= mEditorModeDirector.LoadAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
 
-    SpacePartitioningStructureFactory<UiCollider>::GetInstance();
+   // SpacePartitioningStructureFactory<UiCollider>::GetInstance();
 
    // std::vector<Asset*> editorAsset = mEditorModeDirector.LoadAsset(".\\Asset");
 
@@ -199,11 +249,11 @@ void Quad::EditorDirector::Initialize()
  
 
 
-    if (!mGraphicCommandObject->GetCloseState())
-    {
-        mGraphicCommandObject->ExecuteCommandList();
-        mGraphicCommandObject->FlushCommandQueue();
-    }
+    //if (!mGraphicCommandObject->GetCloseState())
+    //{
+    //    mGraphicCommandObject->ExecuteCommandList();
+    //    mGraphicCommandObject->FlushCommandQueue();
+    //}
 
 //
 //    std::vector<DockingWindowController*>normalWindowControllerVector = { mGameWindowPlayController,mFileUiWindowController,mAttributeWindowController };
@@ -226,7 +276,6 @@ void Quad::EditorDirector::Initialize()
 
    // FrameWindowMenuDirector::GetInstance();
 
-#endif
 
 
 
@@ -236,6 +285,23 @@ void Quad::EditorDirector::Initialize()
 
 void Quad::EditorDirector::PreUpdate(float deltaTime)
 {
+
+
+
+
+
+    mSuperFrameController->PreUpdate();
+   // mSuperAssetBrowerController->PreUpdate();
+
+
+
+
+
+
+
+
+
+
    // int modeSwitchFlag = GetSwitchWindowSceneModeFlag();
    // if (modeSwitchFlag == 1)
    // {
@@ -259,6 +325,28 @@ void Quad::EditorDirector::PreUpdate(float deltaTime)
 
 void Quad::EditorDirector::Update(float deltaTime)
 {
+
+    //지금이렇게 순서대로하는데 멀티스레드 고려를해봐야한다.
+    mSuperFrameController->Update(deltaTime);
+   // mSuperAssetBrowerController->Update(deltaTime);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //#ifndef EngineMode
 //
@@ -401,8 +489,14 @@ void Quad::EditorDirector::EndUpdate(float deltaTime)
 {
 
 
+    //마지막에는 각 가지고있는 채널들에대해서 렌더아이템구축후 렌더시스템으로 전달
+  //  mSuperFrameController
+   // mSuperAssetBrowerController
 
 
+
+    mSuperFrameController->EndUpdate();
+   // mSuperAssetBrowerController->EndUpdate();
 
 
 
@@ -419,6 +513,27 @@ void Quad::EditorDirector::EndUpdate(float deltaTime)
 
 void Quad::EditorDirector::Draw()
 {
+
+
+    //렌더시스템이 렌더 혹은 
+
+
+    //각 컨트롤러들이 draw  (이미 렌더아이템들은 다 제출된상황)
+    mSuperFrameController->Draw();
+   // mSuperAssetBrowerController->Draw();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //#ifndef EngineMode
 //    bool popupWindowActiveFlag = mPopupWindow->GetVisibilityState();
@@ -491,6 +606,47 @@ const int Quad::EditorDirector::GetSwitchWindowSceneModeFlag() const
 {
     return 0; // mFrameWindowSceneSwitch;
 }
+
+
+
+void Quad::EditorDirector::InitSystem()
+{
+
+    QuadLog::Logger* log = QuadLog::Logger::GetInstance();
+    bool logRet = log->SetLoggerFile("EditorLogFile.txt");
+
+
+    mTextureImporter = std::make_unique<EditorTextureImporter>(Import::TextureImporter::GetInstance(), CoreAsset::TextureManager::GetInstance(), CoreAsset::AssetMetaDataManager::GetInstance());
+
+
+    mPhysicalFileSystem = QuadPF::PhysicalFileSystem::GetInstance();
+
+    mLogicalFileSystem = std::make_unique<QuadLF::LogicalFileSystem>(mPhysicalFileSystem);
+    mLogicalFileSystem->Initialize(testProjectPath);
+
+
+
+    mAssetLoader = CoreAsset::AssetLoader::GetInstance();
+
+
+    mProjectInitializer = std::make_unique<EditorProjectInitializer>(mLogicalFileSystem.get(), mPhysicalFileSystem, mAssetLoader);
+
+
+    mEditorShaderImporter = std::make_unique<EditorShaderImporter>(Render::IMaterialManager::GetInstance());
+     
+    EditorShaderImporter * editorShaderImporter =   EditorShaderImporter::GetInstance();
+
+
+    std::wstring buffer;
+    buffer.resize(100);
+    GetCurrentDirectory(100, buffer.data());
+
+  /// editorShaderImporter->Import("Shader/testshader.shader");
+    editorShaderImporter->Import("C:/Users/dongd/gitproject/GameEngine/Shader/testshader.shader");
+
+
+}
+
 
 //void Quad::EditorDirector::InitGamePlayWindow()
 //{
@@ -1349,46 +1505,46 @@ const int Quad::EditorDirector::GetSwitchWindowSceneModeFlag() const
 //    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,0.0f });
 //}
 
-void Quad::EditorDirector::InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system)
-{
-    
-
-   // Map* map = EditorMapManager::CreateEngineSystemMap(system, "FrameWindowUiMainMap");
-   // // map->SetName("FrameWindowUiMainMap");
-   ////  map->Initialize(system);
-
-
-   //
-
-
-   // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
- 
-   // initDefaultMapSetting(window, map);
-
-   // system->Start();
-   // Map* currMap = system->GetMap();
-
-   // // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-   // OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
-
-   // //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-
-   // currMap->SetMainCamera(gameCamera);
-   // // map->SetCameraType(ECameraType::ePerspectiveCamera);
-   // currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2, (float)-window->GetClientHeight() / 2,0.0f });
-   // //system->SetViewPort(0, 60, (float)window->GetClientWidth(), (float)window->GetClientHeight(), 0.0f, 1.0f);
-
-
-   // auto cameraEventComponentFactory = CameraEventComponentFactory::GetInstance();
-
-   // CameraFixWindowResizeEventComponent * cameraFixWindowResizeEventComponent =  cameraEventComponentFactory->CreateComponent< CameraFixWindowResizeEventComponent>();
-
-   // cameraFixWindowResizeEventComponent->Initialize(gameCamera);
-
-   // RegisterCameraEventComponentHelperMethod(gameCamera, cameraFixWindowResizeEventComponent);
-
-
-}
+//void Quad::EditorDirector::InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system)
+//{
+//    
+//
+//   // Map* map = EditorMapManager::CreateEngineSystemMap(system, "FrameWindowUiMainMap");
+//   // // map->SetName("FrameWindowUiMainMap");
+//   ////  map->Initialize(system);
+//
+//
+//   //
+//
+//
+//   // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
+// 
+//   // initDefaultMapSetting(window, map);
+//
+//   // system->Start();
+//   // Map* currMap = system->GetMap();
+//
+//   // // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
+//   // OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//
+//   // //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
+//
+//   // currMap->SetMainCamera(gameCamera);
+//   // // map->SetCameraType(ECameraType::ePerspectiveCamera);
+//   // currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2, (float)-window->GetClientHeight() / 2,0.0f });
+//   // //system->SetViewPort(0, 60, (float)window->GetClientWidth(), (float)window->GetClientHeight(), 0.0f, 1.0f);
+//
+//
+//   // auto cameraEventComponentFactory = CameraEventComponentFactory::GetInstance();
+//
+//   // CameraFixWindowResizeEventComponent * cameraFixWindowResizeEventComponent =  cameraEventComponentFactory->CreateComponent< CameraFixWindowResizeEventComponent>();
+//
+//   // cameraFixWindowResizeEventComponent->Initialize(gameCamera);
+//
+//   // RegisterCameraEventComponentHelperMethod(gameCamera, cameraFixWindowResizeEventComponent);
+//
+//
+//}
 
 //void Quad::EditorDirector::InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
 //{
@@ -1849,13 +2005,13 @@ const std::wstring& Quad::EditorDirector::GetEditorPathW() const
 }
 
 
-void Quad::EditorDirector::AddEffect(RenderSystem* renderSystem, Effect* effect ,ESystemType systemType)
-{
- //   renderSystem->AddEffect(*effect, systemType);
-  //  renderSystem->ReigsterDefaultEffect(systemType, effect->GetName());
-}
+//void Quad::EditorDirector::AddEffect(RenderSystem* renderSystem, Effect* effect ,ESystemType systemType)
+//{
+// //   renderSystem->AddEffect(*effect, systemType);
+//  //  renderSystem->ReigsterDefaultEffect(systemType, effect->GetName());
+//}
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLine, int nCmdShow)
 {
   
 #ifdef _DEBUG
@@ -1871,22 +2027,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     SetDllDirectory(L".\\Dll\\x64\\Release\\");
 
 #endif 
+    int cmdNum;
+    LPWSTR* cmdLists = CommandLineToArgvW(pCmdLine, &cmdNum);
 
-    Quad::Application app;
+    MessageBox(nullptr, cmdLists[0], L"ProjectPath", 0);
+
+    QuadLog::Logger* logger = QuadLog::Logger::GetInstance();
+
+    Quad::ProjectConfig * projectConfig = Quad::ProjectConfig::GetInstance();
+    
+    projectConfig->SetProjectPath(CoreUtility::Utility::ConvertToString(cmdLists[0], true));
+
+    logger->SetLoggerFile((projectConfig->GetProjectPath() + "\LogFile.txt").c_str());
+
+
+    Quad::Application* app= Quad::Application::GetInstance();
      
-    Quad::EditorDirector editorDirector;
+
+
+
+    Quad::EditorDirector* editorDirector =Quad::EditorDirector::GetInstance();
 
     Quad::AppInitData appInitData;
     appInitData.hInstance = hInstance;
     appInitData.nShowCmd = nCmdShow;
-    appInitData.programDirector = &editorDirector;
-    std::unique_ptr< Quad::EditorCollisionWorldFactoryImpl> collisionFactoryImpl(new Quad::EditorCollisionWorldFactoryImpl);
+    appInitData.programDirector = editorDirector;
+   /* std::unique_ptr< Quad::EditorCollisionWorldFactoryImpl> collisionFactoryImpl(new Quad::EditorCollisionWorldFactoryImpl);
     appInitData.collisionWorldFactoryImpl = collisionFactoryImpl.get();
     std::unique_ptr< Quad::EditorSpacePartitioningStructrureFactoryImpl>sapcePartitioningStructureFactoryImpl(new Quad::EditorSpacePartitioningStructrureFactoryImpl);
-    appInitData.spacePartitoingStructureFactoryImpl = sapcePartitioningStructureFactoryImpl.get();
+    appInitData.spacePartitoingStructureFactoryImpl = sapcePartitioningStructureFactoryImpl.get();*/
 
-    if (!app.Initialize(appInitData))
+    if (!app->Initialize(appInitData))
         return 0;
 
-    return app.Run();
+    return app->Run();
 }

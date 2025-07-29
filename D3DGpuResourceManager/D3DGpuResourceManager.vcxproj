@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -106,12 +106,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_LIB;GPURESOURCE_MANAGER_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Include\;$(SolutionDir)Logger;$(SolutionDir)Logger\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -143,9 +143,13 @@
     <ClInclude Include="D3DGpuIndexBuffer.h" />
     <ClInclude Include="D3DGpuResource.h" />
     <ClInclude Include="D3DGpuResourceManager.h" />
+    <ClInclude Include="D3DGpuTexture.h" />
     <ClInclude Include="D3DGpuType.h" />
     <ClInclude Include="D3DGpuVertexBuffer.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GpuResourceDllMacro.h" />
+    <ClInclude Include="GpuTypes.h" />
+    <ClInclude Include="GRMPtr.h" />
     <ClInclude Include="IGpuResource.h" />
     <ClInclude Include="IGpuResourceManager.h" />
     <ClInclude Include="pch.h" />
@@ -157,7 +161,11 @@
     <ClCompile Include="D3DGpuIndexBuffer.cpp" />
     <ClCompile Include="D3DGpuResource.cpp" />
     <ClCompile Include="D3DGpuResourceManager.cpp" />
+    <ClCompile Include="D3DGpuTexture.cpp" />
+    <ClCompile Include="D3DGpuType.cpp" />
     <ClCompile Include="D3DGpuVertexBuffer.cpp" />
+    <ClCompile Include="GpuTypes.cpp" />
+    <ClCompile Include="GRMPtr.cpp" />
     <ClCompile Include="IGpuResource.cpp" />
     <ClCompile Include="IGpuResourceManager.cpp" />
     <ClCompile Include="pch.cpp">

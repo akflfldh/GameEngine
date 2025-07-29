@@ -79,6 +79,8 @@ StyleCopReport.xml
 *.pch
 *.pdb
 *.ipdb
+*.lib
+*.dll
 *.pgc
 *.pgd
 *.rsp
@@ -406,3 +408,4 @@ Include/Fbx/lib
 Include/Fbx/libxml2
 Include/Fbx/fbxsdk.h
 ProjectMetaDataFile.json
+

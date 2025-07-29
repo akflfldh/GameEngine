@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿
+#pragma once
 
 
 #include"header.h"
@@ -19,6 +20,7 @@ namespace Quad
 	public:
 		Texture(const std::string & name="");
 		~Texture() = default;
+
 
 		void SetTextureResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
 		void SetViewIndex(ViewIndex viewIndex);

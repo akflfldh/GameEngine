@@ -42,7 +42,8 @@ LRESULT CALLBACK Quad::BaseWindow::InnerWndProc(HWND hwnd, UINT msg, WPARAM wPar
 
 
 
-bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName,LPCWSTR windowName, UINT windowStyle)
+bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName,LPCWSTR windowName, DWORD windowStyle 
+, UINT windowClassStyle)
 {
 
 
@@ -56,7 +57,7 @@ bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName,LPCWSTR windowN
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = windowClassName;
 	wc.lpfnWndProc = InnerWndProc;
-	wc.style = windowStyle;
+	wc.style = windowClassStyle;
 
 	if (!RegisterClass(&wc))
 	{
@@ -67,13 +68,13 @@ bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName,LPCWSTR windowN
 	RECT windowClientRect{ 0,0,(LONG)GetClientWidth(),(LONG)GetClientHeight() };
 	int windowWidth = 800;
 	int windowHeight = 600;
-	if (AdjustWindowRect(&windowClientRect, WS_OVERLAPPEDWINDOW, false))
+	if (AdjustWindowRect(&windowClientRect, windowStyle, false))
 	{
 		windowWidth = windowClientRect.right - windowClientRect.left;
 		windowHeight = windowClientRect.bottom - windowClientRect.top;
 	}
 
-	HWND hwnd = CreateWindow(wc.lpszClassName, windowName, WS_OVERLAPPEDWINDOW,
+	HWND hwnd = CreateWindow(wc.lpszClassName, windowName, windowStyle,
 		0, 0, windowClientRect.right, windowClientRect.bottom, 0, 0, GetHInstance(), this);
 
 

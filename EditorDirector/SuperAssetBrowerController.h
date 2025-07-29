@@ -15,6 +15,11 @@ namespace Quad
 			virtual ~SuperAssetBrowerController() ;
 			virtual void Initialize() override ;
 
+			virtual void PreUpdate() override;
+			virtual void Update(float deltaTime) override;
+			virtual void EndUpdate() override;
+			virtual void Draw() override;
+
 			virtual BaseWindow* GetWindow() override;
 
 

@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include"D3DGpuBuffer.h"
-
+#include"GpuResourceDllMacro.h"
 namespace D3DGRM
 {
 
-	class D3DGpuVertexBuffer:public D3DGpuBuffer
+	class GPURESOURCE_MANAGER_API D3DGpuVertexBuffer:public D3DGpuBuffer
 	{
 	public:
 		D3DGpuVertexBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer,size_t vertexNum, size_t vertexSize);

@@ -1,95 +1,45 @@
 ﻿#include "Core/Application.h"
-//#include"VectorSpace.h"
-//#include"AttributeWindow.h"
-//#include"AttributeUiSystem.h"
-//#include"DockingWindowController.h"
-//#include"GamePlaySystem.h"
-//#include"AttributeSystem.h"
-//#include"AttributeUiSystem.h"
-//
-//#include"FileUiWindow.h"
-//#include"FileUiSystem.h"
-//#include"FileUiUiSystem.h"
-
-
-//#include"Entity.h"
-//#include"ButtonUiEntitiy.h"
-//#include"WindowChromeSystem.h"
-//#include"FrameWindow.h"
-//#include"FrameWindowController.h"
-//#include"FrameWindowSystem.h"
-//#include"FrameWindowUiSystem.h"
-//#include"WindowDockingSystem.h"
-//#include"WindowControlEntityHeader.h"
-//#include"ChromeSystemCamera.h"
-//#include"DockingSystemCamera.h"
-//#include"FrameWindowDockingSystem.h"
-//#include"ChildWindowDockingSystem.h"
-//#include"FileUiWindowContoller.h"
-//#include"Text.h"
-
-
-
-//#include"DragAndDropWindow.h"
-//#include"DragAndDropWindowController.h"
-//#include"DragAndDropSystem.h"
-//
-//#include"EffectTable.h"
-//#include"Light.h"
-//#include"Grid.h"
-//#include"LineFactory.h"
-//#include"Line.h"
-//
-//
-//#include"CollisionWorld.h"
-//#include"Gizmo.h"
-//
-//
-//#include"GamePlayWindowCamera.h"
-//
-//#include"PopupWindowController.h"
-//#include"PopupWindowUiSystem.h"
-//
-//#include"PopupSystemCamera.h"
-//#include"ButtonUiEntitiy.h"
-//#include"WindowResizeEvent.h"
-
-//#include"AnimationClipSplitter.h"
-
-
-//#include"RenderTargetTexture.h"
-
 
 #include<tchar.h>
 
-#include"ResourceManager/EffectManager/EffectManager.h"
-#include"ObjectFactory/ObjectFactory.h"
-
-//#include"EditorSystem.h"
-
-
-//#include"EngineModeDirector.h"
-
-//#include"EditorModeDirector.h"
-
-#include"Core/IProgramDirector.h"
-
-#include"Core/SpacePartitioningStructureFactory.h"
-#include"Core/CollisionWorldFactory.h"
-
 
 #include"GlobalAppHelper.h"
+//#include"UIRenderItemBuilder.h"
+#include<IGpuResourceManager.h>
 
-#undef EngineMode
+//#include<UIManager.h>
+//#include<UISystem.h>
+#include<IProgramDirector.h>
+
+
+
+#include<TextureManager.h>
+#include<TextureImporter.h>
+#include"ProjectConfig.h"
+
+#include<Logger.h>
+
+#ifdef D3DX
+
+#include<D3DSystemInitializer.h>
+
+
+
+#endif
 
 namespace Quad
 {
 
+    Application* Application::GetInstance()
+    {
+        static Application instance;
 
+        return &instance;
+    }
 
 Application::Application()
 {
-    mEditObjectFactory = EditObjectFactory::GetInstance();
+    //mEditObjectFactory = EditObjectFactory::GetInstance();
 
 
 }
@@ -110,40 +60,50 @@ bool Application::Initialize(AppInitData& appInitData)
     mHinstance = appInitData.hInstance;
     mShowcmd = appInitData.nShowCmd;
 
-    GlobalAppHelper * globalAppHelper =    GlobalAppHelper::GetInstance();
-    globalAppHelper->Initialize(mHinstance);
-    //if (!InitFrameWindow())
-    //    return false;
+  //  GlobalAppHelper * globalAppHelper =    GlobalAppHelper::GetInstance();
+  //  globalAppHelper->Initialize(mHinstance);
+  //  //if (!InitFrameWindow())
+  //  //    return false;
 
-    if (!InitD3d())
-        return false;
+  //  if (!InitD3d())
+  //      return false;
 
-
-
-
-    mProgramDirector = appInitData.programDirector;
-
-  //  mRenderWindowTest = new  GameRenderWindow(mHinstance);
-   // mAttributeWindow = new AttributeWindow(mHinstance);
-    
-    mCollisionWorldFactory = new CollisionWorldFactory(appInitData.collisionWorldFactoryImpl);
-
-
-    m3DSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<Collider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
         
-        
-    
-  
 
-    mUiSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<UiCollider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
+
+
+
+   mProgramDirector = appInitData.programDirector;
+     
+
+
+   ProjectConfig::GetInstance();
+
+   
+
+
+
+  ////  mRenderWindowTest = new  GameRenderWindow(mHinstance);
+  // // mAttributeWindow = new AttributeWindow(mHinstance);
+  //  
+  //  mCollisionWorldFactory = new CollisionWorldFactory(appInitData.collisionWorldFactoryImpl);
+
+
+  //  m3DSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<Collider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
+  //      
+  //      
+  //  
+  //
+
+  //  mUiSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<UiCollider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
 
  
-    mGraphicCommandObject.ResetCommandList(nullptr);
+  //  mGraphicCommandObject.ResetCommandList(nullptr);
 
-   // HarfBuzzTest();
+  // // HarfBuzzTest();
 
-    mRootSignatureGeneratorHelper.Initialize(mDevice);
-    mGraphicPipelineStateGeneratorHelper.Initialize(mDevice);
+  //  mRootSignatureGeneratorHelper.Initialize(mDevice);
+  //  mGraphicPipelineStateGeneratorHelper.Initialize(mDevice);
 
     InitSystems();
     
@@ -412,61 +372,61 @@ int Application::Run()
 
 bool Application::InitD3d()
 {
-#if defined(DEBUG)||defined(_DEBUG)
-    //D3D12 디버그층 활성화 
-    {
-        ComPtr<ID3D12Debug> debugController;
-        ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))); //&debugController을 사용하면 Comptr과 연관된 인터페이스를 해제후 comptr 객체의 주소를 리턴한다.
-                                                                              //GetAddressOf는 인터페이스를 참조하는 포인터의 주소를 리턴한다. //둘다 2번씩 참조하면 인터페이스를 나타내는다는것은 똑같다.
-        debugController->EnableDebugLayer();//디버그계층활성화
-
-        //디버그계층활성화는 장치생성전에 수행해야한다.
-        //그렇지 않으면 생성한 장치가 제거된다.
-    }
-#endif
-
-    ThrowIfFailed( CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
-
-    HRESULT hardwareResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
-
-
-    if (FAILED(hardwareResult))
-    {
-        ComPtr<IDXGIAdapter> pWarpAdapter;
-      ThrowIfFailed(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));//소프트웨어 어댑터를 제공한다.
-
-       ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
-        //실패하면 종료 
-    }
-
-    ThrowIfFailed(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
-
-    mRtvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    mDsvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-    mCbvsrvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    mSamplerdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-
-
-
-    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-    msQualityLevels.Format = mBackBufferForamt;
-    msQualityLevels.SampleCount = 4;
-    msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-    msQualityLevels.NumQualityLevels = 0;
-
-    ThrowIfFailed(mDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels, sizeof(msQualityLevels)));
-    
-    m4xmsaaQuality = msQualityLevels.NumQualityLevels;
-
-    assert(m4xmsaaQuality > 0 && " Unexpected MSAA quality level.");
-
-
-    //순서 중요
-    CreateCommandObjects();
-    
- 
-
-
+//#if defined(DEBUG)||defined(_DEBUG)
+//    //D3D12 디버그층 활성화 
+//    {
+//        ComPtr<ID3D12Debug> debugController;
+//        ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))); //&debugController을 사용하면 Comptr과 연관된 인터페이스를 해제후 comptr 객체의 주소를 리턴한다.
+//                                                                              //GetAddressOf는 인터페이스를 참조하는 포인터의 주소를 리턴한다. //둘다 2번씩 참조하면 인터페이스를 나타내는다는것은 똑같다.
+//        debugController->EnableDebugLayer();//디버그계층활성화
+//
+//        //디버그계층활성화는 장치생성전에 수행해야한다.
+//        //그렇지 않으면 생성한 장치가 제거된다.
+//    }
+//#endif
+//
+//    ThrowIfFailed( CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
+//
+//    HRESULT hardwareResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
+//
+//
+//    if (FAILED(hardwareResult))
+//    {
+//        ComPtr<IDXGIAdapter> pWarpAdapter;
+//      ThrowIfFailed(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));//소프트웨어 어댑터를 제공한다.
+//
+//       ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
+//        //실패하면 종료 
+//    }
+//
+//    ThrowIfFailed(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
+//
+//    mRtvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+//    mDsvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+//    mCbvsrvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+//    mSamplerdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+//
+//
+//
+//    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+//    msQualityLevels.Format = mBackBufferForamt;
+//    msQualityLevels.SampleCount = 4;
+//    msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+//    msQualityLevels.NumQualityLevels = 0;
+//
+//    ThrowIfFailed(mDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels, sizeof(msQualityLevels)));
+//    
+//    m4xmsaaQuality = msQualityLevels.NumQualityLevels;
+//
+//    assert(m4xmsaaQuality > 0 && " Unexpected MSAA quality level.");
+//
+//
+//    //순서 중요
+//    CreateCommandObjects();
+//    
+// 
+//
+//
 
 
 
@@ -505,37 +465,78 @@ bool Application::InitD3d()
 
 void Application::InitSystems()
 {
-    InitCommonSystems();
 
-    if (!mGraphicCommandObject.GetCloseState())
-    {
-        mGraphicCommandObject.ExecuteCommandList();
-        mGraphicCommandObject.FlushCommandQueue();
-    }
-        mGraphicCommandObject.ResetCommandList(nullptr);
+#ifdef D3DX
+
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+
+
+
+
+
+
+
+    mSystemInitializer = std::unique_ptr<SystemInitializer::ISystemInitializer>(new D3DSystemInitializer::D3DSystemInitializer());
+
+    SystemInitializer::ISystemInitializer::SetSystemInitializerImpl(mSystemInitializer.get());
+
+    auto systemInitializer = SystemInitializer::ISystemInitializer::GetInstance();
+
+    systemInitializer->Initialize();
+
+
+
+#endif
+
+    mTextureManager = std::make_unique<CoreAsset::TextureManager>((GRM::IGpuResourceManager::GetInstance()));
+
+
+
     
+  /*  mUIRenderItemBuilder = std::make_unique<UIRenderItemBuilder>(Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(),GRM::IGpuResourceManager::GetInstance());
 
-    mResourceController.Initialize(mDevice, &mGraphicCommandObject, &mMeshManager, &mMaterialManager, &mTextureManager,
-        &mMapManager, &mRenderSystem, &mResourceLoader, &mResourceStorer,nullptr, nullptr, &mDescriptorHeapManagerMaster);
-
-    mMapController.Initialize(&mRenderSystem, &mMeshManager, &mMapManager);
- 
-    Controller::AddController("resourceController", &mResourceController);
-    Controller::AddController("mapController", &mMapController);
-
-    if (!mGraphicCommandObject.GetCloseState())
-    {
-        mGraphicCommandObject.ExecuteCommandList();
-        mGraphicCommandObject.FlushCommandQueue();
-    }
+    mUISystem = std::make_unique<UI::UISystem>(UI::UIManager::GetInstance());*/
 
 
-   // mResourceLoader.LoadProjectData();
-
- //   SpacePartitioningStructureFactory<UiCollider>::GetInstance();
 
 
-    CreateDefaultCoreResource();
+
+
+
+
+
+ //   InitCommonSystems();
+
+ //   if (!mGraphicCommandObject.GetCloseState())
+ //   {
+ //       mGraphicCommandObject.ExecuteCommandList();
+ //       mGraphicCommandObject.FlushCommandQueue();
+ //   }
+ //       mGraphicCommandObject.ResetCommandList(nullptr);
+ //   
+
+ //   mResourceController.Initialize(mDevice, &mGraphicCommandObject, &mMeshManager, &mMaterialManager, &mTextureManager,
+ //       &mMapManager, &mRenderSystem, &mResourceLoader, &mResourceStorer,nullptr, nullptr, &mDescriptorHeapManagerMaster);
+
+ //   mMapController.Initialize(&mRenderSystem, &mMeshManager, &mMapManager);
+ //
+ //   Controller::AddController("resourceController", &mResourceController);
+ //   Controller::AddController("mapController", &mMapController);
+
+ //   if (!mGraphicCommandObject.GetCloseState())
+ //   {
+ //       mGraphicCommandObject.ExecuteCommandList();
+ //       mGraphicCommandObject.FlushCommandQueue();
+ //   }
+
+
+ //  // mResourceLoader.LoadProjectData();
+
+ ////   SpacePartitioningStructureFactory<UiCollider>::GetInstance();
+
+
+ //   CreateDefaultCoreResource();
 
 
 
@@ -550,75 +551,75 @@ void Application::InitSystems()
 
 void Application::InitCommonSystems()
 {
-    D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc;
-    cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    cbvSrvUavHeapDesc.NodeMask = 0;
-    cbvSrvUavHeapDesc.NumDescriptors = VIEW_MAXNUM;
-    cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-    mCbvSrvUavHeapManager.Initialize(mDevice, mCbvsrvdescriptorSize, cbvSrvUavHeapDesc);
-
-    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    dsvHeapDesc.NodeMask = 0;
-    dsvHeapDesc.NumDescriptors = VIEW_MAXNUM;
-    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-
-    mDsvHeapManager.Initialize(mDevice, mDsvdescriptorSize, dsvHeapDesc);
-
-
-    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-    rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-    rtvHeapDesc.NodeMask = 0;
-    rtvHeapDesc.NumDescriptors = VIEW_MAXNUM;
-    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-
-    mRtvHeapManager.Initialize(mDevice, mDsvdescriptorSize, rtvHeapDesc);
-
-
-    D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc;
-    samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    samplerHeapDesc.NodeMask = 0;
-    samplerHeapDesc.NumDescriptors = 30;
-    samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-
-    mSamplerHeapManager.Initialize(mDevice, mDsvdescriptorSize, samplerHeapDesc);
-
-
-
-
-
-    mDescriptorHeapManagerMaster.Initialize(&mCbvSrvUavHeapManager, &mDsvHeapManager, &mRtvHeapManager, &mSamplerHeapManager);
-
-    mMeshManager.Initialize(&mDescriptorHeapManagerMaster);
-
-    mMaterialManager.Initialize();
-
-
-    mTextureManager.Initialize(mDevice,&mDescriptorHeapManagerMaster,&mGraphicCommandObject);
-
-    mMapManager.Initialize();
-
-    mResourceLoader.Initialize(mDevice, &mGraphicCommandObject,&mDescriptorHeapManagerMaster);
-    mResourceStorer.Initialize();
-
-
-    mTextFactory.initialize(mDevice, &mGraphicCommandObject, &mTextureManager, &mDescriptorHeapManagerMaster);
-
-   // mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
-//    mTextFactory.ReadFontFile(L".\\Font\\DefaultFont.ttf");
-    mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Include\\Font\\DefaultFont.ttf");
-
-    mLineFactory.Initialize(mDevice);
-
-
-   // mKeyBoard.Initialize();
- //   mMouse.Initlaize(mHinstance);
-
-    mCollisionHelper.Initialize();
-    mColliderGenerator.Initialize(mDevice, &mGraphicCommandObject);
-
-    mEventDispatcher.Initialize();
+//    D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc;
+//    cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+//    cbvSrvUavHeapDesc.NodeMask = 0;
+//    cbvSrvUavHeapDesc.NumDescriptors = VIEW_MAXNUM;
+//    cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+//
+//    mCbvSrvUavHeapManager.Initialize(mDevice, mCbvsrvdescriptorSize, cbvSrvUavHeapDesc);
+//
+//    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+//    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+//    dsvHeapDesc.NodeMask = 0;
+//    dsvHeapDesc.NumDescriptors = VIEW_MAXNUM;
+//    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+//
+//    mDsvHeapManager.Initialize(mDevice, mDsvdescriptorSize, dsvHeapDesc);
+//
+//
+//    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+//    rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+//    rtvHeapDesc.NodeMask = 0;
+//    rtvHeapDesc.NumDescriptors = VIEW_MAXNUM;
+//    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+//
+//    mRtvHeapManager.Initialize(mDevice, mDsvdescriptorSize, rtvHeapDesc);
+//
+//
+//    D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc;
+//    samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+//    samplerHeapDesc.NodeMask = 0;
+//    samplerHeapDesc.NumDescriptors = 30;
+//    samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+//
+//    mSamplerHeapManager.Initialize(mDevice, mDsvdescriptorSize, samplerHeapDesc);
+//
+//
+//
+//
+//
+//    mDescriptorHeapManagerMaster.Initialize(&mCbvSrvUavHeapManager, &mDsvHeapManager, &mRtvHeapManager, &mSamplerHeapManager);
+//
+//    mMeshManager.Initialize(&mDescriptorHeapManagerMaster);
+//
+//    mMaterialManager.Initialize();
+//
+//
+//    mTextureManager.Initialize(mDevice,&mDescriptorHeapManagerMaster,&mGraphicCommandObject);
+//
+//    mMapManager.Initialize();
+//
+//    mResourceLoader.Initialize(mDevice, &mGraphicCommandObject,&mDescriptorHeapManagerMaster);
+//    mResourceStorer.Initialize();
+//
+//
+//    mTextFactory.initialize(mDevice, &mGraphicCommandObject, &mTextureManager, &mDescriptorHeapManagerMaster);
+//
+//   // mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
+////    mTextFactory.ReadFontFile(L".\\Font\\DefaultFont.ttf");
+//    mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Include\\Font\\DefaultFont.ttf");
+//
+//    mLineFactory.Initialize(mDevice);
+//
+//
+//   // mKeyBoard.Initialize();
+// //   mMouse.Initlaize(mHinstance);
+//
+//    mCollisionHelper.Initialize();
+//    mColliderGenerator.Initialize(mDevice, &mGraphicCommandObject);
+//
+//    mEventDispatcher.Initialize();
 
 
 
@@ -1887,22 +1888,22 @@ void Application::InitCommonSystems()
 
 void Application::CreateCommandObjects()
 {
-    D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-    queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;    //gpu가 실행할 명령을 담을 큐이다.
-    queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-    queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    queueDesc.NodeMask = 0;
+   // D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+   // queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;    //gpu가 실행할 명령을 담을 큐이다.
+   // queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+   // queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+   // queueDesc.NodeMask = 0;
 
-   ThrowIfFailed(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
+   //ThrowIfFailed(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
-    ThrowIfFailed(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator)));
+   // ThrowIfFailed(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator)));
 
-    ThrowIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&mGraphicscommandList)));
+   // ThrowIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&mGraphicscommandList)));
 
-    mGraphicscommandList->Close();
+   // mGraphicscommandList->Close();
 
 
-    mGraphicCommandObject.Initialize(mGraphicscommandList, mCommandAllocator, mCommandQueue, mFence);
+   // mGraphicCommandObject.Initialize(mGraphicscommandList, mCommandAllocator, mCommandQueue, mFence);
 
     //commandList를 생성하면 열린상태가된다.
 
@@ -1914,7 +1915,7 @@ void Application::PreUpdate(GameTimer& timer)
 {
 
     float deltaTime = timer.GetDeltaTime();
-    mResourceController.Update();
+  //  mResourceController.Update();
 
     //mInputSystem.Update(deltaTime);
 
@@ -2023,44 +2024,41 @@ void Application::MouseMove(WPARAM wParam, int x, int y)
 
 void Application::FlushCommandQueue()
 {
-    mCurrentFence++;
-    ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
+    //mCurrentFence++;
+    //ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
 
-    if (mFence->GetCompletedValue() < mCurrentFence)
-    {
-        HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
-        ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));//이울타리지점에 도달하면 event발생
+    //if (mFence->GetCompletedValue() < mCurrentFence)
+    //{
+    //    HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+    //    ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));//이울타리지점에 도달하면 event발생
 
-        WaitForSingleObject(eventHandle, INFINITE);
-        CloseHandle(eventHandle);
-    }
+    //    WaitForSingleObject(eventHandle, INFINITE);
+    //    CloseHandle(eventHandle);
+    //}
 }
 
-float Application::GetAspectRatio() const
-{
-    return static_cast<float>(mClientWidth) / mClientHeight;
-}
+//float Application::GetAspectRatio() const
+//{
+//    return static_cast<float>(mClientWidth) / mClientHeight;
+//}
+//
+//Microsoft::WRL::ComPtr<ID3D12Device> Application::GetD3D12Device() const
+//{
+//    return mDevice;
+//}
+//
+//Microsoft::WRL::ComPtr<IDXGIFactory4> Application::GetD3DFactory() const
+//{
+//    return mFactory;
+//}
+//
+//GraphicCommand& Application::GetGraphicCommand()
+//{
+//    return mGraphicCommandObject;
+//    // TODO: 여기에 return 문을 삽입합니다.
+//}
 
-Microsoft::WRL::ComPtr<ID3D12Device> Application::GetD3D12Device() const
-{
-    return mDevice;
-}
 
-Microsoft::WRL::ComPtr<IDXGIFactory4> Application::GetD3DFactory() const
-{
-    return mFactory;
-}
-
-GraphicCommand& Application::GetGraphicCommand()
-{
-    return mGraphicCommandObject;
-    // TODO: 여기에 return 문을 삽입합니다.
-}
-
-DescriptorHeapManagerMaster* Application::GetDescriptorHeapManagerMaster() 
-{
-    return &mDescriptorHeapManagerMaster;
-}
 
 HINSTANCE Application::GetHinstance() const
 {
@@ -2102,474 +2100,474 @@ void Application::CalculateFrameStats()
 
 void Application::AddEffect(RenderSystem* renderSystem, Effect* effect)
 {
-    renderSystem->AddEffect(*effect, ESystemType::eMainSystem);
-    renderSystem->AddEffect(*effect, ESystemType::eDockingSystem);
-    //renderSystem->AddEffect(*effect, ESystemType::eUiSystem);
-    renderSystem->AddEffect(*effect, ESystemType::eWindowLayoutSystem);
+    //renderSystem->AddEffect(*effect, ESystemType::eMainSystem);
+    //renderSystem->AddEffect(*effect, ESystemType::eDockingSystem);
+    ////renderSystem->AddEffect(*effect, ESystemType::eUiSystem);
+    //renderSystem->AddEffect(*effect, ESystemType::eWindowLayoutSystem);
 
 }
 
 void Application::CreateDefaultCoreResource()
 {
 
-    if (mGraphicCommandObject.GetCloseState())
-        mGraphicCommandObject.ResetCommandList(nullptr);
+  //  if (mGraphicCommandObject.GetCloseState())
+  //      mGraphicCommandObject.ResetCommandList(nullptr);
 
-    StaticMesh * defaultCoreRect = static_cast<StaticMesh*>(mMeshManager.CreateMeshFromFile("DefaultEntireRect3", EMeshType::eStaticMesh,10));
-    defaultCoreRect->SetEngineContentItemFlag(true);
+  //  StaticMesh * defaultCoreRect = static_cast<StaticMesh*>(mMeshManager.CreateMeshFromFile("DefaultEntireRect3", EMeshType::eStaticMesh,10));
+  //  defaultCoreRect->SetEngineContentItemFlag(true);
 
-    std::vector<StaticVertex>defaultCoreRectVertexVector(4);
-    defaultCoreRectVertexVector[0].mPos = { -1,1,1 };
-    defaultCoreRectVertexVector[1].mPos = { -1,-1,1 };
-    defaultCoreRectVertexVector[2].mPos = { 1,-1,1 };
-    defaultCoreRectVertexVector[3].mPos = { 1,1,1 };
-
-
-    defaultCoreRectVertexVector[0].mTex = { 0,0 };
-    defaultCoreRectVertexVector[1].mTex = { 1,0 };
-    defaultCoreRectVertexVector[2].mTex = { 0,1 };
-    defaultCoreRectVertexVector[3].mTex = { 1,1 };
-
-    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexUploadBuffer;
-    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexDefaultBuffer =   Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectVertexVector.data(), sizeof(StaticVertex), 4,
-        defaultCoreRectVertexUploadBuffer);
+  //  std::vector<StaticVertex>defaultCoreRectVertexVector(4);
+  //  defaultCoreRectVertexVector[0].mPos = { -1,1,1 };
+  //  defaultCoreRectVertexVector[1].mPos = { -1,-1,1 };
+  //  defaultCoreRectVertexVector[2].mPos = { 1,-1,1 };
+  //  defaultCoreRectVertexVector[3].mPos = { 1,1,1 };
 
 
-    defaultCoreRect->SetVertexBuffer(defaultCoreRectVertexDefaultBuffer);
-    defaultCoreRect->SetVertexNum(4);
+  //  defaultCoreRectVertexVector[0].mTex = { 0,0 };
+  //  defaultCoreRectVertexVector[1].mTex = { 1,0 };
+  //  defaultCoreRectVertexVector[2].mTex = { 0,1 };
+  //  defaultCoreRectVertexVector[3].mTex = { 1,1 };
+
+  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexUploadBuffer;
+  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexDefaultBuffer =   Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectVertexVector.data(), sizeof(StaticVertex), 4,
+  //      defaultCoreRectVertexUploadBuffer);
 
 
-    std::vector<MeshIndexType> defaultCoreRectIndexVector(6);
-    defaultCoreRectIndexVector[0] = 0;
-    defaultCoreRectIndexVector[1] = 1;
-    defaultCoreRectIndexVector[2] = 2;
-
-    defaultCoreRectIndexVector[3] = 1;
-    defaultCoreRectIndexVector[4] = 3;
-    defaultCoreRectIndexVector[5] = 2;
-
-
-    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexUploadBuffer;
-    Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexDefaultBuffer = Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectIndexVector.data(), sizeof(MeshIndexType), 6,
-        defaultCoreRectIndexUploadBuffer);
-
-
-    defaultCoreRect->SetIndexBuffer(defaultCoreRectIndexDefaultBuffer);
-    defaultCoreRect->SetIndexNum(6);
-
-    std::vector<SubMesh> defaultCoreRectSubMeshVector(1);
-    defaultCoreRectSubMeshVector[0].mID = 0;
-    defaultCoreRectSubMeshVector[0].mIndexRange.first = 0;
-    defaultCoreRectSubMeshVector[0].mIndexRange.second = 6;
-    defaultCoreRectSubMeshVector[0].mMesh = defaultCoreRect;
-    defaultCoreRectSubMeshVector[0].mVertexNum = 4;
-    defaultCoreRectSubMeshVector[0].mVertexOffset = 0;
-
-
-    defaultCoreRect->SetSubMeshVector(std::move(defaultCoreRectSubMeshVector));
-
+  //  defaultCoreRect->SetVertexBuffer(defaultCoreRectVertexDefaultBuffer);
   //  defaultCoreRect->SetVertexNum(4);
 
-    mGraphicCommandObject.ExecuteCommandList();
-    mGraphicCommandObject.FlushCommandQueue();
+
+  //  std::vector<MeshIndexType> defaultCoreRectIndexVector(6);
+  //  defaultCoreRectIndexVector[0] = 0;
+  //  defaultCoreRectIndexVector[1] = 1;
+  //  defaultCoreRectIndexVector[2] = 2;
+
+  //  defaultCoreRectIndexVector[3] = 1;
+  //  defaultCoreRectIndexVector[4] = 3;
+  //  defaultCoreRectIndexVector[5] = 2;
+
+
+  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexUploadBuffer;
+  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexDefaultBuffer = Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectIndexVector.data(), sizeof(MeshIndexType), 6,
+  //      defaultCoreRectIndexUploadBuffer);
+
+
+  //  defaultCoreRect->SetIndexBuffer(defaultCoreRectIndexDefaultBuffer);
+  //  defaultCoreRect->SetIndexNum(6);
+
+  //  std::vector<SubMesh> defaultCoreRectSubMeshVector(1);
+  //  defaultCoreRectSubMeshVector[0].mID = 0;
+  //  defaultCoreRectSubMeshVector[0].mIndexRange.first = 0;
+  //  defaultCoreRectSubMeshVector[0].mIndexRange.second = 6;
+  //  defaultCoreRectSubMeshVector[0].mMesh = defaultCoreRect;
+  //  defaultCoreRectSubMeshVector[0].mVertexNum = 4;
+  //  defaultCoreRectSubMeshVector[0].mVertexOffset = 0;
+
+
+  //  defaultCoreRect->SetSubMeshVector(std::move(defaultCoreRectSubMeshVector));
+
+  ////  defaultCoreRect->SetVertexNum(4);
+
+  //  mGraphicCommandObject.ExecuteCommandList();
+  //  mGraphicCommandObject.FlushCommandQueue();
 
 
 
 }
 
-void Application::HarfBuzzTest()
-{
-    FT_Library  library;        //FT_Library는 핸들이다 (모든 타입이 다 그런거같다 ,객체는내부적으로 존재하는거고)
-   FT_Error error = FT_Init_FreeType(&library);
-   if (error)
-   {
-       MessageBox(nullptr, L"error", L"error", MB_OK);
-      // ... an error occurred during library initialization ...
-   }
-
-   FT_Face faceFt;
-//   error = FT_New_Face(library, "C:\\Users\\dongd\\Downloads\\aver-font\\AverBold-4YlW.ttf",
-   error = FT_New_Face(library, "C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf",
-       0, &faceFt);
-   if (error == FT_Err_Unknown_File_Format)
-   {
-       MessageBox(nullptr, L"face error", L"error", MB_OK);
-   }
-   else if (error)
-   {
-       MessageBox(nullptr, L"face error", L"error", MB_OK);
-
-   }
-   faceFt->size->metrics.x_scale;
-
-
-
-   // FT_UInt charA_glyph_index=  FT_Get_Char_Index(faceFt, 0x00000041);
-    FT_UInt charA_glyph_index=  FT_Get_Char_Index(faceFt, 0x00000043);
-
-    //glyph가여기서는 glyph slot(컨테이너)
-
-    faceFt->size;
-
-    //FT_Set_Char_Size(faceFt, 0,72 * 64, 96, 96);
-    FT_Set_Pixel_Sizes(faceFt, 300, 300);
-    FT_Load_Glyph(faceFt, charA_glyph_index, FT_LOAD_DEFAULT);
-    
-    FT_Render_Glyph(faceFt->glyph,
-        FT_RENDER_MODE_NORMAL);
-
-    FT_Glyph_Format format = faceFt->glyph->format;
-
-
-   unsigned int w= faceFt->glyph->bitmap.width;
-
-   BitmapToTextureResource(faceFt->glyph->bitmap);
- //  CreateBitMap(faceFt->glyph->bitmap);
-
-    hb_buffer_t* buf;
-    buf = hb_buffer_create();
-    hb_buffer_add_utf8(buf, "hello World", -1, 0, -1);
-    
-    //2 Set the script, language and direction of the buffer
-    //script는 여기서 문자체계 ,시스템을 의미한다.
-
-    hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
-    hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
-    hb_buffer_set_language(buf, hb_language_from_string("en", -1));
-
-   // hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Lemon Shake Shake.otf");
-    hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
-    
-    hb_face_t* face = hb_face_create(blob, 0);
-    hb_font_t* font = hb_font_create(face);
-
-    hb_shape(font, buf, NULL, 0);
-    
-    //hb_ft_face_create_referenced()
-
-    unsigned int glyph_count;
-    hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
-    hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-  
-    hb_position_t cursor_x = 0;
-    hb_position_t cursor_y = 0;
-    for (unsigned int i = 0; i < glyph_count; i++) {
-        hb_codepoint_t glyphid = glyph_info[i].codepoint;
-        hb_position_t x_offset = glyph_pos[i].x_offset;
-        hb_position_t y_offset = glyph_pos[i].y_offset;
-        hb_position_t x_advance = glyph_pos[i].x_advance;
-        hb_position_t  y_advance = glyph_pos[i].y_advance;
-        
-       // draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
-        cursor_x += x_advance;
-        cursor_y += y_advance;
-    }
-
-    hb_buffer_destroy(buf);
-    hb_font_destroy(font);
-    hb_face_destroy(face);
-    hb_blob_destroy(blob);
-
-
-
-
-
-
-
-
-
-
-
+//void Application::HarfBuzzTest()
+//{
+////    FT_Library  library;        //FT_Library는 핸들이다 (모든 타입이 다 그런거같다 ,객체는내부적으로 존재하는거고)
+////   FT_Error error = FT_Init_FreeType(&library);
+////   if (error)
+////   {
+////       MessageBox(nullptr, L"error", L"error", MB_OK);
+////      // ... an error occurred during library initialization ...
+////   }
+////
+////   FT_Face faceFt;
+//////   error = FT_New_Face(library, "C:\\Users\\dongd\\Downloads\\aver-font\\AverBold-4YlW.ttf",
+////   error = FT_New_Face(library, "C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf",
+////       0, &faceFt);
+////   if (error == FT_Err_Unknown_File_Format)
+////   {
+////       MessageBox(nullptr, L"face error", L"error", MB_OK);
+////   }
+////   else if (error)
+////   {
+////       MessageBox(nullptr, L"face error", L"error", MB_OK);
+////
+////   }
+////   faceFt->size->metrics.x_scale;
+////
+////
+////
+////   // FT_UInt charA_glyph_index=  FT_Get_Char_Index(faceFt, 0x00000041);
+////    FT_UInt charA_glyph_index=  FT_Get_Char_Index(faceFt, 0x00000043);
+////
+////    //glyph가여기서는 glyph slot(컨테이너)
+////
+////    faceFt->size;
+////
+////    //FT_Set_Char_Size(faceFt, 0,72 * 64, 96, 96);
+////    FT_Set_Pixel_Sizes(faceFt, 300, 300);
+////    FT_Load_Glyph(faceFt, charA_glyph_index, FT_LOAD_DEFAULT);
+////    
+////    FT_Render_Glyph(faceFt->glyph,
+////        FT_RENDER_MODE_NORMAL);
+////
+////    FT_Glyph_Format format = faceFt->glyph->format;
+////
+////
+////   unsigned int w= faceFt->glyph->bitmap.width;
+////
+////   BitmapToTextureResource(faceFt->glyph->bitmap);
+//// //  CreateBitMap(faceFt->glyph->bitmap);
+////
+////    hb_buffer_t* buf;
+////    buf = hb_buffer_create();
+////    hb_buffer_add_utf8(buf, "hello World", -1, 0, -1);
+////    
+////    //2 Set the script, language and direction of the buffer
+////    //script는 여기서 문자체계 ,시스템을 의미한다.
+////
+////    hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
+////    hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+////    hb_buffer_set_language(buf, hb_language_from_string("en", -1));
+////
+////   // hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Lemon Shake Shake.otf");
+////    hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
+////    
+////    hb_face_t* face = hb_face_create(blob, 0);
+////    hb_font_t* font = hb_font_create(face);
+////
+////    hb_shape(font, buf, NULL, 0);
+////    
+////    //hb_ft_face_create_referenced()
+////
+////    unsigned int glyph_count;
+////    hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
+////    hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+////  
+////    hb_position_t cursor_x = 0;
+////    hb_position_t cursor_y = 0;
+////    for (unsigned int i = 0; i < glyph_count; i++) {
+////        hb_codepoint_t glyphid = glyph_info[i].codepoint;
+////        hb_position_t x_offset = glyph_pos[i].x_offset;
+////        hb_position_t y_offset = glyph_pos[i].y_offset;
+////        hb_position_t x_advance = glyph_pos[i].x_advance;
+////        hb_position_t  y_advance = glyph_pos[i].y_advance;
+////        
+////       // draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
+////        cursor_x += x_advance;
+////        cursor_y += y_advance;
+////    }
+////
+////    hb_buffer_destroy(buf);
+////    hb_font_destroy(font);
+////    hb_face_destroy(face);
+////    hb_blob_destroy(blob);
+////
+////
+////
+////
+////
+//
+//
+//
+//
+//
+//
+//
+//}
+//
+//void Application::CreateBitMap(FT_Bitmap bitmap)
+//{
+//    // Calculate aligned RowPitch (must be a multiple of 256 bytes for DirectX 12)
+//    UINT alignedRowPitch = (bitmap.pitch + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+//
+//    // Create upload buffer
+//    D3D12_RESOURCE_DESC uploadBufferDesc = {};
+//    uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+//    uploadBufferDesc.Alignment = 0;
+//    uploadBufferDesc.Width = alignedRowPitch * bitmap.rows;  // Buffer size needs to accommodate the entire texture
+//    uploadBufferDesc.Height = 1;
+//    uploadBufferDesc.DepthOrArraySize = 1;
+//    uploadBufferDesc.MipLevels = 1;
+//    uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+//    uploadBufferDesc.SampleDesc.Count = 1;
+//    uploadBufferDesc.SampleDesc.Quality = 0;
+//    uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+//    uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+//
+//    D3D12_HEAP_PROPERTIES uploadHeapProperties = {};
+//    uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+//    uploadHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+//    uploadHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+//
+//    ThrowIfFailed(mDevice->CreateCommittedResource(
+//        &uploadHeapProperties,
+//        D3D12_HEAP_FLAG_NONE,
+//        &uploadBufferDesc,
+//        D3D12_RESOURCE_STATE_GENERIC_READ,
+//        nullptr,
+//        IID_PPV_ARGS(&uploadBuffer)
+//    ));
+//
+//    // Map and copy bitmap data to the upload buffer
+//    uint8_t* pData = nullptr;
+//    D3D12_RANGE readRange = { 0, 0 }; // We do not intend to read this resource on the CPU
+//    ThrowIfFailed(uploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pData)));
+//
+//    for (unsigned int row = 0; row < bitmap.rows; ++row)
+//    {
+//        memcpy(pData + row * alignedRowPitch, bitmap.buffer + row * bitmap.pitch, bitmap.width);
+//    }
+//
+//    uploadBuffer->Unmap(0, nullptr);
+//
+//    // Create texture resource in default heap
+//    D3D12_RESOURCE_DESC texDesc = {};
+//    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+//    texDesc.Alignment = 0;
+//    texDesc.Width = bitmap.width;
+//    texDesc.Height = bitmap.rows;
+//    texDesc.DepthOrArraySize = 1;
+//    texDesc.MipLevels = 1;
+//    texDesc.Format = DXGI_FORMAT_R8_UNORM;
+//    texDesc.SampleDesc.Count = 1;
+//    texDesc.SampleDesc.Quality = 0;
+//    texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+//    texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+//
+//    D3D12_HEAP_PROPERTIES defaultHeapProperties = {};
+//    defaultHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+//    defaultHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+//    defaultHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+//
+//
+//    ThrowIfFailed(mDevice->CreateCommittedResource(
+//        &defaultHeapProperties,
+//        D3D12_HEAP_FLAG_NONE,
+//        &texDesc,
+//        D3D12_RESOURCE_STATE_COPY_DEST,
+//        nullptr,
+//        IID_PPV_ARGS(&mTextTexture)
+//    ));
+//
+//    // Copy data from upload buffer to texture
+//    D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
+//    srcLocation.pResource = uploadBuffer.Get();
+//    srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+//    srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8_UNORM;
+//    srcLocation.PlacedFootprint.Footprint.Width = bitmap.width;
+//    srcLocation.PlacedFootprint.Footprint.Height = bitmap.rows;
+//    srcLocation.PlacedFootprint.Footprint.Depth = 1;
+//    srcLocation.PlacedFootprint.Footprint.RowPitch = alignedRowPitch; // Align to 256 bytes
+//    srcLocation.PlacedFootprint.Offset = 0;
+//
+//    D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
+//    dstLocation.pResource = mTextTexture.Get();
+//    dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+//    dstLocation.SubresourceIndex = 0;
+//
+//    mGraphicscommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+//
+//    // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
+//    D3D12_RESOURCE_BARRIER barrier = {};
+//    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+//    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+//    barrier.Transition.pResource = mTextTexture.Get();
+//    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+//    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+//    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+//
+//    mGraphicscommandList->ResourceBarrier(1, &barrier);
+//
+//    // At this point, 'texture' contains the bitmap data and is ready to be used as a texture in shaders
+//    mGraphicscommandList->Close();  // Make sure the command list is closed before executing
+//
+//    // Submit the command list to the GPU and wait for execution to finish
+//    ID3D12CommandList* commandLists[] = { mGraphicscommandList.Get() };
+//    mCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+//
+//    mGraphicCommandObject.FlushCommandQueue();
+//
+//}
+//
+//
+//
+//void Application::BitmapToTextureResource(FT_Bitmap bitmap)
+//{
+//    //texture
+//    mTextTexture;
+//    D3D12_RESOURCE_DESC texDesc;
+//    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+//    texDesc.Alignment = 0;
+//    texDesc.Width = bitmap.width;
+//    texDesc.Height = bitmap.rows;
+//    texDesc.DepthOrArraySize = 1;
+//    texDesc.MipLevels = 1;
+//    texDesc.Format = DXGI_FORMAT_R8_UNORM;
+//    texDesc.SampleDesc.Count = 1;
+//    texDesc.SampleDesc.Quality = 0;
+//    texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+//    texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+//
+//    D3D12_HEAP_PROPERTIES uploadHeapPropertiesTex;
+//    uploadHeapPropertiesTex.Type = D3D12_HEAP_TYPE_DEFAULT;
+//    uploadHeapPropertiesTex.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+//    uploadHeapPropertiesTex.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+//    uploadHeapPropertiesTex.CreationNodeMask = 0;
+//    uploadHeapPropertiesTex.VisibleNodeMask = 0;
+//
+//
+//    ThrowIfFailed(mDevice->CreateCommittedResource(&uploadHeapPropertiesTex, D3D12_HEAP_FLAG_NONE,
+//        &texDesc, D3D12_RESOURCE_STATE_COPY_DEST,
+//        nullptr, IID_PPV_ARGS(mTextTexture.GetAddressOf())));
+//
+//
+//
+//
+//    D3D12_PLACED_SUBRESOURCE_FOOTPRINT subFootPrint;
+//    UINT numRow;
+//    UINT64 rowSizeInByte;
+//    UINT64 totalByte;
+//    mDevice->GetCopyableFootprints(
+//        &texDesc, 0, 1, 0, &subFootPrint,
+//        &numRow, &rowSizeInByte, &totalByte);
+//
+//
+//
+//
+//    //default heap의  texture로 업로드
+//
+//
+//
+//    //uploadbuffer만들기
+//    
+//
+//    D3D12_RESOURCE_DESC uploadBufferDesc;
+//    uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+//    uploadBufferDesc.Alignment = 0;
+//    uploadBufferDesc.Width = totalByte;// bitmap.width* bitmap.rows;// bitmap.width * bitmap.rows;
+//    uploadBufferDesc.Height = 1;
+//    uploadBufferDesc.DepthOrArraySize = 1;
+//    uploadBufferDesc.MipLevels = 1;
+//    uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+//    uploadBufferDesc.SampleDesc.Count = 1;
+//    uploadBufferDesc.SampleDesc.Quality = 0;
+//    uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+//    uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+//
+//    D3D12_HEAP_PROPERTIES uploadHeapProperties;
+//    uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+//    uploadHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+//    uploadHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+//    uploadHeapProperties.CreationNodeMask = 0;
+//    uploadHeapProperties.VisibleNodeMask = 0;
+//
+//
+//   ThrowIfFailed( mDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+//        &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
+//        nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf())));
+//
+//
+//    //uploadbuffer로 복사
+//   D3D12_RANGE range{ 0,0 };
+//   uint8_t* pData = nullptr;
+//  //uploadBuffer->Map(0, &range, (void**)&pData);
+//   uploadBuffer->Map(0, nullptr, (void**)&pData);
+//
+//  // memset(pData, 255, bitmap.pitch * bitmap.rows);
+//
+//   for (unsigned int row = 0; row < bitmap.rows; ++row)
+//   {
+//       memcpy(&pData[subFootPrint.Footprint.RowPitch *row], &bitmap.buffer[bitmap.width * row], bitmap.width);
+//   }
+//   
+//   for (unsigned int row = 0; row < bitmap.rows; ++row)
+//   {
+//       for (unsigned int i = 0; i < bitmap.width; ++i)
+//       {
+//            uint8_t t =   bitmap.buffer[i + row * bitmap.width];
+//        if (t != 0)
+//        {
+//            int a = 2;
+//        }
+//       }
+//   }
+//
+//   for (unsigned int row = 0; row < bitmap.rows; ++row)
+//   {
+//       for (unsigned int i = 0; i < bitmap.width; ++i)
+//       {
+//            uint8_t t =  pData[row * 256 + i];
+//            if (t != 0)
+//            {
+//                int a = 2;
+//            }
+//       }
+//   }
+//
+//
+//
+//
+//   uploadBuffer->Unmap(0, nullptr);
+//
+//   D3D12_RESOURCE_BARRIER uploadBufferTransferState;
+//   uploadBufferTransferState.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+//   uploadBufferTransferState.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+//
+//   uploadBufferTransferState.Transition.pResource = uploadBuffer.Get();
+//   uploadBufferTransferState.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+//   uploadBufferTransferState.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+//   uploadBufferTransferState.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+//
+//   mGraphicscommandList->ResourceBarrier(1, &uploadBufferTransferState);
+//
+//   //texture resource 생성
+//
+//
+//
+//    D3D12_SUBRESOURCE_FOOTPRINT uploadBufferFootprint;
+//    uploadBufferFootprint.Format = DXGI_FORMAT_R8_UNORM;
+//    uploadBufferFootprint.Depth = 1;
+//    uploadBufferFootprint.Height = bitmap.rows;
+//    uploadBufferFootprint.Width = bitmap.width;
+//    uploadBufferFootprint.RowPitch = 256;
+//    D3D12_PLACED_SUBRESOURCE_FOOTPRINT uploadbufferPlacedFootPrint;
+//    uploadbufferPlacedFootPrint.Offset = 0;
+//    uploadbufferPlacedFootPrint.Footprint = uploadBufferFootprint;
+//
+//    D3D12_TEXTURE_COPY_LOCATION src{ uploadBuffer.Get(),D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT ,subFootPrint };
+//
+//    D3D12_TEXTURE_COPY_LOCATION dst{ mTextTexture.Get(),D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,(UINT64)0 };
+//
+//    mGraphicscommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+//    
+//  // mGraphicscommandList->CopyResource(mTextTexture.Get(), uploadBuffer.Get());
+//
+//
+//   D3D12_RESOURCE_BARRIER texTransferState;
+//   texTransferState.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+//   texTransferState.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+//
+//   texTransferState.Transition.pResource = mTextTexture.Get();
+//   texTransferState.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+//   texTransferState.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+//   texTransferState.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+// 
+//   mGraphicscommandList->ResourceBarrier(1, &texTransferState);
+//
+//
+//
+//
+//}
+//
+//}
 
 }
-
-void Application::CreateBitMap(FT_Bitmap bitmap)
-{
-    // Calculate aligned RowPitch (must be a multiple of 256 bytes for DirectX 12)
-    UINT alignedRowPitch = (bitmap.pitch + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
-
-    // Create upload buffer
-    D3D12_RESOURCE_DESC uploadBufferDesc = {};
-    uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    uploadBufferDesc.Alignment = 0;
-    uploadBufferDesc.Width = alignedRowPitch * bitmap.rows;  // Buffer size needs to accommodate the entire texture
-    uploadBufferDesc.Height = 1;
-    uploadBufferDesc.DepthOrArraySize = 1;
-    uploadBufferDesc.MipLevels = 1;
-    uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-    uploadBufferDesc.SampleDesc.Count = 1;
-    uploadBufferDesc.SampleDesc.Quality = 0;
-    uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    D3D12_HEAP_PROPERTIES uploadHeapProperties = {};
-    uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-    uploadHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    uploadHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-    ThrowIfFailed(mDevice->CreateCommittedResource(
-        &uploadHeapProperties,
-        D3D12_HEAP_FLAG_NONE,
-        &uploadBufferDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&uploadBuffer)
-    ));
-
-    // Map and copy bitmap data to the upload buffer
-    uint8_t* pData = nullptr;
-    D3D12_RANGE readRange = { 0, 0 }; // We do not intend to read this resource on the CPU
-    ThrowIfFailed(uploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pData)));
-
-    for (unsigned int row = 0; row < bitmap.rows; ++row)
-    {
-        memcpy(pData + row * alignedRowPitch, bitmap.buffer + row * bitmap.pitch, bitmap.width);
-    }
-
-    uploadBuffer->Unmap(0, nullptr);
-
-    // Create texture resource in default heap
-    D3D12_RESOURCE_DESC texDesc = {};
-    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    texDesc.Alignment = 0;
-    texDesc.Width = bitmap.width;
-    texDesc.Height = bitmap.rows;
-    texDesc.DepthOrArraySize = 1;
-    texDesc.MipLevels = 1;
-    texDesc.Format = DXGI_FORMAT_R8_UNORM;
-    texDesc.SampleDesc.Count = 1;
-    texDesc.SampleDesc.Quality = 0;
-    texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    D3D12_HEAP_PROPERTIES defaultHeapProperties = {};
-    defaultHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-    defaultHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    defaultHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-
-    ThrowIfFailed(mDevice->CreateCommittedResource(
-        &defaultHeapProperties,
-        D3D12_HEAP_FLAG_NONE,
-        &texDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&mTextTexture)
-    ));
-
-    // Copy data from upload buffer to texture
-    D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-    srcLocation.pResource = uploadBuffer.Get();
-    srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-    srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8_UNORM;
-    srcLocation.PlacedFootprint.Footprint.Width = bitmap.width;
-    srcLocation.PlacedFootprint.Footprint.Height = bitmap.rows;
-    srcLocation.PlacedFootprint.Footprint.Depth = 1;
-    srcLocation.PlacedFootprint.Footprint.RowPitch = alignedRowPitch; // Align to 256 bytes
-    srcLocation.PlacedFootprint.Offset = 0;
-
-    D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-    dstLocation.pResource = mTextTexture.Get();
-    dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-    dstLocation.SubresourceIndex = 0;
-
-    mGraphicscommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
-
-    // Transition texture to PIXEL_SHADER_RESOURCE state for rendering
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = mTextTexture.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-    mGraphicscommandList->ResourceBarrier(1, &barrier);
-
-    // At this point, 'texture' contains the bitmap data and is ready to be used as a texture in shaders
-    mGraphicscommandList->Close();  // Make sure the command list is closed before executing
-
-    // Submit the command list to the GPU and wait for execution to finish
-    ID3D12CommandList* commandLists[] = { mGraphicscommandList.Get() };
-    mCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
-
-    mGraphicCommandObject.FlushCommandQueue();
-
-}
-
-
-
-void Application::BitmapToTextureResource(FT_Bitmap bitmap)
-{
-    //texture
-    mTextTexture;
-    D3D12_RESOURCE_DESC texDesc;
-    texDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    texDesc.Alignment = 0;
-    texDesc.Width = bitmap.width;
-    texDesc.Height = bitmap.rows;
-    texDesc.DepthOrArraySize = 1;
-    texDesc.MipLevels = 1;
-    texDesc.Format = DXGI_FORMAT_R8_UNORM;
-    texDesc.SampleDesc.Count = 1;
-    texDesc.SampleDesc.Quality = 0;
-    texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    D3D12_HEAP_PROPERTIES uploadHeapPropertiesTex;
-    uploadHeapPropertiesTex.Type = D3D12_HEAP_TYPE_DEFAULT;
-    uploadHeapPropertiesTex.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    uploadHeapPropertiesTex.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    uploadHeapPropertiesTex.CreationNodeMask = 0;
-    uploadHeapPropertiesTex.VisibleNodeMask = 0;
-
-
-    ThrowIfFailed(mDevice->CreateCommittedResource(&uploadHeapPropertiesTex, D3D12_HEAP_FLAG_NONE,
-        &texDesc, D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr, IID_PPV_ARGS(mTextTexture.GetAddressOf())));
-
-
-
-
-    D3D12_PLACED_SUBRESOURCE_FOOTPRINT subFootPrint;
-    UINT numRow;
-    UINT64 rowSizeInByte;
-    UINT64 totalByte;
-    mDevice->GetCopyableFootprints(
-        &texDesc, 0, 1, 0, &subFootPrint,
-        &numRow, &rowSizeInByte, &totalByte);
-
-
-
-
-    //default heap의  texture로 업로드
-
-
-
-    //uploadbuffer만들기
-    
-
-    D3D12_RESOURCE_DESC uploadBufferDesc;
-    uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    uploadBufferDesc.Alignment = 0;
-    uploadBufferDesc.Width = totalByte;// bitmap.width* bitmap.rows;// bitmap.width * bitmap.rows;
-    uploadBufferDesc.Height = 1;
-    uploadBufferDesc.DepthOrArraySize = 1;
-    uploadBufferDesc.MipLevels = 1;
-    uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
-    uploadBufferDesc.SampleDesc.Count = 1;
-    uploadBufferDesc.SampleDesc.Quality = 0;
-    uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    D3D12_HEAP_PROPERTIES uploadHeapProperties;
-    uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-    uploadHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    uploadHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    uploadHeapProperties.CreationNodeMask = 0;
-    uploadHeapProperties.VisibleNodeMask = 0;
-
-
-   ThrowIfFailed( mDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-        &uploadBufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr, IID_PPV_ARGS(uploadBuffer.GetAddressOf())));
-
-
-    //uploadbuffer로 복사
-   D3D12_RANGE range{ 0,0 };
-   uint8_t* pData = nullptr;
-  //uploadBuffer->Map(0, &range, (void**)&pData);
-   uploadBuffer->Map(0, nullptr, (void**)&pData);
-
-  // memset(pData, 255, bitmap.pitch * bitmap.rows);
-
-   for (unsigned int row = 0; row < bitmap.rows; ++row)
-   {
-       memcpy(&pData[subFootPrint.Footprint.RowPitch *row], &bitmap.buffer[bitmap.width * row], bitmap.width);
-   }
-   
-   for (unsigned int row = 0; row < bitmap.rows; ++row)
-   {
-       for (unsigned int i = 0; i < bitmap.width; ++i)
-       {
-            uint8_t t =   bitmap.buffer[i + row * bitmap.width];
-        if (t != 0)
-        {
-            int a = 2;
-        }
-       }
-   }
-
-   for (unsigned int row = 0; row < bitmap.rows; ++row)
-   {
-       for (unsigned int i = 0; i < bitmap.width; ++i)
-       {
-            uint8_t t =  pData[row * 256 + i];
-            if (t != 0)
-            {
-                int a = 2;
-            }
-       }
-   }
-
-
-
-
-   uploadBuffer->Unmap(0, nullptr);
-
-   D3D12_RESOURCE_BARRIER uploadBufferTransferState;
-   uploadBufferTransferState.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-   uploadBufferTransferState.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-
-   uploadBufferTransferState.Transition.pResource = uploadBuffer.Get();
-   uploadBufferTransferState.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
-   uploadBufferTransferState.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-   uploadBufferTransferState.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-   mGraphicscommandList->ResourceBarrier(1, &uploadBufferTransferState);
-
-   //texture resource 생성
-
-
-
-    D3D12_SUBRESOURCE_FOOTPRINT uploadBufferFootprint;
-    uploadBufferFootprint.Format = DXGI_FORMAT_R8_UNORM;
-    uploadBufferFootprint.Depth = 1;
-    uploadBufferFootprint.Height = bitmap.rows;
-    uploadBufferFootprint.Width = bitmap.width;
-    uploadBufferFootprint.RowPitch = 256;
-    D3D12_PLACED_SUBRESOURCE_FOOTPRINT uploadbufferPlacedFootPrint;
-    uploadbufferPlacedFootPrint.Offset = 0;
-    uploadbufferPlacedFootPrint.Footprint = uploadBufferFootprint;
-
-    D3D12_TEXTURE_COPY_LOCATION src{ uploadBuffer.Get(),D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT ,subFootPrint };
-
-    D3D12_TEXTURE_COPY_LOCATION dst{ mTextTexture.Get(),D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,(UINT64)0 };
-
-    mGraphicscommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
-    
-  // mGraphicscommandList->CopyResource(mTextTexture.Get(), uploadBuffer.Get());
-
-
-   D3D12_RESOURCE_BARRIER texTransferState;
-   texTransferState.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-   texTransferState.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-
-   texTransferState.Transition.pResource = mTextTexture.Get();
-   texTransferState.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-   texTransferState.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-   texTransferState.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
- 
-   mGraphicscommandList->ResourceBarrier(1, &texTransferState);
-
-
-
-
-}
-
-}
-
-
 
 //
 //int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)

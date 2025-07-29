@@ -21,7 +21,7 @@ namespace Quad
 		void Initialize(
 			const std::function<LRESULT(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)>& wndCallback);
 
-		bool CreateWindowClass(LPCWSTR windowClassName, LPCWSTR windowName, UINT windowStyle = CS_HREDRAW|CS_VREDRAW);
+		bool CreateWindowClass(LPCWSTR windowClassName, LPCWSTR windowName, DWORD windowStyle = WS_OVERLAPPEDWINDOW,  UINT windowClassStyle = CS_HREDRAW|CS_VREDRAW);
 
 		void SetVisible(bool flag);
 
