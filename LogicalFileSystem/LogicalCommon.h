@@ -3,7 +3,7 @@
 #include<stdint.h>
 #include<string>
 
-#include<AssetType.h>
+#include<CoreAsset/AssetType.h>
 
 namespace QuadLF
 {

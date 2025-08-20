@@ -1,21 +1,20 @@
-﻿#include "GlobalAppHelper.h"
+﻿#include "Core/GlobalAppHelper.h"
+
 HINSTANCE Quad::GlobalAppHelper::mHinstance;
 
 void Quad::GlobalAppHelper::Initialize(HINSTANCE hInstance)
 {
-	mHinstance = hInstance;
+    mHinstance = hInstance;
 }
 
-Quad::GlobalAppHelper* Quad::GlobalAppHelper::GetInstance()
+Quad::GlobalAppHelper *Quad::GlobalAppHelper::GetInstance()
 {
-	static GlobalAppHelper helper;
+    static GlobalAppHelper helper;
 
-	return &helper;
-
+    return &helper;
 }
-
 
 HINSTANCE Quad::GlobalAppHelper::GetHinstance()
 {
-	return mHinstance;
+    return mHinstance;
 }

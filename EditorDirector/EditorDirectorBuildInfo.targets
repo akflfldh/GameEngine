@@ -1,0 +1,67 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+
+    <Target Name="GenerateBuildInfoHeader" BeforeTargets="ClCompile">
+
+    <PropertyGroup>
+        <BuildInfoDir>$(ProjectDir)Generated</BuildInfoDir>
+        <BuildInfoFile>$(BuildInfoDir)\BuildInfo.h</BuildInfoFile>
+        <BuildTimestamp>$([System.DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"))</BuildTimestamp>
+  
+        <GitHash>UNKNOWN</GitHash>
+        <GitTag>UNKNOWN</GitTag>
+    </PropertyGroup>
+
+
+    <Exec
+        Command="git describe --tags --always --long"
+        ConsoleToMSBuild="true"
+        WorkingDirectory="$(SolutionDir)"
+        IgnoreExitCode="true">
+        <Output TaskParameter="ConsoleOutput" PropertyName="GitHashRaw"/>
+    </Exec>
+
+    <Exec 
+        Command="git describe --tags --abbrev=0"
+        ConsoleToMSBuild="true"
+        WorkingDirectory="$(SolutionDir)"
+        IgnoreExitCode="true">
+        <Output TaskParameter="ConsoleOutput" PropertyName="GitTagOnly"/>
+    </Exec>
+
+
+
+    <PropertyGroup>
+        <GitHash Condition="'$(GitHashRaw)' != ''">$([System.String]::Copy('$(GitHashRaw)').Trim())</GitHash>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <GitTag Condition="'$(GitTagOnly)' !=''">$([System.String]::Copy('$(GitTagOnly)').Trim())</GitTag>
+    </PropertyGroup>
+
+
+    <MakeDir Directories="$(BuildInfoDir)"/>
+
+    <!-- 헤더 내용 구성 -->
+    <ItemGroup>
+      <BuildInfoLines Include="#pragma once" />
+      <BuildInfoLines Include="#define BUILD_TIME &quot;$(BuildTimestamp)&quot;" />
+      <BuildInfoLines Include="#define BUILD_GIT_HASH &quot;$(GitHash)&quot;" />
+      <BuildInfoLines Include="#define BUILD_GIT_TAG &quot;$(GitTag)&quot;" />
+      <!-- 원하면 구성/플랫폼도 추가 -->
+      <BuildInfoLines Include="#define BUILD_CONFIG &quot;$(Configuration)&quot;" />
+      <BuildInfoLines Include="#define BUILD_PLATFORM &quot;$(Platform)&quot;" />
+    </ItemGroup>
+
+    <!-- 파일로 쓰기 -->
+    <WriteLinesToFile
+      File="$(BuildInfoFile)"
+      Lines="@(BuildInfoLines)"
+      Overwrite="true"
+      Encoding="UTF-8" />
+
+    <Message Text="Generated $(BuildInfoFile) (git: $(GitHash))" Importance="High" />
+
+    </Target>
+
+</Project>

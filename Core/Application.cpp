@@ -1,126 +1,98 @@
 ﻿#include "Core/Application.h"
+#include <tchar.h>
 
-#include<tchar.h>
+#include "Core/GlobalAppHelper.h"
+#include <D3DGpuResourceManager/IGpuResourceManager.h>
 
-
-#include"GlobalAppHelper.h"
-//#include"UIRenderItemBuilder.h"
-#include<IGpuResourceManager.h>
-
-//#include<UIManager.h>
-//#include<UISystem.h>
-#include<IProgramDirector.h>
-
-
-
-#include<TextureManager.h>
-#include<TextureImporter.h>
-#include"ProjectConfig.h"
-
-#include<Logger.h>
+#include "Core/ProjectConfig.h"
+#include <Core/IProgramDirector.h>
+#include <CoreAsset/TextureManager.h>
+#include <InputSystem/InputSystem.h>
+#include <Logger/Logger.h>
+#include <UISystem/UIManager.h>
 
 #ifdef D3DX
 
-#include<D3DSystemInitializer.h>
-
-
+#include <SystemInitializer/D3DSystemInitializer.h>
 
 #endif
 
 namespace Quad
 {
 
-    Application* Application::GetInstance()
-    {
-        static Application instance;
+Application *Application::GetInstance()
+{
+    static Application instance;
 
-        return &instance;
-    }
+    return &instance;
+}
 
 Application::Application()
 {
-    //mEditObjectFactory = EditObjectFactory::GetInstance();
-
-
+    // mEditObjectFactory = EditObjectFactory::GetInstance();
 }
 
 Application::~Application()
 {
-    FlushCommandQueue();//명령대기열에 명령이남아있는데 종료하게되면 gpu 가 충돌(crash)할수있다.
+    FlushCommandQueue(); // 명령대기열에 명령이남아있는데 종료하게되면 gpu 가 충돌(crash)할수있다.
 }
 
-
-bool Application::Initialize(AppInitData& appInitData)
+bool Application::Initialize(AppInitData &appInitData)
 {
-    //SetCurrentDirectory(_T("./SecenGraphQuadTree"));
-    //TCHAR dir[MAX_PATH];
-   // GetCurrentDirectory(MAX_PATH, dir);
-   // OutputDebugString(dir);
+    // SetCurrentDirectory(_T("./SecenGraphQuadTree"));
+    // TCHAR dir[MAX_PATH];
+    // GetCurrentDirectory(MAX_PATH, dir);
+    // OutputDebugString(dir);
 
     mHinstance = appInitData.hInstance;
     mShowcmd = appInitData.nShowCmd;
 
-  //  GlobalAppHelper * globalAppHelper =    GlobalAppHelper::GetInstance();
-  //  globalAppHelper->Initialize(mHinstance);
-  //  //if (!InitFrameWindow())
-  //  //    return false;
+    //  GlobalAppHelper * globalAppHelper =    GlobalAppHelper::GetInstance();
+    //  globalAppHelper->Initialize(mHinstance);
+    //  //if (!InitFrameWindow())
+    //  //    return false;
 
-  //  if (!InitD3d())
-  //      return false;
+    //  if (!InitD3d())
+    //      return false;
 
-        
+    mProgramDirector = appInitData.programDirector;
 
+    ProjectConfig::GetInstance();
 
+    ////  mRenderWindowTest = new  GameRenderWindow(mHinstance);
+    // // mAttributeWindow = new AttributeWindow(mHinstance);
+    //
+    //  mCollisionWorldFactory = new CollisionWorldFactory(appInitData.collisionWorldFactoryImpl);
 
+    //  m3DSpacePartitioningStructureFactory =
+    //  SpacePartitioningStructureFactory<Collider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
+    //
+    //
+    //
+    //
 
-   mProgramDirector = appInitData.programDirector;
-     
+    //  mUiSpacePartitioningStructureFactory =
+    //  SpacePartitioningStructureFactory<UiCollider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
 
+    //  mGraphicCommandObject.ResetCommandList(nullptr);
 
-   ProjectConfig::GetInstance();
+    // // HarfBuzzTest();
 
-   
-
-
-
-  ////  mRenderWindowTest = new  GameRenderWindow(mHinstance);
-  // // mAttributeWindow = new AttributeWindow(mHinstance);
-  //  
-  //  mCollisionWorldFactory = new CollisionWorldFactory(appInitData.collisionWorldFactoryImpl);
-
-
-  //  m3DSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<Collider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
-  //      
-  //      
-  //  
-  //
-
-  //  mUiSpacePartitioningStructureFactory = SpacePartitioningStructureFactory<UiCollider>::GetInstance(appInitData.spacePartitoingStructureFactoryImpl);
-
- 
-  //  mGraphicCommandObject.ResetCommandList(nullptr);
-
-  // // HarfBuzzTest();
-
-  //  mRootSignatureGeneratorHelper.Initialize(mDevice);
-  //  mGraphicPipelineStateGeneratorHelper.Initialize(mDevice);
+    //  mRootSignatureGeneratorHelper.Initialize(mDevice);
+    //  mGraphicPipelineStateGeneratorHelper.Initialize(mDevice);
 
     InitSystems();
-    
 
-
-
-   return true;
+    return true;
 }
 
 int Application::Run()
 {
-    MSG msg = { 0 };
-    
+    MSG msg = {0};
+
     mGameTimer.Reset();
 
-
-    while(msg.message != WM_QUIT)
+    while (msg.message != WM_QUIT)
     {
         if (msg.message == WM_QUIT)
         {
@@ -137,12 +109,13 @@ int Application::Run()
             if (!mIspaused)
             {
                 CalculateFrameStats();
-                //게임코드
+                // 게임코드
                 PreUpdate(mGameTimer);
                 Update(mGameTimer);
                 EndUpdate(mGameTimer);
 
                 Draw(mGameTimer);
+                EndFrame();
             }
             else
             {
@@ -151,316 +124,315 @@ int Application::Run()
         }
     }
 
-
     return (int)msg.wParam;
 }
 
-
-
-//void Application::InitFrameWindow()
-//{
-//    
-//    mFrameWindow = new FrameWindow(mHinstance);
-//
-//    //  Controller* controller = new MapController;// new Controller;
-//    FrameWindowController* wController = new FrameWindowController;// new Controller;
-//    mFrameWindowController = wController;
-//
-//    UINT clientWidth = mFrameWindow->GetClientWidth();
-//    UINT clientHeight = mFrameWindow->GetClientHeight();
-//
-//    //renderSystem;
-//    RenderSystem* renderSystem = new RenderSystem;
-//    renderSystem->Initialize(mDevice,
-//        mFactory, &mGraphicCommandObject, mFrameWindow->GetWindowHandle(),
-//        clientWidth, clientHeight, &mDescriptorHeapManagerMaster, FRAMEWINDOW);
-//
-//    AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
-//
-//   // EffectManager::GetEffect("Default.effect");
-//
-//
-//
-//
-//
-//
-//
-//    wController->SetName("FrameWindowController");
-//
-//    Controller::AddController("FrameWindowController", wController);
-//    //ui System;
-//    FrameWindowUiSystem* uiSystem = new FrameWindowUiSystem;
-//    mFrameWindowUiSystem = uiSystem;    //ProjectDirector초기화를위해
-//    FrameWindowSystem* worldSystem = new FrameWindowSystem;
-//
-//    WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eFrameLayoutSystem);
-//    FrameWindowDockingSystem* windowDockingSystem = new FrameWindowDockingSystem;
-//
-//  
-//
-//    wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager, &mMaterialManager, &mTextureManager,
-//        &mMapManager, mFrameWindow, renderSystem, uiSystem, worldSystem, windowLayoutSystem,
-//        windowDockingSystem, &mDescriptorHeapManagerMaster);
-//
-//    wController->SetWindowActiveFlag(true);
-//
-//    uiSystem->SetController(wController);
-//    worldSystem->SetController(wController);
-//    windowLayoutSystem->SetController(wController);
-//    windowDockingSystem->SetController(wController);
-//
-//    InitFrameWindowSystem(mFrameWindow, worldSystem);
-//    InitFrameWindowUiSystem(mFrameWindow, uiSystem);
-//    InitFrameWindowLayoutSystem(mFrameWindow, windowLayoutSystem);
-//    InitFrameWindowDockingSystem(mFrameWindow, windowDockingSystem);
-//
-//
-//    mFrameWindow->Initialize(wController);
-//
-//    mFrameWindow->SetProjectSelectSceneFlag(true);
-//    uiSystem->SetActiveState(true);
-//    worldSystem->SetActiveState(true);
-//   windowLayoutSystem->SetActiveState(true);
-// //   windowDockingSystem->SetActiveState(false);
-//
-//
-//    
-//
-//
-//   // wController->SetTitleBarSize(true, 3000, 60);
-//    
-//
-//    wController->InitChildWindowSetting(mRenderWindowTest, mAttributeWindow,mFileUiWindow);
-//    mFrameWindow->OnResize(clientWidth, clientHeight, 0);
-//
-//    mEventDispatcher.RegisterSystem(worldSystem);
-//    mEventDispatcher.RegisterSystem(uiSystem);
-//    mEventDispatcher.RegisterSystem(windowLayoutSystem);
-//    mEventDispatcher.RegisterSystem(windowDockingSystem);
-//
-//
-//
-//
-//
-//    mFrameWindowMenuDirector.Initialize(windowLayoutSystem);
-//
-//}
-//
-//void Application::InitDragAndDropWindow()
+// void Application::InitFrameWindow()
 //{
 //
+//     mFrameWindow = new FrameWindow(mHinstance);
 //
-//    //mDragAndDropWindow = new DragAndDropWindow(mHinstance,;
+//     //  Controller* controller = new MapController;// new Controller;
+//     FrameWindowController* wController = new FrameWindowController;// new Controller;
+//     mFrameWindowController = wController;
 //
+//     UINT clientWidth = mFrameWindow->GetClientWidth();
+//     UINT clientHeight = mFrameWindow->GetClientHeight();
 //
+//     //renderSystem;
+//     RenderSystem* renderSystem = new RenderSystem;
+//     renderSystem->Initialize(mDevice,
+//         mFactory, &mGraphicCommandObject, mFrameWindow->GetWindowHandle(),
+//         clientWidth, clientHeight, &mDescriptorHeapManagerMaster, FRAMEWINDOW);
 //
-//    DragAndDropWindowController* controller = new DragAndDropWindowController;
-//  
+//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
 //
-//
-//    DragAndDropSystem* uiSystem = new DragAndDropSystem;
-//
-//
-//    Map* map = EditorSystem::CreateMap(uiSystem, "DragAndDropWindowMainMap", false, false);
-//    //map->SetName("DragAndDropWindowMainMap");
-//  //  map->Initialize(uiSystem);
-//
-//    VectorSpace* vectorSpace = new VectorSpace;
-//    vectorSpace->Initialize(600);
-//    
-//    CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
-//
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)100 ,0.0f,1.0f });
-//   
-//    
-//    uiSystem->Initialize(300, 100, map);
-//
-//    Map* currMap = uiSystem->GetMap();
-//
-// //   OrthogoanlCamera* camera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* camera = OrthogoanlCamera::Create(map, 0, 300, 100);
-//
-//  //  camera->Initialize(300, 100);
-//    currMap->SetMainCamera(camera);
-//
-//    mDragAndDropWindow = new DragAndDropWindow(mHinstance);
-//    mDragAndDropWindow->Initialize(controller, 300, 100);
-//
-//    mDragAndDropRenderSystem.Initialize(mDevice, mFactory,
-//        &mGraphicCommandObject, mDragAndDropWindow->GetWindowHandle(), 300, 100, &mDescriptorHeapManagerMaster, DRAGANDDROPWINDOW);
-//
-//
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("Default.effect"));
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("WindowLayout.effect"));
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//    AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
-//
-//    
+//    // EffectManager::GetEffect("Default.effect");
 //
 //
 //
 //
-//    //드래그앤드랍윈도우에대한 고유의 시스템이 필요하다.
 //
 //
-//    controller->Initialize(mDragAndDropWindow, uiSystem,&mDragAndDropRenderSystem);
+//
+//     wController->SetName("FrameWindowController");
+//
+//     Controller::AddController("FrameWindowController", wController);
+//     //ui System;
+//     FrameWindowUiSystem* uiSystem = new FrameWindowUiSystem;
+//     mFrameWindowUiSystem = uiSystem;    //ProjectDirector초기화를위해
+//     FrameWindowSystem* worldSystem = new FrameWindowSystem;
+//
+//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eFrameLayoutSystem);
+//     FrameWindowDockingSystem* windowDockingSystem = new FrameWindowDockingSystem;
 //
 //
-//    mEventDispatcher.RegisterSystem(uiSystem);
 //
-//}
+//     wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager,
+//     &mMaterialManager, &mTextureManager,
+//         &mMapManager, mFrameWindow, renderSystem, uiSystem, worldSystem, windowLayoutSystem,
+//         windowDockingSystem, &mDescriptorHeapManagerMaster);
 //
-//void Application::InitPopupWindow()
+//     wController->SetWindowActiveFlag(true);
+//
+//     uiSystem->SetController(wController);
+//     worldSystem->SetController(wController);
+//     windowLayoutSystem->SetController(wController);
+//     windowDockingSystem->SetController(wController);
+//
+//     InitFrameWindowSystem(mFrameWindow, worldSystem);
+//     InitFrameWindowUiSystem(mFrameWindow, uiSystem);
+//     InitFrameWindowLayoutSystem(mFrameWindow, windowLayoutSystem);
+//     InitFrameWindowDockingSystem(mFrameWindow, windowDockingSystem);
+//
+//
+//     mFrameWindow->Initialize(wController);
+//
+//     mFrameWindow->SetProjectSelectSceneFlag(true);
+//     uiSystem->SetActiveState(true);
+//     worldSystem->SetActiveState(true);
+//    windowLayoutSystem->SetActiveState(true);
+//  //   windowDockingSystem->SetActiveState(false);
+//
+//
+//
+//
+//
+//    // wController->SetTitleBarSize(true, 3000, 60);
+//
+//
+//     wController->InitChildWindowSetting(mRenderWindowTest, mAttributeWindow,mFileUiWindow);
+//     mFrameWindow->OnResize(clientWidth, clientHeight, 0);
+//
+//     mEventDispatcher.RegisterSystem(worldSystem);
+//     mEventDispatcher.RegisterSystem(uiSystem);
+//     mEventDispatcher.RegisterSystem(windowLayoutSystem);
+//     mEventDispatcher.RegisterSystem(windowDockingSystem);
+//
+//
+//
+//
+//
+//     mFrameWindowMenuDirector.Initialize(windowLayoutSystem);
+//
+// }
+//
+// void Application::InitDragAndDropWindow()
 //{
 //
 //
-//
-//
-//    PopupWindowUiSystem* uiSystem = new PopupWindowUiSystem;
-//    Map* map = EditorSystem::CreateMap(uiSystem, "PopupUiSystem", false, false);
-//   // map->Initialize(uiSystem);
-//
-//    VectorSpace* vectorSpace = new VectorSpace;
-//    vectorSpace->Initialize(10000);
-//    CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
-//    
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)400 ,0.0f,1.0f });
-//
-// //   Camera* camera = new PopupSystemCamera(L"PopupSystemCamera");
+//     //mDragAndDropWindow = new DragAndDropWindow(mHinstance,;
 //
 //
 //
-//    PopupWindowController* controller = new PopupWindowController;
-//    mPopupWindowController = controller;
+//     DragAndDropWindowController* controller = new DragAndDropWindowController;
 //
 //
-//    mPopupWindow = new PopupWindow(mHinstance, 300, 400, false);
-//    mPopupWindow->Initialize(controller);
 //
-//    uiSystem->Initialize(300, 400, map);
-//    uiSystem->SetController(controller);
-//
-//    Map* currMap = uiSystem->GetMap();
+//     DragAndDropSystem* uiSystem = new DragAndDropSystem;
 //
 //
-//   // PopupSystemCamera* camera = static_cast<PopupSystemCamera*>(currMap->CreateObject("PopupSystemCamera"));
-//    PopupSystemCamera* camera = PopupSystemCamera::Create(currMap, 0, 300, 400);
-//  //  camera->Initialize(300, 400);
-//    camera->SetPosition(0, 0,0);
-//    currMap->SetMainCamera(camera);
+//     Map* map = EditorSystem::CreateMap(uiSystem, "DragAndDropWindowMainMap", false, false);
+//     //map->SetName("DragAndDropWindowMainMap");
+//   //  map->Initialize(uiSystem);
 //
-//    mPopupRenderSystem.Initialize(mDevice, mFactory, &mGraphicCommandObject, mPopupWindow->GetWindowHandle(), 300, 400, &mDescriptorHeapManagerMaster, POPUPWINDOW);
+//     VectorSpace* vectorSpace = new VectorSpace;
+//     vectorSpace->Initialize(600);
 //
-//    mPopupRenderSystem.SetBackgroundColor(0.2f, 0.2f, 0.2f, 1.0f);
-//    controller->Initialize(mPopupWindow, uiSystem, &mPopupRenderSystem);
+//     CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
 //
-//  //  AddEffect(&mPopupRenderSystem, EffectTable::GetEffect(L"Default.effect"));
-//    AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//   // AddEffect(&mPopupRenderSystem, EffectTable::GetEffect(L"WindowLayout.effect"));
-//    AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//   // AddEffect(mPopupRenderSystem, EffectTable::GetEffect(L"DefaultCollider.effect"));
+//     map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)100 ,0.0f,1.0f });
 //
-//}
+//
+//     uiSystem->Initialize(300, 100, map);
+//
+//     Map* currMap = uiSystem->GetMap();
+//
+//  //   OrthogoanlCamera* camera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
+//     OrthogoanlCamera* camera = OrthogoanlCamera::Create(map, 0, 300, 100);
+//
+//   //  camera->Initialize(300, 100);
+//     currMap->SetMainCamera(camera);
+//
+//     mDragAndDropWindow = new DragAndDropWindow(mHinstance);
+//     mDragAndDropWindow->Initialize(controller, 300, 100);
+//
+//     mDragAndDropRenderSystem.Initialize(mDevice, mFactory,
+//         &mGraphicCommandObject, mDragAndDropWindow->GetWindowHandle(), 300, 100, &mDescriptorHeapManagerMaster,
+//         DRAGANDDROPWINDOW);
+//
+//
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("Default.effect"));
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("WindowLayout.effect"));
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//     AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
+//
+//
+//
+//
+//
+//
+//     //드래그앤드랍윈도우에대한 고유의 시스템이 필요하다.
+//
+//
+//     controller->Initialize(mDragAndDropWindow, uiSystem,&mDragAndDropRenderSystem);
+//
+//
+//     mEventDispatcher.RegisterSystem(uiSystem);
+//
+// }
+//
+// void Application::InitPopupWindow()
+//{
+//
+//
+//
+//
+//     PopupWindowUiSystem* uiSystem = new PopupWindowUiSystem;
+//     Map* map = EditorSystem::CreateMap(uiSystem, "PopupUiSystem", false, false);
+//    // map->Initialize(uiSystem);
+//
+//     VectorSpace* vectorSpace = new VectorSpace;
+//     vectorSpace->Initialize(10000);
+//     CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
+//
+//     map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)400 ,0.0f,1.0f });
+//
+//  //   Camera* camera = new PopupSystemCamera(L"PopupSystemCamera");
+//
+//
+//
+//     PopupWindowController* controller = new PopupWindowController;
+//     mPopupWindowController = controller;
+//
+//
+//     mPopupWindow = new PopupWindow(mHinstance, 300, 400, false);
+//     mPopupWindow->Initialize(controller);
+//
+//     uiSystem->Initialize(300, 400, map);
+//     uiSystem->SetController(controller);
+//
+//     Map* currMap = uiSystem->GetMap();
+//
+//
+//    // PopupSystemCamera* camera = static_cast<PopupSystemCamera*>(currMap->CreateObject("PopupSystemCamera"));
+//     PopupSystemCamera* camera = PopupSystemCamera::Create(currMap, 0, 300, 400);
+//   //  camera->Initialize(300, 400);
+//     camera->SetPosition(0, 0,0);
+//     currMap->SetMainCamera(camera);
+//
+//     mPopupRenderSystem.Initialize(mDevice, mFactory, &mGraphicCommandObject, mPopupWindow->GetWindowHandle(), 300,
+//     400, &mDescriptorHeapManagerMaster, POPUPWINDOW);
+//
+//     mPopupRenderSystem.SetBackgroundColor(0.2f, 0.2f, 0.2f, 1.0f);
+//     controller->Initialize(mPopupWindow, uiSystem, &mPopupRenderSystem);
+//
+//   //  AddEffect(&mPopupRenderSystem, EffectTable::GetEffect(L"Default.effect"));
+//     AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//    // AddEffect(&mPopupRenderSystem, EffectTable::GetEffect(L"WindowLayout.effect"));
+//     AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//    // AddEffect(mPopupRenderSystem, EffectTable::GetEffect(L"DefaultCollider.effect"));
+//
+// }
 
 bool Application::InitD3d()
 {
-//#if defined(DEBUG)||defined(_DEBUG)
-//    //D3D12 디버그층 활성화 
-//    {
-//        ComPtr<ID3D12Debug> debugController;
-//        ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))); //&debugController을 사용하면 Comptr과 연관된 인터페이스를 해제후 comptr 객체의 주소를 리턴한다.
-//                                                                              //GetAddressOf는 인터페이스를 참조하는 포인터의 주소를 리턴한다. //둘다 2번씩 참조하면 인터페이스를 나타내는다는것은 똑같다.
-//        debugController->EnableDebugLayer();//디버그계층활성화
-//
-//        //디버그계층활성화는 장치생성전에 수행해야한다.
-//        //그렇지 않으면 생성한 장치가 제거된다.
-//    }
-//#endif
-//
-//    ThrowIfFailed( CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
-//
-//    HRESULT hardwareResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
-//
-//
-//    if (FAILED(hardwareResult))
-//    {
-//        ComPtr<IDXGIAdapter> pWarpAdapter;
-//      ThrowIfFailed(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));//소프트웨어 어댑터를 제공한다.
-//
-//       ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
-//        //실패하면 종료 
-//    }
-//
-//    ThrowIfFailed(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
-//
-//    mRtvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-//    mDsvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-//    mCbvsrvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-//    mSamplerdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-//
-//
-//
-//    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
-//    msQualityLevels.Format = mBackBufferForamt;
-//    msQualityLevels.SampleCount = 4;
-//    msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-//    msQualityLevels.NumQualityLevels = 0;
-//
-//    ThrowIfFailed(mDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels, sizeof(msQualityLevels)));
-//    
-//    m4xmsaaQuality = msQualityLevels.NumQualityLevels;
-//
-//    assert(m4xmsaaQuality > 0 && " Unexpected MSAA quality level.");
-//
-//
-//    //순서 중요
-//    CreateCommandObjects();
-//    
-// 
-//
-//
+    // #if defined(DEBUG)||defined(_DEBUG)
+    //     //D3D12 디버그층 활성화
+    //     {
+    //         ComPtr<ID3D12Debug> debugController;
+    //         ThrowIfFailed(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))); //&debugController을 사용하면
+    //         Comptr과 연관된 인터페이스를 해제후 comptr 객체의 주소를 리턴한다.
+    //                                                                               //GetAddressOf는 인터페이스를
+    //                                                                               참조하는 포인터의 주소를 리턴한다.
+    //                                                                               //둘다 2번씩 참조하면 인터페이스를
+    //                                                                               나타내는다는것은 똑같다.
+    //         debugController->EnableDebugLayer();//디버그계층활성화
+    //
+    //         //디버그계층활성화는 장치생성전에 수행해야한다.
+    //         //그렇지 않으면 생성한 장치가 제거된다.
+    //     }
+    // #endif
+    //
+    //     ThrowIfFailed( CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
+    //
+    //     HRESULT hardwareResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
+    //
+    //
+    //     if (FAILED(hardwareResult))
+    //     {
+    //         ComPtr<IDXGIAdapter> pWarpAdapter;
+    //       ThrowIfFailed(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)));//소프트웨어 어댑터를 제공한다.
+    //
+    //        ThrowIfFailed(D3D12CreateDevice(pWarpAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
+    //         //실패하면 종료
+    //     }
+    //
+    //     ThrowIfFailed(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
+    //
+    //     mRtvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    //     mDsvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    //     mCbvsrvdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    //     mSamplerdescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    //
+    //
+    //
+    //     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msQualityLevels;
+    //     msQualityLevels.Format = mBackBufferForamt;
+    //     msQualityLevels.SampleCount = 4;
+    //     msQualityLevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+    //     msQualityLevels.NumQualityLevels = 0;
+    //
+    //     ThrowIfFailed(mDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msQualityLevels,
+    //     sizeof(msQualityLevels)));
+    //
+    //     m4xmsaaQuality = msQualityLevels.NumQualityLevels;
+    //
+    //     assert(m4xmsaaQuality > 0 && " Unexpected MSAA quality level.");
+    //
+    //
+    //     //순서 중요
+    //     CreateCommandObjects();
+    //
+    //
+    //
+    //
 
+    // CreateSwapChain();
+    // CreateDescriptorHeaps();
+    //  CreateSwapChainRtv();
+    //  CreateSwapchainDsv();
 
-
-
-
-
-   // CreateSwapChain();
-   // CreateDescriptorHeaps();
-  //  CreateSwapChainRtv();
-  //  CreateSwapchainDsv();
-
-    //mClientViewPort.TopLeftX = 0;
-    //mClientViewPort.TopLeftY = 0;
-    //mClientViewPort.Width =(float) mClientWidth;
-    //mClientViewPort.Height = (float)mClientHeight;
-    //mClientViewPort.MinDepth = 0.0f;
-    //mClientViewPort.MaxDepth = 1.0f;
+    // mClientViewPort.TopLeftX = 0;
+    // mClientViewPort.TopLeftY = 0;
+    // mClientViewPort.Width =(float) mClientWidth;
+    // mClientViewPort.Height = (float)mClientHeight;
+    // mClientViewPort.MinDepth = 0.0f;
+    // mClientViewPort.MaxDepth = 1.0f;
     ////m_graphicscommandList->RSSetViewports(1, &m_clientViewPort);
 
-    //mScissorRect.left = 0;
-    //mScissorRect.right = (LONG)mClientWidth;
-    //mScissorRect.top = 0;
-    //mScissorRect.bottom = (LONG)mClientHeight;
-    //m_graphicscommandList->RSSetScissorRects(1, &m_scissorRect);
+    // mScissorRect.left = 0;
+    // mScissorRect.right = (LONG)mClientWidth;
+    // mScissorRect.top = 0;
+    // mScissorRect.bottom = (LONG)mClientHeight;
+    // m_graphicscommandList->RSSetScissorRects(1, &m_scissorRect);
 
+    /*  ThrowIfFailed(mGraphicscommandList->Close());
+      ID3D12CommandList* commandList[] = { mGraphicscommandList.Get() };
+      mCommandQueue->ExecuteCommandLists(_countof(commandList), commandList);
 
-  /*  ThrowIfFailed(mGraphicscommandList->Close());
-    ID3D12CommandList* commandList[] = { mGraphicscommandList.Get() };
-    mCommandQueue->ExecuteCommandLists(_countof(commandList), commandList);
-
-	FlushCommandQueue();*/
-	//OnResize();
-    //commandlist에서 reset을호출하기위해서는 닫혀있어야한다.
-     return true;
+      FlushCommandQueue();*/
+    // OnResize();
+    // commandlist에서 reset을호출하기위해서는 닫혀있어야한다.
+    return true;
 }
 
 void Application::InitSystems()
@@ -470,14 +442,8 @@ void Application::InitSystems()
 
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-
-
-
-
-
-
-
-    mSystemInitializer = std::unique_ptr<SystemInitializer::ISystemInitializer>(new D3DSystemInitializer::D3DSystemInitializer());
+    mSystemInitializer =
+        std::unique_ptr<SystemInitializer::ISystemInitializer>(new D3DSystemInitializer::D3DSystemInitializer());
 
     SystemInitializer::ISystemInitializer::SetSystemInitializerImpl(mSystemInitializer.get());
 
@@ -485,233 +451,158 @@ void Application::InitSystems()
 
     systemInitializer->Initialize();
 
-
-
 #endif
 
     mTextureManager = std::make_unique<CoreAsset::TextureManager>((GRM::IGpuResourceManager::GetInstance()));
 
+    /*  mUIRenderItemBuilder = std::make_unique<UIRenderItemBuilder>(Render::IRenderSystem::GetInstance(),
+      UI::UIManager::GetInstance(),GRM::IGpuResourceManager::GetInstance());
 
+      mUISystem = std::make_unique<UI::UISystem>(UI::UIManager::GetInstance());*/
 
-    
-  /*  mUIRenderItemBuilder = std::make_unique<UIRenderItemBuilder>(Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(),GRM::IGpuResourceManager::GetInstance());
+    //   InitCommonSystems();
 
-    mUISystem = std::make_unique<UI::UISystem>(UI::UIManager::GetInstance());*/
+    //   if (!mGraphicCommandObject.GetCloseState())
+    //   {
+    //       mGraphicCommandObject.ExecuteCommandList();
+    //       mGraphicCommandObject.FlushCommandQueue();
+    //   }
+    //       mGraphicCommandObject.ResetCommandList(nullptr);
+    //
 
+    //   mResourceController.Initialize(mDevice, &mGraphicCommandObject, &mMeshManager, &mMaterialManager,
+    //   &mTextureManager,
+    //       &mMapManager, &mRenderSystem, &mResourceLoader, &mResourceStorer,nullptr, nullptr,
+    //       &mDescriptorHeapManagerMaster);
 
+    //   mMapController.Initialize(&mRenderSystem, &mMeshManager, &mMapManager);
+    //
+    //   Controller::AddController("resourceController", &mResourceController);
+    //   Controller::AddController("mapController", &mMapController);
 
+    //   if (!mGraphicCommandObject.GetCloseState())
+    //   {
+    //       mGraphicCommandObject.ExecuteCommandList();
+    //       mGraphicCommandObject.FlushCommandQueue();
+    //   }
 
+    //  // mResourceLoader.LoadProjectData();
 
+    ////   SpacePartitioningStructureFactory<UiCollider>::GetInstance();
 
-
-
-
- //   InitCommonSystems();
-
- //   if (!mGraphicCommandObject.GetCloseState())
- //   {
- //       mGraphicCommandObject.ExecuteCommandList();
- //       mGraphicCommandObject.FlushCommandQueue();
- //   }
- //       mGraphicCommandObject.ResetCommandList(nullptr);
- //   
-
- //   mResourceController.Initialize(mDevice, &mGraphicCommandObject, &mMeshManager, &mMaterialManager, &mTextureManager,
- //       &mMapManager, &mRenderSystem, &mResourceLoader, &mResourceStorer,nullptr, nullptr, &mDescriptorHeapManagerMaster);
-
- //   mMapController.Initialize(&mRenderSystem, &mMeshManager, &mMapManager);
- //
- //   Controller::AddController("resourceController", &mResourceController);
- //   Controller::AddController("mapController", &mMapController);
-
- //   if (!mGraphicCommandObject.GetCloseState())
- //   {
- //       mGraphicCommandObject.ExecuteCommandList();
- //       mGraphicCommandObject.FlushCommandQueue();
- //   }
-
-
- //  // mResourceLoader.LoadProjectData();
-
- ////   SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-
-
- //   CreateDefaultCoreResource();
-
-
+    //   CreateDefaultCoreResource();
 
     mProgramDirector->Initialize();
 
-
-
-
-
-   return ;
+    return;
 }
 
 void Application::InitCommonSystems()
 {
-//    D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc;
-//    cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-//    cbvSrvUavHeapDesc.NodeMask = 0;
-//    cbvSrvUavHeapDesc.NumDescriptors = VIEW_MAXNUM;
-//    cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-//
-//    mCbvSrvUavHeapManager.Initialize(mDevice, mCbvsrvdescriptorSize, cbvSrvUavHeapDesc);
-//
-//    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-//    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-//    dsvHeapDesc.NodeMask = 0;
-//    dsvHeapDesc.NumDescriptors = VIEW_MAXNUM;
-//    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-//
-//    mDsvHeapManager.Initialize(mDevice, mDsvdescriptorSize, dsvHeapDesc);
-//
-//
-//    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-//    rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-//    rtvHeapDesc.NodeMask = 0;
-//    rtvHeapDesc.NumDescriptors = VIEW_MAXNUM;
-//    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-//
-//    mRtvHeapManager.Initialize(mDevice, mDsvdescriptorSize, rtvHeapDesc);
-//
-//
-//    D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc;
-//    samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-//    samplerHeapDesc.NodeMask = 0;
-//    samplerHeapDesc.NumDescriptors = 30;
-//    samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-//
-//    mSamplerHeapManager.Initialize(mDevice, mDsvdescriptorSize, samplerHeapDesc);
-//
-//
-//
-//
-//
-//    mDescriptorHeapManagerMaster.Initialize(&mCbvSrvUavHeapManager, &mDsvHeapManager, &mRtvHeapManager, &mSamplerHeapManager);
-//
-//    mMeshManager.Initialize(&mDescriptorHeapManagerMaster);
-//
-//    mMaterialManager.Initialize();
-//
-//
-//    mTextureManager.Initialize(mDevice,&mDescriptorHeapManagerMaster,&mGraphicCommandObject);
-//
-//    mMapManager.Initialize();
-//
-//    mResourceLoader.Initialize(mDevice, &mGraphicCommandObject,&mDescriptorHeapManagerMaster);
-//    mResourceStorer.Initialize();
-//
-//
-//    mTextFactory.initialize(mDevice, &mGraphicCommandObject, &mTextureManager, &mDescriptorHeapManagerMaster);
-//
-//   // mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
-////    mTextFactory.ReadFontFile(L".\\Font\\DefaultFont.ttf");
-//    mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Include\\Font\\DefaultFont.ttf");
-//
-//    mLineFactory.Initialize(mDevice);
-//
-//
-//   // mKeyBoard.Initialize();
-// //   mMouse.Initlaize(mHinstance);
-//
-//    mCollisionHelper.Initialize();
-//    mColliderGenerator.Initialize(mDevice, &mGraphicCommandObject);
-//
-//    mEventDispatcher.Initialize();
+    //    D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc;
+    //    cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    //    cbvSrvUavHeapDesc.NodeMask = 0;
+    //    cbvSrvUavHeapDesc.NumDescriptors = VIEW_MAXNUM;
+    //    cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    //
+    //    mCbvSrvUavHeapManager.Initialize(mDevice, mCbvsrvdescriptorSize, cbvSrvUavHeapDesc);
+    //
+    //    D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
+    //    dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    //    dsvHeapDesc.NodeMask = 0;
+    //    dsvHeapDesc.NumDescriptors = VIEW_MAXNUM;
+    //    dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    //
+    //    mDsvHeapManager.Initialize(mDevice, mDsvdescriptorSize, dsvHeapDesc);
+    //
+    //
+    //    D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+    //    rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    //    rtvHeapDesc.NodeMask = 0;
+    //    rtvHeapDesc.NumDescriptors = VIEW_MAXNUM;
+    //    rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    //
+    //    mRtvHeapManager.Initialize(mDevice, mDsvdescriptorSize, rtvHeapDesc);
+    //
+    //
+    //    D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc;
+    //    samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    //    samplerHeapDesc.NodeMask = 0;
+    //    samplerHeapDesc.NumDescriptors = 30;
+    //    samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+    //
+    //    mSamplerHeapManager.Initialize(mDevice, mDsvdescriptorSize, samplerHeapDesc);
+    //
+    //
+    //
+    //
+    //
+    //    mDescriptorHeapManagerMaster.Initialize(&mCbvSrvUavHeapManager, &mDsvHeapManager, &mRtvHeapManager,
+    //    &mSamplerHeapManager);
+    //
+    //    mMeshManager.Initialize(&mDescriptorHeapManagerMaster);
+    //
+    //    mMaterialManager.Initialize();
+    //
+    //
+    //    mTextureManager.Initialize(mDevice,&mDescriptorHeapManagerMaster,&mGraphicCommandObject);
+    //
+    //    mMapManager.Initialize();
+    //
+    //    mResourceLoader.Initialize(mDevice, &mGraphicCommandObject,&mDescriptorHeapManagerMaster);
+    //    mResourceStorer.Initialize();
+    //
+    //
+    //    mTextFactory.initialize(mDevice, &mGraphicCommandObject, &mTextureManager, &mDescriptorHeapManagerMaster);
+    //
+    //   //
+    //   mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
+    ////    mTextFactory.ReadFontFile(L".\\Font\\DefaultFont.ttf");
+    //    mTextFactory.ReadFontFile(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Include\\Font\\DefaultFont.ttf");
+    //
+    //    mLineFactory.Initialize(mDevice);
+    //
+    //
+    //   // mKeyBoard.Initialize();
+    // //   mMouse.Initlaize(mHinstance);
+    //
+    //    mCollisionHelper.Initialize();
+    //    mColliderGenerator.Initialize(mDevice, &mGraphicCommandObject);
+    //
+    //    mEventDispatcher.Initialize();
 
-
-
-   // mTextureFactory.Initialize(mDevice, &mDescriptorHeapManagerMaster, &mGraphicCommandObject);
+    // mTextureFactory.Initialize(mDevice, &mDescriptorHeapManagerMaster, &mGraphicCommandObject);
 }
 
-//void Application::InitGamePlayWindow()
+// void Application::InitGamePlayWindow()
 //{
 //
-//    UINT gameWindowClientWidth = mRenderWindowTest->GetClientWidth();
-//    UINT gameWindowClientHeight = mRenderWindowTest->GetClientHeight();
-//    HWND gameWindowHandle = mRenderWindowTest->GetWindowHandle();
-//
-//    
-//    //render system 
-//    RenderSystem* renderSystem = new RenderSystem;
-//    renderSystem->Initialize(mDevice,mFactory,&mGraphicCommandObject,
-//        gameWindowHandle, gameWindowClientWidth, gameWindowClientHeight, &mDescriptorHeapManagerMaster,GAMEWINDOW);
+//     UINT gameWindowClientWidth = mRenderWindowTest->GetClientWidth();
+//     UINT gameWindowClientHeight = mRenderWindowTest->GetClientHeight();
+//     HWND gameWindowHandle = mRenderWindowTest->GetWindowHandle();
 //
 //
-//    AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("GizmoLine.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Gizmo.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("GizmoRotation.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
+//     //render system
+//     RenderSystem* renderSystem = new RenderSystem;
+//     renderSystem->Initialize(mDevice,mFactory,&mGraphicCommandObject,
+//         gameWindowHandle, gameWindowClientWidth, gameWindowClientHeight, &mDescriptorHeapManagerMaster,GAMEWINDOW);
 //
 //
-//
-//    renderSystem->SetColliderWorldRenderState(true);
+//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("GizmoLine.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Gizmo.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("GizmoRotation.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
 //
 //
 //
-//
-//
-//
-//
-//    //System을 초기화하면서 맵들, 그 맵에있는엔티티들,등등을 로드하고 초기화한다.
-//        //Controller
-//    GamePlayWindowController* wcontroller = new GamePlayWindowController();
-//    mGameWindowPlayController = wcontroller;
-//    wcontroller->SetName("gameWindowPlayController");
-//    Controller::AddController("gameWindowPlayController", wcontroller);
-//
-//    GamePlaySystem* gamePlaySystem = new GamePlaySystem;
-//    GamePlayUiSystem* gamePlayUiSystem = new GamePlayUiSystem;
-//    WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eGamePlayLayoutSystem);
-//    mGamePlayWindowChromeSystem = windowLayoutSystem;
-//    ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eGamePlayDockingSystem);
-//
-//
-//    wcontroller->Initialize(mDevice, mGraphicscommandList, &mMeshManager,
-//        &mMaterialManager, &mTextureManager, &mMapManager, mRenderWindowTest, renderSystem, gamePlayUiSystem,
-//        gamePlaySystem, windowLayoutSystem, windowDockingSystem, &mDescriptorHeapManagerMaster, false);
-//
-//    gamePlaySystem->SetController(wcontroller);
-//    gamePlayUiSystem->SetController(wcontroller);
-//    windowLayoutSystem->SetController(wcontroller);
-//    windowDockingSystem->SetController(wcontroller);
-//
-//    wcontroller->SetWindowActiveFlag(false);
-//
-//
-//    InitGameProject(mRenderWindowTest, wcontroller,gamePlaySystem, gamePlayUiSystem, windowLayoutSystem,
-//        windowDockingSystem);
-//
-//
-// 
-//
-//
-//    //유일하게 gameWindow만 false로 시작한다.
-//    //다른 window들은 항상 play mode이기때문에(true) //그리고 이미 ui,main system은 false로 설정되었다 (내부초기화때문에)
-//    //일단 컨트롤러에서 직접 상태를 가져오는 일이 없는거같지만 그래도 controller와 동기화해주자
-//    wcontroller->SetPlayMode(false);
-//
-//
-//    wcontroller->SetTitleBarSize(true, 3000, 40);
-//    gamePlayUiSystem->SetDefaultController("gameWindowPlayController");
-//
-//    mRenderWindowTest->Initialize(wcontroller);
-//
-//
-//
-//    mEventDispatcher.RegisterSystem(gamePlaySystem);
-//    mEventDispatcher.RegisterSystem(gamePlayUiSystem);
-//    mEventDispatcher.RegisterSystem(windowLayoutSystem);
-//    mEventDispatcher.RegisterSystem(windowDockingSystem);
+//     renderSystem->SetColliderWorldRenderState(true);
 //
 //
 //
@@ -719,127 +610,184 @@ void Application::InitCommonSystems()
 //
 //
 //
-//  //  CreateInitGameWindowEntity(gamePlaySystem);
+//     //System을 초기화하면서 맵들, 그 맵에있는엔티티들,등등을 로드하고 초기화한다.
+//         //Controller
+//     GamePlayWindowController* wcontroller = new GamePlayWindowController();
+//     mGameWindowPlayController = wcontroller;
+//     wcontroller->SetName("gameWindowPlayController");
+//     Controller::AddController("gameWindowPlayController", wcontroller);
 //
-//}
+//     GamePlaySystem* gamePlaySystem = new GamePlaySystem;
+//     GamePlayUiSystem* gamePlayUiSystem = new GamePlayUiSystem;
+//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eGamePlayLayoutSystem);
+//     mGamePlayWindowChromeSystem = windowLayoutSystem;
+//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eGamePlayDockingSystem);
 //
-//void Application::InitFileUiWindow()
+//
+//     wcontroller->Initialize(mDevice, mGraphicscommandList, &mMeshManager,
+//         &mMaterialManager, &mTextureManager, &mMapManager, mRenderWindowTest, renderSystem, gamePlayUiSystem,
+//         gamePlaySystem, windowLayoutSystem, windowDockingSystem, &mDescriptorHeapManagerMaster, false);
+//
+//     gamePlaySystem->SetController(wcontroller);
+//     gamePlayUiSystem->SetController(wcontroller);
+//     windowLayoutSystem->SetController(wcontroller);
+//     windowDockingSystem->SetController(wcontroller);
+//
+//     wcontroller->SetWindowActiveFlag(false);
+//
+//
+//     InitGameProject(mRenderWindowTest, wcontroller,gamePlaySystem, gamePlayUiSystem, windowLayoutSystem,
+//         windowDockingSystem);
+//
+//
+//
+//
+//
+//     //유일하게 gameWindow만 false로 시작한다.
+//     //다른 window들은 항상 play mode이기때문에(true) //그리고 이미 ui,main system은 false로 설정되었다
+//     (내부초기화때문에)
+//     //일단 컨트롤러에서 직접 상태를 가져오는 일이 없는거같지만 그래도 controller와 동기화해주자
+//     wcontroller->SetPlayMode(false);
+//
+//
+//     wcontroller->SetTitleBarSize(true, 3000, 40);
+//     gamePlayUiSystem->SetDefaultController("gameWindowPlayController");
+//
+//     mRenderWindowTest->Initialize(wcontroller);
+//
+//
+//
+//     mEventDispatcher.RegisterSystem(gamePlaySystem);
+//     mEventDispatcher.RegisterSystem(gamePlayUiSystem);
+//     mEventDispatcher.RegisterSystem(windowLayoutSystem);
+//     mEventDispatcher.RegisterSystem(windowDockingSystem);
+//
+//
+//
+//
+//
+//
+//
+//   //  CreateInitGameWindowEntity(gamePlaySystem);
+//
+// }
+//
+// void Application::InitFileUiWindow()
 //{
 //
-//    mFileUiWindow = new FileUiWindow(mHinstance);
-//    //window controller;
-//    //  Controller* controller = new MapController;// new Controller;
-//    FileUiWindowContoller* wController = new FileUiWindowContoller;// new Controller;
-//    mFileUiWindowController = wController;
-//    //rendersystem
+//     mFileUiWindow = new FileUiWindow(mHinstance);
+//     //window controller;
+//     //  Controller* controller = new MapController;// new Controller;
+//     FileUiWindowContoller* wController = new FileUiWindowContoller;// new Controller;
+//     mFileUiWindowController = wController;
+//     //rendersystem
 //
-//    //3d,ui,chrome system
+//     //3d,ui,chrome system
 //
-//    UINT clientWidth = mFileUiWindow->GetClientWidth();
-//    UINT clientHeight = mFileUiWindow->GetClientHeight();
+//     UINT clientWidth = mFileUiWindow->GetClientWidth();
+//     UINT clientHeight = mFileUiWindow->GetClientHeight();
 //
-//    //renderSystem;
-//    RenderSystem* renderSystem = new RenderSystem;
-//    renderSystem->Initialize(mDevice,
-//        mFactory, &mGraphicCommandObject, mFileUiWindow->GetWindowHandle(),
-//        clientWidth, clientHeight, &mDescriptorHeapManagerMaster, FILEUIWINDOW);
-//
-//
-//    AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
-//
-//  //  SetCurrentDirectory(beforeDirectory);
+//     //renderSystem;
+//     RenderSystem* renderSystem = new RenderSystem;
+//     renderSystem->Initialize(mDevice,
+//         mFactory, &mGraphicCommandObject, mFileUiWindow->GetWindowHandle(),
+//         clientWidth, clientHeight, &mDescriptorHeapManagerMaster, FILEUIWINDOW);
 //
 //
+//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
+//
+//   //  SetCurrentDirectory(beforeDirectory);
 //
 //
 //
 //
 //
-//    wController->SetName("FileUiWindowController");
-//    Controller::AddController("FileUiWindowController", wController);
-//
-//    //ui System;
-//    FileUiSystem* mainSystem = new FileUiSystem;
-//    FileUiUiSystem* uiSystem = new FileUiUiSystem;
-//    WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eFileUiLayoutSystem);
-//    ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eFileUiDockingSystem);
-//    uiSystem->SetController(wController);
-//    mainSystem->SetController(wController);
-//    windowLayoutSystem->SetController(wController);
-//    windowDockingSystem->SetController(wController);
-//    windowDockingSystem->SetController(wController);
-//
-//    wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager, &mMaterialManager, &mTextureManager,
-//        &mMapManager, mFileUiWindow, renderSystem, uiSystem, mainSystem, windowLayoutSystem,
-//        windowDockingSystem ,&mDescriptorHeapManagerMaster);
-//   
-//    mFileUiWindow->Initialize(wController);
-//
-//    InitFileUiUiSystem(mFileUiWindow, uiSystem);
-//    InitFileUiSystem(mFileUiWindow, mainSystem);
-//    InitFileUiWindowLayoutSystem(mFileUiWindow, windowLayoutSystem);
-//    InitChildWindowDockingSystem(mFileUiWindow, windowDockingSystem);
 //
 //
-//    wController->SetTitleBarSize(true, 3000, 40);
-//    wController->SetWindowActiveFlag(false);
+//     wController->SetName("FileUiWindowController");
+//     Controller::AddController("FileUiWindowController", wController);
 //
-//    mEventDispatcher.RegisterSystem(mainSystem);
-//    mEventDispatcher.RegisterSystem(uiSystem);
-//    mEventDispatcher.RegisterSystem(windowLayoutSystem);
-//    mEventDispatcher.RegisterSystem(windowDockingSystem);
+//     //ui System;
+//     FileUiSystem* mainSystem = new FileUiSystem;
+//     FileUiUiSystem* uiSystem = new FileUiUiSystem;
+//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eFileUiLayoutSystem);
+//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eFileUiDockingSystem);
+//     uiSystem->SetController(wController);
+//     mainSystem->SetController(wController);
+//     windowLayoutSystem->SetController(wController);
+//     windowDockingSystem->SetController(wController);
+//     windowDockingSystem->SetController(wController);
+//
+//     wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager,
+//     &mMaterialManager, &mTextureManager,
+//         &mMapManager, mFileUiWindow, renderSystem, uiSystem, mainSystem, windowLayoutSystem,
+//         windowDockingSystem ,&mDescriptorHeapManagerMaster);
+//
+//     mFileUiWindow->Initialize(wController);
+//
+//     InitFileUiUiSystem(mFileUiWindow, uiSystem);
+//     InitFileUiSystem(mFileUiWindow, mainSystem);
+//     InitFileUiWindowLayoutSystem(mFileUiWindow, windowLayoutSystem);
+//     InitChildWindowDockingSystem(mFileUiWindow, windowDockingSystem);
 //
 //
-//    //윈도우생성
-//    //윈도우컨트롤러 생성 
-//    //시스템들을 생성
+//     wController->SetTitleBarSize(true, 3000, 40);
+//     wController->SetWindowActiveFlag(false);
 //
-//    //윈도우 컨트롤러 초기화 ( 시스템 패싱)
-//    //컨트롤러 초기화에서 시스템 초기화수행
-//    //맵은 없는상태
+//     mEventDispatcher.RegisterSystem(mainSystem);
+//     mEventDispatcher.RegisterSystem(uiSystem);
+//     mEventDispatcher.RegisterSystem(windowLayoutSystem);
+//     mEventDispatcher.RegisterSystem(windowDockingSystem);
 //
 //
-//     
-//    //그이후 맵추가 
-//    //(맵추가할때 카메라등등처리)
+//     //윈도우생성
+//     //윈도우컨트롤러 생성
+//     //시스템들을 생성
 //
-//}
+//     //윈도우 컨트롤러 초기화 ( 시스템 패싱)
+//     //컨트롤러 초기화에서 시스템 초기화수행
+//     //맵은 없는상태
 //
-//void Application::InitAttributeWindow()
+//
+//
+//     //그이후 맵추가
+//     //(맵추가할때 카메라등등처리)
+//
+// }
+//
+// void Application::InitAttributeWindow()
 //{
-//  //  Controller* controller = new MapController;// new Controller;
-//    DockingWindowController* wController = new DockingWindowController;// new Controller;
-//    mAttributeWindowController = wController;
+//   //  Controller* controller = new MapController;// new Controller;
+//     DockingWindowController* wController = new DockingWindowController;// new Controller;
+//     mAttributeWindowController = wController;
 //
-//    UINT clientWidth = mAttributeWindow->GetClientWidth();
-//    UINT clientHeight = mAttributeWindow->GetClientHeight();
+//     UINT clientWidth = mAttributeWindow->GetClientWidth();
+//     UINT clientHeight = mAttributeWindow->GetClientHeight();
 //
-//    //renderSystem;
-//    RenderSystem* renderSystem = new RenderSystem;
-//    renderSystem->Initialize(mDevice,
-//        mFactory, &mGraphicCommandObject, mAttributeWindow->GetWindowHandle(),
-//        clientWidth, clientHeight, &mDescriptorHeapManagerMaster,ATTRIBUTEWINDOW);
-//
-//
-//
-//    AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("ScrollListPanelUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("ScrollListChildPanelUi.effect"));
-//    AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
+//     //renderSystem;
+//     RenderSystem* renderSystem = new RenderSystem;
+//     renderSystem->Initialize(mDevice,
+//         mFactory, &mGraphicCommandObject, mAttributeWindow->GetWindowHandle(),
+//         clientWidth, clientHeight, &mDescriptorHeapManagerMaster,ATTRIBUTEWINDOW);
 //
 //
+//
+//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("ScrollListPanelUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("ScrollListChildPanelUi.effect"));
+//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"));
 //
 //
 //
@@ -852,124 +800,128 @@ void Application::InitCommonSystems()
 //
 //
 //
-//    wController->SetName("AttributeWindowController");
-//    Controller::AddController("AttributeWindowController", wController);
-//    //ui System;
-//    AttributeUiSystem* uiSystem = new AttributeUiSystem;
-//    AttributeSystem* worldSystem = new AttributeSystem;
-//    WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eAttributeLayoutSystem);
-//    ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eAttributeDockingSystem);
 //
 //
-//    mAttributeWindow->Initialize(wController);
-//    uiSystem->SetController(wController);
-//    worldSystem->SetController(wController);
-//    windowLayoutSystem->SetController(wController);
-//    windowDockingSystem->SetController(wController);
-//    windowDockingSystem->SetController(wController);
+//     wController->SetName("AttributeWindowController");
+//     Controller::AddController("AttributeWindowController", wController);
+//     //ui System;
+//     AttributeUiSystem* uiSystem = new AttributeUiSystem;
+//     AttributeSystem* worldSystem = new AttributeSystem;
+//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eAttributeLayoutSystem);
+//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eAttributeDockingSystem);
 //
 //
-//
-//    wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager, &mMaterialManager, &mTextureManager,
-//        &mMapManager, mAttributeWindow, renderSystem, uiSystem, worldSystem, windowLayoutSystem, windowDockingSystem,
-//        &mDescriptorHeapManagerMaster);
-//
-//    InitAttributeSystem(mAttributeWindow, worldSystem);
-//    InitAttributeUiSystem(mAttributeWindow, uiSystem);
-//    InitAttributeWindowLayoutSystem(mAttributeWindow, windowLayoutSystem);
-//    InitChildWindowDockingSystem(mAttributeWindow, windowDockingSystem);
+//     mAttributeWindow->Initialize(wController);
+//     uiSystem->SetController(wController);
+//     worldSystem->SetController(wController);
+//     windowLayoutSystem->SetController(wController);
+//     windowDockingSystem->SetController(wController);
+//     windowDockingSystem->SetController(wController);
 //
 //
 //
-//    wController->SetWindowActiveFlag(false);
+//     wController->Initialize(mDevice, mGraphicCommandObject.GetGraphicsCommandList(), &mMeshManager,
+//     &mMaterialManager, &mTextureManager,
+//         &mMapManager, mAttributeWindow, renderSystem, uiSystem, worldSystem, windowLayoutSystem, windowDockingSystem,
+//         &mDescriptorHeapManagerMaster);
 //
-//   
-// 
-//    
-//    wController->SetTitleBarSize(true, 3000, 40);
-//    mEventDispatcher.RegisterSystem(worldSystem);
-//    mEventDispatcher.RegisterSystem(uiSystem);
-//    mEventDispatcher.RegisterSystem(windowLayoutSystem);
-//    mEventDispatcher.RegisterSystem(windowDockingSystem);
-//  
+//     InitAttributeSystem(mAttributeWindow, worldSystem);
+//     InitAttributeUiSystem(mAttributeWindow, uiSystem);
+//     InitAttributeWindowLayoutSystem(mAttributeWindow, windowLayoutSystem);
+//     InitChildWindowDockingSystem(mAttributeWindow, windowDockingSystem);
 //
 //
 //
-//}
-
-//void Application::InitGameProject(TaskWindow * window , DockingWindowController* controller , 
-//    GamePlaySystem * gamePlaySystem , GamePlayUiSystem * gamePlayUiSystem ,
-//    WindowChromeSystem * windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem)
-//{
-//
-//    //entity type  sch load
-//    //mesh ,materal ,texture load 
-//    
-//    std::wstring meshFilePath = L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Project\\Mesh\\*.mesh";
-//    WIN32_FIND_DATA fileData;
-//    HANDLE handle;
-//    //load mesh 
-//    handle = FindFirstFile(meshFilePath.c_str(), &fileData);
-//    if (handle == INVALID_HANDLE_VALUE)
-//    {
-//            
-//
-//    }
-//    else
-//    {
-//
-//   /*     mResourceController.CreateNewMesh(fileData.cFileName);
-//        while (FindNextFile(handle, &fileData) != 0)
-//        {
-//            mResourceController.CreateNewMesh(fileData.cFileName);
-//        }*/
-//
-//    }
-//    FindClose(handle);
-//
-//    //load texture
-//    //load material
-//    //load shader
-//    
-//
-//    //entity
+//     wController->SetWindowActiveFlag(false);
 //
 //
 //
 //
-//    InitGamePlayUiSystem(window,gamePlayUiSystem);
-//    InitGamePlaySystem(window,gamePlaySystem);
-//    InitGamePlayWindowLayoutSystem(window, windowLayoutSystem);
-//    InitChildWindowDockingSystem(window, windowDockingSystem);
+//     wController->SetTitleBarSize(true, 3000, 40);
+//     mEventDispatcher.RegisterSystem(worldSystem);
+//     mEventDispatcher.RegisterSystem(uiSystem);
+//     mEventDispatcher.RegisterSystem(windowLayoutSystem);
+//     mEventDispatcher.RegisterSystem(windowDockingSystem);
 //
-//    gamePlayUiSystem->SetController(controller);
-//    gamePlaySystem->SetController(controller);
-//    windowLayoutSystem->SetController(controller);
-//    windowDockingSystem->SetController(controller);
 //
 //
 //
 // }
-//
-//void Application::InitGamePlaySystem(TaskWindow* window,GamePlaySystem* system)
+
+// void Application::InitGameProject(TaskWindow * window , DockingWindowController* controller ,
+//     GamePlaySystem * gamePlaySystem , GamePlayUiSystem * gamePlayUiSystem ,
+//     WindowChromeSystem * windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem)
 //{
-//    //유저가 생성한 map들의 정보를 로드하고 
-//    //start point로 지정된map과 맵 그래프에서 그 start point맵과 연결된 맵들도 로드 한다.
-//    //또한 그 맵들에 존재하는 엔티티들도 로드
-//    //1차적으로 연결되지않는 맵들은 정보만 로드
+//
+//     //entity type  sch load
+//     //mesh ,materal ,texture load
+//
+//     std::wstring meshFilePath =
+//     L"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Project\\Mesh\\*.mesh";
+//     WIN32_FIND_DATA fileData;
+//     HANDLE handle;
+//     //load mesh
+//     handle = FindFirstFile(meshFilePath.c_str(), &fileData);
+//     if (handle == INVALID_HANDLE_VALUE)
+//     {
 //
 //
-//    //project파일이 있어야하고
-//    //project파일안에는 start point map이있어야돼고 또 엔티티타입들이 있어야돼고 
-//    //map 그래프정보가있어야돼 
-//    //일단 project에있는 맵정보는 다로드해
-//    //map그래프를보고 가시적인 map들에대해서만 ,entity를 메모리로 로드한다.
-//    //
-//   
+//     }
+//     else
+//     {
+//
+//    /*     mResourceController.CreateNewMesh(fileData.cFileName);
+//         while (FindNextFile(handle, &fileData) != 0)
+//         {
+//             mResourceController.CreateNewMesh(fileData.cFileName);
+//         }*/
+//
+//     }
+//     FindClose(handle);
+//
+//     //load texture
+//     //load material
+//     //load shader
+//
+//
+//     //entity
 //
 //
 //
-//    //map.- scenegraph.spatialSpace
+//
+//     InitGamePlayUiSystem(window,gamePlayUiSystem);
+//     InitGamePlaySystem(window,gamePlaySystem);
+//     InitGamePlayWindowLayoutSystem(window, windowLayoutSystem);
+//     InitChildWindowDockingSystem(window, windowDockingSystem);
+//
+//     gamePlayUiSystem->SetController(controller);
+//     gamePlaySystem->SetController(controller);
+//     windowLayoutSystem->SetController(controller);
+//     windowDockingSystem->SetController(controller);
+//
+//
+//
+//  }
+//
+// void Application::InitGamePlaySystem(TaskWindow* window,GamePlaySystem* system)
+//{
+//     //유저가 생성한 map들의 정보를 로드하고
+//     //start point로 지정된map과 맵 그래프에서 그 start point맵과 연결된 맵들도 로드 한다.
+//     //또한 그 맵들에 존재하는 엔티티들도 로드
+//     //1차적으로 연결되지않는 맵들은 정보만 로드
+//
+//
+//     //project파일이 있어야하고
+//     //project파일안에는 start point map이있어야돼고 또 엔티티타입들이 있어야돼고
+//     //map 그래프정보가있어야돼
+//     //일단 project에있는 맵정보는 다로드해
+//     //map그래프를보고 가시적인 map들에대해서만 ,entity를 메모리로 로드한다.
+//     //
+//
+//
+//
+//
+//     //map.- scenegraph.spatialSpace
 //
 //
 ////    VectorSpace* vectorSpace = new VectorSpace;
@@ -985,10 +937,13 @@ void Application::InitCommonSystems()
 ////
 ////    Map* map = EditorSystem::CreateMap(system, "GamePlayMainMap", false, true);
 ////
-////    map->CreateMapLayer(0, 0, nullptr, collisionRunTimeWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//// 
-//////    GamePlayWindowCamera* gameCamera = static_cast<GamePlayWindowCamera*>(map->CreateObject("GamePlayWindowCamera"));
-////    GamePlayWindowCamera* gameCamera = GamePlayWindowCamera::Create(map, 0, DirectX::XM_PI / 2, (float)window->GetClientWidth() / window->GetClientHeight());
+////    map->CreateMapLayer(0, 0, nullptr, collisionRunTimeWorld, { 0,0,(float)window->GetClientWidth(),
+///(float)window->GetClientHeight() ,0.0f,1.0f });
+////
+//////    GamePlayWindowCamera* gameCamera =
+/// static_cast<GamePlayWindowCamera*>(map->CreateObject("GamePlayWindowCamera")); /    GamePlayWindowCamera* gameCamera
+///= GamePlayWindowCamera::Create(map, 0, DirectX::XM_PI / 2, (float)window->GetClientWidth() /
+/// window->GetClientHeight());
 ////
 ////
 ////    map->SetMainCamera(gameCamera);
@@ -1010,14 +965,14 @@ void Application::InitCommonSystems()
 //
 //
 //
-// 
+//
 //
 //}
 //
-//void Application::InitGamePlayUiSystem(TaskWindow * window ,GamePlayUiSystem* system)
+// void Application::InitGamePlayUiSystem(TaskWindow * window ,GamePlayUiSystem* system)
 //{
 //
-//  
+//
 //
 // //   VectorSpace* vectorSpace = new VectorSpace;
 // //   vectorSpace->Initialize(10000);
@@ -1034,10 +989,12 @@ void Application::InitCommonSystems()
 // //   Map* map = EditorSystem::CreateMap(system, "GamePlayUiMainMap", false,true);
 // //  // map->SetName("GamePlayUiMainMap");
 // ////   map->Initialize(system);
-// //   map->CreateMapLayer(0, 0, nullptr, collisionRunTimeWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+// //   map->CreateMapLayer(0, 0, nullptr, collisionRunTimeWorld, { 0,0,(float)window->GetClientWidth(),
+// (float)window->GetClientHeight() ,0.0f,1.0f });
 // // //  OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(map->CreateObject("OrthogoanlCamera"));
-// //   OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(map, 0, window->GetClientWidth(), window->GetClientHeight());
-// //  // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());  
+// //   OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(map, 0, window->GetClientWidth(),
+// window->GetClientHeight());
+// //  // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 // //   map->SetMainCamera(gameCamera);
 //
 // //   system->Initialize(window->GetClientWidth(), window->GetClientHeight(),map);
@@ -1077,16 +1034,16 @@ void Application::InitCommonSystems()
 //    //textBox->SetText(L"test입니다.");
 //    //textBox->SetSelectAvailableFlag(false);
 //    //textBox->SetTexture(L"Black.png");
-//    
+//
 //
 //}
 //
-//void Application::InitAttributeSystem(TaskWindow* window,AttributeSystem* system)
+// void Application::InitAttributeSystem(TaskWindow* window,AttributeSystem* system)
 //{
-//    //game play system말고 다른 시스템들은 
+//    //game play system말고 다른 시스템들은
 //    // 일단 map이 하나뿐이다 라고 간소화하자.
 //
-//   
+//
 //
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(10000);
@@ -1096,15 +1053,17 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "AttrMainMap", false, false);
 //  //  map->SetName("AttrMainMap");
 //  //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //   // Camera* gameCamera = new Camera(L"GameCamera");
-//   
-// 
+//
+//
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //    Map* currMap = system->GetMap();
 //   // FrustumCamera* gameCamera = static_cast<FrustumCamera*>(currMap->CreateObject("FrustumCamera"));
-//    FrustumCamera* gameCamera = FrustumCamera::Create(currMap, 0, DirectX::XM_PI / 2, (float)window->GetClientWidth() / window->GetClientHeight());
+//    FrustumCamera* gameCamera = FrustumCamera::Create(currMap, 0, DirectX::XM_PI / 2, (float)window->GetClientWidth()
+//    / window->GetClientHeight());
 // //  gameCamera->Initialize(DirectX::XM_PI / 2, (float)window->GetClientWidth() / window->GetClientHeight());
 //    currMap->SetMainCamera(gameCamera);
 //   // map->SetCameraType(ECameraType::ePerspectiveCamera);
@@ -1114,7 +1073,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitAttributeUiSystem(TaskWindow* window,AttributeUiSystem* system)
+// void Application::InitAttributeUiSystem(TaskWindow* window,AttributeUiSystem* system)
 //{
 //
 //
@@ -1126,28 +1085,32 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "AttrUiMainMap", false, false);
 //   // map->SetName("AttrUiMainMap");
 //   // map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//
-//  
-//    
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //
 //
-//    RenderTargetTexture * renderTargetTexture = TextureManager::CreateRenderTargetTexture("AnimationEdit3DPanelTexture", 300, 300);
+//
+//
+//
+//    RenderTargetTexture * renderTargetTexture =
+//    TextureManager::CreateRenderTargetTexture("AnimationEdit3DPanelTexture", 300, 300);
 //    //TextureManager::AddTexture(renderTargetTexture, L"AnimationEdit3DPanelTexture");
 //    renderTargetTexture->SetEngineContentItemFlag(true);
 //
-//    Texture* depthStencilBuffer = TextureManager::CreateDepthStencilBuffer("AnimationEdit3DPanelDepthStencilBuffer", 300, 300);
-//    //map layer 1 
+//    Texture* depthStencilBuffer = TextureManager::CreateDepthStencilBuffer("AnimationEdit3DPanelDepthStencilBuffer",
+//    300, 300);
+//    //map layer 1
 //    depthStencilBuffer->SetEngineContentItemFlag(true);
 //    vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(100);
 //    CollisionWorld* animationEdit3DCollisionWorld = new CollisionWorld(vectorSpace);
 //
 //
-//    map->CreateMapLayer(1, 1, nullptr, animationEdit3DCollisionWorld, { 0,0,300,300,0.0f,1.0f }, renderTargetTexture, depthStencilBuffer);
+//    map->CreateMapLayer(1, 1, nullptr, animationEdit3DCollisionWorld, { 0,0,300,300,0.0f,1.0f }, renderTargetTexture,
+//    depthStencilBuffer);
 //
 //  //  Camera* animationEdit3DCamera = new Camera(L"AnimationEdit3DCamera");
-//   
+//
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
@@ -1155,7 +1118,8 @@ void Application::InitCommonSystems()
 //
 //
 //   // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
 //    currMap->SetMainCamera(gameCamera);
@@ -1172,17 +1136,18 @@ void Application::InitCommonSystems()
 //    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,0.0f });
 //
 //
-//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2,-1.0f * (float)window->GetClientHeight() / 2 , 0 });
+//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2,-1.0f *
+//    (float)window->GetClientHeight() / 2 , 0 });
 //
 //
 //
 //
 //}
 //
-//void Application::InitFileUiUiSystem(TaskWindow* window, FileUiUiSystem* system)
+// void Application::InitFileUiUiSystem(TaskWindow* window, FileUiUiSystem* system)
 //{
 //
-//   
+//
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(100000000);
 //    CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
@@ -1191,8 +1156,9 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "FileUiUiMainMap", false, false);
 //  //  map->SetName("FileUiUiMainMap");
 //  //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),(float)window->GetClientHeight(),0.0f,1.0f });
-// 
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, {
+//    0,0,(float)window->GetClientWidth(),(float)window->GetClientHeight(),0.0f,1.0f });
+//
 //
 //
 //    //gameCamera를 설정은했는데 맵으로 들어가진않은거지
@@ -1201,7 +1167,8 @@ void Application::InitCommonSystems()
 //    Map* currMap = system->GetMap();
 //
 //  //  OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //  //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
 //    currMap->SetMainCamera(gameCamera);
@@ -1211,10 +1178,10 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitFileUiSystem(TaskWindow* window, FileUiSystem* system)
+// void Application::InitFileUiSystem(TaskWindow* window, FileUiSystem* system)
 //{
 //
-//   
+//
 //
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(10000);
@@ -1224,15 +1191,17 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "FileUiMainMap", false, false);
 // //   map->SetName("FileUiMainMap");
 //  //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //
-//  
+//
 //    //map->AddObject(gameCamera);
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //    Map* currMap = system->GetMap();
 //  //  OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //  //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
 //    currMap->SetMainCamera(gameCamera);
@@ -1244,7 +1213,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system)
+// void Application::InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system)
 //{
 //
 //
@@ -1257,14 +1226,16 @@ void Application::InitCommonSystems()
 //
 //   // map->SetName("FrameWindowMainMap");
 // //   map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//  
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
+//
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
 //    Map* currMap = system->GetMap();
 //    //OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //  //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
 //
@@ -1277,7 +1248,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system)
+// void Application::InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system)
 //{
 //
 //
@@ -1290,20 +1261,23 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "FrameWindowUiMainMap", false, false);
 //    // map->SetName("FrameWindowUiMainMap");
 //   //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //    Map* currMap = system->GetMap();
 //    // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //    //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
 //    currMap->SetMainCamera(gameCamera);
 //    // map->SetCameraType(ECameraType::ePerspectiveCamera);
-//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2, (float)-window->GetClientHeight() / 2,0.0f });
-//    system->SetViewPort(0, 60, (float)window->GetClientWidth(), (float)window->GetClientHeight(), 0.0f, 1.0f);
+//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2,
+//    (float)-window->GetClientHeight() / 2,0.0f }); system->SetViewPort(0, 60, (float)window->GetClientWidth(),
+//    (float)window->GetClientHeight(), 0.0f, 1.0f);
 //
 //
 //}
@@ -1311,7 +1285,7 @@ void Application::InitCommonSystems()
 //
 //
 //
-//void Application::InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
+// void Application::InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
 //{
 //
 //
@@ -1323,15 +1297,17 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "GamePlayLayoutMainMap", false, false);
 //  //  map->SetName("GamePlayLayoutMainMap");
 //  //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//   
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
+//
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
 //    Map* currMap = system->GetMap();
 //
 //    //ChromeSystemCamera* gameCamera = static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //   // gameCamera->SetSystem(system);
 //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
@@ -1343,14 +1319,15 @@ void Application::InitCommonSystems()
 //   // system->SetTitleBarSize(3000, 40);
 //
 //  //  WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-//  //  WindowCloseButton* windowCloseButton = static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
+//  //  WindowCloseButton* windowCloseButton =
+//  static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
 //    WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
 //    //windowCloseButton->SetSystem(system);
 //  //  windowCloseButton->Initialize();
 //    windowCloseButton->SetKeepVisibleBaseHorizontalLineOffset(20);
 //    windowCloseButton->SetKeepVisibleBaseVerticalLineOffset(20);
 //
-// 
+//
 //
 //
 //
@@ -1383,7 +1360,7 @@ void Application::InitCommonSystems()
 // //       button->GetTransform().SetPositionLocal(pos);
 // //       });
 //
-// //   
+// //
 //
 // //   gamePlayButton->SetHoverCallback([button = gamePlayButton]() {
 //
@@ -1401,10 +1378,10 @@ void Application::InitCommonSystems()
 //
 //
 // //       });
-// //   gamePlayButton->SetLButtonUpCallback([button = gamePlayButton ,application = this , gamePlayWindowController  = 
+// //   gamePlayButton->SetLButtonUpCallback([button = gamePlayButton ,application = this , gamePlayWindowController  =
 // //       mGameWindowPlayController]() {
 //
-// //       
+// //
 // //       //play mode시작.
 // //       bool prePlayMode = application->GetPlayModeState();
 //
@@ -1480,7 +1457,8 @@ void Application::InitCommonSystems()
 //
 //
 // //   gamePlayEndButton->RegisterAcceptEvent("LButtonDown");
-// //   gamePlayEndButton->SetLButtonDownCallback([gamePlayEndButton = gamePlayEndButton , playOnButton = gamePlayButton, application = this]() {
+// //   gamePlayEndButton->SetLButtonDownCallback([gamePlayEndButton = gamePlayEndButton , playOnButton =
+// gamePlayButton, application = this]() {
 //
 // //       //리셋         - playmode 가 false가되고 ,다 초기상태로
 // //       application->SetPlayModeState(false);
@@ -1508,9 +1486,9 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
+// void Application::InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
 //{
-// 
+//
 //
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(100);
@@ -1520,17 +1498,19 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "AttrLayoutMainMap", false, false);
 //  //  map->SetName("AttrLayoutMainMap");
 //  // map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //    //  map->AddObject(gameCamera);
 //    //ChromeSystemCamera* gameCamera = new ChromeSystemCamera(L"GameCamera");
-// 
-//   
+//
+//
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
 //    Map* currMap = system->GetMap();
 //   // system->SetTitleBarSize(3000, 40);
 //   // ChromeSystemCamera* gameCamera = static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //  //  gameCamera->SetSystem(system);
 //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
@@ -1538,7 +1518,8 @@ void Application::InitCommonSystems()
 //    currMap->SetMainCamera(gameCamera);
 //
 //
-//  //  WindowCloseButton* windowCloseButton = static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
+//  //  WindowCloseButton* windowCloseButton =
+//  static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
 //    WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
 //   // windowCloseButton->SetSystem(system);
 // //   windowCloseButton->Initialize();
@@ -1550,7 +1531,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
+// void Application::InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
 //{
 //
 //
@@ -1564,15 +1545,17 @@ void Application::InitCommonSystems()
 //
 //   // map->SetName("FileUiLayoutMainMap");
 //  //  map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//   
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
+//
 //   // map->AddObject(gameCamera);
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //   // system->SetTitleBarSize(3000, 40);
 //
 //    Map* currMap = system->GetMap();
 //   // ChromeSystemCamera* gameCamera = static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //   // gameCamera->SetSystem(system);
 //    //gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
@@ -1580,7 +1563,8 @@ void Application::InitCommonSystems()
 //    currMap->SetMainCamera(gameCamera);
 //
 // //   WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-//   // WindowCloseButton* windowCloseButton = static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
+//   // WindowCloseButton* windowCloseButton =
+//   static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
 //    WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
 //    //windowCloseButton->SetSystem(system);
 //  //  windowCloseButton->Initialize();
@@ -1591,7 +1575,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
+// void Application::InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
 //{
 //
 //
@@ -1606,15 +1590,17 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "FrameWIindowLayoutMainMap", false, false);
 //  //  map->SetName("FrameWIindowLayoutMainMap");
 //   // map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
-//   
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
+//
 //    //map->AddObject(gameCamera);
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
 //    Map* currMap = system->GetMap();
 //    int mapLayerIndex = 0;
 //  //  ChromeSystemCamera* gameCamera = static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//    ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //
 //    //  gameCamera->SetSystem(system);
@@ -1627,7 +1613,8 @@ void Application::InitCommonSystems()
 //    //system->SetTitleBarSize(3000, 60);
 //
 //   // WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-// //   WindowCloseButton* windowCloseButton = static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
+// //   WindowCloseButton* windowCloseButton =
+// static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
 //    WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, mapLayerIndex);
 // //   windowCloseButton->SetSystem(system);
 //  //  windowCloseButton->Initialize();
@@ -1638,10 +1625,11 @@ void Application::InitCommonSystems()
 // //   system->AddEntity(windowCloseButton);
 //
 //
-//    //프레임윈도우 처음resize가 먼저 전달되서 안보이는것같다 
+//    //프레임윈도우 처음resize가 먼저 전달되서 안보이는것같다
 //
 // //   WindowMaxRestoreButton* windowMaxRestoreButton = new WindowMaxRestoreButton("WindowMaxRestoreButton");
-//   // WindowMaxRestoreButton* windowMaxRestoreButton = static_cast<WindowMaxRestoreButton*>(currMap->CreateObject("WindowMaxRestoreButton"));
+//   // WindowMaxRestoreButton* windowMaxRestoreButton =
+//   static_cast<WindowMaxRestoreButton*>(currMap->CreateObject("WindowMaxRestoreButton"));
 //    WindowMaxRestoreButton* windowMaxRestoreButton = WindowMaxRestoreButton::Create(currMap, mapLayerIndex);
 //  //  windowMaxRestoreButton->SetSystem(system);
 //  //  windowMaxRestoreButton->Initialize();
@@ -1673,11 +1661,11 @@ void Application::InitCommonSystems()
 //
 //
 //
-//void Application::InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system)
+// void Application::InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system)
 //{
 //
 //
-//  
+//
 //
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(50);
@@ -1687,17 +1675,20 @@ void Application::InitCommonSystems()
 //    Map* map = EditorSystem::CreateMap(system, "FrameWindowDockingMainMap", false, false);
 // //   map->SetName("FrameWindowDockingMainMap");
 // //   map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 //   // DockingSystemCamera* gameCamera = new DockingSystemCamera("GameCamera");
-//  
+//
 //
 //
 //   // map->AddObject(gameCamera);
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //
 //    Map* currMap = system->GetMap();
-//  //  DockingSystemCamera* gameCamera = static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
-//    DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//  //  DockingSystemCamera* gameCamera =
+//  static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
+//    DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //    // DockingSystemCamera* gameCamera = ObjectFactory::CreateObject()
 //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
@@ -1706,10 +1697,10 @@ void Application::InitCommonSystems()
 //}
 //
 //
-//void Application::InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system)
+// void Application::InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system)
 //{
 //
-//   
+//
 //
 //    VectorSpace* vectorSpace = new VectorSpace;
 //    vectorSpace->Initialize(10);
@@ -1718,16 +1709,20 @@ void Application::InitCommonSystems()
 //
 //
 //
-//    Map* map = EditorSystem::CreateMap(system, "ChildWindowDockingMainMap" + std::to_string((int)system->GetSystemID()), false, false);
+//    Map* map = EditorSystem::CreateMap(system, "ChildWindowDockingMainMap" +
+//    std::to_string((int)system->GetSystemID()), false, false);
 //   // map->SetName("ChildWindowDockingMainMap"+std::to_string((int)system->GetSystemID()));
 //    //map->Initialize(system);
-//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(), (float)window->GetClientHeight() ,0.0f,1.0f });
+//    map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
+//    (float)window->GetClientHeight() ,0.0f,1.0f });
 // //   DockingSystemCamera* gameCamera = new DockingSystemCamera("GameCamera");
 //
 //    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
 //    Map* currMap = system->GetMap();
-//  //  DockingSystemCamera* gameCamera = static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
-//    DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(), window->GetClientHeight());
+//  //  DockingSystemCamera* gameCamera =
+//  static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
+//    DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(),
+//    window->GetClientHeight());
 //
 //    //gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
 //
@@ -1737,7 +1732,7 @@ void Application::InitCommonSystems()
 //
 //}
 //
-//void Application::CreateInitGameWindowEntity(GamePlaySystem* system)
+// void Application::CreateInitGameWindowEntity(GamePlaySystem* system)
 //{
 //
 //
@@ -1796,10 +1791,10 @@ void Application::InitCommonSystems()
 // //// //   cube->AddModelComponent(MeshManager::GetMesh("Cube"));
 // ////   // cube->GetTransform().SetPositionLocal({ -10.0F,2.0F,5.0F });
 // //    cube->GetTransform().SetPositionWorld({ 0.0f,-2.0f,5.0f });
-// //  
+// //
 // //    cube->GetTransform().SetScaleLocal({ 0.5F,0.5F,0.5F });
 // //    cube->SetName("Cube");
-// //   
+// //
 // //    cube->SetUpdateCallback([dir = -1 ](Object * object ,float deltaTime)mutable {
 //
 // //        Entity* cube = (Entity*)object;
@@ -1829,23 +1824,24 @@ void Application::InitCommonSystems()
 //
 // //    //이 heroOne에 에니메이션을 입히고 처리
 // //    //에니메이션에대한 effect도필요하고
-// //    //update처리 
+// //    //update처리
 // //    //매프레임마다 두 키프레임보간, 뼈대들을 변환행렬 계산.
-// //    
+// //
 // //    //그엔티티에 skeleton,그리고 animationclip을 붙여보자
 // //    //animationclip은나중에 여러개가 들어갈수있을거고
-// //    
+// //
 // //    //뼈대에서 오프셋변환행렬, 그리고 에니메이션클립에서 그 시간에서 뼈대의 루트변환행렬
 // //    //이둘이 함께처리되어서 최종적인 뼈대팔레트행렬을 완성해야돼
 // //    //그럼 model에 anim부분을 만들고, 그안에 다가 아니메이션클립하고 스켈레톤은 설정할수있게하고
 // //    //그 anim에서 그둘을 이용해 최종행렬들을 계산하자.
 // //    //upload는 자동으로 될것이고.
-// //    //에니메이션클립은 당연히 공유되겠지 그럼, 그 에니메이션클립에 시간을 넘겨서 
+// //    //에니메이션클립은 당연히 공유되겠지 그럼, 그 에니메이션클립에 시간을 넘겨서
 // //    //변환행렬을 얻는방식으로 하는게좋고
-// //    
+// //
 // //    AnimationClip* black_bsionDefaultAnimClip = AnimationClipManager::GetAnimationClip("black_bison_Anim");
 //
-// //    AnimationClip* black_bsionTestAnimClip = AnimationClipSplitter::SplitAnimationClip(black_bsionDefaultAnimClip, "black_bisonTestAnimClip", 60, 77);
+// //    AnimationClip* black_bsionTestAnimClip = AnimationClipSplitter::SplitAnimationClip(black_bsionDefaultAnimClip,
+// "black_bisonTestAnimClip", 60, 77);
 //
 // //    if (black_bsionTestAnimClip == nullptr)
 // //    {
@@ -1867,7 +1863,7 @@ void Application::InitCommonSystems()
 //
 // ////    heroOne->GetModel()->SetAnimationClip(AnimationClipManager::GetAnimationClip(L"black_bison_Anim"));
 // //  //  heroOne->GetModel()->SetSkeleton(SkeletonManager::GetSkeleton(L"black_bison_Skeleton"));
-// //      
+// //
 //
 //
 //
@@ -1885,82 +1881,47 @@ void Application::InitCommonSystems()
 //
 //}
 
+void Application::CreateCommandObjects() {}
 
-void Application::CreateCommandObjects()
-{
-   // D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-   // queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;    //gpu가 실행할 명령을 담을 큐이다.
-   // queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-   // queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-   // queueDesc.NodeMask = 0;
-
-   //ThrowIfFailed(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
-
-   // ThrowIfFailed(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator)));
-
-   // ThrowIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&mGraphicscommandList)));
-
-   // mGraphicscommandList->Close();
-
-
-   // mGraphicCommandObject.Initialize(mGraphicscommandList, mCommandAllocator, mCommandQueue, mFence);
-
-    //commandList를 생성하면 열린상태가된다.
-
-}
-
-
-
-void Application::PreUpdate(GameTimer& timer)
+void Application::PreUpdate(GameTimer &timer)
 {
 
     float deltaTime = timer.GetDeltaTime();
-  //  mResourceController.Update();
-
-    //mInputSystem.Update(deltaTime);
-
     mProgramDirector->PreUpdate(deltaTime);
 }
 
-void Application::Update(GameTimer& timer)
+void Application::Update(GameTimer &timer)
 {
 
-  //  mResourceController.Update();
+    //  mResourceController.Update();
 
-    //사전에 effect들의 shader resource들을 초기화(특히,상수버퍼,구조적버퍼)
+    // 사전에 effect들의 shader resource들을 초기화(특히,상수버퍼,구조적버퍼)
 
-    //아마 리소스 업로드문제 윈도우별,윈도우안의 시스템별
-    //업데이트순서문제로인해 깜빡거림 발생한는거같다.
- 
+    // 아마 리소스 업로드문제 윈도우별,윈도우안의 시스템별
+    // 업데이트순서문제로인해 깜빡거림 발생한는거같다.
+
     float deltaTime = timer.GetDeltaTime();
 
     mProgramDirector->Update(deltaTime);
- 
-
 }
 
-void Application::EndUpdate(GameTimer& timer)
+void Application::EndUpdate(GameTimer &timer)
 {
 
     float deltaTime = timer.GetDeltaTime();
     mProgramDirector->EndUpdate(deltaTime);
 
-   // mMouse.EndUpdate();
+    // mMouse.EndUpdate();
 
-
-
-
-
-    //mEditGameObjectManager.RemoveDeadObject();
-   // mEditObjectManager.RemoveDeadObject();
-   //mRuntimeGameObjectManager.RemoveDeadObject();
-   // mRuntimeObjectManager.RemoveDeadObject();
-
+    // mEditGameObjectManager.RemoveDeadObject();
+    // mEditObjectManager.RemoveDeadObject();
+    // mRuntimeGameObjectManager.RemoveDeadObject();
+    // mRuntimeObjectManager.RemoveDeadObject();
 }
 
-void Application::Draw(GameTimer& timer)
+void Application::Draw(GameTimer &timer)
 {
-    
+
     mProgramDirector->Draw();
 
     /*if (mFrameWindow->GetProjectSelectSceneFlag())
@@ -1989,89 +1950,82 @@ void Application::Draw(GameTimer& timer)
             mDragAndDropWindow->Draw();
         }
     }*/
+}
 
+void Application::EndFrame()
+{
 
-
+    InputSystem::GetInstance()->EndFrame();
 }
 
 void Application::OnResize()
 {
 
-  /*  switch (mCurrentActiveWindow)
-    {
-    case 0:
-        mRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
-        break;
-    case 1:
-        mUiRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
-        break;
-    }*/
-   // mRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
-   // mUiRenderSystem.OnResize(mFileUiWindowWidth, mFileUiWindowHeight);
+    /*  switch (mCurrentActiveWindow)
+      {
+      case 0:
+          mRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
+          break;
+      case 1:
+          mUiRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
+          break;
+      }*/
+    // mRenderSystem.OnResize(mRenderWindowWidth, mRenderWindowHeight);
+    // mUiRenderSystem.OnResize(mFileUiWindowWidth, mFileUiWindowHeight);
 }
 
-void Application::MouseDown(WPARAM wParam, int x, int y)
-{
-}
+void Application::MouseDown(WPARAM wParam, int x, int y) {}
 
-void Application::MouseUp(WPARAM wParam, int x, int y)
-{
-}
+void Application::MouseUp(WPARAM wParam, int x, int y) {}
 
-void Application::MouseMove(WPARAM wParam, int x, int y)
-{
-}
+void Application::MouseMove(WPARAM wParam, int x, int y) {}
 
 void Application::FlushCommandQueue()
 {
-    //mCurrentFence++;
-    //ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
+    // mCurrentFence++;
+    // ThrowIfFailed(mCommandQueue->Signal(mFence.Get(), mCurrentFence));
 
-    //if (mFence->GetCompletedValue() < mCurrentFence)
+    // if (mFence->GetCompletedValue() < mCurrentFence)
     //{
-    //    HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
-    //    ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));//이울타리지점에 도달하면 event발생
+    //     HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
+    //     ThrowIfFailed(mFence->SetEventOnCompletion(mCurrentFence, eventHandle));//이울타리지점에 도달하면 event발생
 
     //    WaitForSingleObject(eventHandle, INFINITE);
     //    CloseHandle(eventHandle);
     //}
 }
 
-//float Application::GetAspectRatio() const
+// float Application::GetAspectRatio() const
 //{
-//    return static_cast<float>(mClientWidth) / mClientHeight;
-//}
+//     return static_cast<float>(mClientWidth) / mClientHeight;
+// }
 //
-//Microsoft::WRL::ComPtr<ID3D12Device> Application::GetD3D12Device() const
+// Microsoft::WRL::ComPtr<ID3D12Device> Application::GetD3D12Device() const
 //{
-//    return mDevice;
-//}
+//     return mDevice;
+// }
 //
-//Microsoft::WRL::ComPtr<IDXGIFactory4> Application::GetD3DFactory() const
+// Microsoft::WRL::ComPtr<IDXGIFactory4> Application::GetD3DFactory() const
 //{
-//    return mFactory;
-//}
+//     return mFactory;
+// }
 //
-//GraphicCommand& Application::GetGraphicCommand()
+// GraphicCommand& Application::GetGraphicCommand()
 //{
-//    return mGraphicCommandObject;
-//    // TODO: 여기에 return 문을 삽입합니다.
-//}
-
-
+//     return mGraphicCommandObject;
+//     // TODO: 여기에 return 문을 삽입합니다.
+// }
 
 HINSTANCE Application::GetHinstance() const
 {
     return mHinstance;
 }
 
-
-
-//bool Application::GetPlayModeState() 
+// bool Application::GetPlayModeState()
 //{
-//   auto instance = GetInstance();
-//    return instance->mPlayModeState;
-//}
+//    auto instance = GetInstance();
+//     return instance->mPlayModeState;
+// }
 
 void Application::CalculateFrameStats()
 {
@@ -2083,7 +2037,7 @@ void Application::CalculateFrameStats()
     if (mGameTimer.TotalTime() - timeElapsed >= 1.0f)
     {
 
-        float fps = (float)frameCnt;        //fps=frameCnt/1(s);
+        float fps = (float)frameCnt; // fps=frameCnt/1(s);
 
         float mspf = 1.000f / fps;
 
@@ -2091,91 +2045,84 @@ void Application::CalculateFrameStats()
         std::wstring mspfStr = std::to_wstring(mspf);
 
         std::wstring windowText = L"fps : " + fpsStr + L" mspf : " + mspfStr;
-        SetWindowTextW(mHwnd,windowText.c_str());
+        SetWindowTextW(mHwnd, windowText.c_str());
 
         frameCnt = 0;
         timeElapsed += 1.0f;
     }
 }
 
-void Application::AddEffect(RenderSystem* renderSystem, Effect* effect)
+void Application::AddEffect(RenderSystem *renderSystem, Effect *effect)
 {
-    //renderSystem->AddEffect(*effect, ESystemType::eMainSystem);
-    //renderSystem->AddEffect(*effect, ESystemType::eDockingSystem);
+    // renderSystem->AddEffect(*effect, ESystemType::eMainSystem);
+    // renderSystem->AddEffect(*effect, ESystemType::eDockingSystem);
     ////renderSystem->AddEffect(*effect, ESystemType::eUiSystem);
-    //renderSystem->AddEffect(*effect, ESystemType::eWindowLayoutSystem);
-
+    // renderSystem->AddEffect(*effect, ESystemType::eWindowLayoutSystem);
 }
 
 void Application::CreateDefaultCoreResource()
 {
 
-  //  if (mGraphicCommandObject.GetCloseState())
-  //      mGraphicCommandObject.ResetCommandList(nullptr);
+    //  if (mGraphicCommandObject.GetCloseState())
+    //      mGraphicCommandObject.ResetCommandList(nullptr);
 
-  //  StaticMesh * defaultCoreRect = static_cast<StaticMesh*>(mMeshManager.CreateMeshFromFile("DefaultEntireRect3", EMeshType::eStaticMesh,10));
-  //  defaultCoreRect->SetEngineContentItemFlag(true);
+    //  StaticMesh * defaultCoreRect = static_cast<StaticMesh*>(mMeshManager.CreateMeshFromFile("DefaultEntireRect3",
+    //  EMeshType::eStaticMesh,10)); defaultCoreRect->SetEngineContentItemFlag(true);
 
-  //  std::vector<StaticVertex>defaultCoreRectVertexVector(4);
-  //  defaultCoreRectVertexVector[0].mPos = { -1,1,1 };
-  //  defaultCoreRectVertexVector[1].mPos = { -1,-1,1 };
-  //  defaultCoreRectVertexVector[2].mPos = { 1,-1,1 };
-  //  defaultCoreRectVertexVector[3].mPos = { 1,1,1 };
+    //  std::vector<StaticVertex>defaultCoreRectVertexVector(4);
+    //  defaultCoreRectVertexVector[0].mPos = { -1,1,1 };
+    //  defaultCoreRectVertexVector[1].mPos = { -1,-1,1 };
+    //  defaultCoreRectVertexVector[2].mPos = { 1,-1,1 };
+    //  defaultCoreRectVertexVector[3].mPos = { 1,1,1 };
 
+    //  defaultCoreRectVertexVector[0].mTex = { 0,0 };
+    //  defaultCoreRectVertexVector[1].mTex = { 1,0 };
+    //  defaultCoreRectVertexVector[2].mTex = { 0,1 };
+    //  defaultCoreRectVertexVector[3].mTex = { 1,1 };
 
-  //  defaultCoreRectVertexVector[0].mTex = { 0,0 };
-  //  defaultCoreRectVertexVector[1].mTex = { 1,0 };
-  //  defaultCoreRectVertexVector[2].mTex = { 0,1 };
-  //  defaultCoreRectVertexVector[3].mTex = { 1,1 };
+    //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexUploadBuffer;
+    //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexDefaultBuffer =
+    //  Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectVertexVector.data(),
+    //  sizeof(StaticVertex), 4,
+    //      defaultCoreRectVertexUploadBuffer);
 
-  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexUploadBuffer;
-  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectVertexDefaultBuffer =   Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectVertexVector.data(), sizeof(StaticVertex), 4,
-  //      defaultCoreRectVertexUploadBuffer);
+    //  defaultCoreRect->SetVertexBuffer(defaultCoreRectVertexDefaultBuffer);
+    //  defaultCoreRect->SetVertexNum(4);
 
+    //  std::vector<MeshIndexType> defaultCoreRectIndexVector(6);
+    //  defaultCoreRectIndexVector[0] = 0;
+    //  defaultCoreRectIndexVector[1] = 1;
+    //  defaultCoreRectIndexVector[2] = 2;
 
-  //  defaultCoreRect->SetVertexBuffer(defaultCoreRectVertexDefaultBuffer);
-  //  defaultCoreRect->SetVertexNum(4);
+    //  defaultCoreRectIndexVector[3] = 1;
+    //  defaultCoreRectIndexVector[4] = 3;
+    //  defaultCoreRectIndexVector[5] = 2;
 
+    //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexUploadBuffer;
+    //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexDefaultBuffer = Utility::CreateDefaultBuffer(mDevice,
+    //  mGraphicscommandList, defaultCoreRectIndexVector.data(), sizeof(MeshIndexType), 6,
+    //      defaultCoreRectIndexUploadBuffer);
 
-  //  std::vector<MeshIndexType> defaultCoreRectIndexVector(6);
-  //  defaultCoreRectIndexVector[0] = 0;
-  //  defaultCoreRectIndexVector[1] = 1;
-  //  defaultCoreRectIndexVector[2] = 2;
+    //  defaultCoreRect->SetIndexBuffer(defaultCoreRectIndexDefaultBuffer);
+    //  defaultCoreRect->SetIndexNum(6);
 
-  //  defaultCoreRectIndexVector[3] = 1;
-  //  defaultCoreRectIndexVector[4] = 3;
-  //  defaultCoreRectIndexVector[5] = 2;
+    //  std::vector<SubMesh> defaultCoreRectSubMeshVector(1);
+    //  defaultCoreRectSubMeshVector[0].mID = 0;
+    //  defaultCoreRectSubMeshVector[0].mIndexRange.first = 0;
+    //  defaultCoreRectSubMeshVector[0].mIndexRange.second = 6;
+    //  defaultCoreRectSubMeshVector[0].mMesh = defaultCoreRect;
+    //  defaultCoreRectSubMeshVector[0].mVertexNum = 4;
+    //  defaultCoreRectSubMeshVector[0].mVertexOffset = 0;
 
+    //  defaultCoreRect->SetSubMeshVector(std::move(defaultCoreRectSubMeshVector));
 
-  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexUploadBuffer;
-  //  Microsoft::WRL::ComPtr<ID3D12Resource> defaultCoreRectIndexDefaultBuffer = Utility::CreateDefaultBuffer(mDevice, mGraphicscommandList, defaultCoreRectIndexVector.data(), sizeof(MeshIndexType), 6,
-  //      defaultCoreRectIndexUploadBuffer);
+    ////  defaultCoreRect->SetVertexNum(4);
 
-
-  //  defaultCoreRect->SetIndexBuffer(defaultCoreRectIndexDefaultBuffer);
-  //  defaultCoreRect->SetIndexNum(6);
-
-  //  std::vector<SubMesh> defaultCoreRectSubMeshVector(1);
-  //  defaultCoreRectSubMeshVector[0].mID = 0;
-  //  defaultCoreRectSubMeshVector[0].mIndexRange.first = 0;
-  //  defaultCoreRectSubMeshVector[0].mIndexRange.second = 6;
-  //  defaultCoreRectSubMeshVector[0].mMesh = defaultCoreRect;
-  //  defaultCoreRectSubMeshVector[0].mVertexNum = 4;
-  //  defaultCoreRectSubMeshVector[0].mVertexOffset = 0;
-
-
-  //  defaultCoreRect->SetSubMeshVector(std::move(defaultCoreRectSubMeshVector));
-
-  ////  defaultCoreRect->SetVertexNum(4);
-
-  //  mGraphicCommandObject.ExecuteCommandList();
-  //  mGraphicCommandObject.FlushCommandQueue();
-
-
-
+    //  mGraphicCommandObject.ExecuteCommandList();
+    //  mGraphicCommandObject.FlushCommandQueue();
 }
 
-//void Application::HarfBuzzTest()
+// void Application::HarfBuzzTest()
 //{
 ////    FT_Library  library;        //FT_Library는 핸들이다 (모든 타입이 다 그런거같다 ,객체는내부적으로 존재하는거고)
 ////   FT_Error error = FT_Init_FreeType(&library);
@@ -2187,15 +2134,10 @@ void Application::CreateDefaultCoreResource()
 ////
 ////   FT_Face faceFt;
 //////   error = FT_New_Face(library, "C:\\Users\\dongd\\Downloads\\aver-font\\AverBold-4YlW.ttf",
-////   error = FT_New_Face(library, "C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf",
-////       0, &faceFt);
-////   if (error == FT_Err_Unknown_File_Format)
-////   {
-////       MessageBox(nullptr, L"face error", L"error", MB_OK);
-////   }
-////   else if (error)
-////   {
-////       MessageBox(nullptr, L"face error", L"error", MB_OK);
+////   error = FT_New_Face(library,
+///"C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf", /       0,
+///&faceFt); /   if (error == FT_Err_Unknown_File_Format) /   { /       MessageBox(nullptr, L"face error", L"error",
+/// MB_OK); /   } /   else if (error) /   { /       MessageBox(nullptr, L"face error", L"error", MB_OK);
 ////
 ////   }
 ////   faceFt->size->metrics.x_scale;
@@ -2212,7 +2154,7 @@ void Application::CreateDefaultCoreResource()
 ////    //FT_Set_Char_Size(faceFt, 0,72 * 64, 96, 96);
 ////    FT_Set_Pixel_Sizes(faceFt, 300, 300);
 ////    FT_Load_Glyph(faceFt, charA_glyph_index, FT_LOAD_DEFAULT);
-////    
+////
 ////    FT_Render_Glyph(faceFt->glyph,
 ////        FT_RENDER_MODE_NORMAL);
 ////
@@ -2227,7 +2169,7 @@ void Application::CreateDefaultCoreResource()
 ////    hb_buffer_t* buf;
 ////    buf = hb_buffer_create();
 ////    hb_buffer_add_utf8(buf, "hello World", -1, 0, -1);
-////    
+////
 ////    //2 Set the script, language and direction of the buffer
 ////    //script는 여기서 문자체계 ,시스템을 의미한다.
 ////
@@ -2235,20 +2177,22 @@ void Application::CreateDefaultCoreResource()
 ////    hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
 ////    hb_buffer_set_language(buf, hb_language_from_string("en", -1));
 ////
-////   // hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Lemon Shake Shake.otf");
-////    hb_blob_t* blob = hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
-////    
+////   // hb_blob_t* blob =
+/// hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Lemon Shake
+/// Shake.otf"); /    hb_blob_t* blob =
+/// hb_blob_create_from_file("C:\\Users\\dongd\\source\\repos\\SecenGraphQuadTree\\SecenGraphQuadTree\\Font\\DefaultFont.ttf");
+////
 ////    hb_face_t* face = hb_face_create(blob, 0);
 ////    hb_font_t* font = hb_font_create(face);
 ////
 ////    hb_shape(font, buf, NULL, 0);
-////    
+////
 ////    //hb_ft_face_create_referenced()
 ////
 ////    unsigned int glyph_count;
 ////    hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
 ////    hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-////  
+////
 ////    hb_position_t cursor_x = 0;
 ////    hb_position_t cursor_y = 0;
 ////    for (unsigned int i = 0; i < glyph_count; i++) {
@@ -2257,7 +2201,7 @@ void Application::CreateDefaultCoreResource()
 ////        hb_position_t y_offset = glyph_pos[i].y_offset;
 ////        hb_position_t x_advance = glyph_pos[i].x_advance;
 ////        hb_position_t  y_advance = glyph_pos[i].y_advance;
-////        
+////
 ////       // draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
 ////        cursor_x += x_advance;
 ////        cursor_y += y_advance;
@@ -2281,10 +2225,11 @@ void Application::CreateDefaultCoreResource()
 //
 //}
 //
-//void Application::CreateBitMap(FT_Bitmap bitmap)
+// void Application::CreateBitMap(FT_Bitmap bitmap)
 //{
 //    // Calculate aligned RowPitch (must be a multiple of 256 bytes for DirectX 12)
-//    UINT alignedRowPitch = (bitmap.pitch + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
+//    UINT alignedRowPitch = (bitmap.pitch + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) &
+//    ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1);
 //
 //    // Create upload buffer
 //    D3D12_RESOURCE_DESC uploadBufferDesc = {};
@@ -2397,7 +2342,7 @@ void Application::CreateDefaultCoreResource()
 //
 //
 //
-//void Application::BitmapToTextureResource(FT_Bitmap bitmap)
+// void Application::BitmapToTextureResource(FT_Bitmap bitmap)
 //{
 //    //texture
 //    mTextTexture;
@@ -2445,7 +2390,7 @@ void Application::CreateDefaultCoreResource()
 //
 //
 //    //uploadbuffer만들기
-//    
+//
 //
 //    D3D12_RESOURCE_DESC uploadBufferDesc;
 //    uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -2485,7 +2430,7 @@ void Application::CreateDefaultCoreResource()
 //   {
 //       memcpy(&pData[subFootPrint.Footprint.RowPitch *row], &bitmap.buffer[bitmap.width * row], bitmap.width);
 //   }
-//   
+//
 //   for (unsigned int row = 0; row < bitmap.rows; ++row)
 //   {
 //       for (unsigned int i = 0; i < bitmap.width; ++i)
@@ -2545,7 +2490,7 @@ void Application::CreateDefaultCoreResource()
 //    D3D12_TEXTURE_COPY_LOCATION dst{ mTextTexture.Get(),D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,(UINT64)0 };
 //
 //    mGraphicscommandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
-//    
+//
 //  // mGraphicscommandList->CopyResource(mTextTexture.Get(), uploadBuffer.Get());
 //
 //
@@ -2557,7 +2502,7 @@ void Application::CreateDefaultCoreResource()
 //   texTransferState.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 //   texTransferState.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 //   texTransferState.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-// 
+//
 //   mGraphicscommandList->ResourceBarrier(1, &texTransferState);
 //
 //
@@ -2567,10 +2512,10 @@ void Application::CreateDefaultCoreResource()
 //
 //}
 
-}
+} // namespace Quad
 
 //
-//int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+// int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 //{
 //
 //	Quad::Application app;
@@ -2579,4 +2524,3 @@ void Application::CreateDefaultCoreResource()
 //
 //	return app.Run();
 //}
-

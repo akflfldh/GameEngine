@@ -1,49 +1,50 @@
 ﻿#pragma once
 
-#include<dxgi.h>
-#include"RenderType.h"
+#include "RenderSystem/RenderType.h"
 
-#include<assert.h>
-#include<iostream>
-#include<unordered_map>
-#include<memory>
+#include <dxgi.h>
 
-#include<d3d12.h>
+#include <assert.h>
+#include <iostream>
+#include <memory>
+#include <unordered_map>
 
-#include<wrl.h>
+#include <d3d12.h>
+
+#include <wrl.h>
 #ifdef D3DX
-#include"RenderSystemDllMacro.h"
+#include "RenderSystem/RenderSystemDllMacro.h"
 namespace D3DRender
 {
-	class D3DWindowRenderData;
+class D3DWindowRenderData;
 
-	//window별 공통의데이터인 WindowRenderData를 관리하는 Manager클래스
-	class RENDER_SYSTEM_API D3DWindowRenderManager
-	{
-	public:
-		//반드시 어느 한곳에서 생성후 호출할것
-		static D3DWindowRenderManager* GetInstance();
+// window별 공통의데이터인 WindowRenderData를 관리하는 Manager클래스
+class RENDER_SYSTEM_API D3DWindowRenderManager
+{
+  public:
+    // 반드시 어느 한곳에서 생성후 호출할것
+    static D3DWindowRenderManager *GetInstance();
 
-		D3DWindowRenderManager(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory> factory);
-		~D3DWindowRenderManager();
+    D3DWindowRenderManager(Microsoft::WRL::ComPtr<ID3D12Device> device, Microsoft::WRL::ComPtr<IDXGIFactory> factory,
+                           Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue);
+    ~D3DWindowRenderManager();
 
-		
-		bool RegisterWindow(const Render::CreationRenderChannelInfo& creationChannelInfo);
-		
-		std::shared_ptr<D3DWindowRenderData> GetWindowRenderData(HWND hwnd) const;
-	private:
+    bool RegisterWindow(const Render::CreationRenderChannelInfo &creationChannelInfo);
 
-		static D3DWindowRenderManager* mInstance;
+    std::shared_ptr<D3DWindowRenderData> GetWindowRenderData(HWND hwnd) const;
 
-		Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
-		Microsoft::WRL::ComPtr<IDXGIFactory> mFactory;
+    void WindowResize(HWND hwnd);
 
-		std::unordered_map<HWND, std::shared_ptr<D3DWindowRenderData>> mWindowRenderDataTable;
+  private:
+    static D3DWindowRenderManager *mInstance;
 
+    Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
+    Microsoft::WRL::ComPtr<IDXGIFactory> mFactory;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
 
-	};
+    std::unordered_map<HWND, std::shared_ptr<D3DWindowRenderData>> mWindowRenderDataTable;
+};
 
-}
-
+} // namespace D3DRender
 
 #endif

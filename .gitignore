@@ -403,9 +403,10 @@ FodyWeavers.xsd
 *.sln.iml
 
 
-Include/Fbx/fbxsdk
-Include/Fbx/lib
-Include/Fbx/libxml2
-Include/Fbx/fbxsdk.h
-ProjectMetaDataFile.json
+/build/
 
+/x64/
+
+
+*.exe
+/Lib/

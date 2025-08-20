@@ -1,73 +1,52 @@
-﻿#include "BinaryWriter.h"
-#include<PhysicalFileSystem.h>
-QuadRW::BinaryWriter::BinaryWriter()
-	:mPhysicalFileSystem(QuadPF::PhysicalFileSystem::GetInstance())
-{
+﻿#include "BinaryReaderWriter/BinaryWriter.h"
+#include <PhysicalFileSystem/PhysicalFileSystem.h>
+QuadRW::BinaryWriter::BinaryWriter() : mPhysicalFileSystem(QuadPF::PhysicalFileSystem::GetInstance()) {}
 
-
-}
-
-QuadRW::BinaryWriter::~BinaryWriter()
-{
-}
+QuadRW::BinaryWriter::~BinaryWriter() {}
 
 void QuadRW::BinaryWriter::StartWrite()
 {
-	mBuffer.clear();
-	
-
+    mBuffer.clear();
 }
-bool QuadRW::BinaryWriter::Close(const std::string & path)
-{
-	
-	bool ret = mPhysicalFileSystem->WriteBufferToFile(path, mBuffer.data(), mBuffer.size());
-
-
-	return ret;
-
-}
-
-
-void QuadRW::BinaryWriter::Write(const std::string& str)
-{
-	
-	size_t size = str.size();
-	Write(size);
-	if (size != 0)
-	{
-		const uint8_t* pData = reinterpret_cast<const uint8_t*>(str.data());
-		mBuffer.insert(mBuffer.end(), pData, pData + size);
-	}
-}
-
-void QuadRW::BinaryWriter::Write(void* data, size_t size)
-{
-	if (data == nullptr)
-		return;
-
-	Write(size);
-
-	const uint8_t* pData = reinterpret_cast<const uint8_t*>(data);
-	mBuffer.insert(mBuffer.end(), pData, pData+size);
-
-}
-
-
-
-//일반 타입
-template<typename T>
-void QuadRW::BinaryWriter::Write(T data)
+bool QuadRW::BinaryWriter::Close(const std::string &path)
 {
 
-	const uint8_t* pData = reinterpret_cast<const uint8_t*>(& data);
+    bool ret = mPhysicalFileSystem->WriteBufferToFile(path, mBuffer.data(), mBuffer.size());
 
-	mBuffer.insert(mBuffer.end(), pData, pData + sizeof(data));
-
+    return ret;
 }
 
+void QuadRW::BinaryWriter::Write(const std::string &str)
+{
 
+    size_t size = str.size();
+    Write(size);
+    if (size != 0)
+    {
+        const uint8_t *pData = reinterpret_cast<const uint8_t *>(str.data());
+        mBuffer.insert(mBuffer.end(), pData, pData + size);
+    }
+}
 
+void QuadRW::BinaryWriter::Write(void *data, size_t size)
+{
+    if (data == nullptr)
+        return;
 
+    Write(size);
+
+    const uint8_t *pData = reinterpret_cast<const uint8_t *>(data);
+    mBuffer.insert(mBuffer.end(), pData, pData + size);
+}
+
+// 일반 타입
+template <typename T> void QuadRW::BinaryWriter::Write(T data)
+{
+
+    const uint8_t *pData = reinterpret_cast<const uint8_t *>(&data);
+
+    mBuffer.insert(mBuffer.end(), pData, pData + sizeof(data));
+}
 
 template void QuadRW::BinaryWriter::Write<bool>(bool data);
 template void QuadRW::BinaryWriter::Write<char>(char data);

@@ -1,9 +1,0 @@
-<Project>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <PreprocessorDefinitions>
-        _WINDOWS;D3DX;%(PreprocessorDefinitions)
-      </PreprocessorDefinitions>
-    </ClCompile>
-  </ItemDefinitionGroup>
-</Project>

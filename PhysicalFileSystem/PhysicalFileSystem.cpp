@@ -1,55 +1,39 @@
-﻿#include"PhysicalFileSystem.h"
+﻿#include "PhysicalFileSystem/PhysicalFileSystem.h"
 
-#include<assert.h>
-
+#include <assert.h>
 
 #ifdef _WINDOWS
-#include"WindowPhysicalFileSystem.h"
+#include "PhysicalFileSystem/WindowPhysicalFileSystem.h"
 
 #endif
 
-QuadPF::PhysicalFileSystem * QuadPF::PhysicalFileSystem::mImplSystem = nullptr;
+QuadPF::PhysicalFileSystem *QuadPF::PhysicalFileSystem::mImplSystem = nullptr;
 
-QuadPF::PhysicalFileSystem* QuadPF::PhysicalFileSystem::GetInstance()
+QuadPF::PhysicalFileSystem *QuadPF::PhysicalFileSystem::GetInstance()
 {
 
 #ifdef _WINDOWS
 
-	static WindowsPhysicalFileSystem instance;
+    static WindowsPhysicalFileSystem instance;
 
+#endif
 
+    return &instance;
 
-#endif 
+    // if (mImplSystem == nullptr)
+    //{
+    //	//log
+    //	assert(0);
+    // }
 
-
-
-	return &instance;
-
-
-
-	//if (mImplSystem == nullptr)
-	//{
-	//	//log
-	//	assert(0);
-	//}
-
-	//return mImplSystem;
+    // return mImplSystem;
 }
 
+QuadPF::PhysicalFileSystem::PhysicalFileSystem() {}
 
-QuadPF::PhysicalFileSystem::PhysicalFileSystem()
-{
+QuadPF::PhysicalFileSystem::~PhysicalFileSystem() {}
 
-
-}
-
-QuadPF::PhysicalFileSystem::~PhysicalFileSystem() {
-
-
-
-}
-
-//void QuadPF::PhysicalFileSystem::SetPhysicalFileSystemImpl(PhysicalFileSystem* pImpl)
+// void QuadPF::PhysicalFileSystem::SetPhysicalFileSystemImpl(PhysicalFileSystem* pImpl)
 //{
 //	if (mImplSystem != nullptr)
 //	{
@@ -59,4 +43,4 @@ QuadPF::PhysicalFileSystem::~PhysicalFileSystem() {
 //
 //	mImplSystem = pImpl;
 //
-//}
+// }

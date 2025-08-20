@@ -1,38 +1,32 @@
 ﻿#pragma once
 
-#include"AssetType.h"
-#include<unordered_map>
-#include"AssetPtr.h"
-#include"AssetMetaDataType.h"
-
+#include "CoreAsset/AssetMetaDataType.h"
+#include "CoreAsset/AssetPtr.h"
+#include "CoreAsset/AssetType.h"
+#include <unordered_map>
 
 namespace CoreAsset
 {
 
-	class CORE_ASSET_API AssetMetaDataManager
-	{
-	public:
-		static AssetMetaDataManager* GetInstance();
-		~AssetMetaDataManager();
+class CORE_ASSET_API AssetMetaDataManager
+{
+  public:
+    static AssetMetaDataManager *GetInstance();
+    ~AssetMetaDataManager();
 
+    bool Register(const AssetMetaData &assetMetaData);
+    void UnRegister(AssetID id);
 
-		bool Register(const AssetMetaData& assetMetaData);
-		void UnRegister(EAssetType assetType, AssetID id);
+    AssetMetaData *GetMetaData(AssetID id) const;
 
+  private:
+    AssetMetaDataManager();
 
-		TextureMetaData* GetTextureMetaData(AssetID id) const;
+  private:
+    // 타입별로 테이블
 
+    using AssetMetaTable = std::unordered_map<AssetID, AssetMetaData *>;
+    AssetMetaTable mAssetMetaDataTable;
+};
 
-	private:
-		AssetMetaDataManager();
-
-	private:
-		//타입별로 테이블
-
-		using TypeIDMetaTable = std::unordered_map < EAssetType, std::unordered_map<AssetID, AssetMetaData*>>;
-		TypeIDMetaTable mAssetMetaDataTable;
-
-	};
-
-
-}
+} // namespace CoreAsset

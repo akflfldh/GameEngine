@@ -1,32 +1,22 @@
-﻿#include "LogicalFile.h"
+﻿#include "LogicalFileSystem/LogicalFile.h"
 
+QuadLF::LogicalFile::LogicalFile(LogicalNodeID id) : LogicalNode(id, ELogicalNodeType::eFile) {}
 
-QuadLF::LogicalFile::LogicalFile(LogicalNodeID id)
-	:LogicalNode(id, ELogicalNodeType::eFile)
+QuadLF::LogicalFile::~LogicalFile() {}
+
+void QuadLF::LogicalFile::SetAssetInfo(const LogicalFileAssetInfo &fileAssetInfo)
 {
+    mAssetInfo = fileAssetInfo;
 }
 
-QuadLF::LogicalFile::~LogicalFile()
+QuadLF::LogicalFileAssetInfo &QuadLF::LogicalFile::GetAssetInfo()
 {
+
+    return mAssetInfo;
 }
 
-void QuadLF::LogicalFile::SetAssetInfo(const LogicalFileAssetInfo& fileAssetInfo)
-{
-	mAssetInfo = fileAssetInfo;
-
-}
-
-QuadLF::LogicalFileAssetInfo& QuadLF::LogicalFile::GetAssetInfo()
+const QuadLF::LogicalFileAssetInfo &QuadLF::LogicalFile::GetAssetInfo() const
 {
 
-
-
-	return mAssetInfo;
-}
-
-const QuadLF::LogicalFileAssetInfo& QuadLF::LogicalFile::GetAssetInfo() const
-{
-	
-	return mAssetInfo;
-
+    return mAssetInfo;
 }

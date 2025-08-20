@@ -1,160 +1,97 @@
-﻿#include "UIRectTransform.h"
-#include"UIElement.h"
-UI::UIRectTransform::UIRectTransform(UIElement* owner)
-	:mOwner(owner),mLocalDirtyFlag(false), mParentTrasnformVersionNum(0),mCurrentTransformVersionNum(0)
+﻿#include "UiSystem/UIRectTransform.h"
+#include "UiSystem/UIElement.h"
+
+UI::UIRectTransform::UIRectTransform(UIElement *owner) : mOwner(owner) {}
+
+void UI::UIRectTransform::SetPositionLocal(const CoreMath::Vector2 &pos)
 {
+    mLocalPosition = pos;
+    MarkDirty();
 }
 
-
-UI::UIRectTransform::~UIRectTransform()
+void UI::UIRectTransform::SetSize(const CoreMath::Vector2 &size)
 {
+    mSize = size;
+    MarkDirty();
 }
 
-void UI::UIRectTransform::SetPositionLocal(const CoreMath::Vector3& posLocal)
+void UI::UIRectTransform::TranslateLocal(const CoreMath::Vector2 &shift)
 {
-	mPositionLocal = posLocal;
-
-	mLocalDirtyFlag = true;
+    mLocalPosition += shift;
+    MarkDirty();
 }
 
-void UI::UIRectTransform::SetScaleLocal(const CoreMath::Vector3& scaleLocal)
-{
-	mScaleLocal = scaleLocal;
-	mScaleLocal.Z = 1.0f;
+UI::UIRectTransform::~UIRectTransform() {}
 
-	mLocalDirtyFlag = true;
+const CoreMath::Matrix4X4 &UI::UIRectTransform::GetWorldMatrix()
+{
+    UpdateIfDirty();
+    return mWorldMatrix;
 
-}
-CoreMath::Vector3 UI::UIRectTransform::GetPositionLocal() const
-{
-	return mPositionLocal;
-}
-CoreMath::Vector3 UI::UIRectTransform::GetScaleLocal() const
-{
-	return mScaleLocal;
+    // TODO: 여기에 return 문을 삽입합니다.
 }
 
-
-CoreMath::Vector3 UI::UIRectTransform::GetPositionWorld() const
+const CoreMath::Vector2 &UI::UIRectTransform::GetWorldPosition() const
 {
 
-	//worldTransform과 동일하게 
-	//localDirty와 부모와의 버전일치를 확인하고 적절히 갱신후 
-	//분해하여 리턴한다.
-
-	GetWorldMatrix();
-
-	CoreMath::Vector3 positionWorld;
-	CoreMath::Quaternion quaternion;
-	CoreMath::Vector3 scaleWorld;
-	CoreMath::Matrix4X4::MatrixDecompose(positionWorld, quaternion, scaleWorld, mWorldMatrix);
-
-	return positionWorld;
+    UpdateIfDirty();
+    return mWorldPosition;
 }
 
-
-
-CoreMath::Vector3 UI::UIRectTransform::GetScaleWorld() const
+const CoreMath::Vector2 &UI::UIRectTransform::GetLocalPosition() const
 {
-
-	GetWorldMatrix();
-	CoreMath::Vector3 positionWorld;
-	CoreMath::Quaternion quaternion;
-	CoreMath::Vector3 scaleWorld;
-	CoreMath::Matrix4X4::MatrixDecompose(positionWorld, quaternion, scaleWorld, mWorldMatrix);
-
-	return scaleWorld;
-
+    return mLocalPosition;
+    // TODO: 여기에 return 문을 삽입합니다.
 }
 
-CoreMath::Vector3 UI::UIRectTransform::GetSizeWorld() const
+const CoreMath::Vector2 &UI::UIRectTransform::GetSize() const
 {
-	//dirty플래그가 켜져있으면 조상이 변한것임으로 업데이트 후 리턴
-	return mSizeWorld;
+    return mSize;
 }
 
-
-
-CoreMath::Matrix4X4 UI::UIRectTransform::GetWorldMatrix() const
+void UI::UIRectTransform::GetQuadWorldPoints(CoreMath::Vector2 out[4]) const
 {
 
-	//먼저 부모의 변환행렬을 가져와야한다
-	//GetWorldMatrix 그래야 부모도 자신의 부모들과의 버전비교후 업데이트를 올바르게 먼저수행(재귀적으로)
-	//만약 완전히 갱신된상태였다면 빠르게 거슬러올라가면서 버전확인후 돌아온다.
+    float halfWidth = mSize.X * 0.5f;
+    float halfHeight = mSize.Y * 0.5f;
 
-	UIElement * parentUIElement =	mOwner->GetParent();	//최상위는 UICanvas일것이다.
-	if (parentUIElement != nullptr)
-	{
-		CoreMath::Matrix4X4 parentWorldMatrix = parentUIElement->GetRectTransform()->GetWorldMatrix();
-		//그렇지않은경우 적절한 부모의 월드행렬,버전갱신 발생한다.
+    UpdateIfDirty();
 
-		if (GetParentTransformVersionNum() != parentUIElement->GetRectTransform()->GetCurrentTransformVersionNum())
-		{
-			//업데이트 필요
-			UpdateWorldMatrix(parentWorldMatrix);
-			mParentTrasnformVersionNum = parentUIElement->GetRectTransform()->GetCurrentTransformVersionNum();
-			mCurrentTransformVersionNum++;
-		}
-	}
-	else if (mLocalDirtyFlag)
-	{
-		//역시 업데이트필요 // 
-		UpdateWorldMatrix(CoreMath::Matrix4X4::Identity);
-		mLocalDirtyFlag = false;
-		mCurrentTransformVersionNum++;
-	}
-	else
-	{
-		//업데이트 불필요 최신상태
-
-	}
-
-	return mWorldMatrix;
+    out[0] = mWorldPosition + CoreMath::Vector2(-halfWidth, +halfHeight); // top-left
+    out[1] = mWorldPosition + CoreMath::Vector2(+halfWidth, +halfHeight); // top-right
+    out[2] = mWorldPosition + CoreMath::Vector2(+halfWidth, -halfHeight); // bottom-right
+    out[3] = mWorldPosition + CoreMath::Vector2(-halfWidth, -halfHeight); // bottom-left
 }
 
-void UI::UIRectTransform::GetRectPointWorld(std::vector<CoreMath::Vector3> oPoints) const
+void UI::UIRectTransform::MarkDirty()
 {
-
-	oPoints.resize(4);
-
-	CoreMath::Vector3 pos = GetPositionWorld();
-	CoreMath::Vector3 size = GetSizeWorld();
-
-
-
-	CoreMath::Vector3 sizeDivide2 = size / 2;
-	//0   x  -  , y + 
-	oPoints[0] = pos;
-	oPoints[0].X -= sizeDivide2.X;
-	oPoints[0].Y += sizeDivide2.Y;
-
-	//1  x + , y +
-	oPoints[1] = pos;
-	oPoints[1].X += sizeDivide2.X;
-	oPoints[1].Y += sizeDivide2.Y;
-
-	//2   x - , y - 
-	oPoints[2] = pos;
-	oPoints[2].X -= sizeDivide2.X;
-	oPoints[2].Y -= sizeDivide2.Y;
-
-	//3  x +  , y -
-	oPoints[3] = pos;
-	oPoints[3].X += sizeDivide2.X;
-	oPoints[3].Y -= sizeDivide2.Y;
-
+    mDirty = true;
 }
 
-uint64_t UI::UIRectTransform::GetParentTransformVersionNum() const
+void UI::UIRectTransform::UpdateIfDirty() const
 {
-	return mParentTrasnformVersionNum;
+
+    UIElement *parent = mOwner->GetParent();
+
+    if (parent != nullptr)
+    {
+        UIRectTransform &parentTransform = parent->mTransform;
+        parentTransform.UpdateIfDirty();
+
+        mWorldPosition = mLocalPosition + parentTransform.mWorldPosition;
+        UpdateWorldMatrix();
+    }
+    else if (mDirty)
+    {
+        mWorldPosition = mLocalPosition;
+        UpdateWorldMatrix();
+    }
+
+    mDirty = false;
 }
 
-uint64_t UI::UIRectTransform::GetCurrentTransformVersionNum() const
+void UI::UIRectTransform::UpdateWorldMatrix() const
 {
-	return mCurrentTransformVersionNum;
-}
-
-void UI::UIRectTransform::UpdateWorldMatrix(const CoreMath::Matrix4X4 & parentWorldMatrix) const
-{
+    mWorldMatrix = CoreMath::Matrix4X4::MakeTransform({mWorldPosition.X, mWorldPosition.Y, 0}, {0, 0, 0, 1},
+                                                      {mSize.X, mSize.Y, 1});
 }

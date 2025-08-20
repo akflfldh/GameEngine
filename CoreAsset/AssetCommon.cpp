@@ -1,54 +1,40 @@
-﻿#include "AssetCommon.h"
+﻿#include "CoreAsset/AssetCommon.h"
 
+#include "CoreAsset/Asset.h"
+#include <Utility.h>
+#include <vector>
 
-
-#include"Asset.h"
-#include<vector>
-#include<Utility.h>
-
-const char* CoreAsset::GetAssetFileExtension()
+const char *CoreAsset::GetAssetFileExtension()
 {
-	return "asset";
+    return "asset";
 }
 
-const char* CoreAsset::GetAssetRawFileExtension()
+const char *CoreAsset::GetAssetRawFileExtension()
 {
-	return "raw";
+    return "raw";
 }
 
-std::string CoreAsset::GetAssetFileName(CoreAsset::Asset* asset)
+std::string CoreAsset::GetAssetFileName(CoreAsset::Asset *asset)
 {
-	if (asset == nullptr)
-		return "";
+    if (asset == nullptr)
+        return "";
 
-
-
-
-	return asset->GetName() + "."+ GetAssetFileExtension();
-	
-
-
+    std::string fileName = asset->GetName() + "." + GetAssetFileExtension();
+    return fileName;
 }
 
-std::string CoreAsset::GetAssetRawFileName(const std::string & logicalPath)
+std::string CoreAsset::GetAssetRawFileName(const std::string &logicalPath)
 {
 
-	std::vector<std::string> logicalPathTokenVector=  CoreUtility::Utility::Split(logicalPath, '/');
+    std::vector<std::string> logicalPathTokenVector = CoreUtility::Utility::Split(logicalPath, '/');
 
+    std::string rawFileName;
+    for (const auto &folderToken : logicalPathTokenVector)
+    {
+        rawFileName += folderToken + ".";
+    }
 
-	std::string rawFileName;
-	for (const auto& folderToken : logicalPathTokenVector)
-	{
-		rawFileName += folderToken + ".";
-	}
+    rawFileName += GetAssetRawFileExtension();
 
-	rawFileName += GetAssetRawFileExtension();
-
-
-	return rawFileName;
+    return rawFileName;
 }
-
-
-
-
-

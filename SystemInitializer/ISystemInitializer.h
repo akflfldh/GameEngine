@@ -1,25 +1,24 @@
 ﻿#pragma once
 
-#include"SystemInitializerDll.h"
+#include "SystemInitializer/SystemInitializerDll.h"
 namespace SystemInitializer
 {
 
-	class SYSTEM_INITIALIZER_API ISystemInitializer
-	{
-	public:
-		//한번만생성
-		virtual ~ISystemInitializer()= 0 ;
+class SYSTEM_INITIALIZER_API ISystemInitializer
+{
+  public:
+    // 한번만생성
+    virtual ~ISystemInitializer() = 0;
 
+    virtual void Initialize() = 0;
 
-		virtual void Initialize() = 0;
-		
-		static void SetSystemInitializerImpl(ISystemInitializer* pImpl); 
-		static ISystemInitializer* GetInstance();
-	protected:
-		ISystemInitializer();
+    static void SetSystemInitializerImpl(ISystemInitializer *pImpl);
+    static ISystemInitializer *GetInstance();
 
-	private:
-		static ISystemInitializer* mImpl;
+  protected:
+    ISystemInitializer();
 
-	};
-}
+  private:
+    static ISystemInitializer *mImpl;
+};
+} // namespace SystemInitializer

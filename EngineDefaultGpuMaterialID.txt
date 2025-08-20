@@ -1,0 +1,2 @@
+constexpr Render::MaterialID DefaultUIGpuMaterialID = 3;
+constexpr Render::MaterialID DefaultGizmoUIGpuMaterialID = 4;

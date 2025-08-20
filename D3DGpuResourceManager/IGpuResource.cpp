@@ -1,26 +1,17 @@
-﻿#include "IGpuResource.h"
-#include"IGpuResourceManager.h"
-GRM::IGpuResource::IGpuResource()
-{
-}
+﻿#include "D3DGpuResourceManager/IGpuResource.h"
+#include "D3DGpuResourceManager/IGpuResourceManager.h"
+GRM::IGpuResource::IGpuResource() {}
 
-GRM::IGpuResource::~IGpuResource()
-{
-
-
-
-}
-
+GRM::IGpuResource::~IGpuResource() {}
 
 GRM::EGpuResourceType GRM::IGpuResource::GetGpuResourceType() const
 {
-	return mGpuResourceType;
+    return mGpuResourceType;
 }
-
 
 void GRM::IGpuResource::Release()
 {
-	auto manager =	IGpuResourceManager::GetInstance();
-	
-	manager->Release(this);
+    auto manager = IGpuResourceManager::GetInstance();
+
+    manager->Release(this);
 }

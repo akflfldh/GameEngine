@@ -1,130 +1,116 @@
-﻿#include "AssetPtr.h"
-#include"TextureManager.h"
-#include"Texture.h"
+﻿#include "CoreAsset/AssetPtr.h"
+#include "CoreAsset/Texture.h"
+#include "CoreAsset/TextureManager.h"
 
+#include "CoreAsset/Material.h"
+#include "CoreAsset/MaterialManager.h"
 
-template<typename T>
-class AssetManagerAccessor
+#include "CoreAsset/GlobalAssetRegistrySystem.h"
+
+template <typename T> class AssetManagerAccessor
 {
-public:
-	static_assert(sizeof(T) == 0, "AssetManagerAccessor<T> is not specialized for this type.");
+  public:
+    static_assert(sizeof(T) == 0, "AssetManagerAccessor<T> is not specialized for this type.");
 
-private:
-
+  private:
 };
 
-
-template<>
-class AssetManagerAccessor<CoreAsset::Texture>
+template <> class AssetManagerAccessor<CoreAsset::Asset>
 {
-public:
+  public:
+    static CoreAsset::GlobalAssetRegistrySystem *GetManager()
+    {
+        return CoreAsset::GlobalAssetRegistrySystem::GetInstance();
+    }
 
-	static CoreAsset::TextureManager* GetManager() { return CoreAsset::TextureManager::GetInstance(); }
-
-
-
-private:
-
-
-
+  private:
 };
 
-
-
-
-
-
-
-
-
-
-
-template<typename T>
-T* CoreAsset::AssetPtr<T>::Get() const
+template <> class AssetManagerAccessor<CoreAsset::Texture>
 {
-	//AssetManagerAccessor ->get(id); //항상 look up 
+  public:
+    static CoreAsset::TextureManager *GetManager()
+    {
+        return CoreAsset::TextureManager::GetInstance();
+    }
 
-	auto manager = AssetManagerAccessor<T>::GetManager();
+  private:
+};
 
-	if (mID == NoneAssetID)
-		return nullptr;
+template <> class AssetManagerAccessor<CoreAsset::Material>
+{
+  public:
+    static CoreAsset::MaterialManager *GetManager()
+    {
+        return CoreAsset::MaterialManager::GetInstance();
+    }
 
-	T * asset =	manager->GetAsset(mID);
-	return asset;
+  private:
+};
 
+template <typename T> T *CoreAsset::AssetPtr<T>::Get() const
+{
+    // AssetManagerAccessor ->get(id); //항상 look up
+
+    auto manager = AssetManagerAccessor<T>::GetManager();
+
+    if (mID == NoneAssetID)
+        return nullptr;
+
+    T *asset = manager->GetAsset(mID);
+    return asset;
 }
 
-template<typename T>
-inline CoreAsset::AssetPtr<T>::AssetPtr(T* asset)
+template <typename T> inline CoreAsset::AssetPtr<T>::AssetPtr(T *asset)
 {
-	if (asset != nullptr)
-		mID = asset->GetID();
-	else
-		mID = NoneAssetID;
+    if (asset != nullptr)
+        mID = asset->GetID();
+    else
+        mID = NoneAssetID;
 }
 
-template<typename T>
-inline CoreAsset::AssetPtr<T>::~AssetPtr()
+template <typename T> inline CoreAsset::AssetPtr<T>::~AssetPtr() {}
+
+template <typename T> CoreAsset::AssetPtr<T>::AssetPtr(const AssetPtr &rhs)
 {
-
-
-
-
-
+    mID = rhs.mID;
 }
 
-template<typename T>
-CoreAsset::AssetPtr<T>::AssetPtr(const AssetPtr& rhs)
-{
-	mID = rhs.mID;
-}
-
-template<typename T>
-CoreAsset::AssetPtr<T>& CoreAsset::AssetPtr<T>::operator=(const AssetPtr& rhs)
+template <typename T> CoreAsset::AssetPtr<T> &CoreAsset::AssetPtr<T>::operator=(const AssetPtr &rhs)
 {
 
-	mID = rhs.mID;
-	
-	return *this;
+    mID = rhs.mID;
+
+    return *this;
 }
 
-template<typename T>
-CoreAsset::AssetPtr<T>::AssetPtr(AssetPtr&& rhs)
+template <typename T> CoreAsset::AssetPtr<T>::AssetPtr(AssetPtr &&rhs)
 {
-	mID = rhs.mID;
-	rhs.mID = NoneAssetID;
-
+    mID = rhs.mID;
+    rhs.mID = NoneAssetID;
 }
 
-template<typename T>
-CoreAsset::AssetPtr<T>& CoreAsset::AssetPtr<T>::operator=(AssetPtr&& rhs)
+template <typename T> CoreAsset::AssetPtr<T> &CoreAsset::AssetPtr<T>::operator=(AssetPtr &&rhs)
 {
 
-	mID = rhs.mID;
-	rhs.mID = NoneAssetID;
+    mID = rhs.mID;
+    rhs.mID = NoneAssetID;
 
-	return *this;
+    return *this;
 }
 
-
-
-
-
-
-
-
-//template<>
-//class AssetManagerAcessor<CoreAsset::Material>
+// template<>
+// class AssetManagerAcessor<CoreAsset::Material>
 //{
-//public:
+// public:
 //	static CoreAsset::MaterialManager* GetManager() { return CoreAsset::MaterialManager::GetInstance(); }
 //
-//private:
-//};
+// private:
+// };
 
-
-
-//template class AssetManagerAccessor<CoreAsset::Texture>;
+// template class AssetManagerAccessor<CoreAsset::Texture>;
+template class CoreAsset::AssetPtr<CoreAsset::Asset>;
 template class CoreAsset::AssetPtr<CoreAsset::Texture>;
+template class CoreAsset::AssetPtr<CoreAsset::Material>;
 
-//template class CoreAsset::AssetPtr<CoreAsset::Material>;
+// template class CoreAsset::AssetPtr<CoreAsset::Material>;

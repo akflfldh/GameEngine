@@ -1,4 +1,4 @@
-﻿#include "GpuTypes.h"
+﻿#include "D3DGpuResourceManager/GpuTypes.h"
 
 bool GRM::IsSRGBType(ETextureFormat format)
 {
@@ -17,11 +17,7 @@ bool GRM::IsSRGBType(ETextureFormat format)
     }
 }
 
-
-
-
-
-GRM::ScratchImage::ScratchImage(const ScratchImage& rhs)
+GRM::ScratchImage::ScratchImage(const ScratchImage &rhs)
 {
     mimagesNum = rhs.mimagesNum;
     mSize = rhs.mSize;
@@ -34,14 +30,14 @@ GRM::ScratchImage::ScratchImage(const ScratchImage& rhs)
     {
         mImages[i] = rhs.mImages[i];
 
-        //offset 
+        // offset
         uintptr_t offset = rhs.mImages[i].mPixels - rhs.mMemory.data();
         mImages[i].mPixels = mMemory.data() + offset;
     }
-
+    memcpy(mMemory.data(), rhs.mMemory.data(), mSize);
 }
 
-GRM::ScratchImage& GRM::ScratchImage::operator=(const GRM::ScratchImage& rhs)
+GRM::ScratchImage &GRM::ScratchImage::operator=(const GRM::ScratchImage &rhs)
 {
     mimagesNum = rhs.mimagesNum;
     mSize = rhs.mSize;
@@ -53,12 +49,12 @@ GRM::ScratchImage& GRM::ScratchImage::operator=(const GRM::ScratchImage& rhs)
     {
         mImages[i] = rhs.mImages[i];
 
-        //offset 
+        // offset
         uintptr_t offset = rhs.mImages[i].mPixels - rhs.mMemory.data();
         mImages[i].mPixels = mMemory.data() + offset;
     }
 
+    memcpy(mMemory.data(), rhs.mMemory.data(), mSize);
+
     return *this;
-
-
 }

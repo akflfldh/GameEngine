@@ -1,12 +1,12 @@
-﻿#include "Utility.h"
-#include<unicode/ustring.h>
-#include<unicode/unistr.h>
-#include<unicode/ucnv.h>
-#include<unicode/errorcode.h>
-#include<vector>
-#include"uuid.h"
+﻿#include "Utility/Utility.h"
+#include "uuid.h"
+#include <unicode/errorcode.h>
+#include <unicode/ucnv.h>
+#include <unicode/unistr.h>
+#include <unicode/ustring.h>
+#include <vector>
 
-std::string CoreUtility::Utility::ConvertToString(const std::wstring& wstr, bool unicode)
+std::string CoreUtility::Utility::ConvertToString(const std::wstring &wstr, bool unicode)
 {
     icu::UnicodeString u16String = wstr.c_str();
     std::string str;
@@ -14,7 +14,7 @@ std::string CoreUtility::Utility::ConvertToString(const std::wstring& wstr, bool
     return str;
 }
 
-std::wstring CoreUtility::Utility::ConvertToWString(const std::string& str, bool unicode)
+std::wstring CoreUtility::Utility::ConvertToWString(const std::string &str, bool unicode)
 {
     icu::UnicodeString u16String = icu::UnicodeString::fromUTF8(str);
 
@@ -25,7 +25,7 @@ std::wstring CoreUtility::Utility::ConvertToWString(const std::string& str, bool
         wstr.resize(length);
 
         u16String.extract(0, u16String.length(), icu::Char16Ptr(wstr.data()), 0);
-        
+
         return wstr;
     }
     else if (sizeof(wchar_t) == 4)
@@ -35,51 +35,43 @@ std::wstring CoreUtility::Utility::ConvertToWString(const std::string& str, bool
         int32_t length = u16String.toUTF32(uchar32Buffer.data(), (int32_t)uchar32Buffer.size(), errorCode);
         if (!U_SUCCESS(errorCode))
         {
-            //log
+            // log
             return L"";
         }
 
-        std::wstring wstr(reinterpret_cast<wchar_t*>(uchar32Buffer.data()), length);
+        std::wstring wstr(reinterpret_cast<wchar_t *>(uchar32Buffer.data()), length);
 
         return wstr;
-
     }
 
     return L"";
 }
 
-
-void CoreUtility::Utility::ConvertUpperCase(std::string& oStr)
+void CoreUtility::Utility::ConvertUpperCase(std::string &oStr)
 {
 
     icu::UnicodeString icuString = icu::UnicodeString::fromUTF8(oStr);
     icuString.toUpper();
 
     icuString.toUTF8String(oStr);
- 
 }
 
-void CoreUtility::Utility::ConvertLowerCase(std::string& oStr)
+void CoreUtility::Utility::ConvertLowerCase(std::string &oStr)
 {
     icu::UnicodeString icuString = icu::UnicodeString::fromUTF8(oStr);
     icuString.toLower();
 
     icuString.toUTF8String(oStr);
-
 }
 
-
-
-std::string CoreUtility::Utility::GetFileNameFromPath(const std::string& path, bool removeExtension )
+std::string CoreUtility::Utility::GetFileNameFromPath(const std::string &path, bool removeExtension)
 {
 
     size_t slashPos = path.find_last_of('/');
     size_t backSlashPos = path.find_last_of('\\');
 
- 
-
     std::size_t pos = std::max(slashPos, backSlashPos);
-  
+
     if (slashPos == std::string::npos)
     {
         pos = backSlashPos;
@@ -89,9 +81,8 @@ std::string CoreUtility::Utility::GetFileNameFromPath(const std::string& path, b
         pos = slashPos;
     }
 
-
     std::string fileName = (pos == std::string::npos) ? path : path.substr(pos + 1);
-   
+
     if (removeExtension)
     {
         size_t dotPos = fileName.find_last_of('.');
@@ -100,40 +91,34 @@ std::string CoreUtility::Utility::GetFileNameFromPath(const std::string& path, b
             fileName = fileName.substr(0, dotPos);
         }
     }
-    
 
     return fileName;
 }
 
-std::string CoreUtility::Utility::GetExtensionFromPath(const std::string& path)
+std::string CoreUtility::Utility::GetExtensionFromPath(const std::string &path)
 {
 
     size_t dotPos = path.find_last_of('.');
     size_t backSlashPos = path.find_last_of('\\');
     size_t slashPos = path.find_last_of('/');
 
-
-
     if (dotPos == std::string::npos)
         return "";
 
-    if (dotPos < std::max(backSlashPos,slashPos))
+    if (dotPos < std::max(backSlashPos, slashPos))
     {
-        //올바르지못하다.
+        // 올바르지못하다.
         return "";
     }
 
-    return  path.substr(dotPos + 1);
+    return path.substr(dotPos + 1);
 }
 
-std::string CoreUtility::Utility::GetParentFolderPathFromPath(const std::string& path)
+std::string CoreUtility::Utility::GetParentFolderPathFromPath(const std::string &path)
 {
-
 
     size_t slashPos = path.find_last_of('/');
     size_t backSlashPos = path.find_last_of('\\');
-
-
 
     std::size_t pos = std::max(slashPos, backSlashPos);
 
@@ -146,62 +131,65 @@ std::string CoreUtility::Utility::GetParentFolderPathFromPath(const std::string&
         pos = slashPos;
     }
 
-
-    std::string fileName = (pos == std::string::npos) ? path : path.substr( 0,pos);
-
+    std::string fileName = (pos == std::string::npos) ? path : path.substr(0, pos);
 
     return fileName;
-
-
-  
 }
 
-std::vector<std::string> CoreUtility::Utility::Split(const std::string& str, char delimiter)
+std::vector<std::string> CoreUtility::Utility::Split(const std::string &str, char delimiter)
 {
 
     std::vector<std::string> tokenVector;
 
     std::stringstream ss(str);
 
-
     std::string token;
     while (std::getline(ss, token, delimiter))
     {
-        // 빈토큰 /folder1//folder의경우 건너띈다. 
+        // 빈토큰 /folder1//folder의경우 건너띈다.
         if (!token.empty())
         {
             tokenVector.push_back(std::move(token));
         }
-
-
     }
-
 
     return tokenVector;
 }
 
-
-
-std::string CoreUtility::Utility::MakeUniqueName(const std::string& baseName)
+std::string CoreUtility::Utility::MakeUniqueName(const std::string &baseName)
 {
 
-  
-
-
-    static std::mt19937 generator([](){
-        std::random_device rd;
-        std::array<int, std::mt19937::state_size> seed_data{};
-        std::generate(seed_data.begin(), seed_data.end(), std::ref(rd));
-        std::seed_seq seq(seed_data.begin(), seed_data.end());
-        return std::mt19937(seq);
+    static std::mt19937 generator(
+        []()
+        {
+            std::random_device rd;
+            std::array<int, std::mt19937::state_size> seed_data{};
+            std::generate(seed_data.begin(), seed_data.end(), std::ref(rd));
+            std::seed_seq seq(seed_data.begin(), seed_data.end());
+            return std::mt19937(seq);
         }());
 
     static uuids::uuid_random_generator uuidGenerator(generator);
 
     uuids::uuid const id = uuidGenerator();
-    std::string idStr =uuids::to_string(id);
+    std::string idStr = uuids::to_string(id);
 
-    return baseName+"_"+idStr;
+    return baseName + "_" + idStr;
 }
 
+bool CoreUtility::Utility::IsPointInsideRect(float left, float right, float top, float bottom, float pointX,
+                                             float pointY)
+{
 
+    if (pointX < left)
+        return false;
+    if (pointX > right)
+        return false;
+
+    if (pointY > top)
+        return false;
+    if (pointY < bottom)
+        return false;
+
+    return true;
+}

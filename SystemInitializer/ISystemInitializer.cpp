@@ -1,40 +1,29 @@
 ﻿#include "pch.h"
-#include "ISystemInitializer.h"
-#include<assert.h>
-SystemInitializer::ISystemInitializer* SystemInitializer::ISystemInitializer::mImpl =nullptr;
 
+#include "SystemInitializer/ISystemInitializer.h"
+#include <assert.h>
+SystemInitializer::ISystemInitializer *SystemInitializer::ISystemInitializer::mImpl = nullptr;
 
+SystemInitializer::ISystemInitializer::~ISystemInitializer() {}
 
-SystemInitializer::ISystemInitializer::~ISystemInitializer()
+void SystemInitializer::ISystemInitializer::SetSystemInitializerImpl(ISystemInitializer *pImpl)
 {
+    if (pImpl == nullptr || mImpl != nullptr)
+    {
+        assert(0);
+    }
+
+    mImpl = pImpl;
 }
 
-void SystemInitializer::ISystemInitializer::SetSystemInitializerImpl(ISystemInitializer* pImpl)
+SystemInitializer::ISystemInitializer *SystemInitializer::ISystemInitializer::GetInstance()
 {
-	if (pImpl == nullptr || mImpl !=nullptr)
-	{
-		assert(0);
-	}
+    if (mImpl == nullptr)
+    {
+        assert(0);
+    }
 
-
-
-	mImpl = pImpl;
-
+    return mImpl;
 }
 
-SystemInitializer::ISystemInitializer* SystemInitializer::ISystemInitializer::GetInstance()
-{
-	if (mImpl == nullptr)
-	{
-		assert(0);
-	}
-
-
-	return mImpl;
-
-}
-
-SystemInitializer::ISystemInitializer::ISystemInitializer()
-{
-
-}
+SystemInitializer::ISystemInitializer::ISystemInitializer() {}

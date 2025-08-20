@@ -312,8 +312,8 @@ namespace CoreMath
 		void Transpose() ; // 자신을  전치시킨다.
 
 
-
-
+		Vector4 GetRow(int rowIndex) const;
+		Vector4 GetColumn(int columnIndex) const;
 
 		float m[4][4];//행우선 ;
 		

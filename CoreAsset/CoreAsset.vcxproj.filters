@@ -75,6 +75,24 @@
     <ClInclude Include="TextureLoader.h">
       <Filter>헤더 파일\Loader</Filter>
     </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalAssetRegistrySystem.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialStorer.h">
+      <Filter>헤더 파일\Storer</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialLoader.h">
+      <Filter>헤더 파일\Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="UIMaterialManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -89,7 +107,7 @@
     <ClCompile Include="TextureManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="AssetNameIDTable.cpp">
+    <ClCompile Include="AssetIDTable.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="AssetIDGenerator.cpp">
@@ -120,6 +138,24 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="TextureLoader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalAssetRegistrySystem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialStorer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialLoader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UIMaterialManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

@@ -2,7 +2,7 @@
     "Name": "MyShader",
     "UserResource": {
         "PassBuffer": {
-            "Type": "ConstantBuffer",
+            "Type": "Buffer",
             "BufferID": 1
         },
         "_TexMap": {
@@ -10,7 +10,8 @@
             "FORMAT": "R8G8B8A8_UNORM"
         },
         "_LinearSampler": {
-            "Type": "Sampler"
+            "Type": "Sampler",
+            "ID":1
         }
     },
     "DefaultShader": {

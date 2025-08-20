@@ -1,0 +1,23 @@
+[
+    {
+      "ID":1,
+      "Filter": "MIN_MAG_MIP_LINEAR",
+      "AddressU": "WRAP",
+      "AddressV": "WRAP",
+      "AddressW": "WRAP"
+    },
+
+
+    
+    {
+      "ID":2,
+      "Filter": "MIN_MAG_MIP_POINT",
+      "AddressU": "CLAMP",
+      "AddressV": "CLAMP",
+      "AddressW": "CLAMP"
+    }
+
+
+
+
+]

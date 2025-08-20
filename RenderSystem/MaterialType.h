@@ -1,223 +1,179 @@
 ﻿#pragma once
 
+#include <string>
+#include <vector>
 
-
-#include<string>
-#include<vector>
-
-#include<memory>
-#include<IGpuResource.h>
-#include<unordered_map>
-#include<GpuTypes.h>
-#include<CoreMath.h>
-
+#include <D3DGpuResourceManager/GpuTypes.h>
+#include <D3DGpuResourceManager/IGpuResource.h>
+#include <memory>
+#include <unordered_map>
 
 namespace Render
 {
 
-	using MaterialID = uint32_t;
+using MaterialID = uint32_t;
 #define MaterialIDNone 0
 
+enum class EShaderStage : uint32_t
+{
+    eVertex = 0,
+    ePixel,
+    eGeometry,
+    eDomain,
+    eHull,
+    eCompute
+};
 
+struct ShaderSourceInfo
+{
+    void *mShadeCode;
+    size_t mShaderCodeSize;
+    std::string mEntryPoint; // 셰이더 진입함수이름
+    std::string mTarget;     // ex) vs_5_1, ps_5_0
+    EShaderStage mStage;     // 각 셰이더 타입
+};
 
+enum class EShaderResourceType
+{
+    eConstantBuffer,
+    eStructuredBuffer,
+    eTexture,
+    eSampler
+};
 
-	enum class EShaderStage:uint32_t
-	{
-		eVertex=0,
-		ePixel,
-		eGeometry,
-		eDomain,
-		eHull,
-		eCompute
-	};
+enum class EShaderResourceDimension
+{
+    eNone = 0,
+    eBuffer,
+    eTex2D,
+    eSampler
+};
 
-	struct ShaderSourceInfo
-	{
-		void* mShadeCode;
-		size_t mShaderCodeSize;
-		std::string mEntryPoint;		//셰이더 진입함수이름
-		std::string mTarget;			//ex) vs_5_1, ps_5_0
-		EShaderStage mStage;			//각 셰이더 타입
-	};
+struct ShaderResourceInfo
+{
+    std::string mName;
+    EShaderResourceDimension mDimension;
+    EShaderResourceType mType;
+};
 
+struct TextureShaderResourceInfo : public ShaderResourceInfo
+{
+    GRM::ETextureFormat mFormat;
+};
 
-	enum class EShaderResourceType
-	{
-		eConstantBuffer,
-		eStructuredBuffer,
-		eTexture,
-		eSampler
-	};
+struct BufferShaderResourceInfo : public ShaderResourceInfo
+{
+    uint32_t mBufferID;
+    uint32_t mSize;
+};
 
-	enum class EShaderResourceDimension
-	{
-		eNone=0,
-		eBuffer,
-		eTex2D,
-		eSampler
-	};
+struct SamplerShaderResourceInfo : public ShaderResourceInfo
+{
+    uint32_t mSamplerID;
+};
 
+// pass에서 사용하는 리소스들의 정보
+struct ShaderResourceInfoSet
+{
+    std::vector<TextureShaderResourceInfo> mTextureShaderResourceInfoVector;
+    std::vector<BufferShaderResourceInfo> mBufferShaderResourceInfoVector;
+    std::vector<SamplerShaderResourceInfo> mSamplerShaderResourceInfoVector;
+};
 
+// 렌더링파이프라인 설정
+enum class ECullMode
+{
+    eNone = 0,
+    eFront,
+    eBack
+};
 
+enum class EBlendMode
+{
+    eOpaque = 0,
+    eAlphaBlend,
+    //		eAdditive // 불투명, 알파 블렌딩, 가산 블렌딩
+};
 
+enum class EDepthStencilCompareMode
+{
+    eNone = 0,
+    eLess,
+    eLessEqual,
+    eEqual
+};
 
-	struct ShaderResourceInfo
-	{
-		std::string mName;
-		bool mIsEngineShaderResource;
-		EShaderResourceDimension mDimension;
-		EShaderResourceType mType;
-	};
+enum class EDepthWriteMode
+{
+    eDisabled = 0,
+    eEnabled
+};
 
-	struct TextureShaderResourceInfo :public ShaderResourceInfo
-	{
-		GRM::ETextureFormat mFormat;
-	};
+enum class EFillMode
+{
+    eSolidMode = 0,
+    eWireFrameMode
+};
 
+struct RenderPass
+{
+    std::string mPassName;
+    std::vector<ShaderSourceInfo> mShaderStage;
+    std::vector<std::string> mUsageShaderResourceVector;
 
-	struct BufferShaderResourceInfo :public ShaderResourceInfo
-	{
-		uint32_t mBufferID;
-	};
+    std::vector<uint8_t> mShaderCode;
 
+    ECullMode mCullMode;
+    EBlendMode mBlendMode;
+    EDepthStencilCompareMode mDepthCompareMode = EDepthStencilCompareMode::eLess;
+    EDepthWriteMode mDepthWriteMode;
+    EFillMode mFillMode;
+};
 
-	struct SamplerShaderResourceInfo :public ShaderResourceInfo
-	{
-		
-	};
+enum InputLayoutType
+{
+    eUI = 0,
+    eStaticMesh,
+    eSkinningMesh
+};
 
+struct MainRenderPass : public RenderPass
+{
+    bool mDefaultFlag = false;
+    bool mOpaque = true; // 투명한타입인지 불투명한 타입의 패스인지
 
-	//pass에서 사용하는 리소스들의 정보
-	struct ShaderResourceInfoSet
-	{
-		std::vector<TextureShaderResourceInfo> mTextureShaderResourceInfoVector;
-		std::vector<BufferShaderResourceInfo> mBufferShaderResourceInfoVector;
-		std::vector< SamplerShaderResourceInfo> mSamplerShaderResourceInfoVector;
-	};
+    // UI메시를 위한 InputLayout인지
+    // 스키닝메시를 위한 InputLayout인지,
+    // 정적메시를 위한 InputLayout 인지
+    int mInputType = InputLayoutType::eUI;
+};
 
+struct CreationMaterialInfo
+{
+    std::string mName; // 머터리얼 이름(shader의 이름)
 
+    ShaderResourceInfoSet mShaderResourceInfoSet;
 
-	//렌더링파이프라인 설정
-	enum class ECullMode
-	{
-		eNone=0,
-		eFront,
-		eBack
-	};
+    MainRenderPass mMainRenderPass;
+    std::vector<RenderPass> mPostRenderPass;
+    // 엔진에서 기본제공하는 shader들중 사용하는 shader목록
+    std::vector<std::string> mDefaultPassVector;
+};
 
-	enum class EBlendMode
-	{
-		eOpaque = 0 , 
-		eAlphaBlend,
-//		eAdditive // 불투명, 알파 블렌딩, 가산 블렌딩
-	};
-
-	enum class EDepthStencilCompareMode
-	{
-		eNone= 0,
-		eLess,
-		eLessEqual,
-		eEqual
-	};
-
-	enum class EDepthWriteMode
-	{
-		eDisabled =0,
-		eEnabled
-		
-	};
-	
-	enum class EFillMode
-	{
-		eSolidMode=0,
-		eWireFrameMode
-	};
-
-
-	struct RenderPass
-	{
-		std::string mPassName;
-		std::vector< ShaderSourceInfo> mShaderStage;
-		std::vector<std::string > mUsageShaderResourceVector;
-
-		std::vector<uint8_t> mShaderCode;
-
-		ECullMode mCullMode;
-		EBlendMode mBlendMode;
-		EDepthStencilCompareMode mDepthCompareMode = EDepthStencilCompareMode::eLess;
-		EDepthWriteMode mDepthWriteMode;
-		EFillMode mFillMode;
-	};
-
-	enum InputLayoutType
-	{
-		eUI=0,
-		eStaticMesh,
-		eSkinningMesh
-	};
-
-	struct MainRenderPass :public RenderPass
-	{
-		bool mDefaultFlag = false;
-		bool mOpaque = true; //투명한타입인지 불투명한 타입의 패스인지
-		
-		
-		//UI메시를 위한 InputLayout인지 
-		//스키닝메시를 위한 InputLayout인지,
-		//정적메시를 위한 InputLayout 인지
-		int mInputType = InputLayoutType::eUI;
-	};
-
-
-
-
-
-
-
-
-	struct CreationMaterialInfo
-	{
-		std::string mName;	//머터리얼 이름(shader의 이름)
-		
-		ShaderResourceInfoSet mShaderResourceInfoSet;
-
-		MainRenderPass mMainRenderPass;
-		std::vector<RenderPass> mPostRenderPass;
-		//엔진에서 기본제공하는 shader들중 사용하는 shader목록 
-		std::vector<std::string> mDefaultPassVector;
-
-	};
-
-}
-
-
-
-
-
-
+} // namespace Render
 
 namespace std
 {
-	template<>
-	struct hash< Render::EShaderStage>
-	{
+template <> struct hash<Render::EShaderStage>
+{
 
+    size_t operator()(const Render::EShaderStage &stage) const noexcept
+    {
+        return static_cast<size_t>(stage);
+    }
+};
 
-		size_t operator()(const Render::EShaderStage& stage) const noexcept
-		{
-			return static_cast<size_t>(stage);
-		}
-	};
-
-}
-
-
-
-
-
-
-
-
+} // namespace std
 
 //	struct MaterialDefaultProperties
 //	{
@@ -247,4 +203,3 @@ namespace std
 //		Type mType;
 //		GRM::IGpuResource* mTextureResource; // <<--- GPU 리소스 참조 (중요)
 //	};
-

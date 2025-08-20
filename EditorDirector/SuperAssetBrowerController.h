@@ -1,36 +1,35 @@
 ﻿#pragma once
 
-
-
-#include"SuperController.h"
-#include<Windows.h>
+#include "EditorDirector/SuperController.h"
+#include <Windows.h>
 namespace Quad
 {
-	class BaseWindow;
+class BaseWindow;
 
-	class SuperAssetBrowerController:public SuperController
-	{
-		public:
-			static SuperAssetBrowerController* GetInstance();
-			virtual ~SuperAssetBrowerController() ;
-			virtual void Initialize() override ;
+class SuperAssetBrowerController : public SuperController
+{
+  public:
+    static SuperAssetBrowerController *GetInstance();
+    virtual ~SuperAssetBrowerController();
+    virtual void Initialize() override;
 
-			virtual void PreUpdate() override;
-			virtual void Update(float deltaTime) override;
-			virtual void EndUpdate() override;
-			virtual void Draw() override;
+    virtual void PreUpdate() override;
+    virtual void Update(float deltaTime) override;
+    virtual void EndUpdate() override;
+    virtual void Draw() override;
 
-			virtual BaseWindow* GetWindow() override;
+    virtual BaseWindow *GetWindow() override;
 
+    void TestRButtonDown();
+    virtual void UpdateMouseInput(MouseContext &mouseContext) override;
 
-			void TestRButtonDown();
+  private:
+    LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-	private:
-		LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    SuperAssetBrowerController();
 
-		SuperAssetBrowerController();
-	private:
-		BaseWindow* mWindow;
-	};
+  private:
+    BaseWindow *mWindow;
+};
 
-}
+} // namespace Quad

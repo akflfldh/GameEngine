@@ -1,26 +1,20 @@
 ﻿#pragma once
 
-#include"D3DGpuResource.h"
-#include<d3d12.h>
-#include<wrl.h>
-#include"GpuResourceDllMacro.h"
+#include "D3DGpuResourceManager/D3DGpuResource.h"
+#include "D3DGpuResourceManager/GpuResourceDllMacro.h"
+#include <d3d12.h>
+#include <wrl.h>
 namespace D3DGRM
 {
 
-	class GPURESOURCE_MANAGER_API D3DGpuBuffer:public D3DGpuResource
-	{
-	public:
-		D3DGpuBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
-		virtual ~D3DGpuBuffer();
+class GPURESOURCE_MANAGER_API D3DGpuBuffer : public D3DGpuResource
+{
+  public:
+    D3DGpuBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> resource);
+    virtual ~D3DGpuBuffer();
 
-	private:
-	
+  private:
+  private:
+};
 
-
-	private:
-		
-
-
-	};
-
-}
+} // namespace D3DGRM

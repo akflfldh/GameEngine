@@ -25,6 +25,9 @@
     <Filter Include="헤더 파일\SystemInitializer">
       <UniqueIdentifier>{015d6d77-a549-4ed2-9c04-7e59843c9e82}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{6fc5a23e-2425-45f4-ba24-d47a32219119}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EditorDirector.cpp">
@@ -45,17 +48,38 @@
     <ClCompile Include="SerializedAssetContainer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EditorProjectInitializer.cpp">
+    <ClCompile Include="EditorProjectManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="EditorShaderImporter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ImGui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_demo.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_dx12.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_tables.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGui\imgui_widgets.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="ImGuiSystem.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\EditorDirector\EditorDirector.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="SuperFrameController.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -65,16 +89,43 @@
     <ClInclude Include="SuperController.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\EditorDirector\EditorTextureImporter.h">
-      <Filter>헤더 파일\EditorImporter</Filter>
-    </ClInclude>
     <ClInclude Include="SerializedAssetContainer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EditorProjectInitializer.h">
+    <ClInclude Include="EditorProjectManager.h">
       <Filter>헤더 파일\SystemInitializer</Filter>
     </ClInclude>
     <ClInclude Include="EditorShaderImporter.h">
+      <Filter>헤더 파일\EditorImporter</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_dx12.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_impl_win32.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_rectpack.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_textedit.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGui\imstb_truetype.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiSystem.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\EditorDirector\EditorDirector.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EditorTextureImporter.h">
       <Filter>헤더 파일\EditorImporter</Filter>
     </ClInclude>
   </ItemGroup>

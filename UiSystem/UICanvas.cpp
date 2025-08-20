@@ -1,69 +1,93 @@
-﻿#include "UICanvas.h"
-
-#include"UIElement.h"
-#include"UIManager.h"
-UI::UICanvas::UICanvas(UICanvasID id, const std::string& name, ECanvasSizeMode sizeMode)
-	:mID(id),mName(name), mActiveFlag(true),mCanvasSizeMode(sizeMode)
+﻿#include "UiSystem/UICanvas.h"
+#include "UiSystem/UIElement.h"
+#include "UiSystem/UIManager.h"
+UI::UICanvas::UICanvas(UICanvasID id, const std::string &name, ECanvasSizeMode sizeMode)
+    : mID(id), mName(name), mActiveFlag(true), mCanvasSizeMode(sizeMode), mDepthValue(1), mTopUIElementDepthValue(0)
 {
 }
 
-UI::UICanvas::~UICanvas()
-{
-}
-
-
-
+UI::UICanvas::~UICanvas() {}
 
 void UI::UICanvas::Update(float deltaTime)
 {
-	for (auto childUIElement : mChildUIElement)
-	{
-		childUIElement->Update(deltaTime);
-	}
-
-
-
-
+    for (auto childUIElement : mChildUIElement)
+    {
+        childUIElement->Update(deltaTime);
+    }
 }
 
-
-
-
-void UI::UICanvas::AddChild(UIElement* uiElement)
+void UI::UICanvas::AddChild(UIElement *uiElement)
 {
-	auto manager = UIManager::GetInstance();
+    auto manager = UIManager::GetInstance();
 
-	manager->AddUIElement(this, uiElement);
-
+    manager->AddUIElement(this, uiElement);
 }
 
 UI::ECanvasSizeMode UI::UICanvas::GetSizeMode() const
 {
-	return mCanvasSizeMode;
+    return mCanvasSizeMode;
 }
 
 void UI::UICanvas::SetSize(CoreMath::Vector2 size)
 {
-	if (mCanvasSizeMode == ECanvasSizeMode::eScreenSize)
-	{
-		mSize = size;	//항상 스크린영역의 크기와 동일
-	}
+    if (mCanvasSizeMode == ECanvasSizeMode::eScreenSize)
+    {
+        mSize = size; // 항상 스크린영역의 크기와 동일
 
+        // 자식들에게 영향을 준다
+    }
 }
 
-bool UI::UICanvas::GetActiveFlag()const
+bool UI::UICanvas::GetActiveFlag() const
 {
-	return mActiveFlag;
+    return mActiveFlag;
 }
 
-void UI::UICanvas::AddChildInternal(UIElement* uiElement)
+void UI::UICanvas::AddChildInternal(UIElement *uiElement)
 {
-	mChildUIElement.push_back(uiElement);
-
+    mChildUIElement.push_back(uiElement);
+    uiElement->mDestCanvas = this;
 }
 
-
-const std::vector<UI::UIElement*>& UI::UICanvas::GetChildUIElementAll() const
+UI::UIElement *UI::UICanvas::CreateUIElement(const char *className, const char *instanceName)
 {
-	return mChildUIElement;
+    UIManager *manager = UIManager::GetInstance();
+    UIElement *uiElement = manager->CreateUIElement(className, instanceName);
+
+    if (uiElement == nullptr)
+        return nullptr;
+
+    AddChild(uiElement);
+
+    return uiElement;
+}
+
+const std::vector<UI::UIElement *> &UI::UICanvas::GetChildUIElementAll() const
+{
+    return mChildUIElement;
+}
+
+void UI::UICanvas::SetDepthValue(uint32_t value)
+{
+
+    mDepthValue = value;
+}
+uint32_t UI::UICanvas::GetDepthValue() const
+{
+
+    return mDepthValue;
+}
+
+uint32_t UI::UICanvas::GetTopUIElementDepthValue() const
+{
+    return mTopUIElementDepthValue;
+}
+
+void UI::UICanvas::SetUIElementTopDepth(UIElement *uiElement)
+{
+
+    if (uiElement == nullptr)
+        return;
+    mTopUIElementDepthValue++;
+    uiElement->SetDepthValue(mTopUIElementDepthValue);
 }

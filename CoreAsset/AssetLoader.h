@@ -1,37 +1,33 @@
 ﻿#pragma once
 
-
-#include"SerializedAssetType.h"
-#include<memory>
-#include"CoreAssetDLLMacro.h"
-namespace QuadRW { class BinaryReader; }
-
+#include "CoreAsset/CoreAssetDLLMacro.h"
+#include "CoreAsset/SerializedAssetType.h"
+#include <memory>
+namespace QuadRW
+{
+class BinaryReader;
+}
 
 namespace CoreAsset
 {
-	class TextureLoader;
-	class AssetMetaData;
-	class CORE_ASSET_API AssetLoader
-	{
-	public:
-		static AssetLoader* GetInstance();
-		~AssetLoader();
+class TextureLoader;
+class MaterialLoader;
+class AssetMetaData;
+class CORE_ASSET_API AssetLoader
+{
+  public:
+    static AssetLoader *GetInstance();
+    ~AssetLoader();
 
-		std::unique_ptr<SerializedAsset>LoadAsset(const std::string& filePath, AssetMetaData & oAssetMetaData);
-		std::unique_ptr<SerializedAssetRawData> LoadAssetRawData(const std::string& filePath, EAssetType assetType);
+    std::unique_ptr<SerializedAsset> LoadAsset(const std::string &filePath, AssetMetaData &oAssetMetaData);
+    std::unique_ptr<SerializedAssetRawData> LoadAssetRawData(const std::string &filePath, EAssetType assetType);
 
+  private:
+    AssetLoader();
 
-	private:
-		AssetLoader();
-
-
-	private:
-		//loader
-		TextureLoader* mTextureLoader;
-
-
-
-
-
-	};
-}
+  private:
+    // loader
+    TextureLoader *mTextureLoader;
+    MaterialLoader *mMaterialLoader;
+};
+} // namespace CoreAsset

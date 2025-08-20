@@ -110,13 +110,13 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Include;$(SolutionDir)Include\Object;$(SolutionDir)Include\EditorDirector;$(SolutionDir)Include\Core;$(SolutionDir)Include\Fbx;$(SolutionDir)Include\freetype-2.13.0\include;%(AdditionalIncludeDirectories);$(SolutionDir)\RenderSystem\;$(SolutionDir)\D3DGpuResourceManager\;$(SolutionDir)\CoreMath\;$(SolutionDir)\SystemInitializer\;$(SolutionDir)UISystem;$(SolutionDir)ImportModule\;$(SolutionDir)CoreAsset\;$(SolutionDir)Utility\;$(SolutionDir)LogicalFileSystem;$(SolutionDir)PhysicalFileSystem;$(SolutionDir)BinaryReaderWriter;$(SolutionDir)Logger;$(SolutionDir)Logger\Include;$(SolutionDir)JsonParserWrapping</AdditionalIncludeDirectories>
-      <AdditionalOptions>/source-charset:utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)Include\Fbx\lib;%(AdditionalLibraryDirectories);$(SolutionDir)Dll\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utility.lib;%(AdditionalDependencies);Core.lib;Window.lib;LogicalFileSystem.lib;Logger.lib;JsonParserWrapping.lib;RenderSystem.lib;D3DGpuResourceManager.lib</AdditionalDependencies>
+      <AdditionalDependencies>Utility.lib;%(AdditionalDependencies);Core.lib;Window.lib;LogicalFileSystem.lib;Logger.lib;JsonParserWrapping.lib;RenderSystem.lib;D3DGpuResourceManager.lib;SystemInitializer.lib;CoreAsset.lib;UISystem.lib</AdditionalDependencies>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
@@ -149,8 +149,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EditorDirector.cpp" />
-    <ClCompile Include="EditorProjectInitializer.cpp" />
+    <ClCompile Include="EditorProjectManager.cpp" />
     <ClCompile Include="EditorTextureImporter.cpp" />
+    <ClCompile Include="ImGuiSystem.cpp" />
+    <ClCompile Include="ImGui\imgui.cpp" />
+    <ClCompile Include="ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="SerializedAssetContainer.cpp" />
     <ClCompile Include="EditorShaderImporter.cpp" />
     <ClCompile Include="SuperAssetBrowerController.cpp" />
@@ -159,8 +167,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\EditorDirector\EditorDirector.h" />
-    <ClInclude Include="..\Include\EditorDirector\EditorTextureImporter.h" />
-    <ClInclude Include="EditorProjectInitializer.h" />
+    <ClInclude Include="EditorProjectManager.h" />
+    <ClInclude Include="EditorTextureImporter.h" />
+    <ClInclude Include="ImGuiSystem.h" />
+    <ClInclude Include="ImGui\imgui.h" />
+    <ClInclude Include="ImGui\imgui_impl_dx12.h" />
+    <ClInclude Include="ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ImGui\imgui_internal.h" />
+    <ClInclude Include="ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ImGui\imstb_textedit.h" />
+    <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="SerializedAssetContainer.h" />
     <ClInclude Include="EditorShaderImporter.h" />
     <ClInclude Include="SuperAssetBrowerController.h" />
@@ -173,4 +189,5 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Import Project="EditorDirectorBuildInfo.targets" />
 </Project>

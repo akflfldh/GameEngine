@@ -1,0 +1,17 @@
+{
+
+    "ConstantBuffer" :
+    [
+        {
+            "ID": 1,
+            "UploadType" : 0,  
+            "Size" : 128
+        }
+    ],
+
+    "StructuredBuffer":
+    [
+
+    ]
+
+}
