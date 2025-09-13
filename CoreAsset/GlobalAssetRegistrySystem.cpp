@@ -32,6 +32,11 @@ bool CoreAsset::GlobalAssetRegistrySystem::RegisterAsset(Asset *asset, const std
     if (mAssetTable.HasName(name) == true)
         return false;
 
+    if (asset->GetID() == NoneAssetID)
+    {
+        asset->mID = GetNextAssetID();
+    }
+
     return mAssetTable.SetAsset(name, asset->GetID(), asset);
 }
 
@@ -53,8 +58,7 @@ void CoreAsset::GlobalAssetRegistrySystem::AddDirtyAsset(Asset *asset)
     mDirtyAssetList.push_back(asset);
 }
 
-const std::vector<CoreAsset::AssetPtr<CoreAsset::Asset>> &CoreAsset::GlobalAssetRegistrySystem::GetDirtyAssetList()
-    const
+const std::vector<CoreAsset::AssetPtr> &CoreAsset::GlobalAssetRegistrySystem::GetDirtyAssetList() const
 {
     return mDirtyAssetList;
 }

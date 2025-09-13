@@ -13,16 +13,26 @@ QuadPF::WindowsPhysicalFileSystem::WindowsPhysicalFileSystem() {}
 
 QuadPF::WindowsPhysicalFileSystem::~WindowsPhysicalFileSystem() {}
 
-bool QuadPF::WindowsPhysicalFileSystem::CreatePhysicalFile(const std::string &fileName, const std::string &path)
+bool QuadPF::WindowsPhysicalFileSystem::CreatePhysicalFile(const std::string &fileName, const std::string &path
+                                                           )
 {
 
     // 경로 검사
+    std::string fullPath;
+    if (path != "")
+    {
+        bool ret = IsValidFolderPath(path);
+        if (ret == false)
+            return false;
 
-    bool ret = IsValidFolderPath(path);
-    if (ret == false)
-        return false;
+        fullPath = path + "/" + fileName;
+    }
+    else
+    {
+        fullPath = fileName;
+    }
 
-    const std::wstring fileNameFullPath = CoreUtility::Utility::ConvertToWString(path + "/" + fileName, true);
+    const std::wstring fileNameFullPath = CoreUtility::Utility::ConvertToWString(fullPath, true);
 
     WindowHandleRef handle = CreateFileW(fileNameFullPath.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
                                          CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);

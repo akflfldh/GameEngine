@@ -453,7 +453,8 @@ void Application::InitSystems()
 
 #endif
 
-    mTextureManager = std::make_unique<CoreAsset::TextureManager>((GRM::IGpuResourceManager::GetInstance()));
+    // mTextureManager = std::make_unique<CoreAsset::TextureManager>((GRM::IGpuResourceManager::GetInstance()));
+    mTextureManager = std::make_unique<CoreAsset::TextureManager>();
 
     /*  mUIRenderItemBuilder = std::make_unique<UIRenderItemBuilder>(Render::IRenderSystem::GetInstance(),
       UI::UIManager::GetInstance(),GRM::IGpuResourceManager::GetInstance());

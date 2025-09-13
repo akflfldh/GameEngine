@@ -2,7 +2,7 @@
 Utility.cpp
 Utility.h
 uuid.h
- )
+  "UniqueID.h" "UniqueID.cpp")
 
 
 target_include_directories(Utility PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

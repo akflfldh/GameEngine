@@ -4,12 +4,13 @@
 #include "EditorDirector/EditorTextureImporter.h"
 #include "EditorDirector/SerializedAssetContainer.h"
 #include <BinaryReaderWriter/BinaryReader.h>
-#include <Core/GpuBufferContextSystem.h>
-#include <Core/GpuSamplerSystem.h>
 #include <Core/ProjectConfig.h>
-#include <Core/UIRenderItemBuilder.h>
+#include <D3DGpuResourceManager/GpuBufferContextSystem.h>
+#include <D3DGpuResourceManager/GpuSamplerSystem.h>
+
 #include <CoreAsset/AssetCommon.h>
 #include <CoreAsset/AssetLoader.h>
+#include <CoreAsset/AssetManager.h>
 #include <CoreAsset/AssetMetaDataManager.h>
 #include <CoreAsset/AssetMetaDataType.h>
 #include <CoreAsset/GlobalAssetRegistrySystem.h>
@@ -27,10 +28,11 @@
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
+#include <RenderFrontend/AssetResolver.h>
+#include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <assert.h>
 #include <queue>
-
 extern std::string testProjectPath;
 
 Quad::EditorProjectManager *Quad::EditorProjectManager::GetInstance()
@@ -61,19 +63,20 @@ bool Quad::EditorProjectManager::Initialize()
     mLogicalFileSystem->Initialize(testProjectPath);
 
     mAssetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
-    mAssetLoader = CoreAsset::AssetLoader::GetInstance();
+    // mAssetLoader = CoreAsset::AssetLoader::GetInstance();
 
     mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>(Render::IMaterialManager::GetInstance());
 
-    mUIRenderItemBuilder = std::make_unique<UIRenderItemBuilder>(
-        Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(), GRM::IGpuResourceManager::GetInstance());
+    mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(
+        Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
+        Render::AssetResolver::GetInstance());
 
     //.shader.buffer 파일을 읽어서 gpuBuffer를 gpuBufferContextSystem에 등록한다.
-    Core::GpuBufferContextSystem *gpuBufferContextSystem = Core::GpuBufferContextSystem::GetInstance();
+    GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
 
     gpuBufferContextSystem->LoadShaderBufferFile(editorRootPath + "/Shader/shaderbuffer.shader.buffer");
 
-    mGpuSamplerSystem = std::make_unique<Core::GpuSamplerSystem>(GRM::IGpuResourceManager::GetInstance());
+    mGpuSamplerSystem = std::make_unique<GRM::GpuSamplerSystem>(GRM::IGpuResourceManager::GetInstance());
     mGpuSamplerSystem->LoadShaderSamplerFile(editorRootPath + "/Shader/Sampler.sampler");
 
     mEditorShaderImporter = std::make_unique<EditorShaderImporter>(Render::IMaterialManager::GetInstance());
@@ -92,11 +95,13 @@ bool Quad::EditorProjectManager::Initialize()
                                                                CoreAsset::TextureManager::GetInstance(),
                                                                CoreAsset::AssetMetaDataManager::GetInstance());
 
+    mAssetRawFolderPath = ProjectConfig::GetInstance()->GetProjectPath();
+    mAssetRawFolderPath += "/RawAsset";
+
     // 2025  07 20
     InitLogicalDirectoryStructure();
 
-    if (true)
-        LoadProjectAsset();
+    LoadProjectAsset();
 
     return true;
 }
@@ -111,28 +116,23 @@ void Quad::EditorProjectManager::SaveProject()
 
 void Quad::EditorProjectManager::SaveAsset()
 {
-    // asset들중 dirty flag 가 켜져있는 asset들에대해서 저장
 
+    // GlobalAssetRegistrySystem이 Asset List 를 유지하고있다
     CoreAsset::GlobalAssetRegistrySystem *globalAssetRegistrySystem =
         CoreAsset::GlobalAssetRegistrySystem::GetInstance();
-    const std::vector<CoreAsset::AssetPtr<CoreAsset::Asset>> &dirtyAssetList =
-        globalAssetRegistrySystem->GetDirtyAssetList();
 
-    // 저장할게없다.
-    if (dirtyAssetList.empty())
-        return;
+    const std::vector<CoreAsset::AssetPtr> &dirtyAssetLists = globalAssetRegistrySystem->GetDirtyAssetList();
+
+    // dirty list 를 순회하면서 메타데이터에 접근하여 , 파일경로를 얻고 저장한다.
 
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
-    const std::string projectFolderPath = projectConfig->GetProjectPath();
+    const std::string &projectRootPath = projectConfig->GetProjectPath();
 
-    // 파일경로는 asset폴더의 물리적경로 + asset의 논리적경로
-    QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF::LogicalFileSystem::GetInstance();
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
 
-    CoreAsset::MaterialStorer *materialStorer = CoreAsset::MaterialStorer::GetInstance();
-
-    for (const auto &pAssetElement : dirtyAssetList)
+    for (size_t i = 0; i < dirtyAssetLists.size(); ++i)
     {
-        CoreAsset::Asset *asset = pAssetElement.Get();
+        CoreAsset::Asset *asset = dirtyAssetLists[i].Get();
 
         if (asset == nullptr)
             continue;
@@ -140,31 +140,22 @@ void Quad::EditorProjectManager::SaveAsset()
         CoreAsset::AssetMetaData *assetMetaData = mAssetMetaDataManager->GetMetaData(asset->GetID());
 
         const std::string filePath =
-            projectFolderPath + "/" + assetMetaData->mFilePath + "." + CoreAsset::GetAssetFileExtension();
+            projectRootPath + "/" + assetMetaData->mFilePath + "." + CoreAsset::GetAssetFileExtension();
 
-        bool ret = false;
-        switch (asset->GetType())
-        {
-        case CoreAsset::EAssetType::eTexture:
-        {
+        bool ret = assetManager->StoreAsset(asset, filePath.c_str()); // 메타데이터만 저장됨
 
-            CoreAsset::Texture *texture = static_cast<CoreAsset::Texture *>(asset);
-        }
-        break;
-        case CoreAsset::EAssetType::eMaterial:
+        // 이렇게 flag로 처리하거나 ,아니면 그냥 에셋storer별로 처리하게끔.
+        if (assetMetaData->mKeepRawDataFlag)
         {
-            CoreAsset::Material *material = static_cast<CoreAsset::Material *>(asset);
-
-            ret = materialStorer->Store(material, assetMetaData, filePath);
-        }
-        break;
+            // raw data도 존재한다면 , 변경되었다면 저장해야함
+            // 메타데이터에 저장되는 raw파일경로는 사실 이름만 저장하는거지 , 실제 폴더경로는 고정된것
+            std::string rawDataFilePath = mAssetRawFolderPath + "/" + assetMetaData->mRawFileName.c_str();
+            ret = assetManager->StoreAssetRawData(asset, rawDataFilePath.c_str());
         }
     }
-
-    // 각 asset storer에게 요청
-
-    // 그리고 dirty flag  를 false 설정
 }
+
+void Quad::EditorProjectManager::SaveMap() {}
 
 void Quad::EditorProjectManager::InitLogicalDirectoryStructure()
 {
@@ -181,12 +172,16 @@ void Quad::EditorProjectManager::LoadProjectAsset()
     EditorConfig *editorConfig = EditorConfig::GetInstance();
     const std::string editorRootPath = editorConfig->GetEditorRootPath();
 
-    SerializedAssetTContainer *serializedAssetContainer = SerializedAssetTContainer::GetInstance();
+    // SerializedAssetTContainer *serializedAssetContainer = SerializedAssetTContainer::GetInstance();
 
     QuadLF::LogicalFolder *assetFolder = mLogicalFileSystem->GetRootFolder();
 
     std::queue<QuadLF::LogicalFolder *> folderQueue;
     folderQueue.push(assetFolder);
+
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+
+    CoreAsset::AssetMetaDataManager *assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
 
     // 각 폴더내 asset파일들을 찾아서 Load한다.
     while (!folderQueue.empty())
@@ -204,42 +199,37 @@ void Quad::EditorProjectManager::LoadProjectAsset()
         {
             //.asset 로드
             assetPath = physcialFolderPath + "/" + assetPath;
-            CoreAsset::AssetMetaData assetMetaData;
-            std::unique_ptr<CoreAsset::SerializedAsset> assetData = mAssetLoader->LoadAsset(assetPath, assetMetaData);
 
-            // rawData load
-            // rawDataFile path
+            CoreAsset::Asset *asset = assetManager->LoadAsset(assetPath.c_str());
+            CoreAsset::AssetMetaData *assetMetaData = assetMetaDataManager->GetMetaData(asset);
 
+            // logical file generation
             std::string parentFolderLogicalPath = folder->GetFullPath();
-            std::string logicalFilePath = parentFolderLogicalPath + "/" + assetData->mAssetName;
-            std::string rawDataFilePath = editorRootPath + "/" + CoreAsset::GetAssetRawFileName(logicalFilePath);
+            std::string logicalFilePath = parentFolderLogicalPath + "/" + asset->GetName().c_str();
 
-            //.raw로드
-            std::unique_ptr<CoreAsset::SerializedAssetRawData> assetRawData =
-                mAssetLoader->LoadAssetRawData(rawDataFilePath, assetData->mAssetType);
+            QuadLF::LogicalFileAssetInfo assetFileInfo;
+            assetFileInfo.mAssetID = asset->GetID();
+            assetFileInfo.mAssetType = asset->GetType();
+            assetFileInfo.mName = asset->GetName().c_str();
 
-            // table에 타입별로 보관
-            serializedAssetContainer->Register(std::move(assetData), std::move(assetRawData), assetMetaData,
-                                               parentFolderLogicalPath);
+            mLogicalFileSystem->MakeFile(assetFileInfo, asset->GetName().c_str(), folder);
         }
     }
 
     CreateAssetAndLogicalFile();
-
-    serializedAssetContainer->Clear();
 }
 
 void Quad::EditorProjectManager::CreateAssetAndLogicalFile()
 {
     // asset 생성
 
-    SerializedAssetTContainer *serializedAssetContainer = SerializedAssetTContainer::GetInstance();
+    // SerializedAssetTContainer *serializedAssetContainer = SerializedAssetTContainer::GetInstance();
 
-    // 2025 07 20
-    CreateTextureAndLogicalFile(serializedAssetContainer);
+    //// 2025 07 20
+    // CreateTextureAndLogicalFile(serializedAssetContainer);
 
-    // material
-    CreateMaterialAndLogicalFile(serializedAssetContainer);
+    //// material
+    // CreateMaterialAndLogicalFile(serializedAssetContainer);
 
     // mesh
 }
@@ -247,70 +237,70 @@ void Quad::EditorProjectManager::CreateAssetAndLogicalFile()
 void Quad::EditorProjectManager::CreateTextureAndLogicalFile(SerializedAssetTContainer *serializedAssetContainer)
 {
     // texture
-    CoreAsset::TextureManager *textureManager = CoreAsset::TextureManager::GetInstance();
+    // CoreAsset::TextureManager *textureManager = CoreAsset::TextureManager::GetInstance();
 
-    const std::vector<SerializedAssetContainerContext> &serializedAssetContextVector =
-        serializedAssetContainer->GetSerializedAssetContextVector(CoreAsset::EAssetType::eTexture);
+    // const std::vector<SerializedAssetContainerContext> &serializedAssetContextVector =
+    //     serializedAssetContainer->GetSerializedAssetContextVector(CoreAsset::EAssetType::eTexture);
 
-    for (const auto &context : serializedAssetContextVector)
-    {
-        CoreAsset::SerializedTexture *textureData =
-            static_cast<CoreAsset::SerializedTexture *>(context.mSerializedAsset.get());
-        CoreAsset::SerializedTextureRawData *textureRawData =
-            static_cast<CoreAsset::SerializedTextureRawData *>(context.mSerializedRawAssetData.get());
+    // for (const auto &context : serializedAssetContextVector)
+    //{
+    //     CoreAsset::SerializedTexture *textureData =
+    //         static_cast<CoreAsset::SerializedTexture *>(context.mSerializedAsset.get());
+    //     CoreAsset::SerializedTextureRawData *textureRawData =
+    //         static_cast<CoreAsset::SerializedTextureRawData *>(context.mSerializedRawAssetData.get());
 
-        // texture 생성
-        CoreAsset::Texture *texture = textureManager->CreateTexture(*textureData, std::move(*textureRawData),
-                                                                    context.assetMetaData, context.mParentFolderPath);
+    //    // texture 생성
+    //    CoreAsset::Texture *texture = textureManager->CreateTexture(*textureData, std::move(*textureRawData),
+    //                                                                context.assetMetaData, context.mParentFolderPath);
 
-        // logicalFile 생성
-        QuadLF::LogicalFileAssetInfo logicalFileInfo;
-        logicalFileInfo.mAssetID = textureData->mAssetID;
-        logicalFileInfo.mAssetType = textureData->mAssetType;
-        logicalFileInfo.mName = textureData->mAssetName;
+    //    // logicalFile 생성
+    //    QuadLF::LogicalFileAssetInfo logicalFileInfo;
+    //    logicalFileInfo.mAssetID = textureData->mAssetID;
+    //    logicalFileInfo.mAssetType = textureData->mAssetType;
+    //    logicalFileInfo.mName = textureData->mAssetName;
 
-        QuadLF::LogicalFolder *parentFolder = mLogicalFileSystem->GetFolder(context.mParentFolderPath);
-        QuadLF::LogicalFile *logicalFile =
-            mLogicalFileSystem->MakeFile(logicalFileInfo, logicalFileInfo.mName, parentFolder);
+    //    QuadLF::LogicalFolder *parentFolder = mLogicalFileSystem->GetFolder(context.mParentFolderPath);
+    //    QuadLF::LogicalFile *logicalFile =
+    //        mLogicalFileSystem->MakeFile(logicalFileInfo, logicalFileInfo.mName, parentFolder);
 
-        mLogicalFileSystem->SetPhysicalBindingFlag(logicalFile, true);
+    //    mLogicalFileSystem->SetPhysicalBindingFlag(logicalFile, true);
 
-        // asset meta Data등록
-        mAssetMetaDataManager->Register(context.assetMetaData);
-    }
+    //    // asset meta Data등록
+    //    mAssetMetaDataManager->Register(context.assetMetaData);
+    //}
 }
 
 void Quad::EditorProjectManager::CreateMaterialAndLogicalFile(SerializedAssetTContainer *serializedAssetContainer)
 {
 
-    CoreAsset::MaterialManager *materialManager = CoreAsset::MaterialManager::GetInstance();
+    // CoreAsset::MaterialManager *materialManager = CoreAsset::MaterialManager::GetInstance();
 
-    const std::vector<SerializedAssetContainerContext> &serializedAssetContextVector =
-        serializedAssetContainer->GetSerializedAssetContextVector(CoreAsset::EAssetType::eMaterial);
+    // const std::vector<SerializedAssetContainerContext> &serializedAssetContextVector =
+    //     serializedAssetContainer->GetSerializedAssetContextVector(CoreAsset::EAssetType::eMaterial);
 
-    for (const auto &context : serializedAssetContextVector)
-    {
+    // for (const auto &context : serializedAssetContextVector)
+    //{
 
-        CoreAsset::SerializedMaterial *materialData =
-            static_cast<CoreAsset::SerializedMaterial *>(context.mSerializedAsset.get());
+    //    CoreAsset::SerializedMaterial *materialData =
+    //        static_cast<CoreAsset::SerializedMaterial *>(context.mSerializedAsset.get());
 
-        // material 생성
-        CoreAsset::Material *material =
-            materialManager->CreateMaterial(*materialData, context.assetMetaData, context.mParentFolderPath);
+    //    // material 생성
+    //    CoreAsset::Material *material =
+    //        materialManager->CreateMaterial(*materialData, context.assetMetaData, context.mParentFolderPath);
 
-        // logicalFile 생성
-        QuadLF::LogicalFileAssetInfo logicalFileInfo;
-        logicalFileInfo.mAssetID = materialData->mAssetID;
-        logicalFileInfo.mAssetType = materialData->mAssetType;
-        logicalFileInfo.mName = materialData->mAssetName;
+    //    // logicalFile 생성
+    //    QuadLF::LogicalFileAssetInfo logicalFileInfo;
+    //    logicalFileInfo.mAssetID = materialData->mAssetID;
+    //    logicalFileInfo.mAssetType = materialData->mAssetType;
+    //    logicalFileInfo.mName = materialData->mAssetName;
 
-        QuadLF::LogicalFolder *parentFolder = mLogicalFileSystem->GetFolder(context.mParentFolderPath);
-        QuadLF::LogicalFile *logicalFile =
-            mLogicalFileSystem->MakeFile(logicalFileInfo, logicalFileInfo.mName, parentFolder);
+    //    QuadLF::LogicalFolder *parentFolder = mLogicalFileSystem->GetFolder(context.mParentFolderPath);
+    //    QuadLF::LogicalFile *logicalFile =
+    //        mLogicalFileSystem->MakeFile(logicalFileInfo, logicalFileInfo.mName, parentFolder);
 
-        mLogicalFileSystem->SetPhysicalBindingFlag(logicalFile, true);
+    //    mLogicalFileSystem->SetPhysicalBindingFlag(logicalFile, true);
 
-        // asset meta Data등록
-        mAssetMetaDataManager->Register(context.assetMetaData);
-    }
+    //    // asset meta Data등록
+    //    mAssetMetaDataManager->Register(context.assetMetaData);
+    //}
 }

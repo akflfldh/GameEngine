@@ -1,8 +1,9 @@
 ﻿#pragma once
 
-#include <D3DGpuResourceManager/GpuTypes.h>
+#include <CommonHeader/GpuTypes.h>
+#include <CoreAsset/CoreAssetDLLMacro.h>
+#include <CoreBase/Arch.h>
 #include <string>
-
 namespace CoreAsset
 {
 using AssetID = uint64_t;
@@ -18,7 +19,8 @@ enum class EAssetType : uint32_t
     eAnimation = 0x1 << 5,
     eSound = 0x1 << 6,
     ePrefab = 0x1 << 7,
-    eCount = 0x1 << 8
+    eCount = 0x1 << 8,
+    eMap = 0x1 << 9
 };
 
 // 이설정들보고 렌더시스템이 샘플러를 동적으로 만들어서 바인딩하거나,기존의 샘플러를 바인딩할것이다.
@@ -41,17 +43,16 @@ struct CreationTextureAssetInfo
     std::string mName;
 };
 
-struct TextureProperties
+struct CORE_ASSET_API TextureProperties
 {
 
-    uint32_t mWidth;
-    uint32_t mHeight;
-    uint32_t mMipLevels;
-
-    GRM::ETextureFormat mTextureFormat;
-    GRM::ETextureType mTextureType;
+    GRM::TextureDesc mMetaData;
     bool mIsSRGB; // 감마보정을해야하는지 +(일반 컬러텍스처인지, 데이터텍스처인지도 나타낸다(대략적으로));
+
+    void SetRawData(uint8_t *pMemory, size_t size);
 };
+
+CORE_ASSET_API Arch &operator<<(Arch &, TextureProperties &textureProperty);
 
 } // namespace CoreAsset
 

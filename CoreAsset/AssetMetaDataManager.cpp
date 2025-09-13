@@ -1,5 +1,5 @@
 ﻿#include "CoreAsset/AssetMetaDataManager.h"
-
+// #include <CoreAsset/GlobalAssetRegistrySystem.h>
 CoreAsset::AssetMetaDataManager *CoreAsset::AssetMetaDataManager::GetInstance()
 {
     static AssetMetaDataManager instance;
@@ -41,6 +41,54 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
     return true;
 }
 
+bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
+{
+    if (asset == nullptr)
+        return false;
+
+    switch (asset->GetType())
+    {
+    case EAssetType::eTexture:
+    {
+        std::string rawDataFileName = asset->GetName().c_str();
+
+        std::string id = std::to_string(asset->GetID());
+
+        rawDataFileName += id; // 유일성보장
+
+        TextureMetaData textureMetaData;
+        textureMetaData.mAssetID = asset->GetID();
+        textureMetaData.mAssetName = asset->GetName().c_str();
+        textureMetaData.mAssetType = asset->GetType();
+        textureMetaData.mKeepRawDataFlag = true;
+        textureMetaData.mRawFileName = rawDataFileName.c_str();
+
+        bool ret = Register(textureMetaData);
+        return ret;
+    }
+    break;
+
+    case EAssetType::eMaterial:
+    {
+        MaterialMetaData materialMetaData;
+        materialMetaData.mAssetID = asset->GetID();
+        materialMetaData.mAssetName = asset->GetName().c_str();
+        materialMetaData.mAssetType = asset->GetType();
+
+        bool ret = Register(materialMetaData);
+        return ret;
+    }
+    break;
+
+    case EAssetType::eMesh:
+    {
+    }
+    break;
+    }
+
+    return false;
+}
+
 void CoreAsset::AssetMetaDataManager::UnRegister(AssetID id)
 {
 
@@ -66,4 +114,13 @@ CoreAsset::AssetMetaData *CoreAsset::AssetMetaDataManager::GetMetaData(AssetID i
     {
         return it->second;
     }
+}
+
+CoreAsset::AssetMetaData *CoreAsset::AssetMetaDataManager::GetMetaData(Asset *asset) const
+{
+
+    if (asset == nullptr)
+        return nullptr;
+
+    return GetMetaData(asset->GetID());
 }

@@ -13,7 +13,6 @@ class Material;
 class Texture;
 class AssetMetaData;
 class TextureManager;
-struct SerializedMaterial;
 
 class GlobalAssetRegistrySystem;
 
@@ -28,9 +27,9 @@ class CORE_ASSET_API MaterialManager
     Material *GetAsset(AssetID id) const;
     Material *GetAsset(const std::string &name) const;
 
-    // load를 통한 생성
-    Material *CreateMaterial(const CoreAsset::SerializedMaterial &serializedMaterial,
-                             const CoreAsset::AssetMetaData &metaData, const std::string &path);
+    //// load를 통한 생성
+    // Material *CreateMaterial(const CoreAsset::SerializedMaterial &serializedMaterial,
+    //                          const CoreAsset::AssetMetaData &metaData, const std::string &path);
 
   private:
     Material *CreateMaterialInstance(const std::string &name, const std::string &path);

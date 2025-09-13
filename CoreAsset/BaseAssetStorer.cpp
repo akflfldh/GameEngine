@@ -4,6 +4,6 @@
 #include "CoreAsset/AssetMetaDataType.h"
 #include <vector>
 
-CoreAsset::BaseAssetStorer::BaseAssetStorer() {}
+CoreAsset::AssetStorer::AssetStorer() {}
 
-CoreAsset::BaseAssetStorer::~BaseAssetStorer() {}
+CoreAsset::AssetStorer::~AssetStorer() {}

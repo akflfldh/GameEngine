@@ -1,7 +1,7 @@
 ﻿#pragma once
 
+#include "CommonHeader/GpuTypes.h"
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
-#include "D3DGpuResourceManager/GpuTypes.h"
 #include "D3DGpuResourceManager/IGpuResource.h"
 
 namespace GRM

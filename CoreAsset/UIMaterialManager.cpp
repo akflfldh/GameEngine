@@ -82,7 +82,7 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::GetDefaultMaterial(CoreAsset:
 CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultMaterial(CoreAsset::Texture *texture)
 {
 
-    std::unique_ptr<Material> newMaterial(new Material(0, ""));
+    std::unique_ptr<Material> newMaterial(new Material());
     newMaterial->mGpuMaterialID = DefaultUIGpuMaterialID;
 
     const Render::ShaderResourceInfoSet &shaderResourceInfoSet =
@@ -109,7 +109,7 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultMaterial(CoreAss
 CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultGizmoMaterial()
 {
 
-    std::unique_ptr<Material> newMaterial(new Material(1, ""));
+    std::unique_ptr<Material> newMaterial(new Material(1));
     newMaterial->mGpuMaterialID = DefaultGizmoUIGpuMaterialID;
 
     const Render::ShaderResourceInfoSet &shaderResourceInfoSet =

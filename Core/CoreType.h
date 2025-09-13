@@ -23,4 +23,6 @@ struct LogicalWindowInputContext
     bool mMouseCaptureFlag = false;
 };
 
+
+
 } // namespace Core

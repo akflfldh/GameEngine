@@ -5,8 +5,8 @@
 #ifdef D3DX
 
 #include "RenderSystem/RenderSystemDllMacro.h"
+#include <CommonHeader/GpuTypes.h>
 #include <D3DGpuResourceManager/GRMPtr.h>
-#include <D3DGpuResourceManager/GpuTypes.h>
 #include <d3d12.h>
 #include <dxgi.h>
 #include <wrl.h>

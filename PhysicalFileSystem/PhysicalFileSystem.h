@@ -7,6 +7,17 @@
 namespace QuadPF
 {
 
+enum class EFileMode
+{
+    eText = 0,
+    eBinary
+};
+
+struct FileOption
+{
+    EFileMode mFileMode = EFileMode::eBinary;
+};
+
 class PHYSICAL_FILESYSTEM_API PhysicalFileSystem
 {
   public:
@@ -14,7 +25,8 @@ class PHYSICAL_FILESYSTEM_API PhysicalFileSystem
     virtual ~PhysicalFileSystem() = 0;
 
     // 향후에 더많은 매개변수를 통해 다양한 제어를 제공할수있다.
-    virtual bool CreatePhysicalFile(const std::string &fileName, const std::string &path) = 0;
+    virtual bool CreatePhysicalFile(const std::string &fileName, const std::string &path = ""
+                                   ) = 0;
     virtual bool CreatePhysicalFolder(const std::string &folderName, const std::string &path) = 0;
 
     // 이 두 메서드는 하나로 합칠수도있을것이다.

@@ -1,0 +1,13 @@
+﻿add_library(RenderFrontend SHARED
+
+RenderFrontendDllMarco.h
+UIRenderItemBuilder.cpp
+UIRenderItemBuilder.h
+AssetResolver.h
+AssetResolver.cpp
+)
+
+
+add_compile_definitions(RenderFrontend PRIVATE RENDER_FRONTEND_LIB)
+
+target_link_libraries(RenderFrontend PUBLIC compiler_flags headerDir RenderSystem GpuResourceManager CoreAsset RenderSystem UiSystem Core)

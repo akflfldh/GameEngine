@@ -1,5 +1,5 @@
 ﻿{
-  "version": 3,
+  "version": 4,
   "cmakeMinimumRequired": {
     "major": 3,
     "minor": 25
@@ -27,7 +27,20 @@
         "CMAKE_BUILD_TYPE": "Release"
       }
 
+    },
+    {
+        "name":"debug-ninja",
+        "displayName":"Debug Build(Ninja)",
+        "description":"Configure project for Debug build with Ninja Generator",
+        "generator":"Ninja",
+        "binaryDir":"${sourceDir}/build/debug-ninja",
+        "cacheVariables":{
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+        }
     }
+
   ],
   "buildPresets": [
 
@@ -38,7 +51,11 @@
     {
       "name": "release",
       "configurePreset": "release"
-    }
+    },
+    {
+      "name":"debug-ninja",
+      "configurePreset":"debug-ninja"
+    } 
 
   ]
 

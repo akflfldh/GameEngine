@@ -42,21 +42,21 @@ CoreAsset::Texture *Quad::EditorTextureImporter::Import(const std::string &fileP
                                                         const std::string &logicalPath) const
 {
 
-    GRM::TextureDesc textureDesc;
-    bool ret = mTextureImporterCore->Import(filePath, textureDesc);
-    if (ret == false)
-        return nullptr;
+    /*   GRM::TextureDesc textureDesc;
+       bool ret = mTextureImporterCore->Import(filePath, textureDesc);
+       if (ret == false)
+           return nullptr;
 
-    std::string fileName = CoreUtility::Utility::GetFileNameFromPath(filePath);
-    CoreAsset::Texture *texture = mTextureManager->CreateTexture(textureDesc, fileName, logicalPath, true);
+       std::string fileName = CoreUtility::Utility::GetFileNameFromPath(filePath);
+       CoreAsset::Texture *texture = mTextureManager->CreateTexture(textureDesc, fileName, logicalPath, true);
 
-    if (texture)
-    {
-        ReigsterTextureMetaData(texture, filePath, logicalPath);
-        texture->SetDirty();
-    }
+       if (texture)
+       {
+           ReigsterTextureMetaData(texture, filePath, logicalPath);
+           texture->SetDirty();
+       }*/
 
-    return texture;
+    return nullptr;
 }
 
 bool Quad::EditorTextureImporter::ReigsterTextureMetaData(CoreAsset::Texture *texture, const std::string &filePath,
@@ -64,7 +64,7 @@ bool Quad::EditorTextureImporter::ReigsterTextureMetaData(CoreAsset::Texture *te
 {
     CoreAsset::TextureMetaData metaData;
     metaData.mAssetID = texture->GetID();
-    metaData.mAssetName = texture->GetName();
+    metaData.mAssetName = texture->GetName().c_str();
     metaData.mAssetType = texture->GetType();
     metaData.mFilePath = logicalPath + "/" + metaData.mAssetName;
 

@@ -19,7 +19,9 @@ class PHYSICAL_FILESYSTEM_API WindowsPhysicalFileSystem : public PhysicalFileSys
     virtual ~WindowsPhysicalFileSystem();
 
     // 향후에 더많은 매개변수를 통해 다양한 제어를 제공할수있다.
-    bool CreatePhysicalFile(const std::string &fileName, const std::string &path) override;
+
+    bool CreatePhysicalFile(const std::string &fileName, const std::string &path = ""
+                            ) override;
     bool CreatePhysicalFolder(const std::string &folderName, const std::string &path) override;
 
     // 이 두 메서드는 하나로 합칠수도있을것이다.

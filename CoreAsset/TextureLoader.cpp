@@ -2,7 +2,9 @@
 #include "CoreAsset/AssetMetaDataType.h"
 #include "CoreAsset/MaterialLoader.h"
 #include <BinaryReaderWriter/BinaryReader.h>
-
+#include <CoreAsset/Asset.h>
+#include <CoreAsset/AssetFactoryManager.h>
+#include <CoreAsset/Texture.h>
 CoreAsset::TextureLoader *CoreAsset::TextureLoader::GetInstance()
 {
     static TextureLoader instance;
@@ -12,46 +14,94 @@ CoreAsset::TextureLoader *CoreAsset::TextureLoader::GetInstance()
 CoreAsset::TextureLoader::TextureLoader() {}
 CoreAsset::TextureLoader::~TextureLoader() {}
 
-std::unique_ptr<CoreAsset::SerializedTexture> CoreAsset::TextureLoader::LoadAssetFile(
-    const std::string &filePath, CoreAsset::AssetMetaData &oMetaData)
+bool CoreAsset::TextureLoader::LoadAssetFile(Arch &arch, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+                                             std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr)
 {
 
-    QuadRW::BinaryReader binaryReader;
+    // texture metaData에대한 texture common header 를 먼저 직렬화
+    TextureCommonHeader textureCommonHeader;
+    textureCommonHeader.Serialize(arch);
 
-    std::unique_ptr<SerializedTexture> serializedTexture = std::make_unique<SerializedTexture>();
+    std::unique_ptr<TextureMetaData> textureMetaDataPtr = std::make_unique<TextureMetaData>();
+    textureMetaDataPtr->mRawFileName = textureCommonHeader.mRawFileName;
+    textureMetaDataPtr->mAssetType = CoreAsset::EAssetType::eTexture;
 
-    bool ret = binaryReader.StartRead(filePath);
-    if (ret == false)
-    {
-        return nullptr;
-    }
+    // 그 후 빈에셋(Texture)생성후 Serialize수행
+    oAsset = assetFactoryManager->CreateEmptyAsset(EAssetType::eTexture);
+    if (oAsset != nullptr)
+        oAsset->Serialize(arch);
 
-    serializedTexture->DeSerialize(binaryReader);
 
-    bool metaDataValidFlag = false;
-    binaryReader.Read(metaDataValidFlag);
 
-    if (metaDataValidFlag == true)
-        oMetaData.DeSerialize(binaryReader);
 
-    return serializedTexture;
+    oAssetMetaDataPtr = std::move(textureMetaDataPtr);
+
+    return true;
 }
 
-std::unique_ptr<CoreAsset::SerializedTextureRawData> CoreAsset::TextureLoader::LoadRawFile(const std::string &filePath)
+bool CoreAsset::TextureLoader::LoadAssetRawFile(Arch &arch, Asset *asset)
 {
-    QuadRW::BinaryReader binaryReader;
 
-    std::unique_ptr<CoreAsset::SerializedTextureRawData> serializedTextureRawData =
-        std::make_unique<SerializedTextureRawData>();
+    CoreAsset::Texture *texture = static_cast<Texture *>(asset);
 
-    if (binaryReader.StartRead(filePath) == false)
-    {
+    uint64_t rawDataSize = texture->GetProperties().mMetaData.mScratchImage.mSize;
 
-        // log
-        return nullptr;
-    }
+    std::vector<uint8_t> pMem(rawDataSize);
 
-    serializedTextureRawData->DeSerialize(binaryReader);
+    arch << QUAD_SERIALIZEBUFFER(pMem.data(), rawDataSize);
 
-    return serializedTextureRawData;
+    texture->GetProperties().SetRawData(pMem.data(), rawDataSize);
+
+    return true;
 }
+
+// std::unique_ptr<CoreAsset::SerializedAsset> CoreAsset::TextureLoader::LoadAssetFile(const std::string &filePath,
+//                                                                                     CoreAsset::AssetMetaData
+//                                                                                     &oMetaData)
+//{
+//
+//     QuadRW::BinaryReader binaryReader;
+//
+//     std::unique_ptr<SerializedTexture> serializedTexture = std::make_unique<SerializedTexture>();
+//
+//     bool ret = binaryReader.StartRead(filePath);
+//     if (ret == false)
+//     {
+//         return nullptr;
+//     }
+//
+//     serializedTexture->DeSerialize(binaryReader);
+//
+//     bool metaDataValidFlag = false;
+//     binaryReader.Read(metaDataValidFlag);
+//
+//     if (metaDataValidFlag == true)
+//         oMetaData.DeSerialize(binaryReader);
+//
+//     return serializedTexture;
+// }
+//
+// std::unique_ptr<CoreAsset::AssetMetaData> CoreAsset::TextureLoader::LoadAssetMetaDataFile(
+//     QuadRW::BinaryReader &binaryReader)
+//{
+//     return std::unique_ptr<AssetMetaData>();
+// }
+//
+// std::unique_ptr<CoreAsset::SerializedAssetRawData> CoreAsset::TextureLoader::LoadRawFile(const std::string &filePath)
+//{
+//     QuadRW::BinaryReader binaryReader;
+//
+//     std::unique_ptr<CoreAsset::SerializedTextureRawData> serializedTextureRawData =
+//         std::make_unique<SerializedTextureRawData>();
+//
+//     if (binaryReader.StartRead(filePath) == false)
+//     {
+//
+//         // log
+//         return nullptr;
+//     }
+//
+//     serializedTextureRawData->DeSerialize(binaryReader);
+//
+//     return serializedTextureRawData;
+// }

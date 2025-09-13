@@ -23,14 +23,12 @@ SuperAssetBrowerController.cpp
 SuperController.cpp
 SuperFrameController.cpp
 
- "EditorConfig.h" "EditorConfig.cpp")
+ "EditorConfig.h" "EditorConfig.cpp" "FNameTableFileIOManager.h" "FNameTableFileIOManager.cpp" "EditorAssetImporterModule.h" "EditorAssetImporterModule.cpp")
 
 if(MSVC)
     add_executable(EditorDirector WIN32
     ${SRCS})
-    set_target_properties(EditorDirector PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-)
+
 endif()
 
 
@@ -60,4 +58,4 @@ target_include_directories(EditorDirector PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}  ${
 
 target_link_libraries(EditorDirector PUBLIC compiler_flags headerDir
 Utility Core Window LogicalFileSystem JsonParser RenderSystem GpuResourceManager SystemInitializer CoreAsset
-UiSystem ImportModule)
+UiSystem ImportModule CoreBase RenderFrontend)

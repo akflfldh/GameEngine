@@ -12,6 +12,7 @@ class CORE_API_LIB ProjectConfig
 
     void SetProjectPath(const std::string &path);
     const std::string &GetProjectPath() const;
+    std::string GetProjectRawAssetPath() const;
 
     void Load();
     void Save();

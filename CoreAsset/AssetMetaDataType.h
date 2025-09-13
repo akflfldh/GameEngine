@@ -3,6 +3,11 @@
 #include "CoreAsset/CoreAssetDLLMacro.h"
 #include <string>
 
+#include <CoreBase/FName.h>
+#include <CoreBase/FString.h>
+
+class Arch;
+
 namespace QuadRW
 {
 class BinaryWriter;
@@ -13,43 +18,57 @@ namespace CoreAsset
 {
 
 // 정확히 이친구는 어떻게 어디에쓸지 고민해야한다.
-class CORE_ASSET_API AssetMetaData
+struct CORE_ASSET_API AssetMetaData
 {
   public:
     AssetID mAssetID = NoneAssetID;
     std::string mAssetName = "";
-    std::string mFilePath = ""; // 실제
+    std::string mFilePath = ""; // 논리적 에셋파일경로
     EAssetType mAssetType = EAssetType::eUnknown;
     bool mKeepRawDataFlag = false;
-
-    // AssetMetaData() = default;
-    //~AssetMetaData() = default;
-
-    // AssetMetaData(const AssetMetaData&) = default;
-    // AssetMetaData(AssetMetaData&&) = default;
-
-    // AssetMetaData& operator=(const AssetMetaData&) = default;
-    // AssetMetaData& operator=(AssetMetaData&&) = default;
-    //
-
-    virtual void Serialize(QuadRW::BinaryWriter &writer);
-    virtual void DeSerialize(QuadRW::BinaryReader &reader);
+    FString mRawFileName = "";
 };
 
-class CORE_ASSET_API TextureMetaData : public AssetMetaData
+struct CORE_ASSET_API TextureMetaData : public AssetMetaData
 {
   public:
-    // TextureMetaData() = default;
-    //~TextureMetaData() = default;
+    //  FString mRawFilePath;
+};
 
-    // TextureMetaData(const TextureMetaData&) = default;
-    // TextureMetaData(TextureMetaData&&) = default;
+struct CORE_ASSET_API MaterialMetaData : public AssetMetaData
+{
 
-    // TextureMetaData& operator=(const TextureMetaData&) = default;
-    // TextureMetaData& operator=(TextureMetaData&&) = default;
+    // 현재 아무런정보도 없다.
+    int i = 0;
+};
 
-    virtual void Serialize(QuadRW::BinaryWriter &writer) override;
-    virtual void DeSerialize(QuadRW::BinaryReader &reader) override;
+struct CORE_ASSET_API AssetCommonHeader
+{
+    // name
+    // type
+    // asset id
+    AssetID mAssetID = NoneAssetID;
+    EAssetType mAssetType = EAssetType::eUnknown;
+    FName mAssetName = "";
+
+    void Serialize(Arch &arch);
+};
+
+struct CORE_ASSET_API TextureCommonHeader
+{
+    // raw asset file path
+
+    // runtime에도 필요할수도있어
+    FString mRawFileName;
+    void Serialize(Arch &arch);
+};
+
+struct CORE_ASSET_API MaterialCommonHeader
+{
+    // 일단없다
+    int i = 0;
+
+    void Serialize(Arch &arch);
 };
 
 } // namespace CoreAsset

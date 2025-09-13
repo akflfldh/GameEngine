@@ -90,6 +90,8 @@ class LogicalFileSystem
     void SetPhysicalBindingFlag(LogicalNode *node, bool flag);
 
     LogicalFolder *GetCurrentLogicalFolder() const;
+    std::string GetCurrentLogicalFolderPath() const;
+
     void SetCurrentLogicalFolder(LogicalFolder *folder);
 
   private:

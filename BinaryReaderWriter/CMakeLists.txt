@@ -1,9 +1,9 @@
-add_library(BinaryReaderWriter STATIC
+﻿add_library(BinaryReaderWriter STATIC
 BinaryReader.h
 BinaryWriter.h
 BinaryReader.cpp
 BinaryWriter.cpp
-)
+ "TextWriter.h" "TextWriter.cpp" "TextReader.h" "TextReader.cpp")
 
 
 target_include_directories(BinaryReaderWriter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

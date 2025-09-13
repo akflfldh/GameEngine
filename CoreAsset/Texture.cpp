@@ -1,34 +1,39 @@
 ﻿#include "CoreAsset/Texture.h"
-#include <D3DGpuResourceManager/IGpuResource.h>
+// #include <D3DGpuResourceManager/IGpuResource.h>
 
-CoreAsset::Texture::Texture(AssetID id, const std::string &name) : Asset(id, name, CoreAsset::EAssetType::eTexture) {}
+CoreAsset::Texture::Texture() : Asset(CoreAsset::EAssetType::eTexture) {}
 
 CoreAsset::Texture::~Texture() {}
 
-void CoreAsset::Texture::SetGpuResource(const GRM::GRMPtr &gpuResource)
+void CoreAsset::Texture::Serialize(Arch &arch)
 {
-    // 오직 한번만호출하거나, 교체할때만 호출될수있게될것이다.
+    Asset::Serialize(arch);
 
-    mGpuResource = gpuResource;
+    arch << mProperties;
 }
 
-GRM::IGpuResource *CoreAsset::Texture::GetGpuResource() const
+void CoreAsset::Texture::SetRawData(uint8_t *pMemory, size_t size)
 {
-    return mGpuResource.getResource();
+    mProperties.SetRawData(pMemory, size);
 }
 
-void CoreAsset::Texture::SetRawData(std::unique_ptr<GRM::TextureDesc> rawData)
+void CoreAsset::Texture::SetTextureDesc(const GRM::TextureDesc &texDesc)
 {
-
-    mRawData = std::move(rawData);
+    mProperties.mMetaData = texDesc;
 }
 
-const GRM::TextureDesc *CoreAsset::Texture::GetRawData() const
+const uint8_t *CoreAsset::Texture::GetRawData() const
 {
-    return mRawData.get();
+    return mProperties.mMetaData.mScratchImage.mMemory.data();
 }
 
 const CoreAsset::TextureProperties &CoreAsset::Texture::GetProperties() const
 {
     return mProperties;
+}
+
+CoreAsset::TextureProperties &CoreAsset::Texture::GetProperties()
+{
+    return mProperties;
+    // TODO: 여기에 return 문을 삽입합니다.
 }

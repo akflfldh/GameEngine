@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <D3DGpuResourceManager/GpuTypes.h>
+#include <CommonHeader/GpuTypes.h>
 #include <D3DGpuResourceManager/IGpuResource.h>
 #include <memory>
 #include <unordered_map>

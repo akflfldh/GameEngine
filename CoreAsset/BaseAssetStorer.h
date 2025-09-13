@@ -9,11 +9,11 @@ namespace CoreAsset
 class Asset;
 class AssetMetaData;
 
-class CORE_ASSET_API BaseAssetStorer
+class CORE_ASSET_API AssetStorer
 {
   public:
-    BaseAssetStorer();
-    virtual ~BaseAssetStorer() = 0;
+    AssetStorer();
+    virtual ~AssetStorer() = 0;
 
   protected:
     QuadRW::BinaryWriter mWriter;

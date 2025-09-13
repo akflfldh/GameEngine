@@ -410,3 +410,6 @@ FodyWeavers.xsd
 
 *.exe
 /Lib/
+
+
+**/out/

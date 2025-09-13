@@ -3,12 +3,14 @@
 #ifdef D3DX
 #include "ImportModule/D3DHelper.h"
 #include "ImportModule/TextureImporter.h"
+#include <CommonHeader/GpuTypes.h>
 #include <CoreAsset/AssetMetaDataManager.h>
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreAsset/Texture.h>
 #include <CoreAsset/TextureManager.h>
 #include <D3DGpuResourceManager/D3DGpuType.h>
-#include <D3DGpuResourceManager/GpuTypes.h>
 #include <DirectXTex.h>
+#include <Logger/Logger.h>
 #include <Utility/Utility.h>
 #include <memory>
 
@@ -26,11 +28,13 @@ Import::TextureImporter::TextureImporter()
 
 Import::TextureImporter::~TextureImporter() {}
 
-bool Import::TextureImporter::Import(const std::string &filePath, GRM::TextureDesc &oTextureDesc) const
+FVector<CoreAsset::IntermediateAsset *> Import::TextureImporter::Import(
+    const char *filePath, CoreAsset::AssetImporterManager *assetImporterManagaer) const
 {
 
     // utility get extension
-    GRM::TextureDesc &textureDesc = oTextureDesc;
+
+    GRM::TextureDesc textureDesc;
 
     const std::wstring &filePathW = CoreUtility::Utility::ConvertToWString(filePath, true);
 
@@ -43,7 +47,8 @@ bool Import::TextureImporter::Import(const std::string &filePath, GRM::TextureDe
     if (FAILED(result))
     {
         // log
-        return false;
+        LOG_MESSAGE_INFO("TextureImporter", "LoadFromWICFile 실패");
+        return {};
     }
 
     // 텍스처데이터를위한 메타데이터를 채운다
@@ -66,7 +71,8 @@ bool Import::TextureImporter::Import(const std::string &filePath, GRM::TextureDe
     if (grmScratchImage.mMetadata.mFormat == GRM::ETextureFormat::eUnknown)
     {
         // log
-        assert(0);
+        assert(0 && "grmScratchImage.mMetadata.mFormat == GRM::ETextureFormat::eUnknown");
+        return {};
     }
 
     grmScratchImage.mMetadata.mMiscFlags = texMetaData.miscFlags;
@@ -91,39 +97,19 @@ bool Import::TextureImporter::Import(const std::string &filePath, GRM::TextureDe
     textureDesc.mTextureUsage = GRM::ETextureUsage::eShaderResource;
     // textureManager에게 ScratchImage 전달
 
-    // 여기까지가 임포터 코어 부분이다. 분리할것
+    CoreAsset::IntermediateAssetFactory *intermediateAssetFactory = CoreAsset::IntermediateAssetFactory::GetInstance();
+    CoreAsset::IntermediateTexture *intermediateTexture = intermediateAssetFactory->CreateIntermediateTexture();
 
-    return true;
+    intermediateTexture->mAssetType = CoreAsset::EAssetType::eTexture;
 
-    // std::string fileName = CoreUtility::Utility::GetFileNameFromPath(filePath);
-    // if (mTextureManager == nullptr)
-    //{
-    //	assert(0);
-    // }
+    std::string name = CoreUtility::Utility::GetFileNameFromPath(filePath);
+    name = CoreUtility::Utility::RemoveExtension(name);
+    intermediateTexture->mAssetName = name.c_str();
+    intermediateTexture->mTextureRawData = std::move(textureDesc);
 
-    // CoreAsset::Texture* texture  = mTextureManager->CreateTexture(textureDesc, fileName, logicalPath);
-
-    // if (texture)
-    //{
-    //
-    //	ReigsterTextureMetaData(texture, filePath);
-    // }
-
-    // return texture;
+    FVector<CoreAsset::IntermediateAsset *> retVector;
+    retVector.Push_Back(intermediateTexture);
+    return retVector;
 }
-
-// void Import::TextureImporter::ReigsterTextureMetaData(CoreAsset::Texture* texture, const std::string& filePath) const
-//{
-//	CoreAsset::TextureMetaData metaData;
-//
-//
-//	metaData.mAssetID = texture->GetID();
-//	metaData.mAssetName = texture->GetName();
-//	metaData.mAssetType = texture->GetType();
-//	metaData.mFilePath = filePath;
-//
-//	mAssetMetaDataManager->Register(metaData);
-//
-// }
 
 #endif

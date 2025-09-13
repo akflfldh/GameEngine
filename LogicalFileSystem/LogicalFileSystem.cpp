@@ -571,6 +571,11 @@ QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetCurrentLogicalFolder() cons
     return mCurrentFolder;
 }
 
+std::string QuadLF::LogicalFileSystem::GetCurrentLogicalFolderPath() const
+{
+    return GetCurrentLogicalFolder()->GetFullPath();
+}
+
 void QuadLF::LogicalFileSystem::SetCurrentLogicalFolder(LogicalFolder *folder)
 {
     if (folder == nullptr)

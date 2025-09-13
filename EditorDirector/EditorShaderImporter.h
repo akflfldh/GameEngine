@@ -5,7 +5,7 @@ namespace Render
 class IMaterialManager;
 }
 #include <BinaryReaderWriter/BinaryReader.h>
-#include <D3DGpuResourceManager/GpuTypes.h>
+#include <CommonHeader/GpuTypes.h>
 #include <RenderSystem/RenderType.h>
 #include <memory>
 #include <string>

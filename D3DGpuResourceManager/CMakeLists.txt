@@ -1,14 +1,20 @@
-add_library(GpuResourceManager SHARED
+﻿add_library(GpuResourceManager SHARED
 IGpuResourceManager.h
 IGpuResource.h
 GRMPtr.h
-GpuTypes.h
+
 GpuResourceDllMacro.h
 IGpuResourceManager.cpp 
 IGpuResource.cpp 
 GRMPtr.cpp
-GpuTypes.cpp 
+ 
 
+GpuBufferContextSystem.cpp
+GpuBufferContextSystem.h
+GpuBufferContextSystemImpl.cpp
+GpuBufferContextSystemImpl.h
+GpuSamplerSystem.cpp 
+GpuSamplerSystem.h 
 
 )
 
@@ -21,7 +27,7 @@ get_filename_component(PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
 target_compile_definitions(GpuResourceManager PRIVATE GPURESOURCE_MANAGER_LIB)
 target_include_directories(GpuResourceManager PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${PARENT_DIR}/Include")
 
-target_link_libraries(GpuResourceManager PUBLIC compiler_flags headerDir Logger CoreDevice)
+target_link_libraries(GpuResourceManager PUBLIC compiler_flags headerDir Logger CoreDevice JsonParser)
 
 
 

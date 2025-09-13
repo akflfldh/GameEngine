@@ -9,6 +9,29 @@ const char *CoreAsset::GetAssetFileExtension()
     return "asset";
 }
 
+const char *CoreAsset::GetAssetFileExtension(EAssetType assetType)
+{
+
+    switch (assetType)
+    {
+    case EAssetType::eMesh:
+    case EAssetType::eMaterial:
+    case EAssetType::eTexture:
+    case EAssetType::eAnimation:
+    case EAssetType::eSound:
+        return GetAssetFileExtension();
+    case EAssetType::eMap:
+        return GetMapFileExtension();
+    }
+
+    return GetAssetFileExtension();
+}
+
+const char *CoreAsset::GetMapFileExtension()
+{
+    return "map";
+}
+
 const char *CoreAsset::GetAssetRawFileExtension()
 {
     return "raw";
@@ -18,8 +41,8 @@ std::string CoreAsset::GetAssetFileName(CoreAsset::Asset *asset)
 {
     if (asset == nullptr)
         return "";
-
-    std::string fileName = asset->GetName() + "." + GetAssetFileExtension();
+    std::string assetName = asset->GetName().c_str();
+    std::string fileName = assetName + "." + GetAssetFileExtension();
     return fileName;
 }
 

@@ -4,7 +4,7 @@
 #include "CoreAsset/AssetIDTable.h"
 #include "CoreAsset/AssetPtr.h"
 #include "CoreAsset/CoreAssetDLLMacro.h"
-#include <D3DGpuResourceManager/GpuTypes.h>
+#include <CommonHeader/GpuTypes.h>
 #include <string>
 
 namespace GRM
@@ -29,7 +29,7 @@ class CORE_ASSET_API TextureManager
 {
   public:
     static TextureManager *GetInstance();
-    TextureManager(GRM::IGpuResourceManager *gpuResourceManager);
+    TextureManager();
     ~TextureManager();
 
     Texture *GetAsset(const std::string &path, const std::string &name) const;
@@ -56,7 +56,6 @@ class CORE_ASSET_API TextureManager
   private:
     static TextureManager *mInstance;
 
-    GRM::IGpuResourceManager *mGpuResourceManager;
     // AssetIDTable mIDTable;
     // AssetIDGenerator mIDGenerator;
 

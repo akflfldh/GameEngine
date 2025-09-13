@@ -6,7 +6,9 @@
 #include "EditorDirector/ImGui/imgui_impl_dx12.h"
 #include "EditorDirector/ImGui/imgui_impl_win32.h"
 #include "EditorDirector/ImGui/imstb_truetype.h"
+#include <CoreAsset/AssetManager.h>
 #include <CoreAsset/AssetMetaDataManager.h>
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreAsset/Material.h>
 #include <CoreAsset/MaterialManager.h>
 #include <CoreAsset/Texture.h>
@@ -19,6 +21,7 @@
 #include <LogicalFileSystem/LogicalFile.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
+#include <RenderFrontend/AssetResolver.h>
 #include <RenderSystem/D3DMaterialManager.h>
 #include <RenderSystem/D3DRenderSystem.h>
 #include <RenderSystem/D3DWindowRenderData.h>
@@ -324,6 +327,8 @@ void Quad::ImGuiSystem::DrawSelectAsset()
 {
     ImGui::Begin("SelectAsset");
 
+    Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
+
     if (AssetClick)
     {
 
@@ -340,7 +345,17 @@ void Quad::ImGuiSystem::DrawSelectAsset()
 
             uint32_t width = texture->GetWidth();
             uint32_t height = texture->GetHeight();
-            D3DGRM::D3DGpuResource *d3dResource = static_cast<D3DGRM::D3DGpuResource *>(texture->GetGpuResource());
+
+            GRM::GRMPtr gpuPtr = assetResolver->GetGpuResource(texture);
+            if (gpuPtr.getResource() == nullptr)
+            {
+
+                bool ret = assetResolver->ResolveAsset(texture);
+                // 향후 대처
+            }
+
+            D3DGRM::D3DGpuResource *d3dResource =
+                static_cast<D3DGRM::D3DGpuResource *>(assetResolver->GetGpuResource(texture).getResource());
 
             D3DGRM::D3DDescriptorHandle handle;
             d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
@@ -434,46 +449,58 @@ void Quad::ImGuiSystem::DrawCreationMaterialPanel()
             // 현재 가리키는 폴더기능필요
             // mLogicalFileSystem->get
 
-            CoreAsset::Material *material = materialManager->CreateMaterial(
-                mCurrMaterialCreationContext.mGpuMaterialID, mCurrMaterialCreationContext.mAssetMaterialName, "Asset");
+            //  CoreAsset::Material *material = materialManager->CreateMaterial(
+            //    mCurrMaterialCreationContext.mGpuMaterialID, mCurrMaterialCreationContext.mAssetMaterialName,
+            //    "Asset");
 
-            for (int i = 0; i < mCurrMaterialCreationContext.mTexResourceInfo.size(); ++i)
-            {
-                material->SetTextureResource(
-                    i, mTextureManager->GetAsset(mCurrMaterialCreationContext.mTexResourceInfo[i].second));
-            }
+            // 이거 하나로 끝
+            // assetManager->CreateAsset(material type , info );
+            CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
 
-            for (int i = 0; i < mCurrMaterialCreationContext.mSamplerResourceInfo.size(); ++i)
-            {
-                material->SetSamplerResource(i, mCurrMaterialCreationContext.mSamplerResourceInfo[i]);
-            }
+            CoreAsset ::IntermediateAssetFactory *intermediateAssetFactory =
+                CoreAsset::IntermediateAssetFactory::GetInstance();
+            CoreAsset::IntermediateMaterial *intermediateMaterial =
+                intermediateAssetFactory->CreateIntermediateMaterial();
 
-            // 저장플래그 true
-            material->SetDirty();
+            std::string assetPrefixName = mLogicalFileSystem->GetCurrentLogicalFolder()->GetFullPath();
 
-            // 논리적파일에 추가까지
+            intermediateMaterial->mTexResourceList = mCurrMaterialCreationContext.mTexResourceInfo;
+            intermediateMaterial->mSamplerResourceList = mCurrMaterialCreationContext.mSamplerResourceInfo;
+            intermediateMaterial->mGpuMaterialID = mCurrMaterialCreationContext.mGpuMaterialID;
+            intermediateMaterial->mAssetName = mCurrMaterialCreationContext.mAssetMaterialName;
 
-            QuadLF::LogicalFileAssetInfo logicalFileAssetInfo;
-            logicalFileAssetInfo.mAssetID = material->GetID();
-            logicalFileAssetInfo.mAssetType = CoreAsset::EAssetType::eMaterial;
-            logicalFileAssetInfo.mName = material->GetName();
+            assetManager->CreateAsset(CoreAsset::EAssetType::eMaterial, intermediateMaterial, assetPrefixName.c_str());
 
-            QuadLF::LogicalFile *materialLogicalFile = mLogicalFileSystem->MakeFile(
-                logicalFileAssetInfo, material->GetName(), mLogicalFileSystem->GetRootFolder());
+            // 논리적 파일처리까지 다루는 asset 에디터 매니저가 , 즉 래핑이있어야할듯  더 상위클래스
+            //{
+            //     // 저장플래그 true
+            //     material->SetDirty();
 
-            // 에셋 메타데이터 추가
-            CoreAsset::AssetMetaDataManager *assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
+            //    // 논리적파일에 추가까지
 
-            CoreAsset::AssetMetaData assetMetaData;
-            assetMetaData.mAssetID = material->GetID();
-            assetMetaData.mAssetName = material->GetName();
-            assetMetaData.mAssetType = CoreAsset::EAssetType::eMaterial;
-            assetMetaData.mFilePath = materialLogicalFile->GetFullPath();
-            assetMetaData.mKeepRawDataFlag = false;
+            //    QuadLF::LogicalFileAssetInfo logicalFileAssetInfo;
+            //    logicalFileAssetInfo.mAssetID = material->GetID();
+            //    logicalFileAssetInfo.mAssetType = CoreAsset::EAssetType::eMaterial;
+            //    logicalFileAssetInfo.mName = material->GetName().c_str();
 
-            assetMetaDataManager->Register(assetMetaData);
+            //    QuadLF::LogicalFile *materialLogicalFile = mLogicalFileSystem->MakeFile(
+            //        logicalFileAssetInfo, material->GetName().c_str(), mLogicalFileSystem->GetRootFolder());
 
-            bMaterialCreationresult = true;
+            //    // 에셋 메타데이터 추가
+            //    CoreAsset::AssetMetaDataManager *assetMetaDataManager =
+            //    CoreAsset::AssetMetaDataManager::GetInstance();
+
+            //    CoreAsset::AssetMetaData assetMetaData;
+            //    assetMetaData.mAssetID = material->GetID();
+            //    assetMetaData.mAssetName = material->GetName().c_str();
+            //    assetMetaData.mAssetType = CoreAsset::EAssetType::eMaterial;
+            //    assetMetaData.mFilePath = materialLogicalFile->GetFullPath();
+            //    assetMetaData.mKeepRawDataFlag = false;
+
+            //    assetMetaDataManager->Register(assetMetaData);
+
+            //    bMaterialCreationresult = true;
+            //}
         }
 
         ImGui::Text("Result : ");

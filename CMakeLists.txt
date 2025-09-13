@@ -31,12 +31,13 @@ target_include_directories(headerDir INTERFACE  ${headerRootDirDef})
 
 
 
-
+add_subdirectory(CoreAllocator)
 add_subdirectory(Utility)
 add_subdirectory(Window)
 add_subdirectory(Logger)
 add_subdirectory(PhysicalFileSystem)
 add_subdirectory(BinaryReaderWriter)
+add_subdirectory(CoreBase)
 add_subdirectory(CoreDevice)
 add_subdirectory(D3DGpuResourceManager)
 add_subdirectory(RenderSystem)
@@ -49,5 +50,6 @@ add_subdirectory(SystemInitializer)
 add_subdirectory(ReflectSystem)
 add_subdirectory(UiSystem)
 add_subdirectory(ImportModule)
+add_subdirectory(RenderFrontend)
 add_subdirectory(Core)
 add_subdirectory(EditorDirector)

@@ -1,4 +1,4 @@
-add_library(ImportModule STATIC
+﻿add_library(ImportModule STATIC
 
 TextureImporter.h
 )
@@ -20,7 +20,7 @@ set_target_properties(DirectXTex PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${PARENT_DIR}/Include/DirectTexX)
 
 
-target_link_libraries(ImportModule PUBLIC compiler_flags headerDir DirectXTex Utility CoreAsset)
+target_link_libraries(ImportModule PUBLIC compiler_flags headerDir DirectXTex Utility CoreAsset CoreBase)
 
 
 

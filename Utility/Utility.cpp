@@ -105,13 +105,29 @@ std::string CoreUtility::Utility::GetExtensionFromPath(const std::string &path)
     if (dotPos == std::string::npos)
         return "";
 
-    if (dotPos < std::max(backSlashPos, slashPos))
+    size_t commonSlashPos = backSlashPos;
+    if (backSlashPos == std::string::npos)
+    {
+        commonSlashPos = slashPos;
+    }
+
+    if (dotPos < commonSlashPos)
     {
         // 올바르지못하다.
         return "";
     }
 
     return path.substr(dotPos + 1);
+}
+
+std::string CoreUtility::Utility::RemoveExtension(const std::string &path)
+{
+
+    size_t dotPos = path.find_last_of('.');
+    if (dotPos == std::string::npos)
+        return path;
+
+    return path.substr(0, dotPos);
 }
 
 std::string CoreUtility::Utility::GetParentFolderPathFromPath(const std::string &path)
@@ -192,4 +208,25 @@ bool CoreUtility::Utility::IsPointInsideRect(float left, float right, float top,
         return false;
 
     return true;
+}
+
+CoreUtility::UniqueID CoreUtility::Utility::MakeUniqueID()
+{
+    static std::mt19937 generator(
+        []()
+        {
+            std::random_device rd;
+            std::array<int, std::mt19937::state_size> seed_data{};
+            std::generate(seed_data.begin(), seed_data.end(), std::ref(rd));
+            std::seed_seq seq(seed_data.begin(), seed_data.end());
+            return std::mt19937(seq);
+        }());
+    uuids::uuid_random_generator uuidGenerator(generator);
+    uuids::uuid newUUID = uuidGenerator();
+
+    UniqueID uniqueID;
+
+    std::memcpy(uniqueID.mUniqueID, (const void *)&newUUID, 16);
+
+    return uniqueID;
 }

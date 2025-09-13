@@ -8,19 +8,28 @@
 // class AssetMetaDataManager;
 // }
 
-#include <D3DGpuResourceManager/GpuTypes.h>
+#include <CommonHeader/GpuTypes.h>
+#include <CoreAsset/IAssetImporter.h>
+#include <CoreAsset/IntermediateAsset.h>
+#include <CoreBase/FVector.h>
+
+namespace CoreAsset
+{
+class AssetImporterManager;
+}
 
 namespace Import
 {
 
-class TextureImporter
+class TextureImporter : public CoreAsset::IAssetImporter
 {
   public:
     static TextureImporter *GetInstance();
     virtual ~TextureImporter();
 
     // dds, jpg, png
-    bool Import(const std::string &filePath, GRM::TextureDesc &oTextureDesc) const;
+    FVector<CoreAsset::IntermediateAsset *> Import(const char *filePath,
+                                                   CoreAsset::AssetImporterManager *importerManager) const override;
 
   private:
     // 에디터에서 사용할 메타데이터

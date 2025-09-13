@@ -28,12 +28,21 @@ void QuadRW::BinaryWriter::Write(const std::string &str)
     }
 }
 
-void QuadRW::BinaryWriter::Write(void *data, size_t size)
+void QuadRW::BinaryWriter::Write(const void *data, size_t size)
 {
     if (data == nullptr)
         return;
 
     Write(size);
+
+    WriteRaw(data, size);
+}
+
+void QuadRW::BinaryWriter::WriteRaw(const void *data, size_t size)
+{
+
+    if (data == nullptr)
+        return;
 
     const uint8_t *pData = reinterpret_cast<const uint8_t *>(data);
     mBuffer.insert(mBuffer.end(), pData, pData + size);

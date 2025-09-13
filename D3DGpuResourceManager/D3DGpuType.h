@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
-#include "D3DGpuResourceManager/GpuTypes.h"
+#include <CommonHeader/GpuTypes.h>
 #include <d3d12.h>
 namespace D3DGRM
 {

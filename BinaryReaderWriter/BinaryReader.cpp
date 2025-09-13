@@ -53,22 +53,22 @@ bool QuadRW::BinaryReader::Read(std::string &oStr)
     return true;
 }
 
-bool QuadRW::BinaryReader::Read(void **oData, size_t &oSize)
-{
+// bool QuadRW::BinaryReader::Read(void **oData, size_t &oSize)
+//{
+//
+//     bool ret = Read(oSize);
+//     if (ret == false)
+//         return false;
+//
+//     if (mBuffer.size() < mReadPointer + oSize)
+//         return false;
+//
+//     *oData = (void *)&mBuffer[mReadPointer];
+//     mReadPointer += oSize;
+//     return true;
+// }
 
-    bool ret = Read(oSize);
-    if (ret == false)
-        return false;
-
-    if (mBuffer.size() < mReadPointer + oSize)
-        return false;
-
-    *oData = (void *)&mBuffer[mReadPointer];
-    mReadPointer += oSize;
-    return true;
-}
-
-bool QuadRW::BinaryReader::Read(void *oBuffer, size_t size)
+bool QuadRW::BinaryReader::ReadRaw(void *oBuffer, size_t size)
 {
 
     if (mBuffer.size() < mReadPointer + size)
@@ -77,6 +77,21 @@ bool QuadRW::BinaryReader::Read(void *oBuffer, size_t size)
     memcpy(oBuffer, (const void *)&mBuffer[mReadPointer], size);
     mReadPointer += size;
     return true;
+}
+
+bool QuadRW::BinaryReader::Read(void *oBuffer, size_t bufferSize)
+{
+
+    if (oBuffer == nullptr)
+        return false;
+
+    size_t size;
+    Read(size);
+
+    if (size > bufferSize)
+        return false;
+
+    return ReadRaw(oBuffer, size);
 }
 
 bool QuadRW::BinaryReader::SetReadPointer(uint64_t pointerPos)

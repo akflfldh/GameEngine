@@ -1,4 +1,5 @@
 ﻿#include "Core/GameTimer.h"
+#include "Component.h"
 
 namespace Quad
 {
@@ -76,6 +77,8 @@ void GameTimer::Start()
     mStopTime = 0;
     mIsStopped = false;
 }
+
+
 
 void GameTimer::Stop()
 {

@@ -10,16 +10,19 @@ namespace CoreAsset
 {
 class Texture;
 
-struct AssetMaterialTexResourceContext
+struct CORE_ASSET_API AssetMaterialTexResourceContext
 {
     Render::TextureShaderResourceInfo mTexShaderResourceInfo;
-    AssetPtr<Texture> mTexture = nullptr;
+    AssetPtr mTexture = nullptr;
+
+    void Serialize(Arch &arch);
 };
 
 class CORE_ASSET_API Material : public Asset
 {
     friend class MaterialManager;
     friend class UIMaterialManager;
+    friend class MaterialFactory;
 
   public:
     virtual ~Material();
@@ -28,15 +31,25 @@ class CORE_ASSET_API Material : public Asset
         return mGpuMaterialID;
     }
 
+    static EAssetType GetAssetType()
+    {
+        return EAssetType::eMaterial;
+    }
+
     const std::vector<AssetMaterialTexResourceContext> &GetTexResourceContextList() const;
     const std::vector<uint32_t> &GetSamplerResourceContextList() const;
 
     void SetTextureResource(int index, Texture *tex);
+    void SetTextureResource(int index, CoreAsset::AssetID tex);
 
     void SetSamplerResource(int index, uint32_t samplerID);
 
+    virtual void Serialize(Arch &arch) override;
+
+    void SetGpuMaterial(Render::MaterialID id);
+
   private:
-    Material(AssetID assetID, const std::string &name);
+    Material(AssetID id = NoneAssetID);
     Render::MaterialID mGpuMaterialID = MaterialIDNone; // GPU 머터리얼 ID
 
     // asset material 수준에서 설정되는 텍스처 속성들

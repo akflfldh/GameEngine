@@ -1,5 +1,5 @@
 ﻿#include "EditorDirector/EditorShaderImporter.h"
-#include <Core/GpuBufferContextSystem.h>
+#include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <JsonParserWrapping/JsonParser.h>
 #include <Logger/Logger.h>
 #include <RenderSystem/IMaterialManager.h>
@@ -303,7 +303,7 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
                         uint64_t fileSize = mBinaryReader.GetFileSize();
 
                         std::vector<uint8_t> buffer(fileSize);
-                        ret = mBinaryReader.Read(buffer.data(), fileSize);
+                        ret = mBinaryReader.ReadRaw(buffer.data(), fileSize);
                         if (!ret)
                         {
                             return false;
@@ -439,13 +439,13 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
     // buffer resource 정보를 gpuBufferContexSystemd에서 얻어와서 설정한다.
     // 이유는 세이더 reflection을 통해 얻은 정보와 검증을 해야하기때문이다.
 
-    Core::GpuBufferContextSystem *gpuBufferContextSystem = Core::GpuBufferContextSystem::GetInstance();
+    GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
 
     for (auto &bufferResourceInfoElement : creationMaterialInfo.mShaderResourceInfoSet.mBufferShaderResourceInfoVector)
     {
         // bufferID를 통해 gpu버퍼컨텍스트를 얻어온다.
         uint32_t bufferID = bufferResourceInfoElement.mBufferID;
-        Core::GpuBufferContext *gpuBufferContext = gpuBufferContextSystem->GetGpuBufferContext(bufferID);
+        GRM::GpuBufferContext *gpuBufferContext = gpuBufferContextSystem->GetGpuBufferContext(bufferID);
         if (gpuBufferContext == nullptr)
         {
             LOG_MESSAGE_ERROR("EditorShaderImporter",

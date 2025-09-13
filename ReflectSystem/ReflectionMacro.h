@@ -9,4 +9,4 @@
 #define REFLECT_CLASS
 #define REFLECT_PROPERTY
 #endif
-#define GENERATED_BODY(ClassType) \
+#define GENERATED_BODY(ClassType)

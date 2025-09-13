@@ -29,7 +29,7 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
 
     void AddDirtyAsset(Asset *asset);
 
-    const std::vector<AssetPtr<Asset>> &GetDirtyAssetList() const;
+    const std::vector<AssetPtr> &GetDirtyAssetList() const;
 
     void SetNextAssetID(AssetID id);
     AssetID PeekNextAssetID() const;
@@ -38,7 +38,7 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
     AssetIDTable mAssetTable;
     AssetIDGenerator mAssetIDGenerator;
 
-    std::vector<AssetPtr<Asset>> mDirtyAssetList;
+    std::vector<AssetPtr> mDirtyAssetList;
 };
 
 } // namespace CoreAsset

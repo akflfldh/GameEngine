@@ -8,6 +8,7 @@
 #include <Core/ProjectConfig.h>
 #include <Utility/Utility.h>
 
+#include "EditorAssetImporterModule.h"
 #include "EditorDirector/EditorProjectManager.h"
 #include "EditorDirector/EditorShaderImporter.h"
 #include "EditorDirector/EditorTextureImporter.h"
@@ -15,14 +16,23 @@
 #include "EditorDirector/SuperAssetBrowerController.h"
 #include "EditorDirector/SuperFrameController.h"
 #include <BinaryReaderWriter/BinaryReader.h>
-#include <Core/GpuBufferContextSystem.h>
-#include <Core/UIRenderItemBuilder.h>
 #include <CoreAsset/AssetCommon.h>
+#include <CoreAsset/AssetFactoryManager.h>
+#include <CoreAsset/AssetIOManager.h>
+#include <CoreAsset/AssetImporterManager.h>
 #include <CoreAsset/AssetLoader.h>
+#include <CoreAsset/AssetManager.h>
 #include <CoreAsset/AssetMetaDataManager.h>
+#include <CoreAsset/MaterialFactory.h>
 #include <CoreAsset/Texture.h>
+#include <CoreAsset/TextureFactory.h>
+#include <CoreAsset/TextureLoader.h>
 #include <CoreAsset/TextureManager.h>
 #include <CoreAsset/TextureStorer.h>
+#include <CoreBase/BinaryArch.h>
+#include <CoreBase/FNameTable.h>
+#include <CoreBase/TextArch.h>
+#include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <EditorDirector/EditorConfig.h>
 #include <ImportModule/TextureImporter.h>
 #include <InputSystem/InputSystem.h>
@@ -31,6 +41,7 @@
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
+#include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <SystemInitializer/ISystemInitializer.h>
 #include <UISystem/UIManager.h>
@@ -77,76 +88,82 @@ void Quad::EditorDirector::Initialize()
 
     app->GetHinstance();
 
-    // import module test
+    // asset manager init
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
 
+    // asset factory  register
+    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
+    assetFactoryManager->ReigsterAssetFactory(CoreAsset::EAssetType::eTexture,
+                                              CoreAsset::TextureFactory::GetInstance());
+    assetFactoryManager->ReigsterAssetFactory(CoreAsset::EAssetType::eMaterial,
+                                              CoreAsset::MaterialFactory::GetInstance());
+    CoreAsset::AssetImporterManager *assetImporterManager = CoreAsset::AssetImporterManager::GetInstance();
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    // asset storer register
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eTexture, CoreAsset::TextureStorer::GetInstance());
+
+    // asset loader  register
+
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eTexture, CoreAsset::TextureLoader::GetInstance());
+
+    // asset manager init
+    assetManager->Initialize(assetFactoryManager, assetIOManager, assetImporterManager);
+
+    ProjectConfig *projectConfig = ProjectConfig::GetInstance();
+    assetManager->SetAssetRawDataPath(projectConfig->GetProjectRawAssetPath());
+
+    // project init
     mProjectInitializer = EditorProjectManager::GetInstance();
     mProjectInitializer->Initialize();
+
+    // import module test
+    // editor asset importer module
+    EditorAssetImporterModule *editorAssetImporterModule = EditorAssetImporterModule::GetInstance();
+    editorAssetImporterModule->Initialize();
 
     {
 
         // 에셋 임포트, 저장 테스트 ,
 
         QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF::LogicalFileSystem::GetInstance();
-        EditorTextureImporter *textureImporter = EditorTextureImporter::GetInstance();
+        // EditorTextureImporter *textureImporter = EditorTextureImporter::GetInstance();
 
         bool ret = true;
         // 논리적 폴더 테스트
-        bool logicalFolderCreationTestFlag = false;
-        if (logicalFolderCreationTestFlag)
-        {
+        // bool logicalFolderCreationTestFlag = false;
+        // if (logicalFolderCreationTestFlag)
+        //{
 
-            // 논리적 폴더생성 ,저장 테스트
+        //    // 논리적 폴더생성 ,저장 테스트
 
-            logicalFileSystem->CreateFolder("MYTEST", logicalFileSystem->GetRootFolder(), true);
-            QuadRW::BinaryWriter writer;
-            ret =
-                logicalFileSystem->SaveLogicalDirectoryStructureAsBinaryWriter(writer, testProjectPath, "testLDSFile");
-        }
+        //   // logicalFileSystem->CreateFolder("MYTEST", logicalFileSystem->GetRootFolder(), true);
+        //   // QuadRW::BinaryWriter writer;
+        //    //ret =
+        //     //   logicalFileSystem->SaveLogicalDirectoryStructureAsBinaryWriter(writer, testProjectPath,
+        //     "testLDSFile");
+        //}
 
         // 2025 - 07 - 14
         // 텍스처 임포트, 매니저, 리소스매니저 테스트 :Good
 
-        bool testImport = false;
+        bool testImport = true;
         if (testImport)
         {
 
             // 텍스처 임포트 테스트
             std::ifstream fin("C:\\Users\\dongd\\gitproject\\GameEngine\\TestAssetPathFile.txt");
             std::string assetFilePath;
-            fin >> assetFilePath;
 
-            // 현재 논리적폴더에서 해당 파일과 동일한 이름을 가진 논리적파일이존재하면실패하도록한다.
-            // Check Logical File Name
+            while (fin >> assetFilePath)
+            {
+                // 현재 논리적폴더에서 해당 파일과 동일한 이름을 가진 논리적파일이존재하면실패하도록한다.
+                // Check Logical File Name
 
-            // 없으면 임포트수행
-            CoreAsset::Texture *texture = textureImporter->Import(assetFilePath, "Asset");
+                // 없으면 임포트수행
 
-            // 임포트를수행한후에는 논리적파일만 생성한다.
-
-            // 후에 저장버튼을 누르면
-            // 논리적 파일(물리적파일)을 생성
-            // 따라서 저장하지않고 에디터를 종료하면 임포트한 에셋들은 증발한다.
-
-            QuadLF::LogicalFileAssetInfo texturelogicalFileInfo;
-            texturelogicalFileInfo.mAssetID = texture->GetID();
-            texturelogicalFileInfo.mAssetType = CoreAsset::EAssetType::eTexture;
-            texturelogicalFileInfo.mName = texture->GetName();
-
-            QuadLF::LogicalFile *textureLogicalFile = logicalFileSystem->MakeFile(
-                texturelogicalFileInfo, texture->GetName(), logicalFileSystem->GetRootFolder(), true);
-
-            // 텍스처 저장 테스트
-            CoreAsset::TextureStorer *textureStorer = CoreAsset::TextureStorer::GetInstance();
-            CoreAsset::AssetMetaDataManager *assetMetaManager = CoreAsset::AssetMetaDataManager::GetInstance();
-
-            CoreAsset::TextureMetaData *textureMetaData =
-                static_cast<CoreAsset::TextureMetaData *>(assetMetaManager->GetMetaData(texture->GetID()));
-            std::string physicalFilePath = logicalFileSystem->GetPhysicalFullPath(textureLogicalFile);
-            ret = textureStorer->Store(texture, textureMetaData, physicalFilePath);
-
-            std::string rawTextureName = CoreAsset::GetAssetRawFileName(textureLogicalFile->GetFullPath());
-            std::string rawTexturePhysicalPath = testProjectPath + "/" + rawTextureName;
-            ret = textureStorer->StoreTextureRaw(rawTexturePhysicalPath, *texture->GetRawData());
+                editorAssetImporterModule->Import(assetFilePath.c_str());
+            }
         }
     }
 
@@ -155,7 +172,24 @@ void Quad::EditorDirector::Initialize()
 
     mSuperControllerVector.push_back(mSuperFrameController);
 
-    /* mSuperAssetBrowerController = SuperAssetBrowerController::GetInstance();
+    FNameTable *nameTable = FNameTable::GetInstance();
+
+    // nameTable->GetIndex("Root");
+    //   nameTable->GetIndex("HP");
+
+    TextArch bArch(true);
+
+    std::string nameTableFile = ProjectConfig::GetInstance()->GetProjectPath() + "/NameTable.txt";
+    bArch.SetFile(nameTableFile.c_str());
+
+    bArch.Start();
+
+    nameTable->Serialize(bArch);
+
+    bArch.End();
+
+    /* mSuperAssetBrowerCon
+    troller = SuperAssetBrowerController::GetInstance();
      mSuperAssetBrowerController->Initialize();*/
 
     // editorModeDirector가 에디터가 가지는 기본 asset들을 로드할것이다.
@@ -402,7 +436,7 @@ void Quad::EditorDirector::Draw()
     mSuperFrameController->Draw();
     // mSuperAssetBrowerController->Draw();
 
-    UIRenderItemBuilder::GetInstance()->EndFrame();
+    Render::UIRenderItemBuilder::GetInstance()->EndFrame();
 
     // #ifndef EngineMode
     //     bool popupWindowActiveFlag = mPopupWindow->GetVisibilityState();
@@ -1899,6 +1933,9 @@ const std::wstring &Quad::EditorDirector::GetEditorPathW() const
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLine, int nCmdShow)
 {
 
+    // Editor 설정
+    Quad::EditorConfig *editorConfig = Quad::EditorConfig::GetInstance();
+
 #ifdef _DEBUG
     // bool ret = SetDllDirectory(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Dll\\x64\\Debug\\");
 
@@ -1906,17 +1943,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
     //   assert(1);
     // 메모리 누수 체크 활성화
     //  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    SetCurrentDirectoryW(L"../../../../");
+    wchar_t editorRootPath[255];
+    GetCurrentDirectoryW(255, editorRootPath);
 #else
 
     SetDllDirectoryW(L".\\Dll\\x64\\Release\\");
+    wchar_t editorRootPath[255];
+    GetCurrentDirectoryW(255, editorRootPath);
 
 #endif
 
-    // Editor 설정
-    Quad::EditorConfig *editorConfig = Quad::EditorConfig::GetInstance();
-
-    wchar_t editorRootPath[255];
-    GetCurrentDirectoryW(255, editorRootPath);
     editorConfig->SetEditorRootPath(CoreUtility::Utility::ConvertToString(editorRootPath, true));
 
     int cmdNum;
@@ -1932,7 +1969,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
 #ifdef _DEBUG
 
     projectFolderPath = editorConfig->GetEditorRootPath() + "\\TestProject";
-    ;
+    testProjectPath = projectFolderPath;
 #else
 
     projectFolderPath = CoreUtility::Utility::ConvertToString(cmdLists[0], true);

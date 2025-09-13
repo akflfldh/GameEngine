@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <Utility/UniqueID.h>
 #include <string>
 #include <vector>
 namespace CoreUtility
@@ -20,6 +21,8 @@ class Utility
     static std::string GetFileNameFromPath(const std::string &path, bool removeExtension = true);
     static std::string GetExtensionFromPath(const std::string &path);
 
+    static std::string RemoveExtension(const std::string &path);
+
     //  AAA/SSS/DDD  , AAA/SSS/DDD.asd  - > AAA/SSS 리턴
     static std::string GetParentFolderPathFromPath(const std::string &path);
 
@@ -27,6 +30,8 @@ class Utility
 
     // top > bottom (y축이 위로갈수록 증가)
     static bool IsPointInsideRect(float left, float right, float top, float bottom, float pointX, float pointY);
+
+    static UniqueID MakeUniqueID();
 
   private:
 };

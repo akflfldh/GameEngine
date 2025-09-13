@@ -1,7 +1,6 @@
 ﻿#include "EditorDirector/SuperFrameController.h"
 #include <Core/GlobalAppHelper.h>
 #include <Core/LogicalWindow.h>
-#include <Core/UIRenderItemBuilder.h>
 #include <CoreAsset/MaterialManager.h>
 #include <CoreAsset/TextureManager.h>
 #include <CoreDevice/D3DCoreDevice.h>
@@ -9,6 +8,7 @@
 #include <InputSystem/InputSystem.h>
 #include <Logger/Logger.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
+#include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IRenderSystem.h>
 #include <SystemInitializer/ISystemInitializer.h>
 #include <UISystem/UIElement.h>
@@ -96,57 +96,57 @@ void Quad::SuperFrameController::Initialize()
 
     // canvas
 
-    CoreAsset::MaterialManager *materialManager = CoreAsset::MaterialManager::GetInstance();
+    // CoreAsset::MaterialManager *materialManager = CoreAsset::MaterialManager::GetInstance();
 
     UI::UIManager *uiManager = UI::UIManager::GetInstance();
 
-    // Canvas1 (default)
+    //// Canvas1 (default)
     UI::UICanvasID canvasID = uiManager->CreateCanvas("DefaultCanvas", UI::ECanvasSizeMode::eFixSize);
 
     mUICanvas = uiManager->GetCanvas(canvasID);
-    UI::UIElement *defaultUIElement = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement");
+    // UI::UIElement *defaultUIElement = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement");
 
-    defaultUIElement->mTransform.SetSize({100, 100});
-    defaultUIElement->mTransform.SetPositionLocal({200, 200});
+    // defaultUIElement->mTransform.SetSize({100, 100});
+    // defaultUIElement->mTransform.SetPositionLocal({200, 200});
 
-    UI::UIImageComponent *defaultRenderCom =
-        defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
+    // UI::UIImageComponent *defaultRenderCom =
+    //     defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
 
-    defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-    defaultRenderCom->SetTemplateMaterial(1);
+    // defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
+    // defaultRenderCom->SetTemplateMaterial(1);
 
-    UI::UIElement *defaultUIElement2 = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement2");
+    // UI::UIElement *defaultUIElement2 = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement2");
 
-    defaultRenderCom = defaultUIElement2->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
+    // defaultRenderCom = defaultUIElement2->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
 
-    defaultUIElement2->mTransform.SetSize({400, 400});
-    defaultUIElement2->mTransform.SetPositionLocal({400, 400});
-    defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-    defaultRenderCom->SetTemplateMaterial(1);
+    // defaultUIElement2->mTransform.SetSize({400, 400});
+    // defaultUIElement2->mTransform.SetPositionLocal({400, 400});
+    // defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
+    // defaultRenderCom->SetTemplateMaterial(1);
 
     // Canvas2   다른채널
     {
-        UI::UICanvasID canvas2ID = uiManager->CreateCanvas("DefaultCanvas2", UI::ECanvasSizeMode::eFixSize);
-        mUICanvas2 = uiManager->GetCanvas(canvas2ID);
+        /* UI::UICanvasID canvas2ID = uiManager->CreateCanvas("DefaultCanvas2", UI::ECanvasSizeMode::eFixSize);
+         mUICanvas2 = uiManager->GetCanvas(canvas2ID);
 
-        UI::UIElement *defaultUIElement = mUICanvas2->CreateUIElement<UI::UIElement>("DefaultUIElement3");
+         UI::UIElement *defaultUIElement = mUICanvas2->CreateUIElement<UI::UIElement>("DefaultUIElement3");
 
-        defaultUIElement->mTransform.SetSize({100, 100});
-        defaultUIElement->mTransform.SetPositionLocal({0, 0});
+         defaultUIElement->mTransform.SetSize({100, 100});
+         defaultUIElement->mTransform.SetPositionLocal({0, 0});
 
-        UI::UIImageComponent *defaultRenderCom =
-            defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
+         UI::UIImageComponent *defaultRenderCom =
+             defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
 
-        defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-        defaultRenderCom->SetTemplateMaterial(1);
-        defaultRenderCom->SetActiveState(true);
+         defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
+         defaultRenderCom->SetTemplateMaterial(1);
+         defaultRenderCom->SetActiveState(true);
 
-        UI::UIResizeGizmoRenderableComponent *resizeGizmoCom =
-            defaultUIElement->CreateUIComponent<UI::UIResizeGizmoRenderableComponent>("ResizeGizmoCom");
+         UI::UIResizeGizmoRenderableComponent *resizeGizmoCom =
+             defaultUIElement->CreateUIComponent<UI::UIResizeGizmoRenderableComponent>("ResizeGizmoCom");
 
-        UI::UIMovableComponent *movableCom = defaultUIElement->CreateUIComponent<UI::UIMovableComponent>("moveCom");
+         UI::UIMovableComponent *movableCom = defaultUIElement->CreateUIComponent<UI::UIMovableComponent>("moveCom");
 
-        UI::UIButton *defaultButton1 = mUICanvas2->CreateUIElement<UI::UIButton>("DefaltUIButton");
+         UI::UIButton *defaultButton1 = mUICanvas2->CreateUIElement<UI::UIButton>("DefaltUIButton");*/
     }
 
     mImGuiLogicalWindow.AddUICanvas(mUICanvas);
@@ -173,7 +173,7 @@ void Quad::SuperFrameController::Update(float deltaTime)
 void Quad::SuperFrameController::EndUpdate()
 {
 
-    UIRenderItemBuilder *uiRenderItemBuilder = UIRenderItemBuilder::GetInstance();
+    Render::UIRenderItemBuilder *uiRenderItemBuilder = Render::UIRenderItemBuilder::GetInstance();
     //  uiRenderItemBuilder->SubmitUIElement(mUICanvas, mImGuiRenderChannelID);
     uiRenderItemBuilder->SubmitUIElement(mUICanvas, mImGuiLogicalWindow.GetRenderChannelID(),
                                          mImGuiLogicalWindow.mViewportController);
@@ -218,7 +218,7 @@ void Quad::SuperFrameController::Draw()
     frameContext2.mBackGroundColor[3] = 1.0f;
 
     // ui
-    UIRenderItemBuilder *uiRenderItemBuilder = UIRenderItemBuilder::GetInstance();
+    Render::UIRenderItemBuilder *uiRenderItemBuilder = Render::UIRenderItemBuilder::GetInstance();
 
     uiRenderItemBuilder->BuildAndSubmitRenderItem(mImGuiLogicalWindow.GetRenderChannelID(), frameContext.mViewport, 0,
                                                   0);
