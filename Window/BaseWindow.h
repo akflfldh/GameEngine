@@ -25,6 +25,8 @@ class BaseWindow
 
     void SetIWindowEventHandler(IWindowEventHandler *windowEventHandler);
 
+    void Show(UINT showCmd = SW_SHOW);
+
   public:
     HINSTANCE GetHInstance() const;
     HWND GetWindowHandle() const;
@@ -85,5 +87,7 @@ class BaseWindow
     POINT mLastClientPos = {0, 0};
 
     bool mInitialized = false;
+
+    bool mInitMaxmized = false;
 };
 } // namespace Quad

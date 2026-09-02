@@ -77,7 +77,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
 
     // TODO 지금은 cmd를 코드로 넣어주자
 
-    int cmdNum;
+    int cmdNum = 0;
 
     LPWSTR *cmdLists = nullptr;
 

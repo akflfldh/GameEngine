@@ -81,18 +81,26 @@ void Quad::SuperFrameController::Initialize(Render::RenderPipelineManager &rende
         mWindow->SetClientWidth(1000);
         mWindow->SetClientHeight(1150);
         mWindow->CreateWindowClass(L"FrameWindow", L"Editor", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+        mWindow->Show();
     }
     else
     {
+        // 최대크기
 
         mWindow->CreateWindowClass(L"FrameWindow", L"Editor");
+        mWindow->Show(SW_SHOWMAXIMIZED);
+
+        RECT windowClientRect2;
+        GetClientRect(mWindow->GetWindowHandle(), &windowClientRect2);
+
+        mWindow->SetMaxClientWidth(windowClientRect2.right);
+        mWindow->SetMaxClientHeight(windowClientRect2.bottom);
+        mWindow->SetClientWidth(windowClientRect2.right);
+        mWindow->SetClientHeight(windowClientRect2.bottom);
     }
 
     InputSystem *inputSystem = InputSystem::GetInstance();
     Render::IRenderSystem *renderSystem = Render::IRenderSystem::GetInstance();
-
-    RECT windowClientRect2;
-    GetClientRect(mWindow->GetWindowHandle(), &windowClientRect2);
 
 #ifdef D3DX
 

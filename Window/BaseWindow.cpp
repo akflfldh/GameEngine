@@ -60,8 +60,8 @@ LRESULT CALLBACK Quad::BaseWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 
         AdjustWindowRect(&clientMaxRect, mWinStyle, false);
 
-        minmaxInfo->ptMaxSize.x = clientMaxRect.right;
-        minmaxInfo->ptMaxSize.y = clientMaxRect.bottom;
+        //  minmaxInfo->ptMaxSize.x = clientMaxRect.right;
+        // minmaxInfo->ptMaxSize.y = clientMaxRect.bottom;
     }
         return 0;
     case WM_SIZE:
@@ -176,7 +176,7 @@ LRESULT CALLBACK Quad::BaseWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, L
 
             if (rawMouse.usButtonFlags & RI_MOUSE_WHEEL)
             {
-                //A mouseInputState |= EInputState::eMouseWheel;
+                // A mouseInputState |= EInputState::eMouseWheel;
                 mIWindowEventHandler->OnMouseWheel((short)rawMouse.usButtonData);
             }
 
@@ -265,8 +265,8 @@ bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName, LPCWSTR window
     SetWindowHandle(hwnd);
     // GetClientRect(hwnd, &windowClientRect);
 
-    ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
+    // ShowWindow(hwnd, SW_SHOW);
+    //  UpdateWindow(hwnd);
 
     return true;
 }
@@ -289,6 +289,12 @@ void Quad::BaseWindow::SetIWindowEventHandler(IWindowEventHandler *windowEventHa
 {
 
     mIWindowEventHandler = windowEventHandler;
+}
+
+void Quad::BaseWindow::Show(UINT showCmd)
+{
+    ShowWindow(mWindowHandle, showCmd);
+    UpdateWindow(mWindowHandle);
 }
 
 HINSTANCE Quad::BaseWindow::GetHInstance() const
