@@ -120,7 +120,7 @@ void Quad::EditorProjectManager::SaveProject()
     projectConfig->Save();
 }
 
-void Quad::EditorProjectManager::OpenMap(Map *map)
+void Quad::EditorProjectManager::OpenMap(Map *map, bool bShowPreMapSaveMessageBox)
 {
 
     EditorSceneManager *sceneManager = EditorSceneManager::GetInstance();
@@ -144,7 +144,7 @@ void Quad::EditorProjectManager::OpenMap(Map *map)
         mOnOpendMapCallbackSystem.ExecuteCallbacks(map);
     };
 
-    if (currentMap)
+    if (currentMap && bShowPreMapSaveMessageBox)
     {
         // 일단 Map의 더티플래그  + Undo ,Redo는 이후에 도입
         // 지금은항상 저장여부를 묻는 UI띄우기
@@ -444,12 +444,10 @@ void Quad::EditorProjectManager::LoadProjectAsset()
     // map을 생성해주자.
     if (loadedDefaultMap == nullptr)
     {
-        CreateDefaultUserMap();
+        loadedDefaultMap = CreateDefaultUserMap();
     }
-    else
-    {
-        OpenMap(loadedDefaultMap);
-    }
+
+    OpenMap(loadedDefaultMap, false);
 }
 
 void Quad::EditorProjectManager::CreateEditorAsset()
@@ -571,7 +569,7 @@ void Quad::EditorProjectManager::LoadProjectCXXList()
     }
 }
 
-void Quad::EditorProjectManager::CreateDefaultUserMap()
+Map *Quad::EditorProjectManager::CreateDefaultUserMap()
 {
     QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF::LogicalFileSystem::GetInstance();
 
@@ -614,6 +612,8 @@ void Quad::EditorProjectManager::CreateDefaultUserMap()
     SaveMap(defaultMap);
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
     projectConfig->Save();
+
+    return defaultMap;
 }
 
 void Quad::EditorProjectManager::CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager)

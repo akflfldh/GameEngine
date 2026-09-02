@@ -69,7 +69,7 @@ class EditorProjectManager
 
     void SaveProject();
 
-    void OpenMap(Map *map);
+    void OpenMap(Map *map, bool bShowPreMapSaveMessageBox = true);
     void SaveMap(Map *map);
 
     OnOpenMapCallbackSystem mOnOpendMapCallbackSystem;
@@ -80,6 +80,7 @@ class EditorProjectManager
 
     // map에 에디터용오브젝트들을 생성한다
     void CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager);
+    Map *CreateDefaultUserMap();
 
   private:
     void InitSystems();
@@ -119,8 +120,6 @@ class EditorProjectManager
     void RegisterCallbackShader();
 
 #pragma endregion
-
-    void CreateDefaultUserMap();
 
   private:
     static EditorProjectManager *mInstance;
