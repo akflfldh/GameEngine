@@ -39,10 +39,6 @@ Object *Prefab::Instantiate(Map *map, const char *instanceName)
     if (map == nullptr || mDefaultObject == nullptr)
         return nullptr;
 
-    auto *sourceCharacter = static_cast<Character *>(mDefaultObject);
-
-    sourceCharacter->mStaticMeshComponent->GetStaticMesh();
-
     BinaryArch arch(false);
 
     arch.Start();
@@ -91,9 +87,6 @@ Object *Prefab::Instantiate(Map *map, const char *instanceName)
     map->AddPrefabInstanceObject(instance);
 
     // Serialize_Object(readerArch, instance) 직후
-    auto *instanceCharacter = static_cast<Character *>(instance);
-
-    instanceCharacter->mStaticMeshComponent->GetStaticMesh();
 
     return instance;
 }

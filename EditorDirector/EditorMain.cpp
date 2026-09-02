@@ -81,11 +81,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLin
 
     LPWSTR *cmdLists = nullptr;
 
-    // #ifdef LOCAL_DEV_SETUP
-    //     cmdLists = LocalDevSetup(cmdNum);
-    // #else
+#ifdef LOCAL_DEV_SETUP
+    cmdLists = LocalDevSetup(cmdNum);
+#else
     cmdLists = CommandLineToArgvW(pCmdLine, &cmdNum);
-    // #endif
+#endif
 
     SetEditorConfig(cmdLists, cmdNum);
 

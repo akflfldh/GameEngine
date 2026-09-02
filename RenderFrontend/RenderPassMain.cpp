@@ -222,6 +222,8 @@ bool Render::RenderPassMain::BuildRenderItemMeshData(const Render::StaticMeshRen
 
     renderItem.mMeshItem.mIndexBuffer = meshGpuContext.mIndexBuffer.getResource();
     renderItem.mMeshItem.mVertexBuffer = meshGpuContext.mVertexBuffer.getResource();
+
+    return true;
 }
 
 void Render::RenderPassMain::BuildRenderItemBufferGpuResources(
