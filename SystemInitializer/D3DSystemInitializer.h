@@ -1,6 +1,5 @@
 ﻿#pragma once
-
-#define D3DX
+#include <memory>
 
 #ifdef D3DX
 
@@ -27,13 +26,13 @@ class SYSTEM_INITIALIZER_API D3DSystemInitializer : public SystemInitializer::IS
 {
   public:
     D3DSystemInitializer();
-    virtual ~D3DSystemInitializer() = default;
+    virtual ~D3DSystemInitializer();
 
     virtual void Initialize() override;
 
   private:
-    class D3DGRM::D3DGpuResourceManager *mD3DGpuResourceManager;
-    class D3DRender::D3DRenderSystem *mD3DRenderSystem;
+    std::unique_ptr<D3DGRM::D3DGpuResourceManager> mD3DGpuResourceManager;
+    std::unique_ptr<D3DRender::D3DRenderSystem> mD3DRenderSystem;
     //	class D3DRender::D3DMaterialManager* mMaterialManager;
 };
 

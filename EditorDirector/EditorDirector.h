@@ -10,9 +10,16 @@
 // #include"EditorDirector/EditorModeDirector.h"
 
 // #include"BuildModule.h"
+#include <memory>
 #include <string>
 #include <vector>
 #define EngineMode
+
+namespace GRM
+{
+class GpuSamplerSystem;
+class IGpuResourceManager;
+} // namespace GRM
 
 namespace SystemInitializer
 {
@@ -30,6 +37,31 @@ class PhysicalFileSystem;
 namespace CoreAsset
 {
 class AssetLoader;
+class UIMaterialManager;
+class AssetMetaDataManager;
+class AssetManager;
+class Material;
+} // namespace CoreAsset
+
+namespace Render
+{
+class ObjectRenderItemBuilder;
+class RenderPipelineManager;
+class UIRenderItemBuilder;
+class IRenderSystem;
+} // namespace Render
+
+namespace Core
+{
+class SuperController;
+class LogicalWindow;
+class WorkSpace;
+
+} // namespace Core
+
+namespace UI
+{
+class UIManager;
 }
 
 namespace Quad
@@ -42,7 +74,8 @@ class SuperAssetBrowerController;
 class EditorTextureImporter;
 class EditorProjectManager;
 class EditorShaderImporter;
-class SuperController;
+class Application;
+class IEditorTaskManager;
 
 class EditorDirector : public IProgramDirector
 {
@@ -52,18 +85,24 @@ class EditorDirector : public IProgramDirector
     virtual ~EditorDirector();
 
     virtual void Initialize() override;
+    virtual void Initialize(const RuntimeServices &services) override;
 
+    virtual void Begin() override;
     virtual void PreUpdate(float deltaTime) override;
     virtual void Update(float deltaTime) override;
     virtual void EndUpdate(float deltaTime) override;
+    virtual void CleanUp() override;
 
     virtual void Draw() override;
 
+    virtual void EndFrame() override;
+
+    void ShutDownWindow();
+
+    virtual void EndSystem() override;
+
     void SetPlayModeState(bool state);
     static bool GetPlayModeState();
-
-    const std::string &GetEditorPathA() const;
-    const std::wstring &GetEditorPathW() const;
 
     // 프레임윈도우씬으로 화면전환
     // 다른 윈도우들은 정지 그리고 사라진다.
@@ -73,154 +112,102 @@ class EditorDirector : public IProgramDirector
 
     const int GetSwitchWindowSceneModeFlag() const;
 
+    Core::LogicalWindow *GetMainSceneWindow() const;
+
+    void ChangeToPrefabEditWorkSpace();
+    void ChangeToMaterialEditWorkSpace(CoreAsset::Material *targetMaterial);
+    void ChangeToDefaultEditWorkSpace();
+
+    void ChangeWorkSpace(Core::WorkSpace *workspace);
+
   private:
     SuperFrameController *mSuperFrameController;
     SuperAssetBrowerController *mSuperAssetBrowerController;
 
-    std::vector<SuperController *> mSuperControllerVector;
+    std::vector<Core::SuperController *> mSuperControllerVector;
 
   private:
+    void LoadEditorAssets();
+
     // Sub Init Method
     // 시스템들을 초기화한다.
-    void InitSystem();
+    //   void InitSystem();
 
-    // void InitGamePlayWindow();
-    // void InitFileUiWindow();
-    // void InitAttributeWindow();
-    // void InitFrameWindow();
-    // void InitDragAndDropWindow();
-    // void InitPopupWindow();
+    // 프로젝트 선택 단계만을 위한 윈도우생성
+    void InitProjectBrowserWindow();
 
-    // void InitGameProject(TaskWindow* window, DockingWindowController* controller,
-    //	GamePlaySystem* gamePlaySystem,
-    //	WindowChromeSystem* windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem);
-    // void InitGamePlaySystem(TaskWindow* window, GamePlaySystem* system);
-    // void InitGamePlayUiSystem(TaskWindow* window, GamePlayUiSystem* system);
-    ////void InitAttributeSystem(TaskWindow* window, AttributeSystem* system);
-    // void InitAttributeUiSystem(TaskWindow* window, AttributeUiSystem* system);
-    // void InitFileUiUiSystem(TaskWindow* windows, FileUiUiSystem* system);
-    // void InitFileUiSystem2(TaskWindow* windows, FileUiSystem* system);
+    void InitEngineAssetLogicalFile();
 
-    ////void test(TaskWindow* windows, FileUiSystem* system);
+    void CreateEditWorkSpace();
 
-    ////void InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system);
-    // void InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system);
+    void CreateDefaultEditWorkSpace();
+    void CreatePrefabEditWorkSpace();
+    void CreateMaterialEditWorkSpace();
 
-    // void InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    // void InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    // void InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    // void InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
+    void InitEditorWindows();
+    void InitMainSceneWindow();
+    void InitAssetBrowerWindow();
+    void InitGlobalOverlayWindow();
+    void InitPropertyWindow();
 
-    // void InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system);
-    // void InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system);
+    void InitEditorTaskManagerList();
 
-    ////gamePlaySystem말고, 다른 window들의 시스템들의 맵 초기화 (맵 레이어생성,충돌공간생성,설정)
-    // void initDefaultMapSetting(TaskWindow* window, Map* currMap);
+    Core::LogicalWindow *GetMainWindow() const;
 
-    // void AddVisibleEditorAssetToFileWindow(const std::string& configFilePath);
-
-#ifdef EngineMode
-
-    void CreateDefaultMaterial();
-    void CreateDefaultMesh();
-#endif
+    void RegisterAssetFactory();
+    void RegisterAssetLoader();
+    void RegisterAssetStorer();
 
     // switchFrameWindowSceneFlag를보고 프레임윈도우(단독)으로 전환한다.
     void SwitchFrameWindow();
     void SwitchCommonEditWindow();
 
-    // HINSTANCE mHinstance;
-    // int mShowcmd;
-    // HWND mHwnd;
-    //// HWND mHwndClient;
-    // HWND mRenderHwnd;
-    // HWND mFileHwnd;
+    void InitSystems();
 
-    // UINT mClientWidth = 1200;
-    // UINT mClientHeight = 1000;
+    void UpdateEditorTaskManagers();
 
-    // UINT mFileUiWindowWidth = 1200;
-    // UINT mFileUiWindowHeight = 300;
-
-    // UINT mRenderWindowWidth;
-    // UINT mRenderWindowHeight;
-
-    // GraphicCommand*  mGraphicCommandObject;
-
-    //    DXGI_FORMAT mBackBufferForamt = DXGI_FORMAT_R8G8B8A8_UNORM;
-    //  DXGI_FORMAT mSwapchainDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    Quad::Application *mApp;
 
     bool mIspaused = false;
     bool mIsMinimized = false;
     bool mIsMaximized = false;
     bool mIsResizing = false;
 
-    //	bool mPlayModeState = false;
-
   private:
-    // void AddEffect(RenderSystem* renderSystem, Effect* effect,  ESystemType systemType);
-
-  private:
-    //  Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
-    //  Microsoft::WRL::ComPtr<IDXGIFactory4> mFactory;
-    // DescriptorHeapManagerMaster* mDescriptorHeapManagerMaster;
-
-  private:
-    // EditObjectManager mEditObjectManager;
-    // EditGameObjectManager mEditGameObjectManager;
-    // RuntimeObjectManager mRuntimeObjectManager;
-    // RuntimeGameObjectManager mRuntimeGameObjectManager;
-
-    // RenderSystem mRenderSystem;
-    // RenderSystem mUiRenderSystem;
-    // RenderSystem mDragAndDropRenderSystem;
-    // RenderSystem mPopupRenderSystem;
-    // FrameWindowUiSystem* mFrameWindowUiSystem;
-    // WindowChromeSystem* mGamePlayWindowChromeSystem;
-
-    // int mCurrentActiveWindow = 0;
-
-    //
-    ////controller//
-    // DockingWindowController* mGameWindowPlayController;
-    // DockingWindowController* mFileUiWindowController;
-    // DockingWindowController* mAttributeWindowController;
-    // FrameWindowController* mFrameWindowController;
-    // PopupWindowController* mPopupWindowController;
-
-    ////window//
-    // GameRenderWindow* mRenderWindowTest;
-    // FrameWindow* mFrameWindow;
-    // AttributeWindow* mAttributeWindow;
-    // FileUiWindow* mFileUiWindow; //초기화
-    // DragAndDropWindow* mDragAndDropWindow;
-    // PopupWindow* mPopupWindow;
-    //////
-
-    // bool mPlayModeState = false;
-
-    //
-    ////CreatingProjectDirector mCreatingProjectDirector;
-    // ProjectDirector mProjectDirector;
-
-    // FrameWindowMenuDirector mFrameWindowMenuDirector;
-    // EditorModeDirector mEditorModeDirector;
-
-    // ImportModule* mImportMoudle;
-
-    // BuildModule mBuildModule;
-
-    ////에디터 실행파일이 존재하는 경로(editor.exe는 포함안됨)
-    // std::string mEditorPathA;
-    // std::wstring mEditorPathW;
-
-    ////0 : 상태유지 , 1:단독프레임윈도우모드로 전환, 2 : 일반에디터모드
-    // int mFrameWindowSceneSwitch;
-    // bool mWindowSwitchRenderFlag;//윈도우들을 스위치할때, 클리어,렌더가 수행되었으니, 창들을 띄워도된다는것을
-    // 나타내는 상태플래그
-    //
-
     EditorProjectManager *mProjectInitializer;
+
+    const RuntimeServices *mRuntimeServices = nullptr;
+    CoreAsset::AssetManager *mAssetManager = nullptr;
+    UI::UIManager *mUIManager = nullptr;
+    Render::IRenderSystem *mRenderSystem = nullptr;
+    GRM::IGpuResourceManager *mGpuResourceManager = nullptr;
+
+    Render::RenderPipelineManager *mRenderPipelineManager;
+
+    std::unique_ptr<Core::WorkSpace> mDefaultEditWorkSpace = nullptr;
+    std::unique_ptr<Core::WorkSpace> mPrefabEditWorkSpace = nullptr;
+    std::unique_ptr<Core::WorkSpace> mProjectBrowserWorkSpace = nullptr;
+
+    std::unique_ptr<Core::LogicalWindow> mMainSceneLogicalWindow = nullptr;
+    std::unique_ptr<Core::LogicalWindow> mPropertyLogicalWindow = nullptr;
+    std::unique_ptr<Core::LogicalWindow> mAssetBrowserLogicalWindow = nullptr;
+    std::unique_ptr<Core::LogicalWindow> mGlobalOverlayLogicalWindow = nullptr;
+    std::unique_ptr<Core::LogicalWindow> mProjectBrowserLogicalWindow = nullptr;
+
+    QuadPF::PhysicalFileSystem *mPhysicalFileSystem;
+    CoreAsset::AssetLoader *mAssetLoader;
+
+    std::unique_ptr<QuadLF::LogicalFileSystem> mLogicalFileSystem;
+
+    std::unique_ptr<EditorTextureImporter> mTextureImporter;
+    std::unique_ptr<GRM::GpuSamplerSystem> mGpuSamplerSystem;
+    std::unique_ptr<EditorShaderImporter> mEditorShaderImporter;
+    std::unique_ptr<Render::UIRenderItemBuilder> mUIRenderItemBuilder;
+    std::unique_ptr<CoreAsset::UIMaterialManager> mUIMaterialManager;
+    CoreAsset::AssetMetaDataManager *mAssetMetaDataManager;
+    std::unique_ptr<Render::ObjectRenderItemBuilder> mObjectRenderItemBuilder;
+
+    std::vector<IEditorTaskManager *> mEditorTaskManagerList;
 };
 
 } // namespace Quad

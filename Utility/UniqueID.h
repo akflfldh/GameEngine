@@ -15,8 +15,8 @@ class UniqueID
     UniqueID &operator=(UniqueID &&) = default;
     UniqueID(UniqueID &&) = default;
 
-    bool operator==(const UniqueID &lhs) const;
-    bool operator!=(const UniqueID &lhs) const;
+    bool operator==(const UniqueID &rhs) const;
+    bool operator!=(const UniqueID &rhs) const;
 
     // map을위해 operator<
 

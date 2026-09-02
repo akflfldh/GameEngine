@@ -1,18 +1,11 @@
 ﻿#pragma once
 
-#ifdef D3DX
-#include <Windows.h>
-namespace Render
-{
-using WindowHandle = HWND;
-}
-// namespace Render{using }
-
-#endif
-
 #include "RenderSystem/MaterialType.h"
+#include <CoreBase/CoreBaseType.h>
+#include <D3DGpuResourceManager/GpuResourceTypes.h>
 #include <memory>
 #include <vector>
+
 namespace GRM
 {
 class IGpuResource;
@@ -20,7 +13,7 @@ class IGpuResource;
 
 namespace Render
 {
-
+using WindowHandle = void *;
 using RenderChannelID = uint32_t;
 using RootSignatureID = uint16_t;
 
@@ -40,6 +33,10 @@ struct CreationRenderChannelInfo
 
 struct MeshItem
 {
+    /*
+
+    */
+
     uint32_t mVertexNum = 0;
     uint32_t mIndexNum = 0;
     uint32_t mVertexOffset = 0;
@@ -59,7 +56,7 @@ struct MeshItem
             return false;
         if (mIndexNum != rhs.mIndexNum)
             return false;
-        if (mIndexOffset != rhs.mIndexNum)
+        if (mIndexOffset != rhs.mIndexOffset)
             return false;
 
         return true;
@@ -88,30 +85,41 @@ struct Viewport
 };
 
 // Scissor Rect 정보를 담는 구조체 (D3D12_RECT와 유사)
-struct ScissorRect
+// struct ScissorRect
+//{
+//    long Left = 0;
+//    long Top = 0;
+//    long Right = 0;
+//    long Bottom = 0;
+//
+//    bool operator==(const ScissorRect &rhs) const
+//    {
+//        if (Left != rhs.Left)
+//            return false;
+//        if (Top != rhs.Top)
+//            return false;
+//        if (Right != rhs.Right)
+//            return false;
+//        if (Bottom != rhs.Bottom)
+//            return false;
+//        return true;
+//    }
+//
+//    bool operator!=(const ScissorRect &rhs) const
+//    {
+//        return !operator==(rhs);
+//    }
+//};
+
+using ScissorRect = SRECT;
+using RECT = ScissorRect;
+
+struct BindingGpuResource
 {
-    long Left = 0;
-    long Top = 0;
-    long Right = 0;
-    long Bottom = 0;
-
-    bool operator==(const ScissorRect &rhs) const
-    {
-        if (Left != rhs.Left)
-            return false;
-        if (Top != rhs.Top)
-            return false;
-        if (Right != rhs.Right)
-            return false;
-        if (Bottom != rhs.Bottom)
-            return false;
-        return true;
-    }
-
-    bool operator!=(const ScissorRect &rhs) const
-    {
-        return !operator==(rhs);
-    }
+    std::string mName;
+    Render::EShaderResourceType mType = EShaderResourceType::eConstantBuffer;
+    uint32_t mOffset = 0; // 상수, 구조적 버퍼일떄 유효 , 구조적버퍼의 baseOffset
+    GRM::IGpuResource *gpuResource = nullptr;
 };
 
 // 채널별로 전역적으로 매프레임시 제공되어야하는 정보
@@ -121,16 +129,16 @@ struct FrameContext
     Viewport mViewport;
     ScissorRect mScissorRect;
     float mBackGroundColor[4];
-
+    BindingGpuResource mGlobalPassBufferResouce;
+    BindingGpuResource mGlobalStructuredBufferResource;
     // UINT mGlobalPassConstantsRootParameterIndex; 이것도 아마 엔진에서 고정한대로 나오지않을까?
-};
 
-struct BindingGpuResource
-{
-    std::string mName;
-    Render::EShaderResourceType mType;
-    uint32_t mOffset; // 구조적버퍼일떄 유효 , 구조적버퍼의 baseOffset
-    GRM::IGpuResource *gpuResource;
+    //<binding index, resource>
+    std::vector<std::pair<uint32_t, BindingGpuResource>> mGlobalPassTexResourceVector;
+
+    // 렌더타켓은  일단 단일, 향후에 렌더타켓이 여러개여서, vector로 표현될수있을듯.
+    // nullptr이면 후면버퍼
+    GRM::IGpuResource *mRenderTarget;
 };
 
 // 동일한 Gpu머터리얼을 사용하는 Asset머터리얼들 각각에대해서
@@ -146,16 +154,27 @@ enum class EDrawType
     eIndex       // 인덱스를 사용하는 드로우콜호출
 };
 
+enum class EPrimitiveTopology
+{
+    eTriangleList = 0,
+    ePointList, // 인덱스,버텍스 사용하지않음.
+    eLineList   // 인덱스,버텍스 사용하지않음.
+};
+
 struct RenderItem
 {
     MaterialID mMaterialID;
     ScissorRect mScissor;
+    bool bUseScissor = false;
+
     MeshItem mMeshItem;
     InstanceItem mInstance;
     // 바인딩할 gpuResource들
-    std::vector<BindingGpuResource> mBindingGpuResourceVector;
+    std::vector<BindingGpuResource> mBindingGpuBufferResourceVector;
+    std::vector<BindingGpuResource> mBindingGpuTexResourceVector;
 
     EDrawType mDrawType = EDrawType::eIndex;
+    EPrimitiveTopology mPrimitiveTopology = EPrimitiveTopology::eTriangleList;
 };
 
 // 시스템 내부용
@@ -175,4 +194,12 @@ struct InternalRenderItem : public Render::RenderItem
         return false;
     }
 };
+
+struct ResourceBarrier
+{
+    GRM::IGpuResource *mResource;
+    EResourceState mBeforeState;
+    EResourceState mAfterState;
+};
+
 } // namespace Render

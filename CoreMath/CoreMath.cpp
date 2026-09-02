@@ -1,28 +1,16 @@
-﻿#include "CoreMath/CoreMath.h"
-
+﻿#define GLM_FORCE_LEFT_HANDED
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "CoreMath/CoreMath.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 namespace CoreMath
 {
-
-#ifdef D3DX
-
-#include <DirectXMath.h>
-
-#define CCASTVECTOR2(pVector2) reinterpret_cast<const DirectX::XMFLOAT2 *>(pVector2) // 상수 Vector2 캐스팅
-#define CASTVECTOR2(pVector2) reinterpret_cast<DirectX::XMFLOAT2 *>(pVector2)        // 비상수 Vector2 캐스팅
-
-#define CCASTVECTOR3(pVector3) reinterpret_cast<const DirectX::XMFLOAT3 *>(pVector3) // 상수 Vector3 캐스팅
-#define CASTVECTOR3(pVector3) reinterpret_cast<DirectX::XMFLOAT3 *>(pVector3)        // 비상수 Vector3 캐스팅
-
-#define CCASTVECTOR4(pVector4) reinterpret_cast<const DirectX::XMFLOAT4 *>(pVector4) // 상수 Vector4 캐스팅
-#define CASTVECTOR4(pVector4) reinterpret_cast<DirectX::XMFLOAT4 *>(pVector4)        // 비상수 Vector4 캐스팅
-
-#define CCASTMATRIX4X4(pMatrix4X4) reinterpret_cast<const DirectX::XMFLOAT4X4 *>(pMatrix4X4) // 상수 Vector4 캐스팅
-#define CASTMATRIX4X4(pMatrix4X4) reinterpret_cast<DirectX::XMFLOAT4X4 *>(pMatrix4X4)        // 비상수 Vector4 캐스팅
-
 const Vector2 Vector2::Zero = Vector2{0.0f, 0.0f};
 const Vector2 Vector2::One = Vector2{1.0f, 1.0f};
-const Vector2 Vector2::UintX = Vector2{1.0f, 0.0f};
-const Vector2 Vector2::UintY = Vector2{0.0f, 1.0f};
+const Vector2 Vector2::UnitX = Vector2{1.0f, 0.0f};
+const Vector2 Vector2::UnitY = Vector2{0.0f, 1.0f};
 
 const Vector3 Vector3::Zero = Vector3{0.0f, 0.0f, 0.0f};
 const Vector3 Vector3::One = Vector3{1.0f, 1.0f, 1.0f};
@@ -30,815 +18,599 @@ const Vector3 Vector3::UintX = Vector3{1.0f, 0.0f, 0.0f};
 const Vector3 Vector3::UintY = Vector3{0.0f, 1.0f, 0.0f};
 const Vector3 Vector3::UintZ = Vector3{0.0f, 0.0f, 1.0f};
 
+Vector3::Vector3(const Vector4 &vec4) : X(vec4.X), Y(vec4.Y), Z(vec4.Z) {}
+
 const Vector4 Vector4::Zero = Vector4{0.0f, 0.0f, 0.0f, 0.0f};
 const Vector4 Vector4::One = Vector4{1.0f, 1.0f, 1.0f, 1.0f};
-const Vector4 Vector4::UintX = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
-const Vector4 Vector4::UintY = Vector4{0.0f, 1.0f, 0.0f, 0.0f};
-const Vector4 Vector4::UintZ = Vector4{0.0f, 0.0f, 1.0f, 0.0f};
-const Vector4 Vector4::UintW = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
-
-const Matrix4X4 Matrix4X4::Zero =
-    Matrix4X4{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-const Matrix4X4 Matrix4X4::Identity = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-                                       0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-
-// Vector2::operator!=
-bool Vector2::operator!=(const Vector2 &vector) const
-{
-    return !this->operator==(vector);
-}
-
-// Vector2::operator+
-Vector2 Vector2::operator+(const Vector2 &rhs) const
-{
-    DirectX::XMFLOAT2 vf2;
-    DirectX::XMStoreFloat2(&vf2, DirectX::XMVectorAdd(DirectX::XMLoadFloat2(CCASTVECTOR2(this)),
-                                                      DirectX::XMLoadFloat2(CCASTVECTOR2(&rhs))));
-    return Vector2(vf2.x, vf2.y);
-}
-
-// Vector2::operator-
-Vector2 Vector2::operator-(const Vector2 &rhs) const
-{
-    DirectX::XMFLOAT2 vf2;
-    DirectX::XMStoreFloat2(&vf2, DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(CCASTVECTOR2(this)),
-                                                           DirectX::XMLoadFloat2(CCASTVECTOR2(&rhs))));
-    return Vector2(vf2.x, vf2.y);
-}
-
-// Vector2::operator* (스칼라 곱셈)
-Vector2 Vector2::operator*(float scalar) const
-{
-    DirectX::XMFLOAT2 vf2;
-    DirectX::XMStoreFloat2(&vf2, DirectX::XMVectorScale(DirectX::XMLoadFloat2(CCASTVECTOR2(this)), scalar));
-    return Vector2(vf2.x, vf2.y);
-}
-
-// Vector2::operator/ (스칼라 나눗셈)
-Vector2 Vector2::operator/(float scalar) const
-{
-    if (scalar == 0.0f)
-    {
-        return Vector2(0.0f, 0.0f); // 0벡터 반환
-    }
-    return operator*(1.0f / scalar);
-}
-
-// Vector2::operator+=
-Vector2 &Vector2::operator+=(const Vector2 &rhs)
-{
-    DirectX::XMStoreFloat2(CASTVECTOR2(this), DirectX::XMVectorAdd(DirectX::XMLoadFloat2(CCASTVECTOR2(this)),
-                                                                   DirectX::XMLoadFloat2(CCASTVECTOR2(&rhs))));
-    return *this;
-}
-
-// Vector2::operator-=
-Vector2 &Vector2::operator-=(const Vector2 &rhs)
-{
-    DirectX::XMStoreFloat2(CASTVECTOR2(this), DirectX::XMVectorSubtract(DirectX::XMLoadFloat2(CCASTVECTOR2(this)),
-                                                                        DirectX::XMLoadFloat2(CCASTVECTOR2(&rhs))));
-    return *this;
-}
-
-// Vector2::operator*= (스칼라 곱셈 할당)
-Vector2 &Vector2::operator*=(float scalar)
-{
-    DirectX::XMStoreFloat2(CASTVECTOR2(this),
-                           DirectX::XMVectorScale(DirectX::XMLoadFloat2(CCASTVECTOR2(this)), scalar));
-    return *this;
-}
-
-// Vector2::operator/= (스칼라 나눗셈 할당)
-Vector2 &Vector2::operator/=(float scalar)
-{
-    if (scalar == 0.0f)
-    {
-        X = 0.0f;
-        Y = 0.0f;
-        return *this;
-    }
-    return this->operator*=(1.0f / scalar);
-}
-
-// Vector2::Length()
-float Vector2::Length() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMLoadFloat2(CCASTVECTOR2(this))));
-}
-
-// Vector2::LengthSquared()
-float Vector2::LengthSquared() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMLoadFloat2(CCASTVECTOR2(this))));
-}
-
-// Vector2::Normalize() (void 버전)
-void Vector2::Normalize()
-{
-    DirectX::XMStoreFloat2(CASTVECTOR2(this), DirectX::XMVector2Normalize(DirectX::XMLoadFloat2(CCASTVECTOR2(this))));
-}
-
-// Vector2::Normalize() (const 버전)
-Vector2 Vector2::Normalize() const
-{
-    Vector2 temp = *this;
-    temp.Normalize();
-    return temp;
-}
-
-// Vector2::Dot()
-float Vector2::Dot(const Vector2 &vector) const
-{
-    return DirectX::XMVectorGetX(
-        DirectX::XMVector2Dot(DirectX::XMLoadFloat2(CCASTVECTOR2(this)), DirectX::XMLoadFloat2(CCASTVECTOR2(&vector))));
-}
-
-// Vector2::Equal() (Vector4와 동일하게 오버로드된 operator==가 부동소수점 비교를 한다고 가정)
-bool Vector2::Equal(const Vector2 &vector)
-{
-    return operator==(vector);
-}
-
-// Vector2::NearEqual() (부동소수점 오차 허용 비교)
-bool Vector2::NearEqual(const Vector2 &vector, float epsilon)
-{
-    DirectX::XMVECTOR vector1 = DirectX::XMLoadFloat2(CCASTVECTOR2(this));
-    DirectX::XMVECTOR vector2 = DirectX::XMLoadFloat2(CCASTVECTOR2(&vector));
-    DirectX::XMVECTOR epsilonVec = DirectX::XMVectorReplicate(epsilon);
-
-    return DirectX::XMVector2NearEqual(vector1, vector2, epsilonVec);
-}
-
-// Vector2::operator== (부동소수점 비교 고려)
-bool Vector2::operator==(const Vector2 &vector) const
-{
-    return DirectX::XMVector2Equal(DirectX::XMLoadFloat2(CCASTVECTOR2(this)),
-                                   DirectX::XMLoadFloat2(CCASTVECTOR2(&vector)));
-}
-
-// Vector3::operator!=
-bool Vector3::operator!=(const Vector3 &vector) const
-{
-    return !this->operator==(vector);
-}
-
-// Vector3::operator+
-Vector3 Vector3::operator+(const Vector3 &rhs) const
-{
-    DirectX::XMFLOAT3 vf3;
-    DirectX::XMStoreFloat3(&vf3, DirectX::XMVectorAdd(DirectX::XMLoadFloat3(CCASTVECTOR3(this)),
-                                                      DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs))));
-    return Vector3(vf3.x, vf3.y, vf3.z);
-}
-
-// Vector3::operator-
-Vector3 Vector3::operator-(const Vector3 &rhs) const
-{
-    DirectX::XMFLOAT3 vf3;
-    DirectX::XMStoreFloat3(&vf3, DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(CCASTVECTOR3(this)),
-                                                           DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs))));
-    return Vector3(vf3.x, vf3.y, vf3.z);
-}
-
-// Vector3::operator* (스칼라 곱셈)
-Vector3 Vector3::operator*(float scalar) const
-{
-    DirectX::XMFLOAT3 vf3;
-    DirectX::XMStoreFloat3(&vf3, DirectX::XMVectorScale(DirectX::XMLoadFloat3(CCASTVECTOR3(this)), scalar));
-    return Vector3(vf3.x, vf3.y, vf3.z);
-}
-
-// Vector3::operator/ (스칼라 나눗셈)
-Vector3 Vector3::operator/(float scalar) const
-{
-    if (scalar == 0.0f)
-    {
-        // 0으로 나누는 경우 처리: 0벡터 반환
-        return Vector3(0.0f, 0.0f, 0.0f);
-    }
-    return operator*(1.0f / scalar);
-}
-
-// Vector3::operator+=
-Vector3 &Vector3::operator+=(const Vector3 &rhs)
-{
-    DirectX::XMStoreFloat3(CASTVECTOR3(this), DirectX::XMVectorAdd(DirectX::XMLoadFloat3(CCASTVECTOR3(this)),
-                                                                   DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs))));
-    return *this;
-}
-
-// Vector3::operator-=
-Vector3 &Vector3::operator-=(const Vector3 &rhs)
-{
-    DirectX::XMStoreFloat3(CASTVECTOR3(this), DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(CCASTVECTOR3(this)),
-                                                                        DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs))));
-    return *this;
-}
-
-// Vector3::operator*= (스칼라 곱셈 할당)
-Vector3 &Vector3::operator*=(float scalar)
-{
-    DirectX::XMStoreFloat3(CASTVECTOR3(this),
-                           DirectX::XMVectorScale(DirectX::XMLoadFloat3(CCASTVECTOR3(this)), scalar));
-    return *this;
-}
-
-// Vector3::operator/= (스칼라 나눗셈 할당)
-Vector3 &Vector3::operator/=(float scalar)
-{
-    if (scalar == 0.0f)
-    {
-        // 0으로 나누는 경우 처리: 0으로 설정
-        X = 0.0f;
-        Y = 0.0f;
-        Z = 0.0f;
-        return *this;
-    }
-    return this->operator*=(1.0f / scalar);
-}
-
-// Vector3::Length()
-float Vector3::Length() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMLoadFloat3(CCASTVECTOR3(this))));
-}
-
-// Vector3::LengthSquared()
-float Vector3::LengthSquared() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector3LengthSq(DirectX::XMLoadFloat3(CCASTVECTOR3(this))));
-}
-
-// Vector3::Normalize() (void 버전)
-void Vector3::Normalize()
-{
-    DirectX::XMStoreFloat3(CASTVECTOR3(this), DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(CCASTVECTOR3(this))));
-}
-
-// Vector3::Normalize() (const 버전)
-Vector3 Vector3::Normalize() const
-{
-    Vector3 temp = *this; // 현재 객체의 복사본
-    temp.Normalize();     // 복사본 정규화 (void Normalize() 호출)
-    return temp;          // 정규화된 복사본 반환
-}
-
-// Vector3::Dot()
-float Vector3::Dot(const Vector3 &vector) const
-{
-    return DirectX::XMVectorGetX(
-        DirectX::XMVector3Dot(DirectX::XMLoadFloat3(CCASTVECTOR3(this)), DirectX::XMLoadFloat3(CCASTVECTOR3(&vector))));
-}
-
-bool Vector3::Equal(const Vector3 &vector)
-{
-    return this->operator==(vector);
-}
-
-bool Vector3::NearEqual(const Vector3 &vector, float epsilon)
-{
-    DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(CCASTVECTOR3(this));
-    DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(CCASTVECTOR3(&vector));
-
-    return DirectX::XMVector3NearEqual(v1, v2, DirectX::XMVectorReplicate(epsilon));
-}
-
-// Vector3::Cross() (외적) - Vector3에만 있는 특수 연산
-Vector3 Vector3::Cross(const Vector3 &rhs) const
-{
-    DirectX::XMFLOAT3 vf3;
-    DirectX::XMStoreFloat3(&vf3, DirectX::XMVector3Cross(DirectX::XMLoadFloat3(CCASTVECTOR3(this)),
-                                                         DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs))));
-    return Vector3(vf3.x, vf3.y, vf3.z);
-}
-
-// Vector3::operator== (부동소수점 비교 고려)
-bool Vector3::operator==(const Vector3 &vector) const
-{
-    DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(CCASTVECTOR3(this));
-    DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(CCASTVECTOR3(&vector));
-
-    return DirectX::XMVector3Equal(v1, v2);
-}
-
-bool Vector4::operator!=(const Vector4 &vector) const
-{
-    return !this->operator==(vector);
-}
-
-Vector4 Vector4::operator+(const Vector4 &rhs) const
-{
-    DirectX::XMFLOAT4 vf4;
-
-    DirectX::XMStoreFloat4(&vf4, DirectX::XMVectorAdd(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                                      DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs))));
-
-    return {vf4.x, vf4.y, vf4.z, vf4.w};
-}
-
-Vector4 Vector4::operator-(const Vector4 &rhs) const
-{
-
-    DirectX::XMFLOAT4 vf4;
-
-    DirectX::XMStoreFloat4(&vf4, DirectX::XMVectorSubtract(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                                           DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs))));
-
-    return {vf4.x, vf4.y, vf4.z, vf4.w};
-}
-
-Vector4 Vector4::operator*(float scalar) const
-{
-    DirectX::XMFLOAT4 vf4;
-
-    DirectX::XMStoreFloat4(&vf4, DirectX::XMVectorScale(DirectX::XMLoadFloat4(CCASTVECTOR4(this)), scalar));
-
-    return {vf4.x, vf4.y, vf4.z, vf4.w};
-}
-
-Vector4 Vector4::operator/(float scalar) const
-{
-    if (scalar == 0.0f)
-    {
-        // 0으로 나누는 경우 처리: 0벡터 반환
-        return Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-    }
-    return operator*(1.0f / scalar);
-}
-
-Vector4 &Vector4::operator+=(const Vector4 &rhs)
-{
-    DirectX::XMStoreFloat4(CASTVECTOR4(this), DirectX::XMVectorAdd(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                                                   DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs))));
-
-    return *this;
-}
-
-Vector4 &Vector4::operator-=(const Vector4 &rhs)
-{
-    DirectX::XMStoreFloat4(CASTVECTOR4(this), DirectX::XMVectorSubtract(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                                                        DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs))));
-
-    return *this;
-}
-
-Vector4 &Vector4::operator*=(float scalar)
-{
-    DirectX::XMStoreFloat4(CASTVECTOR4(this),
-                           DirectX::XMVectorScale(DirectX::XMLoadFloat4(CCASTVECTOR4(this)), scalar));
-
-    return *this;
-}
-
-Vector4 &Vector4::operator/=(float scalar)
-{
-    if (scalar == 0.0f)
-    {
-        // 0으로 나누는 경우 처리: 0으로 설정
-        X = 0.0f;
-        Y = 0.0f;
-        Z = 0.0f;
-        W = 0.0f;
-        return *this;
-    }
-    return this->operator*=(1.0f / scalar);
-}
-
-float Vector4::Length() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector4Length(DirectX::XMLoadFloat4(CCASTVECTOR4(this))));
-}
-
-float Vector4::LengthSquared() const
-{
-    return DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(DirectX::XMLoadFloat4(CCASTVECTOR4(this))));
-}
-
-void Vector4::Normalize()
-{
-    DirectX::XMStoreFloat4(CASTVECTOR4(this), DirectX::XMVector4Normalize(DirectX::XMLoadFloat4(CCASTVECTOR4(this))));
-}
-
-Vector4 Vector4::Normalize() const
-{
-    Vector4 vector4 = *this;
-    vector4.Normalize();
-    return vector4;
-}
-
-float Vector4::Dot(const Vector4 &vector) const
-{
-    return DirectX::XMVectorGetX(
-        DirectX::XMVector4Dot(DirectX::XMLoadFloat4(CCASTVECTOR4(this)), DirectX::XMLoadFloat4(CCASTVECTOR4(&vector))));
-}
-
-bool Vector4::Equal(const Vector4 &vector)
-{
-    return operator==(vector);
-}
-
-bool Vector4::NearEqual(const Vector4 &vector, float epsilon)
-{
-    DirectX::XMVECTOR vector1 = DirectX::XMLoadFloat4(CCASTVECTOR4(this));
-    DirectX::XMVECTOR vector2 = DirectX::XMLoadFloat4(CCASTVECTOR4(&vector));
-
-    return DirectX::XMVector4NearEqual(vector1, vector2, DirectX::XMVectorReplicate(epsilon));
-}
-
-bool Vector4::operator==(const Vector4 &vector) const
-{
-    return DirectX::XMVector4Equal(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                   DirectX::XMLoadFloat4(CCASTVECTOR4(&vector)));
-}
+const Vector4 Vector4::UnitX = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
+const Vector4 Vector4::UnitY = Vector4{0.0f, 1.0f, 0.0f, 0.0f};
+const Vector4 Vector4::UnitZ = Vector4{0.0f, 0.0f, 1.0f, 0.0f};
+const Vector4 Vector4::UnitW = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
+
+Quaternion::Quaternion(const Vector3 &rhs) : X(rhs.X), Y(rhs.Y), Z(rhs.Z), W(0.0f) {}
 
 Quaternion Quaternion::operator*(const Quaternion &rhs) const
 {
 
-    Quaternion quaternion;
-    DirectX::XMStoreFloat4(CASTVECTOR4(&quaternion),
-                           DirectX::XMQuaternionMultiply(DirectX::XMLoadFloat4(CCASTVECTOR4(this)),
-                                                         DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs))));
+    glm::quat q1 = glm::make_quat(&X);
+    glm::quat q2 = glm::make_quat(&rhs.X);
 
-    return quaternion;
+    glm::quat ret = q1 * q2;
+
+    Quaternion result;
+    memcpy(&result.X, glm::value_ptr(ret), sizeof(float) * 4);
+    return result;
+}
+
+Quaternion Quaternion::operator*(float value) const
+{
+    return Quaternion(X * value, Y * value, Z * value, W * value);
+}
+
+Quaternion &Quaternion::operator+=(const Quaternion &rhs)
+{
+
+    glm::quat q1 = glm::make_quat(&X);
+    glm::quat q2 = glm::make_quat(&rhs.X);
+
+    glm::quat ret = q1 + q2;
+
+    memcpy(&X, glm::value_ptr(ret), sizeof(float) * 4);
+    return *this;
+}
+
+Vector3 CoreMath::Quaternion::ToEulerAngles() const
+{
+
+    glm::quat qa = glm::make_quat(&X);
+
+    const glm::vec3 vec1 = glm::degrees(glm::eulerAngles(qa));
+
+    Vector3 result;
+    memcpy(&result.X, glm::value_ptr(vec1), sizeof(float) * 3);
+
+    return result;
+}
+
+CoreMath::Vector3 Quaternion::RotateVector(const Vector3 &v) const
+{
+
+    glm::quat qa = glm::make_quat(&X);
+
+    glm::vec3 v3 = glm::make_vec3(&v.X);
+
+    glm::vec3 nv3 = qa * v3;
+
+    Vector3 result;
+    memcpy(&result.X, glm::value_ptr(nv3), sizeof(float) * 3);
+    return result;
+}
+
+CoreMath::Vector3 Quaternion::InverseRotateVector(const Vector3 &v) const
+{
+
+    CoreMath::Quaternion invqa = GetConjugate();
+    return invqa.RotateVector(v);
+}
+
+Quaternion CoreMath::Quaternion::MakeFromEuler(const Vector3 &euler)
+{
+
+    glm::vec3 vec1 = glm::make_vec3(&euler.X);
+
+    vec1 = glm::radians(vec1);
+
+    float pitch = glm::radians(euler.X);
+    float yaw = glm::radians(euler.Y);
+    float roll = glm::radians(euler.Z);
+
+    glm::quat q =                                 // 세번째
+        glm::angleAxis(yaw, glm::vec3(0, 1, 0)) * // 첫번째
+        glm::angleAxis(pitch, glm::vec3(1, 0, 0)) * glm::angleAxis(roll, glm::vec3(0, 0, 1));
+
+    Quaternion result;
+    memcpy(&result.X, glm::value_ptr(q), sizeof(float) * 4);
+    return result;
+}
+
+void CoreMath::Quaternion::ApplyAngularFromVector(const Vector3 &v)
+{
+
+    Quaternion delta(v.X, v.Y, v.Z, 0.0f);
+    *this += 0.5f * delta * *this;
+    // Normalize();
 }
 
 Matrix4X4::Matrix4X4(float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20,
                      float m21, float m22, float m23, float m30, float m31, float m32, float m33)
 {
+    // 1열
+    mat[0][0] = m00;
+    mat[0][1] = m10;
+    mat[0][2] = m20;
+    mat[0][3] = m30;
 
-    m[0][0] = m00;
-    m[0][1] = m01;
-    m[0][2] = m02;
-    m[0][3] = m03;
+    // 2열
+    mat[1][0] = m01;
+    mat[1][1] = m11;
+    mat[1][2] = m21;
+    mat[1][3] = m31;
 
-    m[1][0] = m10;
-    m[1][1] = m11;
-    m[1][2] = m12;
-    m[1][3] = m13;
+    // 3열
+    mat[2][0] = m02;
+    mat[2][1] = m12;
+    mat[2][2] = m22;
+    mat[2][3] = m32;
 
-    m[2][0] = m20;
-    m[2][1] = m21;
-    m[2][2] = m22;
-    m[2][3] = m23;
+    // 4열
+    mat[3][0] = m03;
+    mat[3][1] = m13;
+    mat[3][2] = m23;
+    mat[3][3] = m33;
+}
 
-    m[3][0] = m30;
-    m[3][1] = m31;
-    m[3][2] = m32;
-    m[3][3] = m33;
+const Matrix4X4 Matrix4X4::Zero = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 0, 0, 0, 0, 0, 0};
+const Matrix4X4 Matrix4X4::Identity = {1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f, 0, 0, 0, 0, 1.0f};
+
+Matrix4X4::Matrix4X4(const CoreMath::Vector4 &col1, const CoreMath::Vector4 &col2, const CoreMath::Vector4 &col3,
+                     const CoreMath::Vector4 &col4)
+{
+    mat[0] = col1;
+    mat[1] = col2;
+    mat[2] = col3;
+    mat[3] = col4;
 }
 
 Matrix4X4 Matrix4X4::operator+(const Matrix4X4 &rhs) const
 {
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+    const glm::mat4 mat2 = glm::make_mat4(&rhs.mat[0].X);
 
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
+    glm::mat4 result = mat1 + mat2;
 
-    Matrix4X4 result;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&result), m1 + m2);
-
-    return result;
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
+    return ret;
 }
-
 Matrix4X4 Matrix4X4::operator-(const Matrix4X4 &rhs) const
 {
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
 
-    Matrix4X4 result;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&result), m1 - m2);
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+    const glm::mat4 mat2 = glm::make_mat4(&rhs.mat[0].X);
 
-    return result;
+    glm::mat4 result = mat1 - mat2;
+
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
+    return ret;
 }
-
-Matrix4X4 Matrix4X4::operator*(const Matrix4X4 &rhs) const
+Matrix4X4 Matrix4X4::operator*(const Matrix4X4 &rhs) const // 행렬 곱셈
 {
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+    const glm::mat4 mat2 = glm::make_mat4(&rhs.mat[0].X);
 
-    Matrix4X4 result;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&result), m1 * m2);
+    glm::mat4 result = mat1 * mat2;
 
-    return result;
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
+    return ret;
 }
-
-Matrix4X4 Matrix4X4::operator*(float scalar) const
+Matrix4X4 Matrix4X4::operator*(float scalar) const // 스칼라 곱셈
 {
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
 
-    DirectX::XMVECTOR r1 = DirectX::XMVectorScale(m1.r[0], scalar);
-    DirectX::XMVECTOR r2 = DirectX::XMVectorScale(m1.r[1], scalar);
-    DirectX::XMVECTOR r3 = DirectX::XMVectorScale(m1.r[2], scalar);
-    DirectX::XMVECTOR r4 = DirectX::XMVectorScale(m1.r[3], scalar);
+    glm::mat4 result = mat1 * scalar;
 
-    DirectX::XMMATRIX m2(r1, r2, r3, r4);
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
 
-    Matrix4X4 result;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&result), m2);
-
-    return result;
+    return ret;
 }
-
-Matrix4X4 Matrix4X4::operator/(float scalar) const
+Matrix4X4 Matrix4X4::operator/(float scalar) const // 스칼라 나눗셈 ,스칼라가 0이면 0이곱해진다
 {
-    if (scalar != 0.0f)
-        return this->operator*(1.0f / scalar);
-    else
-        return this->operator*(0.0f);
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    glm::mat4 result = mat1 / scalar;
+
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
+    return ret;
 }
+
+Vector4 Matrix4X4::operator*(const Vector4 &rhs) const // 행렬 * Vector4
+{
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    const glm::vec4 vec1 = glm::make_vec4(&rhs.X);
+
+    glm::vec4 result = mat1 * vec1;
+
+    Vector4 vec;
+    memcpy(&vec, glm::value_ptr(result), sizeof(float) * 4);
+    return vec;
+}
+Vector3 Matrix4X4::operator*(const Vector3 &rhs) const // 행렬 * Vector3 벡터의 w성분은 0으로 취급하여 곱한다.
+{
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    const glm::vec4 vec1 = {rhs.X, rhs.Y, rhs.Z, 0.0f};
+
+    glm::vec4 result = mat1 * vec1;
+
+    return Vector3{result.x, result.y, result.z};
+
+} // namespace CoreMath
 
 Matrix4X4 &Matrix4X4::operator+=(const Matrix4X4 &rhs)
 {
 
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
-
-    m1 += m2;
-
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(this), m1);
-
+    mat[0] += rhs.mat[0];
+    mat[1] += rhs.mat[1];
+    mat[2] += rhs.mat[2];
+    mat[3] += rhs.mat[3];
     return *this;
 }
-
 Matrix4X4 &Matrix4X4::operator-=(const Matrix4X4 &rhs)
 {
 
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
-
-    m1 -= m2;
-
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(this), m1);
-
+    mat[0] -= rhs.mat[0];
+    mat[1] -= rhs.mat[1];
+    mat[2] -= rhs.mat[2];
+    mat[3] -= rhs.mat[3];
     return *this;
-
-    // TODO: 여기에 return 문을 삽입합니다.
 }
 
 Matrix4X4 &Matrix4X4::operator*=(const Matrix4X4 &rhs)
 {
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-    DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&rhs));
-
-    m1 *= m2;
-
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(this), m1);
-
+    *this = (*this) * rhs;
     return *this;
-    // TODO: 여기에 return 문을 삽입합니다.
 }
 
 Matrix4X4 &Matrix4X4::operator*=(float scalar)
 {
 
-    DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-
-    DirectX::XMVECTOR r1 = DirectX::XMVectorScale(m1.r[0], scalar);
-    DirectX::XMVECTOR r2 = DirectX::XMVectorScale(m1.r[1], scalar);
-    DirectX::XMVECTOR r3 = DirectX::XMVectorScale(m1.r[2], scalar);
-    DirectX::XMVECTOR r4 = DirectX::XMVectorScale(m1.r[3], scalar);
-
-    DirectX::XMMATRIX m2(r1, r2, r3, r4);
-
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(this), m2);
+    *this = (*this) * scalar;
 
     return *this;
 }
-
 Matrix4X4 &Matrix4X4::operator/=(float scalar)
 {
 
-    if (scalar != 0.0f)
-        this->operator*=(1.0f / scalar);
-    else
-        this->operator*=(0.0f);
-
+    *this = (*this) / scalar;
     return *this;
-}
-
-Vector4 Matrix4X4::operator*(const Vector4 &rhs) const
-{
-
-    DirectX::XMMATRIX matrix = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
-
-    DirectX::XMVECTOR vector = DirectX::XMLoadFloat4(CCASTVECTOR4(&rhs));
-
-    Vector4 v4;
-    DirectX::XMStoreFloat4(CASTVECTOR4(&v4), DirectX::XMVector4Transform(vector, matrix));
-
-    return v4;
-}
-
-Vector3 Matrix4X4::operator*(const Vector3 &rhs) const
-{
-    return TransformDirection(rhs);
 }
 
 Vector3 Matrix4X4::TransformDirection(const Vector3 &rhs) const
 {
-    DirectX::XMMATRIX matrix = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
 
-    DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs));
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
 
-    Vector3 v3;
-    DirectX::XMStoreFloat3(CASTVECTOR3(&v3), DirectX::XMVector3Transform(vector, matrix));
+    const glm::vec4 vec1 = {rhs.X, rhs.Y, rhs.Z, 0.0f};
 
-    return v3;
+    glm::vec4 result = mat1 * vec1;
+
+    return Vector3{result.x, result.y, result.z};
 }
-
 Vector3 Matrix4X4::TransformPoint(const Vector3 &rhs) const
 {
 
-    DirectX::XMMATRIX matrix = DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this));
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
 
-    DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(CCASTVECTOR3(&rhs));
+    const glm::vec4 vec1 = {rhs.X, rhs.Y, rhs.Z, 1.0f};
 
-    Vector3 v3;
-    DirectX::XMStoreFloat3(CASTVECTOR3(&v3), DirectX::XMVector3TransformCoord(vector, matrix));
+    glm::vec4 result = mat1 * vec1;
 
-    return v3;
+    return Vector3{result.x, result.y, result.z};
 }
 
-Matrix4X4 Matrix4X4::Transpose() const
+void Matrix4X4::TransformDirectionRef(Vector3 &rhs) const
 {
 
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix),
-                             DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this))));
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
 
-    return matrix;
+    const glm::vec4 vec1 = {rhs.X, rhs.Y, rhs.Z, 0.0f};
+
+    glm::vec4 result = mat1 * vec1;
+
+    memcpy(&rhs, glm::value_ptr(result), sizeof(float) * 3);
+
+    return;
 }
 
-Matrix4X4 Matrix4X4::Inverse() const
+void Matrix4X4::TransformPointRef(Vector3 &rhs) const
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix),
-                             DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this))));
 
-    return matrix;
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    const glm::vec4 vec1 = {rhs.X, rhs.Y, rhs.Z, 1.0f};
+
+    glm::vec4 result = mat1 * vec1;
+
+    memcpy(&rhs, glm::value_ptr(result), sizeof(float) * 3);
 }
 
-float Matrix4X4::Determinant() const
+Matrix4X4 Matrix4X4::GetTransposed() const // 전치 행렬을 반환
 {
-    DirectX::XMVECTOR determinant;
-    DirectX::XMMatrixInverse(&determinant, DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this)));
 
-    return DirectX::XMVectorGetX(determinant);
+    glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    mat1 = glm::transpose(mat1);
+
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(mat1), sizeof(float) * 16);
+
+    return ret;
+}
+Matrix4X4 Matrix4X4::GetInversed() const // 역행렬 반환
+{
+
+    glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    mat1 = glm::inverse(mat1);
+
+    Matrix4X4 ret;
+    memcpy(ret.mat, glm::value_ptr(mat1), sizeof(float) * 16);
+
+    return ret;
+}
+float Matrix4X4::Determinant() const // 행렬식
+{
+    const glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    return glm::determinant(mat1);
 }
 
-void Matrix4X4::Transpose()
+void Matrix4X4::Transpose() // 자신을  전치시킨다.
 {
+    glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
 
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(this),
-                             DirectX::XMMatrixTranspose(DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(this))));
+    mat1 = glm::transpose(mat1);
+
+    memcpy(mat, glm::value_ptr(mat1), sizeof(float) * 16);
 }
 
 Vector4 Matrix4X4::GetRow(int rowIndex) const
 {
-    return Vector4(m[rowIndex][0], m[rowIndex][1], m[rowIndex][2], m[rowIndex][3]);
+    return Vector4{mat[0][rowIndex], mat[1][rowIndex], mat[2][rowIndex], mat[3][rowIndex]};
 }
-
 Vector4 Matrix4X4::GetColumn(int columnIndex) const
 {
-    return Vector4(m[0][columnIndex], m[1][columnIndex], m[2][columnIndex], m[3][columnIndex]);
+
+    return mat[columnIndex];
 }
 
-Matrix4X4 Matrix4X4::MakeTranslation(Vector3 position)
+void Matrix4X4::SetColComponet(int index, const CoreMath::Vector4 &vec)
 {
 
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix),
-                             DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(CCASTVECTOR3(&position))));
+    if (index >= 4)
+        return;
 
-    return matrix;
+    mat[index] = vec;
 }
-
-Matrix4X4 Matrix4X4::MakeTranslation(float x, float y, float z)
+void Matrix4X4::SetColComponents(const CoreMath::Vector4 &col1, const CoreMath::Vector4 &col2,
+                                 const CoreMath::Vector4 &col3, const CoreMath::Vector4 &col4)
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixTranslation(x, y, z));
-
-    return matrix;
+    mat[0] = col1;
+    mat[1] = col2;
+    mat[2] = col3;
+    mat[3] = col4;
 }
 
-Matrix4X4 Matrix4X4::MakeScale(Vector3 scale)
+Matrix4X4 Matrix4X4::MakeTranslation(Vector3 position) // 이동 행렬
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix),
-                             DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(CCASTVECTOR3(&scale))));
+    const glm::vec3 vec1 = glm::make_vec3(&position.X);
 
-    return matrix;
+    glm::mat4x4 ret = glm::translate(glm::identity<glm::mat4x4>(), vec1);
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
+
+    return result;
 }
 
-Matrix4X4 Matrix4X4::MakeScale(float x, float y, float z)
+Matrix4X4 Matrix4X4::MakeTranslation(float x, float y, float z) // 이동 행렬
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixScaling(x, y, z));
-
-    return matrix;
+    return MakeTranslation({x, y, z});
 }
-
-Matrix4X4 Matrix4X4::MakeRotationRadX(float angleRad)
+Matrix4X4 Matrix4X4::MakeScale(Vector3 scale) // 크기 행렬
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixRotationX(angleRad));
+    const glm::vec3 vec1 = glm::make_vec3(&scale.X);
 
-    return matrix;
+    glm::mat4x4 ret = glm::scale(glm::identity<glm::mat4x4>(), vec1);
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
+
+    return result;
 }
-
-Matrix4X4 Matrix4X4::MakeRotationRadY(float angleRad)
+Matrix4X4 Matrix4X4::MakeScale(float x, float y, float z) // 크기 행렬
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixRotationY(angleRad));
-
-    return matrix;
+    return MakeScale({x, y, z});
 }
 
-Matrix4X4 Matrix4X4::MakeRotationRadZ(float angleRad)
+Matrix4X4 Matrix4X4::MakeScale(float value) // 크기 행렬
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixRotationZ(angleRad));
-
-    return matrix;
+    return MakeScale({value, value, value});
 }
 
-Matrix4X4 Matrix4X4::MakeRotationDegreeX(float angle)
-{
-    return MakeRotationRadX(angle * DirectX::XM_PI / 180.0f);
-}
-
-Matrix4X4 Matrix4X4::MakeRotationDegreeY(float angle)
-{
-    return MakeRotationRadY(angle * DirectX::XM_PI / 180.0f);
-}
-
-Matrix4X4 Matrix4X4::MakeRotationDegreeZ(float angle)
-{
-    return MakeRotationRadZ(angle * DirectX::XM_PI / 180.0f);
-}
-
-Matrix4X4 Matrix4X4::MakeRotationYawPitchRollRad(float x, float y, float z)
-{
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixRotationRollPitchYaw(x, y, z));
-
-    return matrix;
-}
-
-Matrix4X4 Matrix4X4::MakeTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+Matrix4X4 Matrix4X4::MakeRotationRadX(float x) // X축 회전 (라디안)
 {
 
-    Matrix4X4 matrix;
+    glm::mat4x4 ret = glm::rotate(glm::identity<glm::mat4x4>(), x, glm::vec3{1, 0, 0});
 
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix),
-                             DirectX::XMMatrixAffineTransformation(DirectX::XMLoadFloat3(CCASTVECTOR3(&scale)),
-                                                                   DirectX::XMVectorSet(0, 0, 0, 1.0f),
-                                                                   DirectX::XMLoadFloat4(CCASTVECTOR4(&rotation)),
-                                                                   DirectX::XMLoadFloat3(CCASTVECTOR3(&position))));
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
 
-    return matrix;
+    return result;
 }
-
-void Matrix4X4::MatrixDecompose(Vector3 &oPosition, Quaternion &oQuaternion, Vector3 &oScale, const Matrix4X4 &matrix)
+Matrix4X4 Matrix4X4::MakeRotationRadY(float y) // Y축 회전 (라디안)
 {
 
-    DirectX::XMVECTOR positionVector;
-    DirectX::XMVECTOR quaternion;
-    DirectX::XMVECTOR scalingVector;
-    DirectX::XMMatrixDecompose(&scalingVector, &quaternion, &positionVector,
-                               DirectX::XMLoadFloat4x4(CCASTMATRIX4X4(&matrix)));
-
-    DirectX::XMStoreFloat3(CASTVECTOR3(&oPosition), positionVector);
-    DirectX::XMStoreFloat4(CASTVECTOR4(&oQuaternion), quaternion);
-    DirectX::XMStoreFloat3(CASTVECTOR3(&oScale), scalingVector);
+    glm::mat4 ret = glm::rotate(glm::mat4(1.0f), y, glm::vec3{0, 1, 0});
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
+    return result;
 }
 
-Matrix4X4 Matrix4X4::MakeLookAtLH(Vector3 eye, Vector3 target, Vector3 up)
+Matrix4X4 Matrix4X4::MakeRotationRadZ(float z) // Z축 회전 (라디안)
 {
 
-    return Matrix4X4();
+    glm::mat4 ret = glm::rotate(glm::mat4(1.0f), z, glm::vec3{0, 0, 1});
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
+    return result;
 }
 
-Matrix4X4 Matrix4X4::MakePerspectiveFovLH(float fovAngleY, float aspectRatio, float nearZ, float farZ)
+Matrix4X4 Matrix4X4::MakeRotationDegreeX(float x) // X축 회전 (도)
 {
 
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(
-        CASTMATRIX4X4(&matrix),
-        DirectX::XMMatrixPerspectiveFovLH(fovAngleY / 180.0f * DirectX::XM_PI, aspectRatio, nearZ, farZ));
-
-    return matrix;
+    return MakeRotationRadX(glm::radians(x));
 }
 
-Matrix4X4 Matrix4X4::MakeOrthographicLH(float width, float height, float nearZ, float farZ)
+Matrix4X4 Matrix4X4::MakeRotationDegreeY(float y) // Y축 회전 (도)
 {
-    Matrix4X4 matrix;
-    DirectX::XMStoreFloat4x4(CASTMATRIX4X4(&matrix), DirectX::XMMatrixOrthographicLH(width, height, nearZ, farZ));
-
-    return matrix;
+    return MakeRotationRadY(glm::radians(y));
 }
 
-#elif OPGL
+Matrix4X4 Matrix4X4::MakeRotationDegreeZ(float z) // Z축 회전 (도)
+{
+    return MakeRotationRadZ(glm::radians(z));
+}
 
-#endif
+Matrix4X4 Matrix4X4::MakeRotationYawPitchRollRad(float yaw, float pitch, float roll)
+{
+    glm::quat q = glm::angleAxis(yaw, glm::vec3(0, 0, 1)) * glm::angleAxis(pitch, glm::vec3(1, 0, 0)) *
+                  glm::angleAxis(roll, glm::vec3(0, 1, 0));
 
+    glm::mat4 mat = glm::mat4_cast(q);
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(mat), sizeof(float) * 16);
+    return result;
+}
+Matrix4X4 Matrix4X4::MakeTransform(Vector3 position, Quaternion quaternion, Vector3 scale)
+{
+
+    const glm::vec3 translationVec = glm::make_vec3(&position.X);
+    glm::mat4x4 translationMat = glm::translate(glm::identity<glm::mat4x4>(), translationVec);
+
+    const glm::quat rotationQuat = glm::make_quat(&quaternion.X);
+    glm::mat4x4 quatMat = glm::mat4_cast(rotationQuat);
+
+    const glm::vec3 scaleVec = glm::make_vec3(&scale.X);
+    glm::mat4x4 scaleMat = glm::scale(glm::identity<glm::mat4x4>(), scaleVec);
+
+    glm::mat4x4 result = translationMat * quatMat * scaleMat;
+
+    Matrix4X4 ret;
+
+    memcpy(ret.mat, glm::value_ptr(result), sizeof(float) * 16);
+
+    return ret;
+}
+
+bool Matrix4X4::Decompose(Vector3 &oPosition, Quaternion &oQuaternion, Vector3 &oScale) const
+{
+
+    glm::mat4 mat1 = glm::make_mat4(&mat[0].X);
+
+    glm::vec3 scale;
+    glm::quat quaternion;
+    glm::vec3 position;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+
+    bool ret = glm::decompose(mat1, scale, quaternion, position, skew, perspective);
+
+    if (ret)
+    {
+        memcpy(&oPosition.X, glm::value_ptr(position), sizeof(float) * 3);
+        memcpy(&oQuaternion.X, glm::value_ptr(quaternion), sizeof(float) * 4);
+        memcpy(&oScale.X, glm::value_ptr(scale), sizeof(float) * 3);
+    }
+    return ret;
+}
+
+void Matrix4X4::SetSkewSymmetric(const CoreMath::Vector3 &vector)
+{
+
+    mat[0].X = 0;
+    mat[0].Y = vector.Z;
+    mat[0].Z = -vector.Y;
+    mat[0].W = 0;
+
+    mat[1].X = -vector.Z;
+    mat[1].Y = 0;
+    mat[1].Z = vector.X;
+    mat[1].W = 0;
+
+    mat[2].X = vector.Y;
+    mat[2].Y = -vector.X;
+    mat[2].Z = 0;
+    mat[2].W = 0;
+
+    mat[3] = {0, 0, 0, 1};
+}
+
+Matrix4X4 Matrix4X4::MakeLookAtLH(const Vector3 &eye, const Vector3 &target, const Vector3 &up)
+{
+
+    glm::vec3 e = glm::make_vec3(&eye.X);
+    glm::vec3 t = glm::make_vec3(&target.X);
+    glm::vec3 u = glm::make_vec3(&up.X);
+
+    glm::mat4 ret = glm::lookAtLH(e, t, glm::normalize(u));
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(ret), sizeof(float) * 16);
+    return result;
+}
+Matrix4X4 Matrix4X4::MakePerspectiveFovLH(float fovAngleY, float aspectRatio, float nearZ, float farZ) // 왼손 원근
+{
+    float angleInRadian = glm::radians(fovAngleY);
+
+    glm::mat4 mat1 = glm::perspectiveFovLH_ZO(angleInRadian, aspectRatio, 1.0f, nearZ, farZ);
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(mat1), sizeof(float) * 16);
+    return result;
+}
+// static Matrix4x4 MakePerspectiveFovRH(float fovAngleY, float aspectRatio, float nearZ, float farZ); // 오른손
+// 원근
+Matrix4X4 Matrix4X4::MakeOrthographicLH(float left, float right, float bottom, float top, float nearZ,
+                                        float farZ) // 왼손 직교
+{
+
+    glm::mat4 mat1 = glm::orthoLH_ZO(left, right, bottom, top, nearZ, farZ);
+
+    Matrix4X4 result;
+    memcpy(result.mat, glm::value_ptr(mat1), sizeof(float) * 16);
+    return result;
+}
 } // namespace CoreMath
+
+// namespace CoreMath
+
+Arch &operator<<(Arch &arch, CoreMath::Vector2 &vector2)
+{
+    arch << vector2.X;
+    arch << vector2.Y;
+    return arch;
+}
+
+Arch &operator<<(Arch &arch, CoreMath::Vector3 &vector3)
+{
+    arch << vector3.X;
+    arch << vector3.Y;
+    arch << vector3.Z;
+
+    return arch;
+}
+Arch &operator<<(Arch &arch, CoreMath::Vector4 &vector4)
+{
+    arch << vector4.X;
+    arch << vector4.Y;
+    arch << vector4.Z;
+    arch << vector4.W;
+    return arch;
+}

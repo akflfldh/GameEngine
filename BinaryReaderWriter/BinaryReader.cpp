@@ -5,13 +5,22 @@ QuadRW::BinaryReader::BinaryReader() : mPhysicalFileSystem(QuadPF::PhysicalFileS
 
 QuadRW::BinaryReader::~BinaryReader() {}
 
-bool QuadRW::BinaryReader::StartRead(const std::string &filePath)
+bool QuadRW::BinaryReader::StartRead(const std::filesystem::path &filePath)
 {
     FlushBuffer();
     mReadPointer = 0;
     return mPhysicalFileSystem->ReadFileToBuffer(filePath, mBuffer);
 }
+bool QuadRW::BinaryReader::StartRead(uint8_t *buffer, size_t size)
+{
 
+    FlushBuffer();
+    mReadPointer = 0;
+    mBuffer.resize(size);
+    memcpy(mBuffer.data(), buffer, size);
+
+    return true;
+}
 template <typename T> inline bool QuadRW::BinaryReader::Read(T &oData)
 {
 
@@ -22,6 +31,7 @@ template <typename T> inline bool QuadRW::BinaryReader::Read(T &oData)
         {
             // log
             assert(0);
+            return false;
         }
 
         memcpy((void *)(&oData), (const void *)&mBuffer[mReadPointer], sizeof(oData));
@@ -74,6 +84,9 @@ bool QuadRW::BinaryReader::ReadRaw(void *oBuffer, size_t size)
     if (mBuffer.size() < mReadPointer + size)
         return false;
 
+    if (size == 0)
+        return true;
+
     memcpy(oBuffer, (const void *)&mBuffer[mReadPointer], size);
     mReadPointer += size;
     return true;
@@ -84,6 +97,9 @@ bool QuadRW::BinaryReader::Read(void *oBuffer, size_t bufferSize)
 
     if (oBuffer == nullptr)
         return false;
+
+    if (bufferSize == 0)
+        return true;
 
     size_t size;
     Read(size);

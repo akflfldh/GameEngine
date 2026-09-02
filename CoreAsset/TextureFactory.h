@@ -14,7 +14,7 @@ class CORE_ASSET_API TextureFactory : public IAssetFactory
     TextureFactory();
     virtual ~TextureFactory();
 
-    virtual Asset *CreateEmptyAsset() override;
+    virtual Asset *CreateEmptyAsset(EAssetType assetType) override;
     virtual Asset *CreateAssetFromData(const IntermediateAsset &intermediateAsset) override;
 
   private:

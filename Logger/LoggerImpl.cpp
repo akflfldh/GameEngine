@@ -1,6 +1,6 @@
 ﻿#include "Logger/LoggerImpl.h"
 
-bool QuadLog::LoggerImpl::SetLoggerFile(const char *outputFile)
+bool QuadLog::LoggerImpl::SetLoggerFile(const std::filesystem::path &outputFile)
 {
 
     if (fout.is_open())

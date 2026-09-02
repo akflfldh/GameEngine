@@ -95,4 +95,7 @@ class CORE_ASSET_API Texture : public Asset
   private:
     TextureProperties mProperties;
 };
+
+AssetClassName(Texture)
+
 } // namespace CoreAsset

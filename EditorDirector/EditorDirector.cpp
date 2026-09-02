@@ -16,6 +16,14 @@
 #include "EditorDirector/SuperAssetBrowerController.h"
 #include "EditorDirector/SuperFrameController.h"
 #include <BinaryReaderWriter/BinaryReader.h>
+#include <ClassGenerationManager.h>
+#include <Core/MapFactory.h>
+#include <Core/MapLoader.h>
+#include <Core/MapStorer.h>
+#include <Core/PrefabFactory.h>
+#include <Core/PrefabLoader.h>
+#include <Core/RuntimeServices.h>
+#include <Core/SceneManager.h>
 #include <CoreAsset/AssetCommon.h>
 #include <CoreAsset/AssetFactoryManager.h>
 #include <CoreAsset/AssetIOManager.h>
@@ -23,33 +31,70 @@
 #include <CoreAsset/AssetLoader.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/AssetMetaDataManager.h>
+#include <CoreAsset/AssetType.h>
+#include <CoreAsset/FontFactory.h>
+#include <CoreAsset/Material.h>
 #include <CoreAsset/MaterialFactory.h>
+#include <CoreAsset/MaterialLoader.h>
+#include <CoreAsset/MaterialStorer.h>
+#include <CoreAsset/MeshFactory.h>
+#include <CoreAsset/MeshLoader.h>
+#include <CoreAsset/MeshStorer.h>
+#include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
 #include <CoreAsset/TextureFactory.h>
 #include <CoreAsset/TextureLoader.h>
 #include <CoreAsset/TextureManager.h>
 #include <CoreAsset/TextureStorer.h>
+#include <CoreAsset/UIMaterialManager.h>
+#include <CoreBase/AsyncThreadPool.h>
 #include <CoreBase/BinaryArch.h>
+#include <CoreBase/CoreAssert.h>
 #include <CoreBase/FNameTable.h>
 #include <CoreBase/TextArch.h>
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
+#include <D3DGpuResourceManager/GpuSamplerSystem.h>
+#include <D3DGpuResourceManager/IGpuResourceManager.h>
+#include <DefaultEditorInspectorManager.h>
+#include <DefaultPropertyInspector.h>
+#include <EditorAssetImporterManager.h>
+#include <EditorDirector/EditorAssetImporterManager.h>
+#include <EditorDirector/EditorAssetManager.h>
 #include <EditorDirector/EditorConfig.h>
+#include <EditorDirector/EditorProjectBrowserManager.h>
+#include <EditorDirector/EditorSceneManager.h>
+#include <EditorDirector/EditorSelectionManager.h>
+#include <EditorDirector/GlobalOverlayManager.h>
+#include <EditorDirector/ObjectHierarchyPanel.h>
+#include <EditorDirector/ProjectGenerator.h>
+#include <EditorDirector/UIAssetBrowser.h>
+#include <IEditorTaskManager.h>
 #include <ImportModule/TextureImporter.h>
 #include <InputSystem/InputSystem.h>
 #include <Logger/Logger.h>
 #include <LogicalFileSystem/LogicalFile.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
+#include <MapSettingUIController.h>
+#include <MaterialWorkSpaceManager.h>
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
+#include <PrefabWorkSpaceManager.h>
+#include <PropertyPanel.H>
+#include <RenderFrontend/AssetResolver.h>
+#include <RenderFrontend/ObjectRenderItemBuilder.h>
+#include <RenderFrontend/RenderPipelineManager.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <SystemInitializer/ISystemInitializer.h>
+#include <UIScrollBox.h>
 #include <UISystem/UIManager.h>
+#include <UiSystem/UIElementPtr.h>
+#include <UiSystem/UIImage.h>
 #include <Window/BaseWindow.h>
+#include <core/PrefabStorer.h>
 #include <memory>
-#pragma comment(lib, "ImportModule.lib")
 
-#define D3DX
+#pragma comment(lib, "ImportModule.lib")
 
 #ifdef D3DX
 
@@ -61,7 +106,7 @@
 
 #undef EngineMode
 
-std::string testProjectPath = "C:/Users/dongd/gitproject/GameEngine";
+// std::string testProjectPath = "C:/Users/dongd/gitproject/GameEngine";
 
 Quad::EditorDirector *Quad::EditorDirector::GetInstance()
 {
@@ -70,14 +115,9 @@ Quad::EditorDirector *Quad::EditorDirector::GetInstance()
 }
 
 Quad::EditorDirector::EditorDirector()
+    : mRenderPipelineManager(Render::RenderPipelineManager::GetInstance()), mApp(nullptr), mAssetManager(nullptr)
 /* :mFrameWindowSceneSwitch(0), mWindowSwitchRenderFlag(false)*/
 {
-
-    wchar_t path[MAX_PATH];
-    GetCurrentDirectoryW(MAX_PATH, path);
-
-    //  mEditorPathW = path;
-    //  mEditorPathA = Utility::ConvertToString(mEditorPathW, true);
 }
 Quad::EditorDirector::~EditorDirector() {}
 // #define EngineMode
@@ -85,151 +125,55 @@ void Quad::EditorDirector::Initialize()
 {
 
     auto app = Application::GetInstance();
+    mApp = app;
 
-    app->GetHinstance();
-
-    // asset manager init
-    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
-
-    // asset factory  register
-    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
-    assetFactoryManager->ReigsterAssetFactory(CoreAsset::EAssetType::eTexture,
-                                              CoreAsset::TextureFactory::GetInstance());
-    assetFactoryManager->ReigsterAssetFactory(CoreAsset::EAssetType::eMaterial,
-                                              CoreAsset::MaterialFactory::GetInstance());
-    CoreAsset::AssetImporterManager *assetImporterManager = CoreAsset::AssetImporterManager::GetInstance();
-    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
-
-    // asset storer register
-    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eTexture, CoreAsset::TextureStorer::GetInstance());
-
-    // asset loader  register
-
-    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eTexture, CoreAsset::TextureLoader::GetInstance());
-
-    // asset manager init
-    assetManager->Initialize(assetFactoryManager, assetIOManager, assetImporterManager);
-
-    ProjectConfig *projectConfig = ProjectConfig::GetInstance();
-    assetManager->SetAssetRawDataPath(projectConfig->GetProjectRawAssetPath());
-
-    // project init
-    mProjectInitializer = EditorProjectManager::GetInstance();
-    mProjectInitializer->Initialize();
-
-    // import module test
-    // editor asset importer module
-    EditorAssetImporterModule *editorAssetImporterModule = EditorAssetImporterModule::GetInstance();
-    editorAssetImporterModule->Initialize();
-
-    {
-
-        // 에셋 임포트, 저장 테스트 ,
-
-        QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF::LogicalFileSystem::GetInstance();
-        // EditorTextureImporter *textureImporter = EditorTextureImporter::GetInstance();
-
-        bool ret = true;
-        // 논리적 폴더 테스트
-        // bool logicalFolderCreationTestFlag = false;
-        // if (logicalFolderCreationTestFlag)
-        //{
-
-        //    // 논리적 폴더생성 ,저장 테스트
-
-        //   // logicalFileSystem->CreateFolder("MYTEST", logicalFileSystem->GetRootFolder(), true);
-        //   // QuadRW::BinaryWriter writer;
-        //    //ret =
-        //     //   logicalFileSystem->SaveLogicalDirectoryStructureAsBinaryWriter(writer, testProjectPath,
-        //     "testLDSFile");
-        //}
-
-        // 2025 - 07 - 14
-        // 텍스처 임포트, 매니저, 리소스매니저 테스트 :Good
-
-        bool testImport = true;
-        if (testImport)
-        {
-
-            // 텍스처 임포트 테스트
-            std::ifstream fin("C:\\Users\\dongd\\gitproject\\GameEngine\\TestAssetPathFile.txt");
-            std::string assetFilePath;
-
-            while (fin >> assetFilePath)
-            {
-                // 현재 논리적폴더에서 해당 파일과 동일한 이름을 가진 논리적파일이존재하면실패하도록한다.
-                // Check Logical File Name
-
-                // 없으면 임포트수행
-
-                editorAssetImporterModule->Import(assetFilePath.c_str());
-            }
-        }
-    }
+    InitSystems();
+    LoadEditorAssets();
 
     mSuperFrameController = SuperFrameController::GetInstance();
-    mSuperFrameController->Initialize();
-
+    mSuperFrameController->Initialize(*mRenderPipelineManager);
     mSuperControllerVector.push_back(mSuperFrameController);
 
+    // project init
+    EEditorMode editorMode = EditorConfig::GetInstance()->GetEditorMode();
+
+    if (editorMode == EEditorMode::eEditProject)
+    {
+
+        mProjectInitializer = EditorProjectManager::GetInstance();
+        mProjectInitializer->Initialize();
+        CreateEditWorkSpace();
+    }
+    else if (editorMode == EEditorMode::eProjectBrowser)
+    {
+        InitProjectBrowserWindow();
+        EditorProjectBrowserManager *editorProjectBrowserManager = EditorProjectBrowserManager::GetInstance();
+        editorProjectBrowserManager->Initialize(mProjectBrowserLogicalWindow->GetActiveCanvas());
+    }
+
     FNameTable *nameTable = FNameTable::GetInstance();
+}
 
-    // nameTable->GetIndex("Root");
-    //   nameTable->GetIndex("HP");
+void Quad::EditorDirector::Initialize(const RuntimeServices &services)
+{
+    mRuntimeServices = &services;
+    mAssetManager = mRuntimeServices->mAssetManager;
+    mUIManager = mRuntimeServices->mUIManager;
+    mRenderSystem = mRuntimeServices->mRenderSystem;
+    mGpuResourceManager = mRuntimeServices->mGpuResourceManager;
 
-    TextArch bArch(true);
+    Initialize();
+}
 
-    std::string nameTableFile = ProjectConfig::GetInstance()->GetProjectPath() + "/NameTable.txt";
-    bArch.SetFile(nameTableFile.c_str());
+void Quad::EditorDirector::Begin()
+{
+    if (Quad::EditorConfig::GetInstance()->GetEditorMode() == EEditorMode::eEditProject)
+    {
 
-    bArch.Start();
+        mProjectInitializer->InitProject();
 
-    nameTable->Serialize(bArch);
-
-    bArch.End();
-
-    /* mSuperAssetBrowerCon
-    troller = SuperAssetBrowerController::GetInstance();
-     mSuperAssetBrowerController->Initialize();*/
-
-    // editorModeDirector가 에디터가 가지는 기본 asset들을 로드할것이다.
-
-    // std::vector<Asset*> editorDefaultAssetVector=
-    // mEditorModeDirector.LoadAsset("C:\\Users\\dongd\\gitproject\\GameEngine\\SecenGraphQuadTree\\Asset");
-
-    // SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-
-    // std::vector<Asset*> editorAsset = mEditorModeDirector.LoadAsset(".\\Asset");
-
-    //  InitFileUiWindow();
-    // InitGamePlayWindow();   //game play window 라고하는데 동시에 월드 에디터이기도한거지
-    //   InitAttributeWindow();
-    // InitFrameWindow();
-    //  InitDragAndDropWindow();
-    //  InitPopupWindow();
-
-    // if (!mGraphicCommandObject->GetCloseState())
-    //{
-    //     mGraphicCommandObject->ExecuteCommandList();
-    //     mGraphicCommandObject->FlushCommandQueue();
-    // }
-
-    //
-    //    std::vector<DockingWindowController*>normalWindowControllerVector = {
-    //    mGameWindowPlayController,mFileUiWindowController,mAttributeWindowController };
-    //
-    //
-    //    mEditorModeDirector.SetGamePlayWindowChromeSystem(mGamePlayWindowChromeSystem);
-    //    mEditorModeDirector.InitGameWindowLayoutSystem();
-    ////    EditorModeDirector::SendAssetToFileSystem();
-    //
-    //   // AddVisibleEditorAssetToFileWindow(".\\EditorConfig\\EditorAssetVisibleConfig.json");
-
-    //    //여기까지는 에디터를 위한내용
-    // mProjectDirector.Initialize(mFrameWindow, std::move(normalWindowControllerVector), mPopupWindowController,
-    // mFrameWindowController, mFrameWindowUiSystem);
-
-    // FrameWindowMenuDirector::GetInstance();
+        DefaultEditorInspectorManager::GetInstance()->BeginInspectorUI();
+    }
 }
 
 void Quad::EditorDirector::PreUpdate(float deltaTime)
@@ -237,183 +181,28 @@ void Quad::EditorDirector::PreUpdate(float deltaTime)
 
     InputSystem *inputSystem = InputSystem::GetInstance();
 
-    Render::WindowHandle currActiveWindowHandle = inputSystem->GetCurrentWindowHandle();
-
-    for (auto element : mSuperControllerVector)
-    {
-        SuperController *controller = element;
-        if (controller->GetWindow()->GetWindowHandle() == currActiveWindowHandle)
-        {
-            MouseContext mouseContext = inputSystem->GetMouseContext();
-            controller->UpdateMouseInput(mouseContext);
-            // 키보드 update
-
-            break;
-        }
-    }
-
     mSuperFrameController->PreUpdate();
-    // mSuperAssetBrowerController->PreUpdate();
-
-    // int modeSwitchFlag = GetSwitchWindowSceneModeFlag();
-    // if (modeSwitchFlag == 1)
-    // {
-    //     //mFrameWindow->SetProjectSelectSceneFlag(true);
-    //     SwitchFrameWindow();
-    //    // SwitchFrameWindow();
-    //   //  SetSwitchWindowSceneModeFlag(0);//초기화
-    //     mWindowSwitchRenderFlag = true;
-    // }
-    // else if (modeSwitchFlag == 2)
-    // {
-    ////     mFrameWindow->SetProjectSelectSceneFlag(false);
-    //     SwitchCommonEditWindow();
-    //   //  SetSwitchWindowSceneModeFlag(0);//초기화
-    //     mWindowSwitchRenderFlag = true;
-    // }
 }
 
 void Quad::EditorDirector::Update(float deltaTime)
 {
 
+    mRenderPipelineManager->Update(mApp->GetTotalFrameCount(), mApp->GetLastCompletedFenceValue());
+
+    UpdateEditorTaskManagers();
+
+    //    UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    mUIManager->Update(deltaTime);
+
     // 지금이렇게 순서대로하는데 멀티스레드 고려를해봐야한다.
     mSuperFrameController->Update(deltaTime);
     // mSuperAssetBrowerController->Update(deltaTime);
 
-    // #ifndef EngineMode
-    //
-    //     //int modeSwitchFlag = GetSwitchWindowSceneModeFlag();
-    //     //if (modeSwitchFlag == 1)
-    //     //{
-    //     //    SwitchFrameWindow();
-    //     //    SetSwitchWindowSceneModeFlag(0);//초기화
-    //     //}
-    //     //else if (modeSwitchFlag == 2)
-    //     //{
-    //     //    SwitchCommonEditWindow();
-    //     //    SetSwitchWindowSceneModeFlag(0);//초기화
-    //     //}
-    //     //0은 상태유지
-    //
-    //     bool popupWindowActiveFlag = mPopupWindow->GetVisibilityState();
-    //     if (mFrameWindow->GetProjectSelectSceneFlag())
-    //     {
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->Update(deltaTime);
-    //
-    //
-    //         mFrameWindow->Update(deltaTime);
-    //
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->UploadObjectToRenderSystem();
-    //
-    //
-    //         mFrameWindow->UploadObjectToRenderSystem();     //du여기문제있다
-    //
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->EndUpdate(deltaTime);
-    //
-    //
-    //
-    //         mFrameWindow->EndUpdate(deltaTime);
-    //
-    //
-    //     }
-    //     else
-    //     {
-    //
-    //         //if(//활성화되어있다면)
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->Update(deltaTime);
-    //
-    //
-    //
-    //
-    //
-    //
-    //         if (!GetPlayModeState())
-    //         {
-    //             mFrameWindow->Update(deltaTime);
-    //             mFileUiWindow->Update(deltaTime);
-    //
-    //
-    //             mAttributeWindow->Update(deltaTime);
-    //
-    //         }
-    //
-    //
-    //         mRenderWindowTest->Update(deltaTime);
-    //
-    //
-    //
-    //
-    //
-    //         if (DragAndDropWindowController::GetWindowRunningState())
-    //         {
-    //             mDragAndDropWindow->Update(deltaTime);
-    //         }
-    //
-    //
-    //
-    //         //if(//활성화되어있다면)
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->UploadObjectToRenderSystem();
-    //
-    //
-    //         //render system으 object 전달(update내부에서 각각전달하면 다른 외부윈도우,시스템에 영향을 받아서
-    //         //더이상 렌더링될수없는데도 이미 렌더시스템에 전달해버려서 렌더시스템이 이미 삭제되거나 렌더되면안되는
-    //         오브젝트들에대해
-    //         // 렌더링을 시도할 수  있는 문제가있다)
-    //
-    //         //sendObjectToRenderSystem()
-    //         if (!GetPlayModeState())
-    //         {
-    //             mFrameWindow->UploadObjectToRenderSystem();
-    //             mFileUiWindow->UploadObjectToRenderSystem();
-    //             mAttributeWindow->UploadObjectToRenderSystem();
-    //
-    //         }
-    //
-    //
-    //         mRenderWindowTest->UploadObjectToRenderSystem();
-    //
-    //
-    //
-    //
-    //
-    //         if (DragAndDropWindowController::GetWindowRunningState())
-    //         {
-    //             mDragAndDropWindow->UploadObjectToRenderSystem();
-    //         }
-    //
-    //         //if(//활성화되어있다면)
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->EndUpdate(deltaTime);
-    //
-    //
-    //         //다음프레임을 위한 초기화 등등
-    //         if (!GetPlayModeState())
-    //         {
-    //             mFrameWindow->EndUpdate(deltaTime);
-    //             mFileUiWindow->EndUpdate(deltaTime);
-    //
-    //             mAttributeWindow->EndUpdate(deltaTime);
-    //
-    //         }
-    //
-    //         mRenderWindowTest->EndUpdate(deltaTime);
-    //
-    //
-    //
-    //
-    //         if (DragAndDropWindowController::GetWindowRunningState())
-    //         {
-    //             mDragAndDropWindow->EndUpdate(deltaTime);
-    //         }
-    //
-    //     }
-    //
-    // #endif
+    PrefabWorkSpaceManager::GetInstance()->Update(deltaTime);
+
+    Quad::EditorSceneManager::GetInstance()->Update(deltaTime);
+
+    GlobalOverlayManager::GetInstance()->Update(deltaTime);
 }
 
 void Quad::EditorDirector::EndUpdate(float deltaTime)
@@ -425,6 +214,15 @@ void Quad::EditorDirector::EndUpdate(float deltaTime)
 
     mSuperFrameController->EndUpdate();
     // mSuperAssetBrowerController->EndUpdate();
+    Quad::EditorSceneManager::GetInstance()->EndUpdate(deltaTime);
+}
+
+void Quad::EditorDirector::CleanUp()
+{
+
+    EditorSceneManager::GetInstance()->CleanUp();
+    //    UI::UIManager::GetInstance()->CleanUp();
+    mUIManager->CleanUp();
 }
 
 void Quad::EditorDirector::Draw()
@@ -433,70 +231,25 @@ void Quad::EditorDirector::Draw()
     // 렌더시스템이 렌더 혹은
 
     // 각 컨트롤러들이 draw  (이미 렌더아이템들은 다 제출된상황)
-    mSuperFrameController->Draw();
+    mSuperFrameController->Draw(*mRenderPipelineManager);
     // mSuperAssetBrowerController->Draw();
+}
 
+void Quad::EditorDirector::EndFrame()
+{
     Render::UIRenderItemBuilder::GetInstance()->EndFrame();
+    Render::RenderPipelineManager::GetInstance()->EndFrame();
+}
 
-    // #ifndef EngineMode
-    //     bool popupWindowActiveFlag = mPopupWindow->GetVisibilityState();
-    //
-    //     if (mFrameWindow->GetProjectSelectSceneFlag())
-    //     {
-    //         mFrameWindow->Draw();
-    //         if (popupWindowActiveFlag)
-    //             mPopupWindow->Draw();
-    //     }
-    //     else
-    //     {
-    //
-    //
-    //         if (!GetPlayModeState())
-    //         {
-    //             mAttributeWindow->Draw();
-    //             mFileUiWindow->Draw();
-    //
-    //             mFrameWindow->Draw();
-    //
-    //             if (popupWindowActiveFlag)
-    //                 mPopupWindow->Draw();
-    //
-    //             if (DragAndDropWindowController::GetWindowRunningState())
-    //             {
-    //                 mDragAndDropWindow->Draw();
-    //             }
-    //         }
-    //         mRenderWindowTest->Draw();
-    //
-    //
-    //
-    //     }
-    //
-    //
-    //
-    //     if (mWindowSwitchRenderFlag)
-    //     {
-    //         int modeSwitchFlag = GetSwitchWindowSceneModeFlag();
-    //
-    //         bool aa =mFrameWindow->GetProjectSelectSceneFlag();
-    //         if (modeSwitchFlag == 1)
-    //         {
-    //             //mFrameWindow->SetProjectSelectSceneFlag(true);
-    //             //SwitchFrameWindow();
-    //             mProjectDirector.SetOtherWindowVisibleOnOff(false);
-    //             SetSwitchWindowSceneModeFlag(0);//초기화
-    //         }
-    //         else if (modeSwitchFlag == 2)
-    //         {
-    //             //mFrameWindow->SetProjectSelectSceneFlag(false);
-    //            // SwitchCommonEditWindow();
-    //             mProjectDirector.SetOtherWindowVisibleOnOff(true);
-    //             SetSwitchWindowSceneModeFlag(0);//초기화
-    //         }
-    //
-    //         mWindowSwitchRenderFlag = false;
-    //     }
-    // #endif
+void Quad::EditorDirector::ShutDownWindow()
+{
+    mSuperFrameController->ShutDownWindow();
+}
+
+void Quad::EditorDirector::EndSystem()
+{
+    Render::RenderPipelineManager::GetInstance()->EndRenderThread();
+    Render::AssetResolver::GetInstance()->EndResourceResolveThread();
 }
 
 void Quad::EditorDirector::SetSwitchWindowSceneModeFlag(int flag)
@@ -510,1484 +263,587 @@ const int Quad::EditorDirector::GetSwitchWindowSceneModeFlag() const
     return 0; // mFrameWindowSceneSwitch;
 }
 
-// void Quad::EditorDirector::InitSystem()
-//{
-//
-//     QuadLog::Logger* log = QuadLog::Logger::GetInstance();
-//     bool logRet = log->SetLoggerFile("EditorLogFile.txt");
-//
-//
-//     mProjectInitializer = EditorProjectManager::GetInstance();
-//
-//     mProjectInitializer->Initialize();
-//
-//
-//
-//     mTextureImporter = std::make_unique<EditorTextureImporter>(Import::TextureImporter::GetInstance(),
-//     CoreAsset::TextureManager::GetInstance(), CoreAsset::AssetMetaDataManager::GetInstance());
-//
-//
-//     QuadPF::PhysicalFileSystem *  physicalFileSystem = QuadPF::PhysicalFileSystem::GetInstance();
-//
-//     QuadLF::LogicalFileSystem * logicalFileSystem = QuadLF::LogicalFileSystem::GetInstance();
-//
-//
-//     CoreAsset::AssetLoader * assetLoader = CoreAsset::AssetLoader::GetInstance();
-//
-//
-//
-//
-// }
-
-// void Quad::EditorDirector::InitGamePlayWindow()
-//{
-//     mRenderWindowTest = new GameRenderWindow(mHinstance);
-//
-//
-//     UINT gameWindowClientWidth = mRenderWindowTest->GetClientWidth();
-//     UINT gameWindowClientHeight = mRenderWindowTest->GetClientHeight();
-//     HWND gameWindowHandle = mRenderWindowTest->GetWindowHandle();
-//
-//
-//     //render system
-//     RenderSystem* renderSystem = new RenderSystem;
-//     renderSystem->Initialize(mDevice, mFactory, mGraphicCommandObject,
-//         gameWindowHandle, gameWindowClientWidth, gameWindowClientHeight, mDescriptorHeapManagerMaster, GAMEWINDOW);
-//
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"),ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"),ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"),ESystemType::eWindowLayoutSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"),ESystemType::eDockingSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"),ESystemType::eWindowLayoutSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"),ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"),ESystemType::eWindowLayoutSystem);
-//    // AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"),ESystemType::eDockingSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"),ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"),ESystemType::eWindowLayoutSystem);
-//     //AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eDockingSystem);
-//
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"),ESystemType::eMainSystem);
-//
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"),ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("GizmoLine.effect"),ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Gizmo.effect"), ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("GizmoRotation.effect"), ESystemType::eMainSystem);
-//
-//   //  AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eWindowLayoutSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eDockingSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TestEffect"), ESystemType::eMainSystem);
-//    // AddEffect(renderSystem, EffectManager::GetEffect("TestEffect"), ESystemType::eWindowLayoutSystem);
-//   //  AddEffect(renderSystem, EffectManager::GetEffect("TestEffect"), ESystemType::eDockingSystem);
-//
-//
-//
-//     renderSystem->SetColliderWorldRenderState(true);
-//
-//
-//
-//
-//
-//
-//
-//     //System을 초기화하면서 맵들, 그 맵에있는엔티티들,등등을 로드하고 초기화한다.
-//         //Controller
-//     GamePlayWindowController* wcontroller = new GamePlayWindowController(renderSystem);
-//     mGameWindowPlayController = wcontroller;
-//     wcontroller->SetName("gameWindowPlayController");
-//     Controller::AddController("gameWindowPlayController", wcontroller);
-//
-//     GamePlaySystem* gamePlaySystem = new GamePlaySystem;
-//    // GamePlayUiSystem* gamePlayUiSystem = new GamePlayUiSystem;
-//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eGamePlayLayoutSystem);
-//     mGamePlayWindowChromeSystem = windowLayoutSystem;
-//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eGamePlayDockingSystem);
-//
-//
-//     wcontroller->Initialize(mDevice, mGraphicCommandObject->GetGraphicsCommandList(), MeshManager::GetInstance(),
-//         MaterialManager::GetInstance(), TextureManager::GetInstance(), MapManager::GetInstance(), mRenderWindowTest,
-//         gamePlaySystem, windowLayoutSystem, windowDockingSystem, mDescriptorHeapManagerMaster, false);
-//
-//     gamePlaySystem->SetController(wcontroller);
-//   //  gamePlayUiSystem->SetController(wcontroller);
-//     windowLayoutSystem->SetController(wcontroller);
-//     windowDockingSystem->SetController(wcontroller);
-//
-//     wcontroller->SetWindowActiveFlag(false);
-//
-//
-//
-//
-//     InitGameProject(mRenderWindowTest, wcontroller, gamePlaySystem, windowLayoutSystem,
-//         windowDockingSystem);
-//
-//
-//
-//     //유일하게 gameWindow만 false로 시작한다.
-//     //다른 window들은 항상 play mode이기때문에(true) //그리고 이미 ui,main system은 false로 설정되었다
-//     (내부초기화때문에)
-//     //일단 컨트롤러에서 직접 상태를 가져오는 일이 없는거같지만 그래도 controller와 동기화해주자
-//     wcontroller->SetPlayMode(false);
-//
-//
-//     wcontroller->SetTitleBarSize(true, 3000, 40);
-//     //gamePlayUiSystem->SetDefaultController("gameWindowPlayController");
-//
-//     mRenderWindowTest->Initialize(wcontroller);
-//
-//
-//     auto eventDispatcher = EventDispatcher::GetInstance();
-//     eventDispatcher->RegisterSystem(gamePlaySystem);
-//     //eventDispatcher->RegisterSystem(gamePlayUiSystem);
-//     eventDispatcher->RegisterSystem(windowLayoutSystem);
-//     eventDispatcher->RegisterSystem(windowDockingSystem);
-//
-//
-//
-//
-//
-//     KeyBoard::SetHwnd(mRenderWindowTest->GetWindowHandle());
-// }
-//
-// void Quad::EditorDirector::InitFileUiWindow()
-//{
-//     mFileUiWindow = new FileUiWindow(mHinstance);
-//
-//     //window controller;
-//     //  Controller* controller = new MapController;// new Controller;
-//
-//     //rendersystem
-//
-//     //3d,ui,chrome system
-//
-//     UINT clientWidth = mFileUiWindow->GetClientWidth();
-//     UINT clientHeight = mFileUiWindow->GetClientHeight();
-//
-//     //renderSystem;
-//     RenderSystem* renderSystem = new RenderSystem;
-//     renderSystem->Initialize(mDevice,
-//         mFactory, mGraphicCommandObject, mFileUiWindow->GetWindowHandle(),
-//         clientWidth, clientHeight, mDescriptorHeapManagerMaster, FILEUIWINDOW);
-//
-//
-//     FileUiWindowContoller* wController = new FileUiWindowContoller(renderSystem);// new Controller;
-//     mFileUiWindowController = wController;
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"),ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"),ESystemType::eWindowLayoutSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"),ESystemType::eDockingSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eWindowLayoutSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eDockingSystem);
-//
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"), ESystemType::eWindowLayoutSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"),ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eWindowLayoutSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eWindowLayoutSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eDockingSystem);
-//
-//     //  SetCurrentDirectory(beforeDirectory);
-//
-//
-//
-//
-//
-//
-//
-//     wController->SetName("FileUiWindowController");
-//     Controller::AddController("FileUiWindowController", wController);
-//
-//     //ui System;
-//    // FileUiSystem* mainSystem = new FileUiSystem;
-//     FileUiUiSystem* mainSystem = new FileUiUiSystem;
-//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eFileUiLayoutSystem);
-//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eFileUiDockingSystem);
-//     //uiSystem->SetController(wController);
-//     mainSystem->SetController(wController);
-//     windowLayoutSystem->SetController(wController);
-//     windowDockingSystem->SetController(wController);
-//     windowDockingSystem->SetController(wController);
-//
-//     wController->Initialize(mDevice, mGraphicCommandObject->GetGraphicsCommandList(), MeshManager::GetInstance(),
-//     MaterialManager::GetInstance(), TextureManager::GetInstance(),
-//         MapManager::GetInstance(), mFileUiWindow,mainSystem, windowLayoutSystem,
-//         windowDockingSystem, mDescriptorHeapManagerMaster);
-//
-//     mFileUiWindow->Initialize(wController);
-//
-//     InitFileUiUiSystem(mFileUiWindow, mainSystem);
-//    // InitFileUiSystem2(mFileUiWindow , mainSystem);
-//     InitFileUiWindowLayoutSystem(mFileUiWindow, windowLayoutSystem);
-//     InitChildWindowDockingSystem(mFileUiWindow, windowDockingSystem);
-//
-//
-//     wController->SetTitleBarSize(true, 3000, 40);
-//     wController->SetWindowActiveFlag(false);
-//
-//     auto eventDispatcher = EventDispatcher::GetInstance();
-//     eventDispatcher->RegisterSystem(mainSystem);
-//   //  eventDispatcher->RegisterSystem(uiSystem);
-//     eventDispatcher->RegisterSystem(windowLayoutSystem);
-//     eventDispatcher->RegisterSystem(windowDockingSystem);
-//
-//
-//     //윈도우생성
-//     //윈도우컨트롤러 생성
-//     //시스템들을 생성
-//
-//     //윈도우 컨트롤러 초기화 ( 시스템 패싱)
-//     //컨트롤러 초기화에서 시스템 초기화수행
-//     //맵은 없는상태
-//
-//
-//
-//
-//     //그이후 맵추가
-//     //(맵추가할때 카메라등등처리)
-//
-//
-//
-//     KeyBoard::SetHwnd(mFileUiWindow->GetWindowHandle());
-//
-// }
-//
-// void Quad::EditorDirector::InitAttributeWindow()
-//{
-//
-//     mAttributeWindow = new AttributeWindow(mHinstance);
-//     //  Controller* controller = new MapController;// new Controller;
-//
-//
-//     UINT clientWidth = mAttributeWindow->GetClientWidth();
-//     UINT clientHeight = mAttributeWindow->GetClientHeight();
-//
-//     //renderSystem;
-//     RenderSystem* renderSystem = new RenderSystem;
-//     renderSystem->Initialize(mDevice,
-//         mFactory, mGraphicCommandObject, mAttributeWindow->GetWindowHandle(),
-//         clientWidth, clientHeight, mDescriptorHeapManagerMaster, ATTRIBUTEWINDOW);
-//
-//     DockingWindowController* wController = new DockingWindowController(renderSystem);// new Controller;
-//     mAttributeWindowController = wController;
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"),ESystemType::eMainSystem);
-//
-//
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eMainSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eDockingSystem);
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eWindowLayoutSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"), ESystemType::eWindowLayoutSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"),ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"), ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"), ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("ScrollListPanelUi.effect"), ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("ScrollListChildPanelUi.effect"), ESystemType::eMainSystem);
-//
-//     AddEffect(renderSystem, EffectManager::GetEffect("Docking.effect"), ESystemType::eDockingSystem);
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//     wController->SetName("AttributeWindowController");
-//     Controller::AddController("AttributeWindowController", wController);
-//     //ui System;
-//     AttributeUiSystem* uiSystem = new AttributeUiSystem;
-//     //AttributeSystem* worldSystem = new AttributeSystem;
-//     WindowChromeSystem* windowLayoutSystem = new WindowChromeSystem(ESystemID::eAttributeLayoutSystem);
-//     ChildWindowDockingSystem* windowDockingSystem = new ChildWindowDockingSystem(ESystemID::eAttributeDockingSystem);
-//
-//
-//     mAttributeWindow->Initialize(wController);
-//     uiSystem->SetController(wController);
-//   //  worldSystem->SetController(wController);
-//     windowLayoutSystem->SetController(wController);
-//     windowDockingSystem->SetController(wController);
-//     windowDockingSystem->SetController(wController);
-//
-//
-//
-//     wController->Initialize(mDevice, mGraphicCommandObject->GetGraphicsCommandList(), MeshManager::GetInstance(),
-//     MaterialManager::GetInstance(), TextureManager::GetInstance(),
-//         MapManager::GetInstance(), mAttributeWindow, uiSystem, windowLayoutSystem, windowDockingSystem,
-//         mDescriptorHeapManagerMaster);
-//
-//  //   InitAttributeSystem(mAttributeWindow, worldSystem);
-//     InitAttributeUiSystem(mAttributeWindow, uiSystem);
-//     InitAttributeWindowLayoutSystem(mAttributeWindow, windowLayoutSystem);
-//     InitChildWindowDockingSystem(mAttributeWindow, windowDockingSystem);
-//
-//
-//
-//     wController->SetWindowActiveFlag(false);
-//
-//
-//
-//
-//     wController->SetTitleBarSize(true, 3000, 40);
-//
-//     auto eventDispatcher = EventDispatcher::GetInstance();
-//     //eventDispatcher->RegisterSystem(worldSystem);
-//     eventDispatcher->RegisterSystem(uiSystem);
-//     eventDispatcher->RegisterSystem(windowLayoutSystem);
-//     eventDispatcher->RegisterSystem(windowDockingSystem);
-//
-//
-//     KeyBoard::SetHwnd(mAttributeWindow->GetWindowHandle());
-//
-// }
-
-// void Quad::EditorDirector::InitFrameWindow()
-//{
-//
-//
-//
-//     mFrameWindow = new FrameWindow(mHinstance);
-//
-//         //  Controller* controller = new MapController;// new Controller;
-//
-//
-//         UINT clientWidth = mFrameWindow->GetClientWidth();
-//         UINT clientHeight = mFrameWindow->GetClientHeight();
-//
-//         //renderSystem;
-//         RenderSystem* renderSystem = new RenderSystem;
-//         renderSystem->Initialize(mDevice,
-//             mFactory, mGraphicCommandObject, mFrameWindow->GetWindowHandle(),
-//             clientWidth, clientHeight, mDescriptorHeapManagerMaster, FRAMEWINDOW);
-//
-//
-//         FrameWindowController* wController = new FrameWindowController(renderSystem);// new Controller;
-//         mFrameWindowController = wController;
-//
-//         AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"), ESystemType::eDockingSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("Default.effect"), ESystemType::eWindowLayoutSystem);
-//
-//
-//         AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eDockingSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eWindowLayoutSystem);
-//
-//
-//         AddEffect(renderSystem, EffectManager::GetEffect("WindowLayout.effect"), ESystemType::eWindowLayoutSystem);
-//
-//         AddEffect(renderSystem, EffectManager::GetEffect("TextBox.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eWindowLayoutSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("DefaultCollider.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("ScrollListPanelUi.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("ScrollListChildPanelUi.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("Line.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("Spline.effect"), ESystemType::eMainSystem);
-//         AddEffect(renderSystem, EffectManager::GetEffect("Thick2DSpline.effect"), ESystemType::eMainSystem);
-//        // EffectManager::GetEffect("Default.effect");
-//
-//
-//
-//         wController->SetName("FrameWindowController");
-//
-//         Controller::AddController("FrameWindowController", wController);
-//         //ui System;
-//         FrameWindowUiSystem* uiSystem = new FrameWindowUiSystem;
-//         mFrameWindowUiSystem = uiSystem;    //ProjectDirector초기화를위해
-//         //FrameWindowSystem* worldSystem = new FrameWindowSystem;
-//
-//         WindowChromeSystem* windowLayoutSystem = nullptr; //new WindowChromeSystem(ESystemID::eFrameLayoutSystem);
-//         FrameWindowDockingSystem* windowDockingSystem = nullptr; // new FrameWindowDockingSystem;
-//
-//
-//
-//         wController->Initialize(mDevice, mGraphicCommandObject->GetGraphicsCommandList(), MeshManager::GetInstance(),
-//         MaterialManager::GetInstance(), TextureManager::GetInstance(),
-//             MapManager::GetInstance(), mFrameWindow, uiSystem, windowLayoutSystem,
-//             windowDockingSystem, mDescriptorHeapManagerMaster);
-//
-//         wController->SetWindowActiveFlag(true);
-//
-//         uiSystem->SetController(wController);
-//         //worldSystem->SetController(wController);
-//      //   windowLayoutSystem->SetController(wController);
-//      //   windowDockingSystem->SetController(wController);
-//
-//         //InitFrameWindowSystem(mFrameWindow, worldSystem);
-//         InitFrameWindowUiSystem(mFrameWindow, uiSystem);
-//      //   InitFrameWindowLayoutSystem(mFrameWindow, windowLayoutSystem);
-//      //   InitFrameWindowDockingSystem(mFrameWindow, windowDockingSystem);
-//
-//
-//         mFrameWindow->Initialize(wController);
-//
-//         mFrameWindow->SetProjectSelectSceneFlag(true);
-//         uiSystem->SetActiveState(true);
-//       //  worldSystem->SetActiveState(true);
-//        windowLayoutSystem->SetActiveState(true);
-//      //   windowDockingSystem->SetActiveState(false);
-//
-//
-//
-//
-//
-//        // wController->SetTitleBarSize(true, 3000, 60);
-//
-//
-//      //   wController->InitChildWindowSetting(mRenderWindowTest, mAttributeWindow,mFileUiWindow);
-//         mFrameWindow->OnResize(clientWidth, clientHeight, 0);
-//
-//         auto eventDisaptcher = EventDispatcher::GetInstance();
-//         //eventDisaptcher->RegisterSystem(worldSystem);
-//         eventDisaptcher->RegisterSystem(uiSystem);
-//       //  eventDisaptcher->RegisterSystem(windowLayoutSystem);
-//      //  eventDisaptcher->RegisterSystem(windowDockingSystem);
-//
-//
-//
-//
-//
-//         mFrameWindowMenuDirector.Initialize(windowLayoutSystem);
-//
-//         KeyBoard::SetHwnd(mFrameWindow->GetWindowHandle());
-//
-//
-// }
-
-// void Quad::EditorDirector::InitDragAndDropWindow()
-//{
-//   //  //mDragAndDropWindow = new DragAndDropWindow(mHinstance,;
-//
-//
-//
-//   //  DragAndDropWindowController* controller = new DragAndDropWindowController(&mDragAndDropRenderSystem);
-//
-//
-//   //
-//   //  DragAndDropSystem* uiSystem = new DragAndDropSystem;
-//   //  uiSystem->SetController(controller);
-//
-//   //  Map* map = EditorMapManager::CreateEngineSystemMap(uiSystem, "DragAndDropWindowMainMap");
-//   //  uiSystem->Initialize(300, 100, map);
-//   //  //map->SetName("DragAndDropWindowMainMap");
-//
-//   //  //
-//   ////  map->Initialize(uiSystem);
-//
-//   // // VectorSpace* vectorSpace = new VectorSpace;
-//   // // vectorSpace->Initialize(600);
-//
-//
-//
-//   //  mDragAndDropWindow = new DragAndDropWindow(mHinstance);
-//   //  mDragAndDropWindow->Initialize(controller, 300, 100);
-//
-//   //  mDragAndDropRenderSystem.Initialize(mDevice, mFactory,
-//   //      mGraphicCommandObject, mDragAndDropWindow->GetWindowHandle(), 300, 100, mDescriptorHeapManagerMaster,
-//   DRAGANDDROPWINDOW);
-//
-//
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("Default.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("WindowLayout.effect"),
-//   ESystemType::eWindowLayoutSystem);
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextBox.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("TextCharacter.effect"),
-//   ESystemType::eMainSystem);
-//   //  AddEffect(&mDragAndDropRenderSystem, EffectManager::GetEffect("DefaultCollider.effect"),
-//   ESystemType::eMainSystem);
-//
-//
-//
-//   //  //드래그앤드랍윈도우에대한 고유의 시스템이 필요하다.
-//
-//
-//   //  controller->Initialize(mDragAndDropWindow, uiSystem);
-//
-//
-//
-//
-//
-//   // // CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
-//
-//   ////  map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)100 ,0.0f,1.0f });
-//
-//   //
-//   //
-//   //
-//   //  map->CreateMapLayer(0, 0, nullptr, { 0,0,(float)300,(float)400,0.0f,1.0f });
-//   //  //default 3D - mapLayer 1
-//   //  map->CreateMapLayer(0, 0, nullptr, { 0,0,(float)300,(float)400,0.0f,1.0f });
-//
-//
-//
-//   //  //ui collisionWorld
-//   //  auto spacePartitioningStructureFactoryUi = SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-//   //  SpacePartitioningStructure<UiCollider>* spacePartitioningStructureUi =
-//   spacePartitioningStructureFactoryUi->CreateSpacePartitioningStructure("VectorSpace");
-//
-//   //  auto collisionWorldFactory = CollisionWorldFactory::GetInstance();
-//   //  UiCollisionWorld* CollisionWorldUi =
-//   collisionWorldFactory->CreateUiCollisionWorld(spacePartitioningStructureUi);
-//
-//   //  map->SetDefaultUiCollisionWorld(CollisionWorldUi);
-//
-//
-//
-//   //  //3d collisionWorld
-//   //  auto spacePartitioningStructureFactory3D = SpacePartitioningStructureFactory<Collider>::GetInstance();
-//   //  SpacePartitioningStructure<Collider>* spacePartitioningStructure3D =
-//   spacePartitioningStructureFactory3D->CreateSpacePartitioningStructure("VectorSpace");
-//
-//   //  CollisionWorld* CollisionWorld3D = collisionWorldFactory->CreateCollisionWorld(spacePartitioningStructure3D);
-//
-//   //  map->SetDefault3DCollisionWorld(CollisionWorld3D);
-//
-//
-//
-//   //  uiSystem->Start();
-//
-//
-//
-//
-//
-//   //  Map* currMap = uiSystem->GetMap();
-//
-//   //  //   OrthogoanlCamera* camera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//   //  OrthogoanlCamera* camera = OrthogoanlCamera::Create(map, 0, 300, 100);
-//
-//   //  //  camera->Initialize(300, 100);
-//   //  currMap->SetMainCamera(camera);
-//
-//
-//
-//
-//   //  auto eventDispatcher = EventDispatcher::GetInstance();
-//
-//   //  eventDispatcher->RegisterSystem(uiSystem);
-//
-//
-//
-// }
-//
-// void Quad::EditorDirector::InitPopupWindow()
-//{
-//   //  PopupWindowUiSystem* uiSystem = new PopupWindowUiSystem;
-//   //  Map* map = EditorMapManager::CreateEngineSystemMap(uiSystem, "PopupUiSystem");
-//   //  // map->Initialize(uiSystem);
-//
-//
-//
-//   ////  map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)300, (float)400 ,0.0f,1.0f });
-//
-//
-//   //
-//
-//   //  //   Camera* camera = new PopupSystemCamera(L"PopupSystemCamera");
-//
-//
-//
-//   //  PopupWindowController* controller = new PopupWindowController(&mPopupRenderSystem);
-//   //  mPopupWindowController = controller;
-//
-//
-//   //  mPopupWindow = new PopupWindow(mHinstance, 300, 400, false);
-//   //  mPopupWindow->Initialize(controller);
-//
-//   //  uiSystem->Initialize(300, 400, map);
-//   //  uiSystem->SetController(controller);
-//
-//   //  //default Ui - mapLayer 0
-//   //  map->CreateMapLayer(0, 0, nullptr, { 0,0,(float)300,(float)400,0.0f,1.0f });
-//   //  //default 3D - mapLayer 1
-//   //  map->CreateMapLayer(0, 0, nullptr, { 0,0,(float)300,(float)400,0.0f,1.0f });
-//
-//
-//
-//   //  //ui collisionWorld
-//   //  auto spacePartitioningStructureFactoryUi = SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-//   //  SpacePartitioningStructure<UiCollider>* spacePartitioningStructureUi =
-//   spacePartitioningStructureFactoryUi->CreateSpacePartitioningStructure("VectorSpace");
-//
-//   //  auto collisionWorldFactory = CollisionWorldFactory::GetInstance();
-//   //  UiCollisionWorld* CollisionWorldUi =
-//   collisionWorldFactory->CreateUiCollisionWorld(spacePartitioningStructureUi);
-//
-//   //  map->SetDefaultUiCollisionWorld(CollisionWorldUi);
-//
-//
-//
-//   //  //3d collisionWorld
-//   //  auto spacePartitioningStructureFactory3D = SpacePartitioningStructureFactory<Collider>::GetInstance();
-//   //  SpacePartitioningStructure<Collider>* spacePartitioningStructure3D =
-//   spacePartitioningStructureFactory3D->CreateSpacePartitioningStructure("VectorSpace");
-//
-//   //  // auto collisionWorldFactory = CollisionWorldFactory::GetInstance();
-//   //  CollisionWorld* CollisionWorld3D = collisionWorldFactory->CreateCollisionWorld(spacePartitioningStructure3D);
-//
-//   //  map->SetDefault3DCollisionWorld(CollisionWorld3D);
-//
-//
-//
-//   //  uiSystem->Start();
-//
-//
-//
-//
-//
-//   //
-//
-//   //  Map* currMap = uiSystem->GetMap();
-//
-//
-//   //  // PopupSystemCamera* camera = static_cast<PopupSystemCamera*>(currMap->CreateObject("PopupSystemCamera"));
-//   //  PopupSystemCamera* camera = PopupSystemCamera::Create(currMap, 0, 300, 400);
-//   //  //  camera->Initialize(300, 400);
-//   //  camera->SetPosition(0, 0, 0);
-//   //  currMap->SetMainCamera(camera);
-//
-//   //  mPopupRenderSystem.Initialize(mDevice, mFactory, mGraphicCommandObject, mPopupWindow->GetWindowHandle(), 300,
-//   400, mDescriptorHeapManagerMaster, POPUPWINDOW);
-//
-//   //  mPopupRenderSystem.SetBackgroundColor(0.2f, 0.2f, 0.2f, 1.0f);
-//   //  controller->Initialize(mPopupWindow, uiSystem);
-//
-//   // // AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("Default.effect"));
-//   //  AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("DefaultUi.effect"), ESystemType::eMainSystem);
-//   //  // AddEffect(&mPopupRenderSystem, EffectTable::GetEffect(L"WindowLayout.effect"));
-//   //  AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextBox.effect"), ESystemType::eMainSystem);
-//   //  AddEffect(&mPopupRenderSystem, EffectManager::GetEffect("TextCharacter.effect"), ESystemType::eMainSystem);
-//   //  // AddEffect(mPopupRenderSystem, EffectTable::GetEffect(L"DefaultCollider.effect"));
-//
-//
-//
-//
-//   //  KeyBoard::SetHwnd(mPopupWindow->GetWindowHandle());
-//
-// }
-//
-// void Quad::EditorDirector::InitGameProject(TaskWindow* window, DockingWindowController* controller, GamePlaySystem*
-// gamePlaySystem,  WindowChromeSystem* windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem)
-//{
-//     //InitGamePlayUiSystem(window, gamePlayUiSystem);
-//     InitGamePlaySystem(window, gamePlaySystem);
-//     InitGamePlayWindowLayoutSystem(window, windowLayoutSystem);
-//     InitChildWindowDockingSystem(window, windowDockingSystem);
-//
-//     //gamePlayUiSystem->SetController(controller);
-//     gamePlaySystem->SetController(controller);
-//     windowLayoutSystem->SetController(controller);
-//     windowDockingSystem->SetController(controller);
-//
-// }
-//
-// void Quad::EditorDirector::InitGamePlaySystem(TaskWindow* window, GamePlaySystem* system)
-//{
-////    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), nullptr);
-//
-//
-//
-//}
-//
-// void Quad::EditorDirector::InitGamePlayUiSystem(TaskWindow* window, GamePlayUiSystem* system)
-//{
-//   // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), nullptr);
-//}
-//
-////void Quad::EditorDirector::InitAttributeSystem(TaskWindow* window, AttributeSystem* system)
-////{
-////
-////
-////    Map* map = EditorSystem::CreateMap(system, "AttrMainMap", false, false);
-////    //  map->SetName("AttrMainMap");
-////    //  map->Initialize(system);
-////   /* map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
-///(float)window->GetClientHeight() ,0.0f,1.0f });*/
-////
-////    initDefaultMapSetting(window, map);
-////    // Camera* gameCamera = new Camera(L"GameCamera");
-////
-////
-////
-////    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-////    Map* currMap = system->GetMap();
-////    // FrustumCamera* gameCamera = static_cast<FrustumCamera*>(currMap->CreateObject("FrustumCamera"));
-////    FrustumCamera* gameCamera = FrustumCamera::Create(currMap, 0, DirectX::XM_PI / 2,
-///(float)window->GetClientWidth() / window->GetClientHeight()); /    //  gameCamera->Initialize(DirectX::XM_PI / 2,
-///(float)window->GetClientWidth() / window->GetClientHeight()); /    currMap->SetMainCamera(gameCamera); /    //
-/// map->SetCameraType(ECameraType::ePerspectiveCamera); / currMap->GetMainCamera()->GetTransform().SetPositionLocal({
-/// 0,0,-10.0f });
-////
-////}
-//
-// void Quad::EditorDirector::InitAttributeUiSystem(TaskWindow* window, AttributeUiSystem* system)
-//{
-//
-//
-//    Map* map = EditorMapManager::CreateEngineSystemMap(system, "AttrUiMainMap");
-//    // map->SetName("AttrUiMainMap");
-//    // map->Initialize(system);
-//
-//
-//
-//   // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//
-//    initDefaultMapSetting(window, map);
-//
-//
-//
-//    map->SetViewportAutoFlag(false, 1);
-//
-//
-//    RenderTargetTexture* renderTargetTexture =
-//    TextureManager::CreateRenderTargetTexture("AnimationEdit3DPanelTexture", 300, 300);
-//    //TextureManager::AddTexture(renderTargetTexture, L"AnimationEdit3DPanelTexture");
-//    renderTargetTexture->SetEngineContentItemFlag(true);
-//
-//    Texture* depthStencilBuffer = TextureManager::CreateDepthStencilBuffer("AnimationEdit3DPanelDepthStencilBuffer",
-//    300, 300);
-//    //map layer 1
-//    depthStencilBuffer->SetEngineContentItemFlag(true);
-//    //  vectorSpace = new VectorSpace;
-//    //  vectorSpace->Initialize(100);
-//   //   CollisionWorld* animationEdit3DCollisionWorld = new CollisionWorld(vectorSpace);
-//
-//
-//    //  map->CreateMapLayer(1, 1, nullptr, animationEdit3DCollisionWorld, { 0,0,300,300,0.0f,1.0f },
-//    renderTargetTexture, //depthStencilBuffer);
-//
-//    MapLayer& default3DMapLayer = map->GetMapLayer(1);
-//    default3DMapLayer.mID = 1;
-//    default3DMapLayer.mDepthPriority = 1;
-//    default3DMapLayer.mViewPort = { 0,0,300,300,0.0f,1.0f };
-//    default3DMapLayer.mRenderTarget = renderTargetTexture;
-//    default3DMapLayer.mDepthStencilBuffer = depthStencilBuffer;
-//
-//    //  Camera* animationEdit3DCamera = new Camera(L"AnimationEdit3DCamera");
-//
-//
-//    system->Start();
-//
-//
-//
-//
-//    Map* currMap = system->GetMap();
-//
-//
-//    // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
-//    window->GetClientHeight());
-//    // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//    currMap->SetMainCamera(gameCamera);
-//
-//
-//
-//    //  FrustumCamera* animationEdit3DCamera = static_cast<FrustumCamera*>(currMap->CreateObject("FrustumCamera", 1));
-//    FrustumCamera* animationEdit3DCamera = FrustumCamera::Create(currMap, 0, 1000, 1000);
-//    //    animationEdit3DCamera->Initialize(1000, 1000);
-//    currMap->SetMainCamera(animationEdit3DCamera, 1);
-//
-//
-//    //map->SetCameraType(ECameraType::ePerspectiveCamera);
-//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,0.0f });
-//
-//
-//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2,-1.0f *
-//    (float)window->GetClientHeight() / 2 , 0 });
-//
-//
-//
-//}
-//
-// void Quad::EditorDirector::InitFileUiUiSystem(TaskWindow* window, FileUiUiSystem* system)
-//{
-//   //// VectorSpace* vectorSpace = new VectorSpace;
-//   //// vectorSpace->Initialize(100000000);
-//   //// CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
-//
-//
-//   // Map* map = EditorMapManager::CreateEngineSystemMap(system, "FileUiUiMainMap");
-//   // //  map->SetName("FileUiUiMainMap");
-//   // //  map->Initialize(system);
-//
-//
-//
-//
-//   // //gameCamera를 설정은했는데 맵으로 들어가진않은거지
-//
-//   // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//   // //Map* currMap = system->GetMap();
-//   // initDefaultMapSetting(window, map);
-//
-//   // system->Start();
-//
-//
-//   // //  OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//   // OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(map, 0, window->GetClientWidth(),
-//   window->GetClientHeight());
-//   // //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//   // map->SetMainCamera(gameCamera);
-//   // //map->SetCameraType(ECameraType::ePerspectiveCamera);
-//   // map->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,-10.0f });
-//
-//}
-//
-// void Quad::EditorDirector::InitFileUiSystem2(TaskWindow* window, FileUiSystem* system)
-//{
-//
-//
-//    Map* map = EditorMapManager::CreateEngineSystemMap(system, "FileUiMainMap");
-//    //   map->SetName("FileUiMainMap");
-//     //  map->Initialize(system);
-//    initDefaultMapSetting(window, map);
-//
-//
-//    system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//    Map* currMap = system->GetMap();
-//    //  OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
-//    window->GetClientHeight());
-//    //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//    currMap->SetMainCamera(gameCamera);
-//    //map->SetCameraType(ECameraType::ePerspectiveCamera);
-//    currMap->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,0.0f });
-//
-//
-//}
-//
-
-// void Quad::EditorDirector::InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system)
-//{
-//
-//
-//
-//     Map* map = EditorSystem::CreateMap(system, "FrameWindowMainMap", false, false);
-//
-//     initDefaultMapSetting(window, map);
-//
-//
-//     system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//
-//     Map* currMap = system->GetMap();
-//     //OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//     OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
-//     window->GetClientHeight());
-//     //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//
-//     currMap->SetMainCamera(gameCamera);
-//
-//     //map->SetCameraType(ECameraType::ePerspectiveCamera);
-//
-//     currMap->GetMainCamera()->GetTransform().SetPositionLocal({ 0,0,0.0f });
-// }
-
-// void Quad::EditorDirector::InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system)
-//{
-//
-//
-//    // Map* map = EditorMapManager::CreateEngineSystemMap(system, "FrameWindowUiMainMap");
-//    // // map->SetName("FrameWindowUiMainMap");
-//    ////  map->Initialize(system);
-//
-//
-//    //
-//
-//
-//    // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//
-//    // initDefaultMapSetting(window, map);
-//
-//    // system->Start();
-//    // Map* currMap = system->GetMap();
-//
-//    // // OrthogoanlCamera* gameCamera = static_cast<OrthogoanlCamera*>(currMap->CreateObject("OrthogoanlCamera"));
-//    // OrthogoanlCamera* gameCamera = OrthogoanlCamera::Create(currMap, 0, window->GetClientWidth(),
-//    window->GetClientHeight());
-//
-//    // //  gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//    // currMap->SetMainCamera(gameCamera);
-//    // // map->SetCameraType(ECameraType::ePerspectiveCamera);
-//    // currMap->GetMainCamera()->GetTransform().SetPositionLocal({ (float)window->GetClientWidth() / 2,
-//    (float)-window->GetClientHeight() / 2,0.0f });
-//    // //system->SetViewPort(0, 60, (float)window->GetClientWidth(), (float)window->GetClientHeight(), 0.0f, 1.0f);
-//
-//
-//    // auto cameraEventComponentFactory = CameraEventComponentFactory::GetInstance();
-//
-//    // CameraFixWindowResizeEventComponent * cameraFixWindowResizeEventComponent =
-//    cameraEventComponentFactory->CreateComponent< CameraFixWindowResizeEventComponent>();
-//
-//    // cameraFixWindowResizeEventComponent->Initialize(gameCamera);
-//
-//    // RegisterCameraEventComponentHelperMethod(gameCamera, cameraFixWindowResizeEventComponent);
-//
-//
-// }
-
-// void Quad::EditorDirector::InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
-//{
-//
-//   ////  VectorSpace* vectorSpace = new VectorSpace;
-//   ////  vectorSpace->Initialize(100);
-//   ////  CollisionWorld* collisionWorld = new CollisionWorld(vectorSpace);
-//
-//
-//   //  Map* map = EditorMapManager::CreateEngineSystemMap(system, "GamePlayLayoutMainMap");
-//   //  //  map->SetName("GamePlayLayoutMainMap");
-//   //  //  map->Initialize(system);
-//   ////  map->CreateMapLayer(0, 0, nullptr, collisionWorld, { 0,0,(float)window->GetClientWidth(),
-//   (float)window->GetClientHeight() ,0.0f,1.0f });
-//
-//
-//   //
-//
-//
-//   //  system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//   //  initDefaultMapSetting(window, map);
-//   //  system->Start();
-//
-//   //  Map* currMap = system->GetMap();
-//
-//   //  //ChromeSystemCamera* gameCamera =
-//   static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//   //  ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//   window->GetClientHeight());
-//
-//   //  // gameCamera->SetSystem(system);
-//   //  // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//   //  currMap->SetMainCamera(gameCamera);
-//
-//
-//
-//   //  // system->SetTitleBarSize(3000, 40);
-//
-//   // //  WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-//   // //  WindowCloseButton* windowCloseButton =
-//   static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
-//   //  WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
-//   //  //windowCloseButton->SetSystem(system);
-//   ////  windowCloseButton->Initialize();
-//   //  windowCloseButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//   //  windowCloseButton->SetKeepVisibleBaseVerticalLineOffset(20);
-//
-//
-// }
-//
-// void Quad::EditorDirector::InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
-//{
-//
-//   //  Map* map = EditorMapManager::CreateEngineSystemMap(system, "AttrLayoutMainMap");
-//
-//
-//   //
-//
-//
-//   //  system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//   //  initDefaultMapSetting(window, map);
-//   //  system->Start();
-//
-//   //  Map* currMap = system->GetMap();
-//   //  // system->SetTitleBarSize(3000, 40);
-//   //  // ChromeSystemCamera* gameCamera =
-//   static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//   //  ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//   window->GetClientHeight());
-//
-//   //  //  gameCamera->SetSystem(system);
-//   //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//   //  currMap->SetMainCamera(gameCamera);
-//
-//
-//   //  //  WindowCloseButton* windowCloseButton =
-//   static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
-//   //  WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
-//   //  // windowCloseButton->SetSystem(system);
-//   ////   windowCloseButton->Initialize();
-//   //  windowCloseButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//   //  windowCloseButton->SetKeepVisibleBaseVerticalLineOffset(20);
-//   //  windowCloseButton->SetDepth(2);
-// }
-//
-// void Quad::EditorDirector::InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
-//{
-//
-//
-//   //  Map* map = EditorMapManager::CreateEngineSystemMap(system, "FileUiLayoutMainMap");
-//
-//   //  // map->SetName("FileUiLayoutMainMap");
-//   // //  map->Initialize(system);
-//
-//   //
-//
-//
-//   //  // map->AddObject(gameCamera);
-//   //  system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//   //  initDefaultMapSetting(window, map);
-//   //  system->Start();
-//
-//   //  // system->SetTitleBarSize(3000, 40);
-//
-//   //  Map* currMap = system->GetMap();
-//   //  // ChromeSystemCamera* gameCamera =
-//   static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//   //  ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//   window->GetClientHeight());
-//
-//   //  // gameCamera->SetSystem(system);
-//   //   //gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//   //  currMap->SetMainCamera(gameCamera);
-//
-//   //  //   WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-//   //    // WindowCloseButton* windowCloseButton =
-//   static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
-//   //  WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, 0);
-//   //  //windowCloseButton->SetSystem(system);
-//   ////  windowCloseButton->Initialize();
-//   //  windowCloseButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//   //  windowCloseButton->SetKeepVisibleBaseVerticalLineOffset(20);
-// }
-//
-// void Quad::EditorDirector::InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system)
-//{
-//
-//
-//
-//
-//  //   Map* map = EditorMapManager::CreateEngineSystemMap(system, "FrameWIindowLayoutMainMap");
-//  //   //  map->SetName("FrameWIindowLayoutMainMap");
-//  //    // map->Initialize(system);
-//  //
-//
-//  //   //map->AddObject(gameCamera);
-//  //   system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//
-//  //   initDefaultMapSetting(window, map);
-//  //   system->Start();
-//
-//  //   Map* currMap = system->GetMap();
-//  //   int mapLayerIndex = 0;
-//  //   //  ChromeSystemCamera* gameCamera =
-//  static_cast<ChromeSystemCamera*>(currMap->CreateObject("ChromeSystemCamera"));
-//  //   ChromeSystemCamera* gameCamera = ChromeSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//  window->GetClientHeight());
-//
-//
-//  //   //  gameCamera->SetSystem(system);
-//  //   // gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//  //   currMap->SetMainCamera(gameCamera);
-//
-//
-//
-//  //   //system->SetTitleBarSize(3000, 60);
-//
-//  //  // WindowCloseButton* windowCloseButton = new WindowCloseButton("WindoeCloseButton");
-//  ////   WindowCloseButton* windowCloseButton =
-//  static_cast<WindowCloseButton*>(currMap->CreateObject("WindowCloseButton"));
-//  //   WindowCloseButton* windowCloseButton = WindowCloseButton::Create(currMap, mapLayerIndex);
-//  //   //   windowCloseButton->SetSystem(system);
-//  //    //  windowCloseButton->Initialize();
-//  //   windowCloseButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//  //   windowCloseButton->SetKeepVisibleBaseVerticalLineOffset(20);
-//  //   windowCloseButton->SetDepth(2);
-//
-//  //   //   system->AddEntity(windowCloseButton);
-//
-//
-//  //      //프레임윈도우 처음resize가 먼저 전달되서 안보이는것같다
-//
-//  //   //   WindowMaxRestoreButton* windowMaxRestoreButton = new WindowMaxRestoreButton("WindowMaxRestoreButton");
-//  //     // WindowMaxRestoreButton* windowMaxRestoreButton =
-//  static_cast<WindowMaxRestoreButton*>(currMap->CreateObject("WindowMaxRestoreButton"));
-//  //   WindowMaxRestoreButton* windowMaxRestoreButton = WindowMaxRestoreButton::Create(currMap, mapLayerIndex);
-//  //   //  windowMaxRestoreButton->SetSystem(system);
-//  //   //  windowMaxRestoreButton->Initialize();
-//  //   windowMaxRestoreButton->SetKeepVisibleBaseHorizontalLine(0);
-//  //   windowMaxRestoreButton->SetKeepVisibleBaseVerticalLine(1);
-//  //   windowMaxRestoreButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//  //   windowMaxRestoreButton->SetKeepVisibleBaseVerticalLineOffset(60);
-//
-//  //   // system->AddEntity(windowMaxRestoreButton);
-//
-//  //   // WindowMinButton* windowMinButton = new WindowMinButton("WindowMinButton");
-//  //   // WindowMinButton* windowMinButton = static_cast<WindowMinButton*>(currMap->CreateObject("WindowMinButton"));
-//  //   WindowMinButton* windowMinButton = WindowMinButton::Create(currMap, mapLayerIndex);
-//  //   // windowMinButton->SetSystem(system);
-//  //  //  windowMinButton->Initialize();
-//  //   windowMinButton->SetKeepVisibleBaseHorizontalLine(0);
-//  //   windowMinButton->SetKeepVisibleBaseVerticalLine(1);
-//  //   windowMinButton->SetKeepVisibleBaseHorizontalLineOffset(20);
-//  //   windowMinButton->SetKeepVisibleBaseVerticalLineOffset(100);
-//
-//  //   //  system->AddEntity(windowMinButton);
-//
-//
-//
-//
-// }
-//
-// void Quad::EditorDirector::InitFrameWindowDockingSystem(TaskWindow* window, FrameWindowDockingSystem* system)
-//{
-//
-//
-//    // Map* map = EditorMapManager::CreateEngineSystemMap(system, "FrameWindowDockingMainMap");
-//
-//    // // map->AddObject(gameCamera);
-//    // system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//
-//    // initDefaultMapSetting(window, map);
-//
-//    // system->Start();
-//
-//    // Map* currMap = system->GetMap();
-//    // //  DockingSystemCamera* gameCamera =
-//    static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
-//    // DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//    window->GetClientHeight());
-//    // // DockingSystemCamera* gameCamera = ObjectFactory::CreateObject()
-//    //// gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//    // currMap->SetMainCamera(gameCamera);
-// }
-//
-// void Quad::EditorDirector::InitChildWindowDockingSystem(TaskWindow* window, ChildWindowDockingSystem* system)
-//{
-//
-//
-//
-//
-//     //Map* map = EditorMapManager::CreateEngineSystemMap(system, "ChildWindowDockingMainMap" +
-//     std::to_string((int)system->GetSystemID()));
-//
-//
-//
-//     //system->Initialize(window->GetClientWidth(), window->GetClientHeight(), map);
-//     //initDefaultMapSetting(window, map);
-//     //system->Start();
-//
-//
-//     //Map* currMap = system->GetMap();
-//     ////  DockingSystemCamera* gameCamera =
-//     static_cast<DockingSystemCamera*>(currMap->CreateObject("DockingSystemCamera"));
-//     //DockingSystemCamera* gameCamera = DockingSystemCamera::Create(currMap, 0, window->GetClientWidth(),
-//     window->GetClientHeight());
-//
-//     ////gameCamera->Initialize(window->GetClientWidth(), window->GetClientHeight());
-//
-//     //currMap->SetMainCamera(gameCamera);
-//
-// }
-//
-// void Quad::EditorDirector::initDefaultMapSetting(TaskWindow* window, Map* map)
-//{
-//     //default Ui - mapLayer 0
-//     map->CreateMapLayer(0, 0, nullptr, {
-//     0,0,(float)window->GetClientWidth(),(float)window->GetClientHeight(),0.0f,1.0f });
-//     //default 3D - mapLayer 1
-//     map->CreateMapLayer(1, 0, nullptr, {
-//     0,0,(float)window->GetClientWidth(),(float)window->GetClientHeight(),0.0f,1.0f });
-//
-//
-//     //new SpacePartitioningStructureFactory<UiCollider>(nullptr);
-//     //ui collisionWorld
-//     auto spacePartitioningStructureFactoryUi = SpacePartitioningStructureFactory<UiCollider>::GetInstance();
-//     SpacePartitioningStructure<UiCollider>* spacePartitioningStructureUi =
-//     spacePartitioningStructureFactoryUi->CreateSpacePartitioningStructure("VectorSpace");
-//
-//     auto collisionWorldFactory = CollisionWorldFactory::GetInstance();
-//     UiCollisionWorld* CollisionWorldUi = collisionWorldFactory->CreateUiCollisionWorld(spacePartitioningStructureUi);
-//
-//     map->SetDefaultUiCollisionWorld(CollisionWorldUi);
-//
-//
-//
-//     //3d collisionWorld
-//     auto spacePartitioningStructureFactory3D = SpacePartitioningStructureFactory<Collider>::GetInstance();
-//     SpacePartitioningStructure<Collider>* spacePartitioningStructure3D =
-//     spacePartitioningStructureFactory3D->CreateSpacePartitioningStructure("VectorSpace");
-//
-//     //auto collisionWorldFactory = CollisionWorldFactory::GetInstance();
-//     CollisionWorld* CollisionWorld3D = collisionWorldFactory->CreateCollisionWorld(spacePartitioningStructure3D);
-//
-//     map->SetDefault3DCollisionWorld(CollisionWorld3D);
-//
-//
-//
-//
-//
-//
-// }
-//
-// void Quad::EditorDirector::AddVisibleEditorAssetToFileWindow(const std::string& configFilePath)
-//{
-//
-//
-//     JsonParser::ReadFile(configFilePath);
-//     JsonParser::ReadStart();
-//     JsonParser::DescendIntoObjectOrArray();
-//
-//
-//     rapidjson::Value::ConstArray  textureArray = JsonParser::ReadArray("Texture");
-//     std::vector<Asset*> assetVector;
-//
-//     for (auto& element : textureArray)
-//     {
-//
-//         std::string textureName= element.GetString();
-//         Asset * asset =  TextureManager::GetTexture(textureName);
-//         if (asset != nullptr)
-//         {
-//             assetVector.push_back(asset);
-//         }
-//      }
-//
-//     rapidjson::Value::ConstArray  matArray = JsonParser::ReadArray("Material");
-//
-//     for (auto& element : matArray)
-//     {
-//
-//         std::string matName = element.GetString();
-//         Asset* asset = MaterialManager::GetMaterial(matName);
-//         if (asset != nullptr)
-//         {
-//             assetVector.push_back(asset);
-//         }
-//     }
-//
-//
-//     rapidjson::Value::ConstArray  meshArray = JsonParser::ReadArray("Mesh");
-//     for (auto& element : meshArray)
-//     {
-//
-//         std::string meshName = element.GetString();
-//         Asset* asset = MeshManager::GetMesh(meshName);
-//         if (asset != nullptr)
-//         {
-//             assetVector.push_back(asset);
-//         }
-//     }
-//
-//
-//     FileUiUiSystem* fileUiSystem = FileUiUiSystem::GetInstance();
-//     fileUiSystem->AddAsset(assetVector);
-//
-//
-// }
-
-void Quad::EditorDirector::CreateDefaultMaterial()
+Core::LogicalWindow *Quad::EditorDirector::GetMainSceneWindow() const
 {
-
-    /* auto * materialManager =  MaterialManager::GetInstance();
-
-     const std::string defaultMaterialName = "Default";
-     Material * defaultMaterial =  materialManager->CreateMaterial(defaultMaterialName);
-
-     defaultMaterial->SetDiffuseMap(TextureManager::GetTexture("Default.bmp"));*/
+    return mMainSceneLogicalWindow.get();
 }
 
-void Quad::EditorDirector::CreateDefaultMesh()
+void Quad::EditorDirector::ChangeToPrefabEditWorkSpace()
 {
-    ////Squre Mesh
 
-    // MeshManager* meshManager = MeshManager::GetInstance();
-    // StaticMesh * squareMesh  =static_cast<StaticMesh*>( meshManager->CreateMesh("Rectangle",
-    // Quad::EMeshType::eStaticMesh));
+    GlobalOverlayManager::GetInstance()->ChangeToPrefabEdit();
+    ChangeWorkSpace(PrefabWorkSpaceManager::GetInstance()->GetWorkSpace());
+    PrefabWorkSpaceManager::GetInstance()->OnPrefabEditActive();
+}
+
+void Quad::EditorDirector::ChangeToMaterialEditWorkSpace(CoreAsset::Material *targetMaterial)
+{
+
+    GlobalOverlayManager::GetInstance()->ChangeToMaterialEdit();
+
+    MaterialWorkSpaceManager *materialWorkSpaceManager = MaterialWorkSpaceManager ::GetInstance();
+    ChangeWorkSpace(materialWorkSpaceManager->GetWorkSpace());
+    materialWorkSpaceManager->OnWorkSpaceActive();
+    materialWorkSpaceManager->SetMaterial(targetMaterial);
+}
+
+void Quad::EditorDirector::ChangeToDefaultEditWorkSpace()
+{
+    GlobalOverlayManager::GetInstance()->ChangeToDefaultEdit();
+    ChangeWorkSpace(mDefaultEditWorkSpace.get());
+}
+
+void Quad::EditorDirector::ChangeWorkSpace(Core::WorkSpace *workspace)
+{
+
+    Core::WorkSpace *currentWorkSpace = mSuperFrameController->GetWorkSpace();
+
+    if (currentWorkSpace == PrefabWorkSpaceManager::GetInstance()->GetWorkSpace())
+    {
+        PrefabWorkSpaceManager::GetInstance()->OnPrefabEditInActive();
+    }
+    else if (currentWorkSpace == MaterialWorkSpaceManager::GetInstance()->GetWorkSpace())
+    {
+        MaterialWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
+    }
+
+    mSuperFrameController->SetWorkSpace(workspace);
+}
+
+void Quad::EditorDirector::LoadEditorAssets()
+{
+
+    bool engineImport = true;
+    if (engineImport)
+    {
+        std::filesystem::path engineAssetPath = EditorConfig::GetInstance()->GetEditorAssetPath();
+
+        std::vector<std::filesystem::path> assetFileList;
+        mPhysicalFileSystem->GetFileList(engineAssetPath, assetFileList);
+
+        // std::ifstream fin("C:\\Users\\dongd\\gitproject\\GameEngine\\TestAssetPathFile.txt");
+        for (const auto &path : assetFileList)
+        {
+            EditorAssetImporterManager::GetInstance()->RequestImportSync(path, true);
+        }
+
+        // std::string assetFilePath;
+
+        // while (fin >> assetFilePath)
+        //{
+        //     // 현재 논리적폴더에서 해당 파일과 동일한 이름을 가진 논리적파일이존재하면실패하도록한다.
+        //     // Check Logical File Name
+
+        //    // 없으면 임포트수행
+
+        //    // 동기버전도 필용할듯
+        //    // 그리고 잡context가 필요없는 버전도 필요할듯
+        //    EditorAssetImporterManager::GetInstance()->RequestImportSync(assetFilePath.c_str(), true);
+        //    // EditorAssetImporterModule::GetInstance()->Import(assetFilePath.c_str(), true);
+        //}
+    }
+
+    InitEngineAssetLogicalFile();
+}
+
+void Quad::EditorDirector::InitProjectBrowserWindow()
+{
+
+    mProjectBrowserWorkSpace = std::make_unique<Core::WorkSpace>();
+
+    mProjectBrowserLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    //    UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("ProjectBrowser", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+
+    auto projectBrowserPanel = canvas->CreateUIElement<UI::UIImage>("ProjectBrowserBackground");
+    projectBrowserPanel->SetSize(1700, 1000);
+    projectBrowserPanel->SetPositionLocal(0, 0);
+    mProjectBrowserLogicalWindow->SetActiveCanvas(canvas);
+
+    mProjectBrowserLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorRightRelValue(0.0f);
+
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::ePixel);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorTopRelValue(0.0f);
+
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mProjectBrowserLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.0f);
+
+    mProjectBrowserWorkSpace->AddLogicalWindow(mProjectBrowserLogicalWindow.get());
+
+    mSuperFrameController->SetWorkSpace(mProjectBrowserWorkSpace.get());
+    // mSuperFrameController->AddLogicalWindow(mProjectBrowserLogicalWindow.get());
+}
+
+void Quad::EditorDirector::InitEngineAssetLogicalFile()
+{
+    // auto assetManager = CoreAsset::AssetManager::GetInstance();
+    // 기본에셋
+    // cube
+    QuadLF::LogicalFileAssetInfo cubeInfo;
+    cubeInfo.mName = "Cube";
+    cubeInfo.mAssetType = CoreAsset::EAssetType::eStaticMesh;
+    cubeInfo.mAssetID = mAssetManager->GetAsset<CoreAsset::StaticMesh>("Engine/Cube").GetAssetID();
+
+    mLogicalFileSystem->MakeFile(cubeInfo, "Cube", mLogicalFileSystem->GetEngineFolder());
+
+    // Cylinder
+    QuadLF::LogicalFileAssetInfo cylinderInfo;
+    cylinderInfo.mName = "Cylinder";
+    cylinderInfo.mAssetType = CoreAsset::EAssetType::eStaticMesh;
+    cylinderInfo.mAssetID = mAssetManager->GetAsset<CoreAsset::StaticMesh>("Engine/Cylinder").GetAssetID();
+
+    mLogicalFileSystem->MakeFile(cylinderInfo, "Cylinder", mLogicalFileSystem->GetEngineFolder());
+}
+
+void Quad::EditorDirector::CreateEditWorkSpace()
+{
+
+    CreateDefaultEditWorkSpace();
+
+    CreatePrefabEditWorkSpace();
+
+    CreateMaterialEditWorkSpace();
+
+    InitEditorTaskManagerList();
+}
+
+void Quad::EditorDirector::CreateDefaultEditWorkSpace()
+{
+    mDefaultEditWorkSpace = std::make_unique<Core::WorkSpace>();
+    InitEditorWindows();
+
+    mSuperFrameController->SetWorkSpace(mDefaultEditWorkSpace.get());
+}
+
+void Quad::EditorDirector::CreatePrefabEditWorkSpace()
+{
+
+    auto prefabWorkSpaceManager = PrefabWorkSpaceManager::GetInstance();
+
+    //   UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("PrefabEditCanvas", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+    prefabWorkSpaceManager->Initialize(canvas, mGlobalOverlayLogicalWindow.get(),
+                                       EditorPrefabSelectionManager::GetInstance());
+}
+
+void Quad::EditorDirector::CreateMaterialEditWorkSpace()
+{
+
+    auto materialEditWorkSpaceManager = MaterialWorkSpaceManager::GetInstance();
+
+    materialEditWorkSpaceManager->Initialize(mGlobalOverlayLogicalWindow.get(),
+                                             EditorMaterialSelectionManager::GetInstance());
+}
+
+void Quad::EditorDirector::InitEditorWindows()
+{
+
+    // 논리적윈도우생성+ 초기화 + 실제 물리적윈도우에 등록
+
+    InitMainSceneWindow();
+    InitPropertyWindow();
+    InitAssetBrowerWindow();
+    InitGlobalOverlayWindow();
+}
+
+void Quad::EditorDirector::InitMainSceneWindow()
+{
+    mMainSceneLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    mMainSceneLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mMainSceneLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mMainSceneLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorRightRelValue(0.3f);
+
+    mMainSceneLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorTopRelValue(0.1f);
+    // mMainSceneLogicalWindow->mViewportController.SetAnchorTopPixelValue(100.0f);
+
+    mMainSceneLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.25f);
+
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorLeftState(true);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorRightState(true);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorRightRelValue(0.0f);
+
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorTopState(true);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorTopRelValue(0.0f);
+    // mMainSceneLogicalWindow->mViewportController.SetAnchorTopPixelValue(0.0f);
+
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorBottomState(true);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mMainSceneLogicalWindow->m3DWorldViewportController.SetAnchorBottomRelValue(0.0f);
+
+    mMainSceneLogicalWindow->SetWorld(EditorSceneManager::GetInstance()->GetUserWorld());
+    mMainSceneLogicalWindow->SetBackBufferClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+
+    mDefaultEditWorkSpace->AddLogicalWindow(mMainSceneLogicalWindow.get());
+
+    mMainSceneLogicalWindow->SetDebugGridRender(true);
+
+    EditorSceneManager::GetInstance()->GetUserWorld()->mOnMapObjectRemovedCallbackSystem.Register(
+        [](Object *object) { EditorSelectionManager::GetInstance()->OnMapObjectRemoved(object); });
+
+    // mSuperFrameController->AddLogicalWindow(mMainSceneLogicalWindow.get());
+}
+
+void Quad::EditorDirector::InitAssetBrowerWindow()
+{
+    mAssetBrowserLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    // UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("AssetBrowserCanvas", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+
+    // auto uiAssetBrowser = canvas->CreateUIElement<UIAssetBrowser>("UIAssetBrowser");
+    // uiAssetBrowser->SetSize(1700, 500);
+    // uiAssetBrowser->SetPositionLocal(0, 0);
+
+    mAssetBrowserLogicalWindow->SetActiveCanvas(canvas);
+
+    mAssetBrowserLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorRightRelValue(0.3);
+
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorTopRelValue(0.75f);
+
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mAssetBrowserLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.0f);
+    // mAssetBrowserLogicalWindow->mViewportController.SetAnchorBottomPixelValue(300.0f);
+
+    mDefaultEditWorkSpace->AddLogicalWindow(mAssetBrowserLogicalWindow.get());
+    //    mSuperFrameController->AddLogicalWindow(mAssetBrowserLogicalWindow.get());
+}
+
+void Quad::EditorDirector::InitGlobalOverlayWindow()
+{
+    mGlobalOverlayLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    //  UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("GlobalOverlayCanvas", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+
+    mGlobalOverlayLogicalWindow->SetActiveCanvas(canvas);
+
+    GlobalOverlayManager::GetInstance()->Initialize(canvas, mGlobalOverlayLogicalWindow.get());
+
+    Core::WindowRenderConfig windowRenderConfig;
+    windowRenderConfig.bIsOverlay = true;
+    windowRenderConfig.bClearRenderTarget = false;
+    mGlobalOverlayLogicalWindow->SetRenderConfig(windowRenderConfig);
+    mGlobalOverlayLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorRightRelValue(0.0);
+
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorTopRelValue(0.0f);
+
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mGlobalOverlayLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.0f);
+    //    mSuperFrameController->AddLogicalWindow(mGlobalOverlayLogicalWindow.get());
+
+    mDefaultEditWorkSpace->AddLogicalWindow(mGlobalOverlayLogicalWindow.get());
+    mDefaultEditWorkSpace->SetGlobalOverlayWindow(mGlobalOverlayLogicalWindow.get());
+    // mSuperFrameController->SetGlobalOverlayWindow(mGlobalOverlayLogicalWindow.get());
+}
+
+void Quad::EditorDirector::InitPropertyWindow()
+{
+    mPropertyLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    //  UI::UIManager *uiManager = UI::UIManager::GetInstance();
+
+    //// Canvas1 (default)
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("DefaultCanvas", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+    ObjectHierarchyPanel *ohpanel = canvas->CreateUIElement<ObjectHierarchyPanel>("asds");
+    ohpanel->Initialize(EditorSelectionManager::GetInstance());
+
+    ohpanel->SetPositionLocal(0, 0);
+    ohpanel->SetSize(700, 500);
+
+    ohpanel->SetScrollPanelSize(200, 300);
+
+    /* PropertyPanel *propertyPanel = canvas->CreateUIElement<PropertyPanel>("PropertyPanel");
+     propertyPanel->Initialize(EditorSelectionManager::GetInstance());
+     propertyPanel->SetSize(700, 800);
+     propertyPanel->SetPositionLocal(0, 500);
+     propertyPanel->SetBackgrounColor(0.6f, 0.6f, 0.6f);
+     propertyPanel->SetLayout(EUIScrollLayout::eVertical);*/
+
+    auto editorSelectionManager = EditorSelectionManager::GetInstance();
+    editorSelectionManager->mOnSelectedObjectCallbackSystem.Register(ohpanel, &ObjectHierarchyPanel::OnSelectedObject);
+    // editorSelectionManager->mOnSelectedObjectCallbackSystem.Register(propertyPanel,
+    // &PropertyPanel::OnSelectedObject);
+    // editorSelectionManager->mOnSelectedComponentCallbackSystem.Register(propertyPanel,
+    //                                                                    &PropertyPanel::OnSelectedComponent);
+
+    DefaultPropertyInspector *defaultPropertyInspector = DefaultPropertyInspector::GetInstance();
+    defaultPropertyInspector->Initialize(canvas);
+    // defaultPropertyInspector->BeginUI();
+
+    // MapSettingPanel
+
+    MapSettingUIController *mapSettingUIController = MapSettingUIController::GetInstance();
+    mapSettingUIController->Initialize(canvas, 700, 800, {0, 500});
+    // mapSettingUIController->BeginUI();
+
+    DefaultEditorInspectorManager *defaultEditorInspectorManager = DefaultEditorInspectorManager::GetInstance();
+
+    defaultEditorInspectorManager->RegisterInspector(EDefaultEditorInspectorType::eProprety, defaultPropertyInspector);
+    defaultEditorInspectorManager->RegisterInspector(EDefaultEditorInspectorType::eMapSetting, mapSettingUIController);
+
+    // defaultEditorInspectorManager->ActivateInsepctor(EDefaultEditorInspectorType::eProprety);
+
+    mPropertyLogicalWindow->SetActiveCanvas(canvas);
+
+    mPropertyLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mPropertyLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mPropertyLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mPropertyLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.7f);
+
+    mPropertyLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mPropertyLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mPropertyLogicalWindow->mViewportController.SetAnchorRightRelValue(0.0f);
+
+    mPropertyLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mPropertyLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::ePixel);
+    //  mSubLogicalWindow.mViewportController.SetAnchorTopRelValue(200.0f);
+    mPropertyLogicalWindow->mViewportController.SetAnchorTopPixelValue(200.0f);
+
+    mPropertyLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mPropertyLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mPropertyLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.0f);
+
+    mPropertyLogicalWindow->SetBackBufferClearColor(0.3, 0.3f, 0.3f, 1.0f);
+
+    mDefaultEditWorkSpace->AddLogicalWindow(mPropertyLogicalWindow.get());
+}
+
+void Quad::EditorDirector::InitEditorTaskManagerList()
+{
+
+    ClassGenerationManager *classGenerationManager = ClassGenerationManager::GetInstance();
+    classGenerationManager->Initialize(mGlobalOverlayLogicalWindow->GetActiveCanvas());
+    mEditorTaskManagerList.push_back(classGenerationManager);
+
+    EditorAssetImporterManager *editorAssetImporterManager = EditorAssetImporterManager::GetInstance();
+    editorAssetImporterManager->Initialize(mGlobalOverlayLogicalWindow->GetActiveCanvas());
+    mEditorTaskManagerList.push_back(editorAssetImporterManager);
+}
+
+Core::LogicalWindow *Quad::EditorDirector::GetMainWindow() const
+{
+    return mMainSceneLogicalWindow.get();
+}
+
+void Quad::EditorDirector::RegisterAssetFactory()
+{
+    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eTexture,
+                                              CoreAsset::TextureFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMaterial,
+                                              CoreAsset::MaterialFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eStaticMesh,
+                                              CoreAsset::MeshFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkinningMesh,
+                                              CoreAsset::MeshFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eFont, CoreAsset::FontFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::ePrefab, PrefabFactory::GetInstance());
+}
+
+void Quad::EditorDirector::RegisterAssetLoader()
+{ // asset loader  register
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eTexture, CoreAsset::TextureLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
+}
+
+void Quad::EditorDirector::RegisterAssetStorer()
+{
+
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    // asset  storer register
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eTexture, CoreAsset::TextureStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());
+}
+
+void Quad::EditorDirector::SwitchFrameWindow() {}
+
+void Quad::EditorDirector::SwitchCommonEditWindow() {}
+
+void Quad::EditorDirector::InitSystems()
+{
+    CHECK(mAssetManager != nullptr);
+    CHECK(mUIManager != nullptr);
+    CHECK(mRenderSystem != nullptr);
+    CHECK(mGpuResourceManager != nullptr);
+
+    // asset manager init
+    // CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+
+    // asset factory  register
+    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
+    CoreAsset::AssetImporterManager *assetImporterManager = CoreAsset::AssetImporterManager::GetInstance();
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    RegisterAssetFactory();
+    RegisterAssetLoader();
+    RegisterAssetStorer();
+
+    // asset manager init
+
+    mAssetManager->Initialize(assetFactoryManager, assetIOManager, assetImporterManager,
+                              EditorConfig::GetInstance()->GetEditorAssetPath());
+
+    ProjectConfig *projectConfig = ProjectConfig::GetInstance();
+    mAssetManager->SetAssetRawDataPath(projectConfig->GetProjectRawAssetPath());
+
+    // import module test
+    // editor asset importer module
+    EditorAssetImporterModule *editorAssetImporterModule = EditorAssetImporterModule::GetInstance();
+    editorAssetImporterModule->Initialize();
 
     //
     //
-    // std::vector<StaticVertex> vertexVector(4);
-    // std::vector<MeshIndexType> indexVector(6);
-
-    // vertexVector[0].mPos = { -0.5f,0.5f,0.0f };
-    // vertexVector[1].mPos = { 0.5f,0.5f,0.0f };
-    // vertexVector[2].mPos = { 0.5f,-0.5f,0.0f };
-    // vertexVector[3].mPos = { -0.5f,-0.5f,0.0f };
-
-    // vertexVector[0].mNormal = { 0.0f,0.0f,-1.0f };
-    // vertexVector[1].mNormal = { 0.0f,0.0f,-1.0f };
-    // vertexVector[2].mNormal = { 0.0f,0.0f,-1.0f };
-    // vertexVector[3].mNormal = { 0.0f,0.0f,-1.0f };
-
-    // vertexVector[0].mTex = { 0.0f,0.0f };
-    // vertexVector[1].mTex = { 1.0f,0.0f };
-    // vertexVector[2].mTex = { 1.0f,1.0f };
-    // vertexVector[3].mTex = { 0.0f,1.0f };
-
-    // indexVector[0] = 0;
-    // indexVector[1] = 1;
-    // indexVector[2] = 2;
     //
-    // indexVector[3] = 0;
-    // indexVector[4] = 2;
-    // indexVector[5] = 3;
 
-    //
-    // squareMesh->SetVertexVector(std::move(vertexVector));
-    // squareMesh->SetIndexVector(std::move(indexVector));
+    EditorConfig *editorConfig = EditorConfig::GetInstance();
+    const std::filesystem::path &editorRootPath = editorConfig->GetEditorRootPath();
 
-    // squareMesh->SetIndexNum(6);
-    // squareMesh->SetVertexNum(4);
+    QuadLog::Logger *log = QuadLog::Logger::GetInstance();
 
-    // std::vector<SubMesh> subMeshVector(1);
+    // FileSystem
+    mPhysicalFileSystem = QuadPF::PhysicalFileSystem::GetInstance();
+    mLogicalFileSystem = std::make_unique<QuadLF::LogicalFileSystem>(mPhysicalFileSystem);
+    mLogicalFileSystem->Initialize(projectConfig->GetProjectPath(), editorConfig->GetEditorAssetPath());
 
-    // subMeshVector[0].mID = 0;
-    // subMeshVector[0].mIndexRange.first = 0;
-    // subMeshVector[0].mIndexRange.second = 6;
-    // subMeshVector[0].mVertexNum = 4;
-    // subMeshVector[0].mName = "DefaultSubMesh";
-    // subMeshVector[0].mVertexOffset = 0;
-    // subMeshVector[0].mMaterialPointer = MaterialManager::GetMaterial("Default");
+    // AssetMeta
+    mAssetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
 
-    // squareMesh->SetSubMeshVector(std::move(subMeshVector));
-    // squareMesh->SetMinMaxPoint({ -0.5f,-0.5f,-0.5f }, { 0.5f,0.5f,0.5f });
+    // UI
+    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>(Render::IMaterialManager::GetInstance());
+
+    mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(mRenderSystem, mUIManager, mGpuResourceManager,
+                                                                         Render::AssetResolver::GetInstance());
+
+    //.shader.buffer 파일을 읽어서 gpuBuffer를 gpuBufferContextSystem에 등록한다.
+    GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
+
+    gpuBufferContextSystem->LoadShaderBufferFile(editorRootPath / "Shader/shaderbuffer.shader.buffer");
+
+    mGpuSamplerSystem = std::make_unique<GRM::GpuSamplerSystem>(mGpuResourceManager);
+    //   mGpuSamplerSystem->LoadShaderSamplerFile(editorRootPath + "/Shader/Sampler.sampler");
+
+    // ShaderImporter
+    // 현재 필요없는 상황
+    mEditorShaderImporter = std::make_unique<EditorShaderImporter>(Render::IMaterialManager::GetInstance());
+    EditorShaderImporter *editorShaderImporter = EditorShaderImporter::GetInstance();
+
+    // Asset Resolver
+    Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
+    assetResolver->Initialize(mAssetManager, mGpuResourceManager);
+
+    // TextureImporter
+    mTextureImporter = std::make_unique<EditorTextureImporter>(Import::TextureImporter::GetInstance(),
+                                                               CoreAsset::TextureManager::GetInstance(),
+                                                               CoreAsset::AssetMetaDataManager::GetInstance());
+
+    // ObjectRenderItemBuilder(IRenderProxyManager)
+    mObjectRenderItemBuilder = std::make_unique<Render::ObjectRenderItemBuilder>(mRenderSystem, mGpuResourceManager,
+                                                                                 Render::AssetResolver::GetInstance());
+
+    Core::IRenderProxyManager::SetRenderProxyManager(mObjectRenderItemBuilder.get());
+
+    EditorAssetManager *editorAssetManager = EditorAssetManager::GetInstance();
+    editorAssetManager->Initialize(mAssetManager, QuadLF::LogicalFileSystem::GetInstance(),
+                                   CoreAsset::AssetMetaDataManager::GetInstance());
+
+    AsyncThreadPool::GetInstance();
 }
 
-void Quad::EditorDirector::SwitchFrameWindow()
+void Quad::EditorDirector::UpdateEditorTaskManagers()
 {
 
-    //   mProjectDirector.SetOhterWindowSystemOff();
-    // mFrameWindow->SetProjectSelectSceneFlag(true);
-    // FrameWindowController::GetInstance()->SetSystemActiveState(2, false);
+    for (auto taskManager : mEditorTaskManagerList)
+    {
+
+        if (taskManager->GetActiveState())
+        {
+            taskManager->Update();
+        }
+    }
 }
 
-void Quad::EditorDirector::SwitchCommonEditWindow()
-{
-    // mProjectDirector.SetOhterWindowSystemOn();
-    //   mFrameWindow->SetProjectSelectSceneFlag(false);
-    //  FrameWindowController::GetInstance()->SetSystemActiveState(2, true);
-}
-
-void Quad::EditorDirector::SetPlayModeState(bool state)
-{
-    // auto instance = GetInstance();
-    //    mPlayModeState = state;
-    //   mRenderWindowTest->SetPlayMode(state);
-}
+void Quad::EditorDirector::SetPlayModeState(bool state) {}
 
 bool Quad::EditorDirector::GetPlayModeState()
 {
     auto instance = GetInstance();
     return true;
     // return instance->mPlayModeState;
-}
-
-const std::string &Quad::EditorDirector::GetEditorPathA() const
-{
-
-    return ""; // mEditorPathA;
-    // TODO: 여기에 return 문을 삽입합니다.
-}
-
-const std::wstring &Quad::EditorDirector::GetEditorPathW() const
-{
-    return L""; // mEditorPathW;
-    // TODO: 여기에 return 문을 삽입합니다.
-}
-
-// void Quad::EditorDirector::AddEffect(RenderSystem* renderSystem, Effect* effect ,ESystemType systemType)
-//{
-//  //   renderSystem->AddEffect(*effect, systemType);
-//   //  renderSystem->ReigsterDefaultEffect(systemType, effect->GetName());
-// }
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR pCmdLine, int nCmdShow)
-{
-
-    // Editor 설정
-    Quad::EditorConfig *editorConfig = Quad::EditorConfig::GetInstance();
-
-#ifdef _DEBUG
-    // bool ret = SetDllDirectory(L"C:\\Users\\dongd\\gitproject\\GameEngine\\Dll\\x64\\Debug\\");
-
-    // if (ret != true)
-    //   assert(1);
-    // 메모리 누수 체크 활성화
-    //  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    SetCurrentDirectoryW(L"../../../../");
-    wchar_t editorRootPath[255];
-    GetCurrentDirectoryW(255, editorRootPath);
-#else
-
-    SetDllDirectoryW(L".\\Dll\\x64\\Release\\");
-    wchar_t editorRootPath[255];
-    GetCurrentDirectoryW(255, editorRootPath);
-
-#endif
-
-    editorConfig->SetEditorRootPath(CoreUtility::Utility::ConvertToString(editorRootPath, true));
-
-    int cmdNum;
-    LPWSTR *cmdLists = CommandLineToArgvW(pCmdLine, &cmdNum);
-
-    MessageBoxW(nullptr, cmdLists[0], L"ProjectPath", 0);
-
-    QuadLog::Logger *logger = QuadLog::Logger::GetInstance();
-
-    Quad::ProjectConfig *projectConfig = Quad::ProjectConfig::GetInstance();
-
-    std::string projectFolderPath;
-#ifdef _DEBUG
-
-    projectFolderPath = editorConfig->GetEditorRootPath() + "\\TestProject";
-    testProjectPath = projectFolderPath;
-#else
-
-    projectFolderPath = CoreUtility::Utility::ConvertToString(cmdLists[0], true);
-#endif
-    projectConfig->SetProjectPath(projectFolderPath);
-
-    logger->SetLoggerFile((projectConfig->GetProjectPath() + "\\LogFile.txt").c_str());
-
-    Quad::Application *app = Quad::Application::GetInstance();
-    Quad::EditorDirector *editorDirector = Quad::EditorDirector::GetInstance();
-
-    Quad::AppInitData appInitData;
-    appInitData.hInstance = hInstance;
-    appInitData.nShowCmd = nCmdShow;
-    appInitData.programDirector = editorDirector;
-
-    if (!app->Initialize(appInitData))
-        return 0;
-
-    return app->Run();
 }

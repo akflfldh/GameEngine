@@ -1,19 +1,74 @@
 ﻿#pragma once
 
+#include <CoreMath/Geometry.h>
+#include <Window/IWindowEventHandler.h>
+#include <functional>
 namespace Quad
 {
-enum class EInputState
-{
-    eKeyDown = 0,
-    eKeyUp,
-    eKeyHeld
-};
 
-struct KeyHeldStruct
+// struct KeyHeldStruct
+//{
+//     int key = 0;
+//     float mCurrTime = 0.0f;
+//     float mIntervalTime = 0.2f;
+// };
+
+enum class EKeyCode : uint32_t
 {
-    int key = 0;
-    float mCurrTime = 0.0f;
-    float mIntervalTime = 0.2f;
+    eUnKnown = 0,
+
+    eEnter = 0x0D,
+
+    eSpace = 32,
+
+    eLeft = 37,
+    eUp,
+    eRight,
+    eDown,
+
+    eDel = 46,
+
+    e0 = 48,
+    e1,
+    e2,
+    e3,
+    e4,
+    e5,
+    e6,
+    e7,
+    e8,
+    e9,
+
+    eA = 65,
+    eB,
+    eC,
+    eD,
+    eE,
+    eF,
+    eG,
+    eH,
+    eI,
+    eJ,
+    eK,
+    eL,
+    eM,
+    eN,
+    eO,
+    eP,
+    eQ,
+    eR,
+    eS,
+    eT,
+    eU,
+    eV,
+    eW,
+    eX,
+    eY,
+    eZ,
+
+    eMouseLeft = 350,
+    eMouseRight,
+    eMouseMiddle,
 };
 
 enum EMouseState
@@ -36,13 +91,39 @@ enum EMouseState
 
 struct MouseContext
 {
-    int mMouseState = EMouseState::eNone; // or연산을 통해서 마우스가 어떤상태인지 확인할수있을것
+
+    bool bLButtonDown = false; // 현재 눌림 상태
+    bool bRButtonDown = false; // 현재 눌림 상태
+
+    bool bLButtonDownThisFrame = false; // 이번프레임 눌림상태
+    bool bRButtonDownThisFrame = false;
+
+    bool bLButtonUpThisFrame = false; // 이번 프레임 up상태
+    bool bRButtonUpThisFrame = false; // 이번 프레임 up 상태
+
     int mScreenPosX = 0;
     int mScreenPosY = 0;
     int mClientPosX = 0;
     int mClientPosY = 0;
     float mWorldPosX = 0;
     float mWorldPosY = 0;
+
+    // 매프레임 이동량
+    int mDeltaX = 0;
+    int mDeltaY = 0;
+};
+
+struct keyContext
+{
+    bool bKeyDown;
+    bool bKeyDownThisFrame;
+    bool bKeyUpThisFrame;
+    uint8_t mVK; // SCAN KEY 에 대응되는 문자(영)
+};
+
+struct KeybaordContext
+{
+    keyContext keyContextArray[128]; // scankeycode;
 };
 
 struct MouseInputData
@@ -59,5 +140,64 @@ struct MouseInputData
     int mPreScreenPositionX;
     int mPreScreenPositionY;
 };
+
+struct RawInputData
+{
+    EInputState mInputState;
+
+    struct
+    {
+        uint32_t mCharCode;
+    } keyChar;
+
+    struct
+    {
+        EKeyCode mKeyCode;
+        uint8_t mScanKeyCode;
+
+    } keyEvent;
+
+    struct
+    {
+        int mWheelDelta = 0;
+        // 누적델타일수도있고, 순간델타일수도있다. (받는쪽에 따라 다르겠다)
+        int mClientX;
+        int mClientY;
+        int mDeltaX;
+        int mDeltaY;
+        bool mAccumulateFlag;
+    } mouseMoveData;
+
+    struct
+    {
+        int mWheelDelta = 0;
+        int mClientX = 0;
+        int mClientY = 0;
+    } mouseWheelData;
+
+    bool IsKeyboardEvent() const
+    {
+
+        if ((mInputState & EInputState::eKeyDown) || (mInputState & EInputState::eKeyUp) ||
+            (mInputState & EInputState::eKeyHeld) || (mInputState & EInputState::eKeyChar))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    bool IsMouseEvent() const
+    {
+
+        if (mInputState >= EInputState::eMouseMove)
+        {
+            return true;
+        }
+
+        return false;
+    }
+};
+
+using InputHandler = std::function<void(const RawInputData &)>;
 
 } // namespace Quad

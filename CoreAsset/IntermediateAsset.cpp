@@ -258,20 +258,27 @@ CoreAsset::IntermediateMaterial *CoreAsset::IntermediateAssetFactory::CreateInte
     return new IntermediateMaterial;
 }
 
+CoreAsset::IntermediateStaticMesh *CoreAsset::IntermediateAssetFactory::CreateIntermediateStaticMesh()
+{
+    return new IntermediateStaticMesh;
+}
+
 void CoreAsset::IntermediateAssetFactory::ReleaseIntermediateAsset(IntermediateTexture *texture)
 {
-    if (texture == nullptr)
-        return;
+
     delete texture;
 }
 
 void CoreAsset::IntermediateAssetFactory::ReleaseIntermediateAsset(IntermediateMaterial *material)
 {
 
-    if (material == nullptr)
-        return;
-
     delete material;
+}
+
+void CoreAsset::IntermediateAssetFactory::ReleaseIntermediateAsset(IntermediateStaticMesh *staticMesh)
+{
+
+    delete staticMesh;
 }
 
 void CoreAsset::IntermediateAssetFactory::ReleaseIntermediateAsset(CoreAsset::EAssetType type, IntermediateAsset *asset)
@@ -285,19 +292,26 @@ void CoreAsset::IntermediateAssetFactory::ReleaseIntermediateAsset(CoreAsset::EA
     case EAssetType::eMaterial:
 
         return ReleaseIntermediateAsset(static_cast<IntermediateMaterial *>(asset));
+
+    case EAssetType::eStaticMesh:
+        return ReleaseIntermediateAsset(static_cast<IntermediateStaticMesh *>(asset));
     }
 }
 
-CoreAsset::IntermediateMaterial::IntermediateMaterial()
+CoreAsset::IntermediateMaterial::IntermediateMaterial() : IntermediateAsset(EAssetType::eMaterial)
 {
 
     mAssetType = CoreAsset::EAssetType::eMaterial;
 }
 
-CoreAsset::IntermediateTexture::IntermediateTexture()
+CoreAsset::IntermediateStaticMesh::IntermediateStaticMesh()
 {
 
-    mAssetType = CoreAsset::EAssetType::eTexture;
+    mAssetType = EAssetType::eStaticMesh;
 }
 
-CoreAsset::IntermediateAsset::IntermediateAsset() {}
+CoreAsset::IntermediateTexture::IntermediateTexture() : IntermediateAsset(EAssetType::eTexture) {}
+
+CoreAsset::IntermediateAsset::IntermediateAsset(EAssetType assetType) : mAssetType(assetType) {}
+
+CoreAsset::IntermediateFont::IntermediateFont() : IntermediateAsset(EAssetType::eFont) {}

@@ -140,5 +140,5 @@ template class Core::QuadVector<long long>;
 template class Core::QuadVector<unsigned long long>;
 template class Core::QuadVector<unsigned long>;
 template class Core::QuadVector<unsigned int>;
-template class Core::QuadVector<Core::Component *>;
-template class Core::QuadVector<Core::SceneComponent *>;
+template class Core::QuadVector<Component *>;
+template class Core::QuadVector<SceneComponent *>;

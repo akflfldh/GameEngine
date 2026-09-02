@@ -1,4 +1,5 @@
-﻿#include "CoreAsset/AssetMetaDataManager.h"
+﻿#include <CoreAsset/AssetMetaDataManager.h>
+
 // #include <CoreAsset/GlobalAssetRegistrySystem.h>
 CoreAsset::AssetMetaDataManager *CoreAsset::AssetMetaDataManager::GetInstance()
 {
@@ -8,6 +9,12 @@ CoreAsset::AssetMetaDataManager *CoreAsset::AssetMetaDataManager::GetInstance()
 }
 
 CoreAsset::AssetMetaDataManager::AssetMetaDataManager() {}
+
+void CoreAsset::AssetMetaDataManager::SetRawFileName(AssetMetaData *metaData)
+{
+
+    metaData->mRawFileName = (metaData->mAssetName + std::to_string(metaData->mAssetID)).c_str();
+}
 
 CoreAsset::AssetMetaDataManager::~AssetMetaDataManager() {}
 
@@ -36,6 +43,40 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
 
         mAssetMetaDataTable[assetMetaData.mAssetID] = materialMetaData;
     }
+    break;
+    case EAssetType::eStaticMesh:
+
+    {
+        MeshMetaData *meshMetaData = new MeshMetaData;
+        *meshMetaData = static_cast<const MeshMetaData &>(assetMetaData);
+
+        mAssetMetaDataTable[assetMetaData.mAssetID] = meshMetaData;
+    }
+    break;
+    case EAssetType::eFont:
+    {
+        FontMetaData *fontMetaData = new FontMetaData;
+        *fontMetaData = static_cast<const FontMetaData &>(assetMetaData);
+
+        mAssetMetaDataTable[assetMetaData.mAssetID] = fontMetaData;
+    }
+    break;
+    case EAssetType::eMap:
+    {
+        MapMetaData *mapMetaData = new MapMetaData;
+        *mapMetaData = static_cast<const MapMetaData &>(assetMetaData);
+
+        mAssetMetaDataTable[assetMetaData.mAssetID] = mapMetaData;
+    }
+    break;
+    case EAssetType::ePrefab:
+    {
+        PrefabMetaData *metaData = new PrefabMetaData;
+        *metaData = static_cast<const PrefabMetaData &>(assetMetaData);
+
+        mAssetMetaDataTable[assetMetaData.mAssetID] = metaData;
+    }
+    break;
     }
 
     return true;
@@ -50,18 +91,12 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
     {
     case EAssetType::eTexture:
     {
-        std::string rawDataFileName = asset->GetName().c_str();
-
-        std::string id = std::to_string(asset->GetID());
-
-        rawDataFileName += id; // 유일성보장
-
         TextureMetaData textureMetaData;
         textureMetaData.mAssetID = asset->GetID();
         textureMetaData.mAssetName = asset->GetName().c_str();
         textureMetaData.mAssetType = asset->GetType();
         textureMetaData.mKeepRawDataFlag = true;
-        textureMetaData.mRawFileName = rawDataFileName.c_str();
+        SetRawFileName(&textureMetaData);
 
         bool ret = Register(textureMetaData);
         return ret;
@@ -70,19 +105,70 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
 
     case EAssetType::eMaterial:
     {
-        MaterialMetaData materialMetaData;
-        materialMetaData.mAssetID = asset->GetID();
-        materialMetaData.mAssetName = asset->GetName().c_str();
-        materialMetaData.mAssetType = asset->GetType();
+        MaterialMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        SetRawFileName(&metaData);
 
-        bool ret = Register(materialMetaData);
+        bool ret = Register(metaData);
         return ret;
     }
     break;
 
-    case EAssetType::eMesh:
+    case EAssetType::eStaticMesh:
+
+    {
+        MeshMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        SetRawFileName(&metaData);
+        bool ret = Register(metaData);
+        return ret;
+    }
+    break;
+
+    case EAssetType::eSkinningMesh:
     {
     }
+    break;
+    case EAssetType::eFont:
+    {
+        FontMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        SetRawFileName(&metaData);
+
+        bool ret = Register(metaData);
+        return ret;
+    }
+    break;
+    case EAssetType::eMap:
+    {
+        MapMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        SetRawFileName(&metaData);
+
+        bool ret = Register(metaData);
+        return ret;
+    }
+    break;
+    case EAssetType::ePrefab:
+    {
+        PrefabMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        SetRawFileName(&metaData);
+
+        bool ret = Register(metaData);
+        return ret;
+    }
+
     break;
     }
 

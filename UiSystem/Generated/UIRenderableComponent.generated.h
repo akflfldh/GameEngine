@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #undef GENERATED_BODY
 #define GENERATED_BODY(ClassType) \
@@ -6,6 +6,6 @@
     friend struct UIRenderableComponentRegistrar; \
 	public :									\
 		static constexpr const char * GetStaticClassName() { return #ClassType; } \
-		virtual const char * GetClassName(){return #ClassType;}				\
-    // ¿©±â¿¡ ¸ŞÅ¸µ¥ÀÌÅÍ, ÇÔ¼ö Æ÷ÀÎÅÍ ¼±¾ğ µî Ãß°¡ ¸®ÇÃ·º¼Ç ÄÚµå¸¦ ³ÖÀ» ¼ö ÀÖ½À´Ï´Ù. \
+		virtual const char * GetTypeName(){return #ClassType;}				\
+    // ì—¬ê¸°ì— ë©”íƒ€ë°ì´í„°, í•¨ìˆ˜ í¬ì¸í„° ì„ ì–¸ ë“± ì¶”ê°€ ë¦¬í”Œë ‰ì…˜ ì½”ë“œë¥¼ ë„£ì„ ìˆ˜ ìˆìŠµë‹ˆë‹¤. \
 

@@ -1,10 +1,13 @@
 ﻿#pragma once
 
 #include "D3DGpuResourceManager/D3DGpuResource.h"
+
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
 #include "D3DGpuResourceManager/IGpuResourceManager.h"
+#include <D3DGpuResourceManager/GRMPtr.h>
 #include <d3d12.h>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <wrl.h>
 
@@ -19,25 +22,50 @@ class D3DGpuBuffer;
 class D3DGpuTexture;
 class D3DGpuDescriptorHeapManager;
 
-class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceManager
+#pragma region Render
+
+struct PooledGpuResource
 {
 
+    GRM::GRMPtr pResource = nullptr;
+
+    bool mUsageAvailableFlag = true;
+};
+
+#pragma endregion
+
+class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceManager
+{
+  private:
+    std::mutex mCommandListMutex;
+
   public:
-    D3DGpuResourceManager(Microsoft::WRL::ComPtr<ID3D12Device> device,
-                          Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue);
+    D3DGpuResourceManager(Microsoft::WRL::ComPtr<ID3D12Device> device);
     ~D3DGpuResourceManager();
 
     GRM::GRMPtr CreateBuffer(const GRM::BufferDesc &bufferDesc) override;
 
     GRM::GRMPtr CreateTexture(const GRM::TextureDesc &textureDesc) override;
 
+#pragma region Render
+    // 렌더모듈에서 사용하는 메서드
+
+    GRM::IGpuResource *CreateOrGetTextureFromPool(const GRM::TextureDesc &textureDesc) override;
+    void ReturnResourceToPool(GRM::IGpuResource *gpuResource) override;
+
+#pragma endregion Render
+
     // 내부 리소스는 새로운 크기의 리소스일것
     void ResizeSwapChainBackBuffer(const GRM::GRMPtr &resource, void *innerResoure) override;
-    GRM::GRMPtr RegisterSwapChainBackBuffer(void *resoure) override; // ID3D12Resource * 타입의 후면버퍼를 전달한다.
+    GRM::GRMPtr RegisterSwapChainBackBuffer(
+        void *resoure, void *windowHandle) override; // ID3D12Resource * 타입의 후면버퍼를 전달한다.
 
     // 후면버퍼를 새로운사이즈의 버퍼로 교체하기전 먼저호출
     //  내부 리소스를 IGPUResource와의 연결을끊는다. 또한 RTV를 제거한다.
     void ReleaseSwapChainBackBuffer(const GRM::GRMPtr &resoure) override;
+    // index 0 1
+    virtual GRM::GRMPtr GetSwapChainBackBuffer(void *windowHandle, int index) override;
+
     void ChangeTextureData(const GRM::GRMPtr &texture, const GRM::TextureDesc &textureDesc) override;
 
     virtual bool UploadBufferData(const GRM::GRMPtr &buffer, void *data, size_t elementSize, size_t elementNum,
@@ -49,10 +77,16 @@ class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceMa
     D3DGpuDescriptorHeapManager *GetSMPHeapManager() const;
 
     void TransitionResourceState(GRM::IGpuResource *resource, D3D12_RESOURCE_STATES afterState);
+    void TransitionResourceState(GRM::IGpuResource *resource, EResourceState afterState);
+    virtual void SetResourceState(GRM::IGpuResource *resource, EResourceState state) override;
 
     virtual void Release(GRM::IGpuResource *resource) override;
 
     virtual void FlushGarbageCollect() override;
+
+    GRM::IGpuResource *GetDefaultTexture() const override;
+
+    void EndSystem();
 
   private:
     D3DGpuBuffer *CreateBuffer(ID3D12Resource *resource, const GRM::BufferDesc &bufferDesc);
@@ -85,7 +119,17 @@ class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceMa
     void UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> textureResource, const GRM::TextureDesc &textureDesc,
                            D3D12_RESOURCE_STATES preState);
 
-    //	void FlushCommandQueue();
+    //	void FlushCommandQueue();'
+
+    void CreateDefaultTeture();
+
+    void FlushCommandQueue();
+
+#pragma region Render
+
+    size_t HashTextureResourceDesc(const GRM::TextureDesc &textureDesc);
+
+#pragma endregion
 
   private:
     Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
@@ -93,7 +137,7 @@ class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceMa
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
     Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
-    size_t mCurrentFence;
+    uint64_t mCurrentFenceValue;
 
     std::unique_ptr<D3DGpuDescriptorHeapManager> mCSUHeapManager;
     std::unique_ptr<D3DGpuDescriptorHeapManager> mRTVHeapManager;
@@ -103,9 +147,19 @@ class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceMa
     std::unordered_map<ID3D12Resource *, D3DDescriptorHandle>
         mSwapChainBackBufferHandleTable; // 수많은 창들의 스왑체인백버퍼가 등록될수있다.
 
+    std::mutex mGarbageMutex;
     std::vector<D3DGpuResource *> mGarbageVector;
 
     Core::D3DCoreDevice *mCoreDevice;
+
+#pragma region Render
+
+    std::unordered_map<size_t, std::vector<GRM::GRMPtr>> mTexResourcePool;
+    std::unordered_map<HWND, std::vector<GRM::GRMPtr>> mSwapChainBackBufferTable;
+
+#pragma endregion
+
+    GRM::GRMPtr mDefaultTexture;
 };
 
 } // namespace D3DGRM

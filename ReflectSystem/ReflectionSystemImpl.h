@@ -25,7 +25,7 @@ class REFLECT_SYSTEM_API ReflectionSystemImpl
     void DestoryClassInstance(const char *className, void *instance);
 
     size_t GetClassSize(const char *className) const;
-    ClassInfo *GetClassInfo(const char *className) const;
+    ClassInfo *FindClassInfo(const char *className) const;
 
   private:
     std::vector<ClassInfo *> mClassInfoVector;

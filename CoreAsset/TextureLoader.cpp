@@ -14,8 +14,8 @@ CoreAsset::TextureLoader *CoreAsset::TextureLoader::GetInstance()
 CoreAsset::TextureLoader::TextureLoader() {}
 CoreAsset::TextureLoader::~TextureLoader() {}
 
-bool CoreAsset::TextureLoader::LoadAssetFile(Arch &arch, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
-                                             std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr)
+bool CoreAsset::TextureLoader::LoadAssetFile(EAssetType assetType, Arch &arch, AssetFactoryManager *assetFactoryManager,
+                                             Asset *&oAsset, std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr)
 {
 
     // texture metaData에대한 texture common header 를 먼저 직렬화
@@ -23,16 +23,13 @@ bool CoreAsset::TextureLoader::LoadAssetFile(Arch &arch, AssetFactoryManager *as
     textureCommonHeader.Serialize(arch);
 
     std::unique_ptr<TextureMetaData> textureMetaDataPtr = std::make_unique<TextureMetaData>();
-    textureMetaDataPtr->mRawFileName = textureCommonHeader.mRawFileName;
-    textureMetaDataPtr->mAssetType = CoreAsset::EAssetType::eTexture;
+    //  textureMetaDataPtr->mRawFileName = textureCommonHeader.mRawFileName;
+    //  textureMetaDataPtr->mAssetType = CoreAsset::EAssetType::eTexture;
 
     // 그 후 빈에셋(Texture)생성후 Serialize수행
     oAsset = assetFactoryManager->CreateEmptyAsset(EAssetType::eTexture);
     if (oAsset != nullptr)
         oAsset->Serialize(arch);
-
-
-
 
     oAssetMetaDataPtr = std::move(textureMetaDataPtr);
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <Utility/UniqueID.h>
+#include <filesystem>
 #include <string>
 #include <vector>
 namespace CoreUtility
@@ -33,7 +34,40 @@ class Utility
 
     static UniqueID MakeUniqueID();
 
+    // UTF8
+    static std::vector<uint32_t> GetUnicodeFromUTF8(const std::string &utf8);
+
+    static void Utility_GetCurrentDirectoryW(size_t size, wchar_t *oBuffer);
+
+    static bool IsAllAlpha(const std::string &text);
+
+    static bool CreateNewProcess(const std::string &executionPath, const std::string &cmdArguments,
+                                 const std::string &currentDirectoryPath = "");
+
+    static bool TryParseFloat(const std::string &text, float &oValue);
+
   private:
 };
+
+class LibraryUtility
+{
+  public:
+    static void *Load(const std::filesystem::path &path);
+};
+
+// FNV-1a
+template <typename T> size_t HashValue(uint64_t hash, const T &value)
+{
+
+    const uint8_t *byte = reinterpret_cast<const uint8_t *>(&value);
+    const uint64_t prime = 0x00000100000001b3;
+    for (size_t i = 0; i < sizeof(value); ++i)
+    {
+        hash ^= byte[i];
+        hash *= prime;
+    }
+
+    return hash;
+}
 
 } // namespace CoreUtility

@@ -162,3 +162,40 @@ CoreAsset::Asset *CoreAsset::AssetPtr::Get() const
 
     return asset;
 }
+
+CoreAsset::AssetID CoreAsset::AssetPtr::GetAssetID() const
+{
+
+    return mID;
+}
+
+void CoreAsset::AssetPtr::SetAsset(Asset *asset)
+{
+    if (asset == nullptr)
+        mID = NoneAssetID;
+    else
+    {
+        mID = asset->GetID();
+    }
+}
+void CoreAsset::AssetPtr::SetAsset(AssetID assetID)
+{
+    mID = assetID;
+}
+
+Arch &CoreAsset::operator<<(Arch &arch, CoreAsset::AssetPtr &ptr)
+{
+    if (arch.GetLoadingFlag())
+    {
+        CoreAsset::AssetID id = NoneAssetID;
+        arch << id;
+        ptr.SetAsset(id);
+    }
+    else
+    {
+        CoreAsset::AssetID id = ptr.GetAssetID();
+        arch << id;
+    }
+
+    return arch;
+}

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Logger/Logger.h"
+#include <filesystem>
 #include <fstream>
 #include <mutex>
 #include <string>
@@ -15,7 +16,7 @@ class LoggerImpl : public Logger
     LoggerImpl();
     virtual ~LoggerImpl();
     // Initialize이다.
-    virtual bool SetLoggerFile(const char *outputFile) override;
+    virtual bool SetLoggerFile(const std::filesystem::path &outputFile) override;
 
     virtual void Log(ELogLevel logLevel, const char *category, const char *message) override;
     virtual void Log(const char *logLevel, const char *category, const char *message) override;
@@ -34,7 +35,7 @@ class LoggerImpl : public Logger
 
   private:
     std::ofstream fout;
-    std::string mOutputFile;
+    std::filesystem::path mOutputFile;
     std::mutex mLogMutex;
 
     std::unordered_map<ELogLevel, std::string> mLogLevelStringTable;

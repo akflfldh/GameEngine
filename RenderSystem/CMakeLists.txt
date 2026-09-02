@@ -8,7 +8,7 @@ IMaterialManager.h
 IMaterialManager.cpp 
 IRenderSystem.cpp 
 RenderSystemInternalHelper.cpp 
-)
+ "IWindowRenderManager.h" "IWindowRenderManager.cpp")
 
 
 if(MSVC)
@@ -43,18 +43,18 @@ if(MSVC)
 
 endif()
 
-add_library(pix SHARED IMPORTED)
+#add_library(pix SHARED IMPORTED)
 
-set_target_properties(pix PROPERTIES
-IMPORTED_IMPLIB_DEBUG "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.lib"
-IMPORTED_IMPLIB_RELEASE "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.lib"
-IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.dll")
+#set_target_properties(pix PROPERTIES
+#IMPORTED_IMPLIB_DEBUG "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.lib"
+#IMPORTED_IMPLIB_RELEASE "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.lib"
+#IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/Pix/WinPixEventRuntime.dll")
 
 
 
 target_compile_definitions(RenderSystem PRIVATE RENDER_SYSTEM_LIB)
 
-target_link_libraries(RenderSystem PUBLIC compiler_flags headerDir GpuResourceManager Logger d3d12 d3dcompiler pix)
+target_link_libraries(RenderSystem PUBLIC compiler_flags headerDir GpuResourceManager Logger d3d12 d3dcompiler CoreBase)
 
 target_include_directories(RenderSystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

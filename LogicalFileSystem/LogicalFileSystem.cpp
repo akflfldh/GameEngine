@@ -4,6 +4,7 @@
 #include <BinaryReaderWriter/BinaryReader.h>
 #include <BinaryReaderWriter/BinaryWriter.h>
 #include <CoreAsset/AssetCommon.h>
+#include <CoreBase/CoreAssert.h>
 #include <Logger/Logger.h>
 #include <PhysicalFileSystem.h>
 #include <Utility/Utility.h>
@@ -47,11 +48,22 @@ QuadLF::LogicalFileSystem::LogicalFileSystem(QuadPF::PhysicalFileSystem *physica
     mRootFolder = new LogicalFolder(0);
     mNextNodeID = 1;
     mPhysicalFileSystem = physicalFileSystem;
-    mRootFolder->SetName("Asset");
+    mRootFolder->SetName("");
     mRootFolder->SetParent(nullptr);
     mCurrentFolder = mRootFolder;
 
     LOG_MESSAGE_INFO("LogicalFileSystem", "논리적파일시스템 인스턴스 생성");
+
+    // TODO
+    // Engin 하위 폴더
+
+    // Asset 하위 폴더
+
+    mRootEngineFolder = CreateFolder("Engine", mRootFolder);
+    mRootAssetFolder = CreateFolder("Asset", mRootFolder);
+    mRootCXXFolder = CreateFolder("C++", mRootFolder);
+
+    SetCurrentLogicalFolder(mRootAssetFolder);
 }
 
 QuadLF::LogicalFile *QuadLF::LogicalFileSystem::MakeFile(const LogicalFileAssetInfo &logicalAssetFileInfo,
@@ -82,14 +94,15 @@ QuadLF::LogicalFile *QuadLF::LogicalFileSystem::MakeFile(const LogicalFileAssetI
     if (physicalFileFlag)
     {
         // 물리적파일도 생성
-        const std::string physicalParentPath = GetPhysicalFullPath(parentFolder);
-        if (!mPhysicalFileSystem->CreatePhysicalFile(fileName + "." + CoreAsset::GetAssetFileExtension(),
-                                                     physicalParentPath))
+        std::filesystem::path physicalParentPath = GetPhysicalFullPath(parentFolder);
+        std::filesystem::path filePath = physicalParentPath / (fileName + CoreAsset::GetAssetDotFileExtension());
+
+        if (!mPhysicalFileSystem->CreatePhysicalFile(filePath))
         {
             // log
 
             LOG_MESSAGE_ERROR("LogicalFileSystem",
-                              (fileName + "." + CoreAsset::GetAssetFileExtension() + "물리적 파일 생성실패").c_str());
+                              (fileName + CoreAsset::GetAssetDotFileExtension() + "물리적 파일 생성실패").c_str());
             return nullptr;
         }
         IsPhysicalBinding = true;
@@ -99,6 +112,8 @@ QuadLF::LogicalFile *QuadLF::LogicalFileSystem::MakeFile(const LogicalFileAssetI
     InitSetting(file, parentFolder, fileName);
     file->SetAssetInfo(logicalAssetFileInfo);
     file->SetPhysicalBindingFlag(IsPhysicalBinding);
+
+    mOnCreatedFileCallbackSystem.ExecuteCallbacks(file, parentFolder);
 
     return file;
 }
@@ -135,6 +150,8 @@ QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::CreateFolder(const std::string
     }
 
     LogicalFolder *logicalFolder = CreateLogicalFolder(parentFolder, folderName, isPhysicalBinding);
+
+    mOnCreatedFolderCallbackSystem.ExecuteCallbacks(logicalFolder, parentFolder);
 
     return logicalFolder;
 }
@@ -197,6 +214,8 @@ bool QuadLF::LogicalFileSystem::RemoveFolder(LogicalFolder *folder)
         }
     }
 
+    mOnRemovedFolderCallbackSystem.ExecuteCallbacks();
+
     return true;
 }
 
@@ -207,6 +226,8 @@ bool QuadLF::LogicalFileSystem::RemoveFile(LogicalFile *file)
 
     folder->removeChildNode(file);
     // 추가적인작업이필요하다면 수행
+
+    mOnRemovedFileCallbackSystem.ExecuteCallbacks(file, folder);
 
     // 물리적 파일과 연결된 파일이면
     // 물리적 파일도 제거한다.
@@ -232,15 +253,9 @@ QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetFolder(const std::string &p
     if (folderListVector.size() == 0)
         return nullptr;
 
-    if (folderListVector[0] != mRootFolder->GetName())
-        return nullptr;
-
-    if (folderListVector.size() == 1)
-        return mRootFolder;
-
     LogicalFolder *parentFolder = mRootFolder;
 
-    for (int i = 1; i < folderListVector.size(); ++i)
+    for (int i = 0; i < folderListVector.size(); ++i)
     {
         LogicalNode *childNode = parentFolder->GetChild(folderListVector[i]);
 
@@ -258,6 +273,21 @@ QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetFolder(const std::string &p
 QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetRootFolder() const
 {
     return mRootFolder;
+}
+
+QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetAssetFolder() const
+{
+    return mRootAssetFolder;
+}
+
+QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetCXXFolder() const
+{
+    return mRootCXXFolder;
+}
+
+QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::GetEngineFolder() const
+{
+    return mRootEngineFolder;
 }
 
 std::vector<QuadLF::LogicalFile *> QuadLF::LogicalFileSystem::GetFile(const std::string &fileName,
@@ -312,9 +342,11 @@ QuadLF::LogicalFileSystem::~LogicalFileSystem()
     delete mRootFolder;
 }
 
-void QuadLF::LogicalFileSystem::Initialize(const std::string &physicalRootPath)
+void QuadLF::LogicalFileSystem::Initialize(const std::filesystem::path &physicalRootPath,
+                                           const std::filesystem::path &engineRootPath)
 {
     mPhysicalRootPath = physicalRootPath;
+    mEnginePhysicalRootPath = engineRootPath;
 }
 
 QuadLF::LogicalNodeID QuadLF::LogicalFileSystem::GetNextNodeID()
@@ -339,8 +371,11 @@ void QuadLF::LogicalFileSystem::ReleaseNodeID(QuadLF::LogicalNodeID id)
 bool QuadLF::LogicalFileSystem::CreatePhysicalFolder(LogicalFolder *parentFolde, const std::string &folderName)
 {
 
-    const std::string physicalParentPath = GetPhysicalFullPath(parentFolde);
-    if (!mPhysicalFileSystem->CreatePhysicalFolder(folderName, physicalParentPath))
+    const std::filesystem::path physicalParentPath = GetPhysicalFullPath(parentFolde);
+
+    std::filesystem::path folderPath = physicalParentPath / folderName;
+
+    if (!mPhysicalFileSystem->CreatePhysicalFolder(folderPath))
     {
         // log
         LOG_MESSAGE("Warning", "LogicalFileSystem", (folderName + " 물리적폴더생성실패").c_str());
@@ -354,10 +389,24 @@ QuadLF::LogicalFolder *QuadLF::LogicalFileSystem::CreateLogicalFolder(LogicalFol
                                                                       const std::string &folderName,
                                                                       bool physicalFolderBindingFlag)
 {
+    if (parentFolder == nullptr)
+    {
+        if (auto folder = GetFolder(folderName))
+            return folder;
+    }
+    else if (auto folder = GetFolder(parentFolder->GetFullPath() + "/" + folderName))
+    {
+        // 이미존재.
+        return folder;
+    }
+
     LogicalFolder *newFolder = CreateFolderInstance(GetNextNodeID());
 
     if (newFolder)
     {
+        if (parentFolder == nullptr)
+            parentFolder = mRootFolder;
+
         InitSetting(newFolder, parentFolder, folderName);
         newFolder->SetPhysicalBindingFlag(physicalFolderBindingFlag);
     }
@@ -412,6 +461,7 @@ bool QuadLF::LogicalFileSystem::ReleaseFileInstance(LogicalFile *file)
 void QuadLF::LogicalFileSystem::InitSetting(LogicalNode *node, LogicalFolder *parentFolder, const std::string &name)
 {
     node->SetName(name);
+
     node->SetParent(parentFolder);
     parentFolder->AddChildNode(node);
 }
@@ -441,13 +491,23 @@ std::vector<QuadLF::LDSFolder> QuadLF::LogicalFileSystem::GetLDSFolderAll() cons
     return ldsVector;
 }
 
-std::string QuadLF::LogicalFileSystem::GetPhysicalFullPath(LogicalNode *node) const
+std::filesystem::path QuadLF::LogicalFileSystem::GetPhysicalFullPath(LogicalNode *node, bool bEngine) const
 {
 
     if (node == nullptr)
         return "";
 
-    std::string path = mPhysicalRootPath + '/' + node->GetFullPath();
+    std::filesystem::path path;
+
+    if (bEngine)
+    {
+        path = mEnginePhysicalRootPath / node->GetFullPath();
+    }
+    else
+    {
+        path = mPhysicalRootPath / node->GetFullPath();
+    }
+
     if (node->GetNodeType() == ELogicalNodeType::eFile)
     {
         path += ".";
@@ -458,7 +518,7 @@ std::string QuadLF::LogicalFileSystem::GetPhysicalFullPath(LogicalNode *node) co
 }
 
 bool QuadLF::LogicalFileSystem::SaveLogicalDirectoryStructureAsBinaryWriter(QuadRW::BinaryWriter &binaryWriter,
-                                                                            const std::string &path,
+                                                                            const std::filesystem::path &path,
                                                                             const std::string &fileName)
 {
     binaryWriter.StartWrite();
@@ -477,12 +537,12 @@ bool QuadLF::LogicalFileSystem::SaveLogicalDirectoryStructureAsBinaryWriter(Quad
         binaryWriter.Write(ldsFolderElement.pyhsicalBindingFlag);
     }
 
-    const std::string filePath = path + "/" + fileName + ".lds";
+    const std::filesystem::path filePath = path / (fileName + ".lds");
     return binaryWriter.Close(filePath);
 }
 
 bool QuadLF::LogicalFileSystem::LoadLogicalDirectoryStructureAsBinaryReader(QuadRW::BinaryReader &binaryReader,
-                                                                            const std::string &filePath)
+                                                                            const std::filesystem::path &filePath)
 {
 
     bool ret = binaryReader.StartRead(filePath);
@@ -541,18 +601,10 @@ bool QuadLF::LogicalFileSystem::LoadLogicalDirectoryStructureAsBinaryReader(Quad
         LogicalFolder *parentFolder =
             GetFolder(CoreUtility::Utility::GetParentFolderPathFromPath(ldsFolderElement.path));
 
-        if (parentFolder == nullptr)
-        {
-            // log
-            continue;
-        }
-
         LogicalFolder *childFolder =
             CreateLogicalFolder(parentFolder, CoreUtility::Utility::GetFileNameFromPath(ldsFolderElement.path), true);
-        if (childFolder == nullptr)
-        {
-            // log
-        }
+
+        CHECK(childFolder != nullptr);
     }
 
     return true;

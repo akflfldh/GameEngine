@@ -1,6 +1,13 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <string>
+
+enum class EEditorMode : uint8_t
+{
+    eProjectBrowser = 0,
+    eEditProject
+};
 
 namespace Quad
 {
@@ -12,15 +19,30 @@ class EditorConfig
     EditorConfig();
     ~EditorConfig();
 
-    void SetEditorRootPath(const std::string &editorRootPath);
-    const std::string &GetEditorRootPath() const;
+    void SetEditorRootPath(const std::filesystem::path &path);
+    const std::filesystem::path &GetEditorRootPath() const;
 
-    std::string GetEditorAssetPath() const;
+    // const std::string &GetEditorRootPath() const;
 
+    void SetEditorExecutableDirectory(const std::filesystem::path &path);
+
+    // 에디터  실행파일 위치
+    const std::filesystem::path &GetExecutableDirectory() const;
+
+    std::filesystem::path GetEditorAssetPath() const;
+
+    void SetEditorMode(EEditorMode mode);
+    EEditorMode GetEditorMode() const;
 
   private:
+    // 배포버전에서는 ExecutablePath와동일 , 개발버전은 다른경로
+    std::filesystem::path mEditorRootPath;
     // editor실행파일이 존재하는 경로(실행파일명은제외)
-    std::string mEditorRootPath;
+    std::filesystem::path mExecutablePath;
+
+    std::filesystem::path mEditorAssetPath;
+
+    EEditorMode mEditorMode;
 };
 
 } // namespace Quad

@@ -14,12 +14,27 @@ GRM::GpuBufferContextSystemImpl::GpuBufferContextSystemImpl()
 
 GRM::GpuBufferContextSystemImpl::~GpuBufferContextSystemImpl() {}
 
-void GRM::GpuBufferContextSystemImpl::LoadShaderBufferFile(const std::string &filePath)
+void GRM::GpuBufferContextSystemImpl::PreUpdate()
+{
+
+    for (auto gpuBufferContext : mConstantBufferCacheList)
+    {
+
+        gpuBufferContext->mAllocateRange.Reset();
+    }
+
+    for (auto gpuBufferContext : mStructuredBufferCacheList)
+    {
+        gpuBufferContext->mCurrFrameIndex = (gpuBufferContext->mCurrFrameIndex + 1) % 3;
+    }
+}
+
+void GRM::GpuBufferContextSystemImpl::LoadShaderBufferFile(const std::filesystem::path &filePath)
 {
 
     JsonParser::Parser jsonParser;
     bool ret = true;
-    ret = jsonParser.ReadFile(filePath);
+    ret = jsonParser.ReadFile(filePath.string());
     if (!ret)
     {
         LOG_MESSAGE_CRITICAL("GpuBufferContextSystemImpl", "JsonParser ReadFile 실패");
@@ -33,69 +48,7 @@ void GRM::GpuBufferContextSystemImpl::LoadShaderBufferFile(const std::string &fi
         if (bufferTypeKey == "ConstantBuffer")
         {
             // 상수버퍼
-
-            jsonParser.IntoReadPointer();
-
-            // 상수버퍼들을 읽는다.
-            do
-            {
-
-                // 한 버퍼 정보들을 읽는다.
-                jsonParser.IntoReadPointer();
-
-                GRM::BufferDesc bufferDesc;
-                uint32_t bufferID = 0;
-                uint32_t uploadType = 0;
-                uint32_t size = 0;
-
-                do
-                {
-                    const std::string &bufferConfigKey = jsonParser.GetKeyFromReadPointer();
-                    if (bufferConfigKey == "ID")
-                    {
-
-                        ret = jsonParser.GetValueFromReadPointer<uint32_t>(bufferID);
-                        if (!ret)
-                        {
-                            LOG_MESSAGE_ERROR("GpuBufferContextSystem", ".shader.buffer 읽기실패 (bufferID)");
-                            assert(0);
-                        }
-                    }
-                    else if (bufferConfigKey == "UploadType")
-                    {
-
-                        ret = jsonParser.GetValueFromReadPointer<uint32_t>(uploadType);
-                        if (!ret)
-                        {
-                            LOG_MESSAGE_CRITICAL("GpuBufferContextSystem", ".shader.buffer 읽기실패 (UploadType)");
-                            assert(0);
-                        }
-                    }
-                    else if (bufferConfigKey == "Size")
-                    {
-
-                        ret = jsonParser.GetValueFromReadPointer<uint32_t>(size);
-                        if (!ret)
-                        {
-                            LOG_MESSAGE_CRITICAL("GpuBufferContextSystem", ".shader.buffer 읽기 실패(size)");
-                            assert(0);
-                        }
-                    }
-
-                } while (jsonParser.NextReadPointer());
-
-                ret = CreateGpuBuffer(bufferID, GRM::EBufferUsage::eConstantBuffer, uploadType, size);
-
-                // 읽은 버퍼에서 빠져나온다.
-                jsonParser.OutReadPointer();
-
-            } while (jsonParser.NextReadPointer());
-
-            jsonParser.OutReadPointer();
-        }
-        else if (bufferTypeKey == "StructuredBuffer")
-        {
-            // 구조화된 버퍼
+            bool ret = LoadConstantBuffer(jsonParser);
         }
         else
         {
@@ -107,9 +60,7 @@ void GRM::GpuBufferContextSystemImpl::LoadShaderBufferFile(const std::string &fi
     } while (jsonParser.NextReadPointer());
 }
 
-bool GRM::GpuBufferContextSystemImpl::RegisterGpuBufferCallback(uint32_t id,
-                                                                pDataMemory (*createBufferData)(void *object,
-                                                                                                void *frameContext))
+bool GRM::GpuBufferContextSystemImpl::RegisterGpuBufferCallback(uint32_t id)
 {
     // GpuBuffer를 생성요청
     // 타입에 맞게 생성해야한다.
@@ -124,8 +75,6 @@ bool GRM::GpuBufferContextSystemImpl::RegisterGpuBufferCallback(uint32_t id,
         assert(0);
         return false;
     }
-
-    it->second->createBufferData = createBufferData;
 
     return true;
 }
@@ -150,8 +99,8 @@ GRM::GpuBufferContext *GRM::GpuBufferContextSystemImpl::GetGpuBufferContext(uint
     return nullptr;
 }
 
-bool GRM::GpuBufferContextSystemImpl::CreateGpuBuffer(uint32_t bufferID, GRM::EBufferUsage bufferUsage,
-                                                      uint32_t uploadType, uint32_t size)
+bool GRM::GpuBufferContextSystemImpl::CreateBuffer(uint32_t bufferID, GRM::EBufferUsage bufferUsage,
+                                                   uint32_t uploadType, uint32_t size)
 {
 
     std::unordered_map<uint32_t, std::unique_ptr<GpuBufferContext>>::iterator it =
@@ -173,22 +122,18 @@ bool GRM::GpuBufferContextSystemImpl::CreateGpuBuffer(uint32_t bufferID, GRM::EB
     if (uploadType == 0)
     {
         // PASS 10
-        bufferDesc.mElementDataNum = 10;
+        bufferDesc.mElementDataNum = 256;
     }
     else
     {
-        bufferDesc.mElementDataNum = 100;
+        // Object
+        bufferDesc.mElementDataNum = 1000;
     }
 
     if (bufferUsage == GRM::EBufferUsage::eConstantBuffer)
     {
         bufferDesc.mElementDataSize = CacluateConstantBufferSize(size);
         bufferDesc.mBufferSize = bufferDesc.mElementDataNum * CacluateConstantBufferSize(bufferDesc.mElementDataSize);
-    }
-    else if (bufferUsage == GRM::EBufferUsage::eStructuredBuffer)
-    {
-        bufferDesc.mElementDataSize = size;
-        bufferDesc.mBufferSize = bufferDesc.mElementDataNum * bufferDesc.mElementDataSize;
     }
 
     GRM::GRMPtr pBuffer = mGpuResourceManager->CreateBuffer(bufferDesc);
@@ -197,15 +142,65 @@ bool GRM::GpuBufferContextSystemImpl::CreateGpuBuffer(uint32_t bufferID, GRM::EB
         LOG_MESSAGE_CRITICAL("GpuBufferContextSystemImpl", "Fun : CreaetGpuBuffer , GpuBuffer리소스 생성실패");
         assert(0);
     }
-
-    std::unique_ptr<GpuBufferContext> gpuBufferContext = std::make_unique<GpuBufferContext>();
-
+    std::unique_ptr<GpuConstantBufferContext> gpuBufferContext = std::make_unique<GpuConstantBufferContext>();
+    gpuBufferContext->mAllocateRange.SetTotalSize(bufferDesc.mElementDataNum);
     gpuBufferContext->mGpuBuffer = pBuffer;
     gpuBufferContext->mID = bufferID;
     gpuBufferContext->mBufferDesc = bufferDesc;
+    // element max개수
+
+    mConstantBufferCacheList.push_back(gpuBufferContext.get());
     mGpuBufferContextTable[bufferID] = std::move(gpuBufferContext);
 
     return true;
+}
+
+bool GRM::GpuBufferContextSystemImpl::CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame)
+{
+
+    if (mGpuBufferContextTable.find(bufferID) != mGpuBufferContextTable.end())
+    {
+        LOG_MESSAGE_CRITICAL("GpuBufferContextSystemImpl",
+                             "Fun : CreaetGpuBuffer , GpuBuffer리소스 생성실패, 이미존재하는 구조적버퍼");
+        assert(0);
+        return false;
+    }
+    GRM::BufferDesc bufferDesc;
+    bufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
+    bufferDesc.mBufferUsage = EBufferUsage::eStructuredBuffer;
+    bufferDesc.mData = nullptr;
+    bufferDesc.mElementDataNum = 256;
+    bufferDesc.mElementDataSize = size;
+    //~(15) & (size + 15);
+    bufferDesc.mBufferSize = bufferDesc.mElementDataNum * bufferDesc.mElementDataSize;
+
+    int bufferNum = 1;
+
+    if (isBuffersPerFrame)
+    {
+        bufferNum = 3;
+    }
+    std::unique_ptr<GpuStructuredBufferContext> gpuBufferContext = std::make_unique<GpuStructuredBufferContext>();
+
+    for (int i = 0; i < bufferNum; ++i)
+    {
+        GRM::GRMPtr pBuffer = mGpuResourceManager->CreateBuffer(bufferDesc);
+        if (pBuffer.getResource() == nullptr)
+        {
+            LOG_MESSAGE_CRITICAL("GpuBufferContextSystemImpl", "Fun : CreaetGpuBuffer , GpuBuffer리소스 생성실패");
+            assert(0);
+        }
+
+        gpuBufferContext->mGpuBuffersPerFrame.push_back(pBuffer);
+    }
+
+    gpuBufferContext->mID = bufferID;
+    gpuBufferContext->mBufferDesc = bufferDesc;
+    gpuBufferContext->mIsFrameBuffers = isBuffersPerFrame;
+    mStructuredBufferCacheList.push_back(gpuBufferContext.get());
+    mGpuBufferContextTable[bufferID] = std::move(gpuBufferContext);
+
+    return false;
 }
 
 uint32_t GRM::GpuBufferContextSystemImpl::CacluateConstantBufferSize(uint32_t size) const
@@ -215,7 +210,76 @@ uint32_t GRM::GpuBufferContextSystemImpl::CacluateConstantBufferSize(uint32_t si
 
     return (size + 255) & ~255;
 
+#else
+    // DirectX 상수 버퍼는 256바이트 정렬을 권장함.
+    // D3DX 매크로가 없을 때도 동일한 정렬 규칙을 적용.
+    const uint32_t alignment = 256u;
+    return (size + (alignment - 1)) & ~(alignment - 1);
 #endif
+}
 
-    return 0;
+bool GRM::GpuBufferContextSystemImpl::LoadConstantBuffer(JsonParser::Parser &jsonParser)
+{
+    bool ret = true;
+
+    jsonParser.IntoReadPointer();
+
+    // 상수버퍼들을 읽는다.
+    do
+    {
+
+        // 한 버퍼 정보들을 읽는다.
+        jsonParser.IntoReadPointer();
+
+        GRM::BufferDesc bufferDesc;
+        uint32_t bufferID = 0;
+        uint32_t uploadType = 0;
+        uint32_t size = 0;
+
+        do
+        {
+            const std::string &bufferConfigKey = jsonParser.GetKeyFromReadPointer();
+            if (bufferConfigKey == "ID")
+            {
+
+                ret = jsonParser.GetValueFromReadPointer<uint32_t>(bufferID);
+                if (!ret)
+                {
+                    LOG_MESSAGE_ERROR("GpuBufferContextSystem", ".shader.buffer 읽기실패 (bufferID)");
+                    assert(0);
+                }
+            }
+            else if (bufferConfigKey == "UploadType")
+            {
+
+                ret = jsonParser.GetValueFromReadPointer<uint32_t>(uploadType);
+                if (!ret)
+                {
+                    LOG_MESSAGE_CRITICAL("GpuBufferContextSystem", ".shader.buffer 읽기실패 (UploadType)");
+                    assert(0);
+                }
+            }
+            else if (bufferConfigKey == "Size")
+            {
+
+                ret = jsonParser.GetValueFromReadPointer<uint32_t>(size);
+                if (!ret)
+                {
+                    LOG_MESSAGE_CRITICAL("GpuBufferContextSystem", ".shader.buffer 읽기 실패(size)");
+                    assert(0);
+                }
+            }
+
+        } while (jsonParser.NextReadPointer());
+
+        ret = CreateBuffer(bufferID, GRM::EBufferUsage::eConstantBuffer, uploadType, size);
+
+        // 읽은 버퍼에서 빠져나온다.
+        jsonParser.OutReadPointer();
+
+    } while (jsonParser.NextReadPointer());
+
+    jsonParser.OutReadPointer();
+
+    return true;
 }

@@ -14,17 +14,13 @@ D3DWindowRenderData::D3DWindowRenderData(D3DWindowRenderManager *windowRenderMan
                                          Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue,
                                          const Render::CreationRenderChannelInfo &creationInfo)
     : mWindowRenderManager(windowRenderManager), mDevice(device), mFactory(factory), mCommandQueue(commandQueue),
-      mWindowHandle(creationInfo.mWindowHandle), mBackBufferForamt(DXGI_FORMAT_R8G8B8A8_UNORM),
+      mWindowHandle((HWND)creationInfo.mWindowHandle), mBackBufferForamt(DXGI_FORMAT_R8G8B8A8_UNORM),
       mCurrentBackBufferIndex(0), mCurrentFenceValue(0)
 {
     mGpuResourceManager = static_cast<D3DGRM::D3DGpuResourceManager *>(GRM::IGpuResourceManager::GetInstance());
     HRESULT result = mDevice->CreateFence(mCurrentFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
 
     Core::D3DCoreDevice *d3dCoreDevice = static_cast<Core::D3DCoreDevice *>(Core::CoreDevice::GetInstance());
-    mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
-    mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), nullptr,
-                               IID_PPV_ARGS(&mCommandList));
-
     CreateSwapChain(creationInfo);
     // CreateDepthStencilBuffer(creationInfo);
     // default back buffer, - 2개
@@ -33,17 +29,17 @@ D3DWindowRenderData::D3DWindowRenderData(D3DWindowRenderManager *windowRenderMan
 
 D3DWindowRenderData::~D3DWindowRenderData() {}
 
-void D3DWindowRenderData::ResizeWindow()
+int D3DWindowRenderData::ResizeWindow()
 {
     RECT clientSize;
     GetClientRect(mWindowHandle, &clientSize);
 
     Core::D3DCoreDevice *coreDevice = static_cast<Core::D3DCoreDevice *>(Core::CoreDevice::GetInstance());
     coreDevice->FlushCommandQueue();
-    ResizeBackBuffer(clientSize.right, clientSize.bottom);
+    mCurrentBackBufferIndex = ResizeBackBuffer(clientSize.right, clientSize.bottom);
     ResizeDepthStencilBuffer(clientSize.right, clientSize.bottom);
 
-    mCurrentBackBufferIndex = 0;
+    return mCurrentBackBufferIndex;
 }
 
 GRM::GRMPtr D3DWindowRenderData::GetBackBuffer(int index) const
@@ -54,6 +50,12 @@ GRM::GRMPtr D3DWindowRenderData::GetBackBuffer(int index) const
 GRM::GRMPtr D3DWindowRenderData::GetDepthStencilBuffer() const
 {
     return mDepthStencilBuffer;
+}
+
+GRM::GRMPtr D3DWindowRenderData::GetCurrentBackBuffer() const
+{
+
+    return GetBackBuffer(GetCurrentBackBufferIndex());
 }
 
 int D3DWindowRenderData::GetCurrentBackBufferIndex() const
@@ -94,7 +96,7 @@ HANDLE D3DWindowRenderData::GetFenceEventHandle()
 void D3DWindowRenderData::CreateSwapChain(const Render::CreationRenderChannelInfo &creationInfo)
 {
 
-    HWND windowHandle = creationInfo.mWindowHandle;
+    HWND windowHandle = (HWND)creationInfo.mWindowHandle;
     RECT windowSize; // 창의 클라이언트 크기
     GetClientRect(windowHandle, &windowSize);
 
@@ -110,13 +112,17 @@ void D3DWindowRenderData::CreateSwapChain(const Render::CreationRenderChannelInf
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 2;
-    swapChainDesc.OutputWindow = creationInfo.mWindowHandle;
+    swapChainDesc.OutputWindow = (HWND)creationInfo.mWindowHandle;
     swapChainDesc.Windowed = true;
     swapChainDesc.SwapEffect =
         DXGI_SWAP_EFFECT_FLIP_DISCARD; // direct12에서는 flip만사용가능. 그리고 후면버퍼에서 멀티샘플링불가능
     swapChainDesc.Flags = 0;
 
-    HRESULT hresult = mFactory->CreateSwapChain(mCommandQueue.Get(), &swapChainDesc, mSwapChain.GetAddressOf());
+    Microsoft::WRL::ComPtr<IDXGISwapChain> tempSwapChain;
+
+    HRESULT hresult = mFactory->CreateSwapChain(mCommandQueue.Get(), &swapChainDesc, tempSwapChain.GetAddressOf());
+
+    tempSwapChain.As(&mSwapChain);
 
     Microsoft::WRL::ComPtr<ID3D12Resource> backBufferResource[2];
     mSwapChain->GetBuffer(0, IID_PPV_ARGS(backBufferResource[0].GetAddressOf()));
@@ -128,8 +134,8 @@ void D3DWindowRenderData::CreateSwapChain(const Render::CreationRenderChannelInf
     // mBackBuffer[1] =
     // static_cast<D3DGRM::D3DGpuTexture*>(mGpuResourceManager->RegisterSwapChainBackBuffer(backBufferResource[1].Get()));
 
-    mBackBuffer[0] = mGpuResourceManager->RegisterSwapChainBackBuffer(backBufferResource[0].Get());
-    mBackBuffer[1] = mGpuResourceManager->RegisterSwapChainBackBuffer(backBufferResource[1].Get());
+    mBackBuffer[0] = mGpuResourceManager->RegisterSwapChainBackBuffer(backBufferResource[0].Get(), windowHandle);
+    mBackBuffer[1] = mGpuResourceManager->RegisterSwapChainBackBuffer(backBufferResource[1].Get(), windowHandle);
 
     D3DGRM::D3DGpuTexture *d3dBackBuffer0 = static_cast<D3DGRM::D3DGpuTexture *>(mBackBuffer[0].getResource());
     D3DGRM::D3DGpuTexture *d3dBackBuffer1 = static_cast<D3DGRM::D3DGpuTexture *>(mBackBuffer[1].getResource());
@@ -139,7 +145,7 @@ void D3DWindowRenderData::CreateSwapChain(const Render::CreationRenderChannelInf
 
     CreateDepthStencilBuffer(creationInfo);
 }
-void D3DWindowRenderData::ResizeBackBuffer(UINT clientWidth, UINT clientHeight)
+int D3DWindowRenderData::ResizeBackBuffer(UINT clientWidth, UINT clientHeight)
 {
 
     for (size_t bufferIndex = 0; bufferIndex < 2; ++bufferIndex)
@@ -147,8 +153,16 @@ void D3DWindowRenderData::ResizeBackBuffer(UINT clientWidth, UINT clientHeight)
         mGpuResourceManager->ReleaseSwapChainBackBuffer(mBackBuffer[bufferIndex]);
     }
 
-    HRESULT reulst = mSwapChain->ResizeBuffers(2, clientWidth, clientHeight, mBackBufferForamt,
+    HRESULT result = mSwapChain->ResizeBuffers(2, clientWidth, clientHeight, mBackBufferForamt,
                                                DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+
+    if (result == DXGI_ERROR_DEVICE_REMOVED)
+    {
+        HRESULT reason = mDevice->GetDeviceRemovedReason();
+        // 여기서 reason 값을 확인하세요 (디버거 조사식 또는 로그 출력)
+        // 예: DXGI_ERROR_DRIVER_INTERNAL_ERROR, S_OK(드물음) 등
+        int a = 2;
+    }
 
     Microsoft::WRL::ComPtr<ID3D12Resource> backBufferResource[2];
     mSwapChain->GetBuffer(0, IID_PPV_ARGS(backBufferResource[0].GetAddressOf()));
@@ -161,16 +175,10 @@ void D3DWindowRenderData::ResizeBackBuffer(UINT clientWidth, UINT clientHeight)
     D3DGRM::D3DGpuTexture *d3dBackBuffer0 = static_cast<D3DGRM::D3DGpuTexture *>(mBackBuffer[0].getResource());
     D3DGRM::D3DGpuTexture *d3dBackBuffer1 = static_cast<D3DGRM::D3DGpuTexture *>(mBackBuffer[1].getResource());
 
-    // CD3DX12_RESOURCE_BARRIER backBufferTransition[2];
-    // backBufferTransition[0] = CD3DX12_RESOURCE_BARRIER::Transition(d3dBackBuffer0->GetResource().Get(),
-    // D3D12_RESOURCE_STATE_COMMON, 	D3D12_RESOURCE_STATE_PRESENT); backBufferTransition[1] =
-    // CD3DX12_RESOURCE_BARRIER::Transition(d3dBackBuffer0->GetResource().Get(), D3D12_RESOURCE_STATE_COMMON,
-    //	D3D12_RESOURCE_STATE_PRESENT);
-
-    // mCommandList->ResourceBarrier(2, backBufferTransition);
-
     d3dBackBuffer0->SetResourceState(D3D12_RESOURCE_STATE_PRESENT);
     d3dBackBuffer1->SetResourceState(D3D12_RESOURCE_STATE_PRESENT);
+
+    return mSwapChain->GetCurrentBackBufferIndex();
 }
 void D3DWindowRenderData::ResizeDepthStencilBuffer(UINT clientWidth, UINT clientHeight)
 {
@@ -187,7 +195,7 @@ void D3DWindowRenderData::ResizeDepthStencilBuffer(UINT clientWidth, UINT client
 void D3DWindowRenderData::CreateDepthStencilBuffer(const Render::CreationRenderChannelInfo &creationInfo)
 {
 
-    HWND windowHandle = creationInfo.mWindowHandle;
+    HWND windowHandle = (HWND)creationInfo.mWindowHandle;
     RECT windowSize; // 창의 클라이언트 크기
     GetClientRect(windowHandle, &windowSize);
     GRM::TextureDesc textureDesc;

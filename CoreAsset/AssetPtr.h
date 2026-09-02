@@ -3,6 +3,9 @@
 #include "CoreAsset/Asset.h"
 #include "CoreAsset/AssetType.h"
 #include "CoreAsset/CoreAssetDLLMacro.h"
+
+class Arch;
+
 namespace CoreAsset
 {
 class Asset;
@@ -23,9 +26,28 @@ class CORE_ASSET_API AssetPtr
     AssetPtr &operator=(AssetPtr &&) = default;
 
     Asset *Get() const;
+    AssetID GetAssetID() const;
+
+    template <typename T> T *As() const
+    {
+        static_assert(std::is_base_of_v<Asset, T>, "T must derive from Asset Class");
+
+        Asset *pAsset = Get();
+        if (pAsset == nullptr)
+            return nullptr;
+
+        EAssetType type = T::GetAssetType();
+
+        return pAsset->GetType() == type ? static_cast<T *>(pAsset) : nullptr;
+    }
+
+    void SetAsset(Asset *asset);
+    void SetAsset(AssetID assetID);
 
   private:
     mutable AssetID mID;
 };
+
+CORE_ASSET_API Arch &operator<<(Arch &arch, AssetPtr &ptr);
 
 } // namespace CoreAsset

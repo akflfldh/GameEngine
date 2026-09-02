@@ -1,0 +1,6 @@
+#pragma once
+
+#cmakedefine01 GAMEENGINE_DEVELOPMENT_BUILD
+
+#define GAMEENGINE_DEVELOPMENT_ROOT \
+    LR"cmake(@GAMEENGINE_DEVELOPMENT_ROOT@)cmake"

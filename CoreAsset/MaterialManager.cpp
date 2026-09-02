@@ -34,14 +34,14 @@ CoreAsset::Material *CoreAsset::MaterialManager::CreateMaterial(Render::Material
     const Render::ShaderResourceInfoSet &shaderResourceInfo =
         gpuMaterialManager->GetMaterialShaderResourceInfo(gpuMaterialID);
 
-    newMaterial->mTexResourceContextList.resize(shaderResourceInfo.mTextureShaderResourceInfoVector.size());
-    newMaterial->mSamplerResourceContextList.resize(shaderResourceInfo.mSamplerShaderResourceInfoVector.size());
+    newMaterial->mTexResourceContextList.resize(shaderResourceInfo.mObjectTextureShaderResourceInfoVector.size());
+    newMaterial->mSamplerResourceContextList.resize(shaderResourceInfo.mObjectSamplerShaderResourceInfoVector.size());
 
     for (int i = 0; i < newMaterial->mTexResourceContextList.size(); ++i)
     {
 
         newMaterial->mTexResourceContextList[i].mTexShaderResourceInfo =
-            shaderResourceInfo.mTextureShaderResourceInfoVector[i];
+            shaderResourceInfo.mObjectTextureShaderResourceInfoVector[i];
         newMaterial->mTexResourceContextList[i].mTexture = nullptr;
     }
 

@@ -14,15 +14,18 @@ SamplerState _LinearSampler:register(s0);
 struct VertexIn
 {
     float3 mPosL : POSITION;
-    float2 mTex : TEX;  
-    float4 mColor : COLOR;
+    float2 mTex : TEXCOORD;  
+     float4 mColor : COLOR;
+    float mCommonOne : COMMON;
+    float mCommonTwo : COMMON1;
+    float mCommonThree: COMMON2;
 };
 
 
 struct VertexOut
 {
     float4 mPosH :SV_POSITION;
-    float2 mTex : TEX;
+    float2 mTex : TEXCOORD;
     float4 mColor : COLOR;
 };
 

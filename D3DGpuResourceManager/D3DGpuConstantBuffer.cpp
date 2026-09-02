@@ -1,4 +1,6 @@
-﻿#include "D3DGpuResourceManager/D3DGpuConstantBuffer.h"
+﻿#include "D3DGpuConstantBuffer.h"
+#include "D3DGpuResourceManager/D3DGpuConstantBuffer.h"
+#include "D3DGpuStructuredBuffer.h"
 
 D3DGRM::D3DGpuConstantBuffer::D3DGpuConstantBuffer(Microsoft::WRL::ComPtr<ID3D12Resource> buffer,
                                                    size_t constantBufferNum, size_t constantBufferSize)
@@ -13,7 +15,18 @@ void D3DGRM::D3DGpuConstantBuffer::SetDescriptorHandleVector(const std::vector<D
     mDescriptorHandleVector = handleVector;
 }
 
+D3DGRM::D3DDescriptorHandle D3DGRM::D3DGpuConstantBuffer::GetConstantDescriptorHandle(uint32_t index) const
+{
+
+    return mDescriptorHandleVector[index];
+}
+
 size_t D3DGRM::D3DGpuConstantBuffer::GetConstantBufferNum() const
 {
     return mConstantBufferNum;
+}
+
+size_t D3DGRM::D3DGpuConstantBuffer::GetConstnatBufferSize() const
+{
+    return mConstantBufferSize;
 }

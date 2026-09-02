@@ -102,3 +102,4 @@ void CoreAsset::TextureProperties::SetRawData(uint8_t *pMemory, size_t size)
 
     return;
 }
+

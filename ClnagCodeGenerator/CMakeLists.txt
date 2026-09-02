@@ -12,7 +12,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(LLVM 18.1.6 EXACT REQUIRED CONFIG)
 find_package(Clang 18.1.6 EXACT REQUIRED CONFIG)
 
-add_executable(CodeGenerator src/main.cpp)
+add_executable(CodeGenerator src/main.cpp
+src/IntermediateGenerator.cpp
+src/IntermediateGenerator.h
+src/IntermediateFrontendAction.cpp
+src/IntermediateFrontendAction.h
+src/ReflectType.h
+ "src/IntermediateASTConsumer.h" "src/IntermediateASTConsumer.cpp" "src/IntermediateASTVisitor.cpp" "src/IntermediateASTVisitor.h"   "src/DepFileCollector.h" "src/DepFileCollector.cpp" "src/IntermediateFrontendFactory.h" "src/IntermediateFrontendFactory.cpp")
 
 # 필요한 최소한의 라이브러리만 나열합니다.
 # vcpkg가 나머지 의존성은 자동으로 처리해줍니다.

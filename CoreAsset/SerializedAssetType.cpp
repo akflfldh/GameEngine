@@ -57,7 +57,7 @@
 //{
 //     writer.Write(scratchImage.mimagesNum);
 //     writer.Write(scratchImage.mSize);
-//     SerializeTextureMetaData(scratchImage.mMetadata, writer);
+//     SerializeTextureMetaData(scratchImage.mMetadata, wr	iter);
 //
 //     writer.Write((void *)scratchImage.mMemory.data(), scratchImage.mMemory.size());
 //

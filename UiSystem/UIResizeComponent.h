@@ -10,7 +10,7 @@ class UIResizeComponent : public IUIComponent
     UIResizeComponent();
     virtual ~UIResizeComponent();
 
-    virtual void Update() override;
+    virtual void Update(float deltaTime) override;
 
     // 마우스입력
     // hover(색변화), 클릭, 드래그(ui의 사이즈변화)

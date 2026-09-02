@@ -2,21 +2,14 @@
 
 #include <assert.h>
 
-#ifdef _WINDOWS
-#include "PhysicalFileSystem/WindowPhysicalFileSystem.h"
-
-#endif
+#include "PhysicalFileSystem/StandardPhysicalFileSystem.h"
 
 QuadPF::PhysicalFileSystem *QuadPF::PhysicalFileSystem::mImplSystem = nullptr;
 
 QuadPF::PhysicalFileSystem *QuadPF::PhysicalFileSystem::GetInstance()
 {
 
-#ifdef _WINDOWS
-
-    static WindowsPhysicalFileSystem instance;
-
-#endif
+    static StandardPhysicalFileSystem instance;
 
     return &instance;
 

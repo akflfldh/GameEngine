@@ -5,8 +5,14 @@
 #include <CoreBase/Arch.h>
 
 CoreAsset::Asset::Asset(CoreAsset::EAssetType assetType, AssetID id)
-    : mID(id), mName(""), mTag(""), mType(assetType), mLoadState(LoadState::Unloaded), mDirtyFlag(false), mIsEmpty(true)
+    : mID(id), mName(""), mTag(""), mType(assetType), mLoadState(LoadState::Unloaded), mDirtyFlag(false),
+      mIsEmpty(true), mRawDirtyFlag(false)
 {
+}
+
+void CoreAsset::Asset::ClearDirty()
+{
+    mDirtyFlag = false;
 }
 
 void CoreAsset::AssetHeaderContext::Serialize(QuadRW::BinaryWriter &binaryWriter)
@@ -25,6 +31,11 @@ void CoreAsset::AssetHeaderContext::DeSerialize(QuadRW::BinaryReader &binaryRead
 }
 
 CoreAsset::Asset::~Asset() {}
+
+void CoreAsset::Asset::SetAssetID(AssetID id)
+{
+    mID = id;
+}
 
 const FString &CoreAsset::Asset::GetName() const
 {
@@ -52,11 +63,6 @@ void CoreAsset::Asset::SetDirty()
     assetRegistrySystem->AddDirtyAsset(this);
 
     mDirtyFlag = true;
-}
-
-void CoreAsset::Asset::ClearDirty()
-{
-    mDirtyFlag = false;
 }
 
 bool CoreAsset::Asset::GetDirty() const
@@ -111,4 +117,21 @@ void CoreAsset::Asset::SetEmptyAssetFlag(bool flag)
 {
 
     mIsEmpty = flag;
+}
+
+void CoreAsset::Asset::SetRawDataDirty(bool flag)
+{
+    // 당연히 metaData도 dirty
+    if (flag == true)
+    {
+        SetDirty();
+    }
+
+    mRawDirtyFlag = flag;
+}
+
+bool CoreAsset::Asset::GetRawDataDirty() const
+{
+
+    return mRawDirtyFlag;
 }

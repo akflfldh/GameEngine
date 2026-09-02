@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "CoreAsset/CoreAssetDLLMacro.h"
+#include <CoreAsset/AssetType.h>
 #include <memory>
 #include <unordered_map>
-
 namespace QuadRW
 {
 class BinaryReader;
@@ -21,10 +21,10 @@ class CORE_ASSET_API AssetLoader
 {
   public:
     AssetLoader();
-    ~AssetLoader();
+    virtual ~AssetLoader();
 
-    virtual bool LoadAssetFile(Arch &arch, AssetFactoryManager *assetFactoryManage, Asset *&oAsset,
-                               std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr) = 0;
+    virtual bool LoadAssetFile(EAssetType assetType, Arch &arch, AssetFactoryManager *assetFactoryManage,
+                               Asset *&oAsset, std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr) = 0;
 
     virtual bool LoadAssetRawFile(Arch &arch, Asset *asset) = 0;
 

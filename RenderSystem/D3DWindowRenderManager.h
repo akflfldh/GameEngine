@@ -4,12 +4,12 @@
 
 #include <dxgi.h>
 
+#include <RenderSystem/IWindowRenderManager.h>
 #include <assert.h>
+#include <d3d12.h>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
-
-#include <d3d12.h>
 
 #include <wrl.h>
 #ifdef D3DX
@@ -19,7 +19,7 @@ namespace D3DRender
 class D3DWindowRenderData;
 
 // window별 공통의데이터인 WindowRenderData를 관리하는 Manager클래스
-class RENDER_SYSTEM_API D3DWindowRenderManager
+class RENDER_SYSTEM_API D3DWindowRenderManager : public Render::IWindowRenderManager
 {
   public:
     // 반드시 어느 한곳에서 생성후 호출할것
@@ -33,7 +33,11 @@ class RENDER_SYSTEM_API D3DWindowRenderManager
 
     std::shared_ptr<D3DWindowRenderData> GetWindowRenderData(HWND hwnd) const;
 
-    void WindowResize(HWND hwnd);
+    int WindowResize(HWND hwnd);
+
+    virtual GRM::GRMPtr GetCurrentSwapchainBackBuffer(void *windowHandle) override;
+    virtual GRM::GRMPtr GetSwapchainBackBuffer(void *windowHandle, int index) override;
+    virtual GRM::GRMPtr GetDepthStencilBuffer(void *windowHandle) override;
 
   private:
     static D3DWindowRenderManager *mInstance;
@@ -43,6 +47,9 @@ class RENDER_SYSTEM_API D3DWindowRenderManager
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
 
     std::unordered_map<HWND, std::shared_ptr<D3DWindowRenderData>> mWindowRenderDataTable;
+
+    // TODOPO IWindowRenderMangaer를 만들자
+    // 인터페이스 GRMPtr GetCurrentSwapChainBackbuffer() ;
 };
 
 } // namespace D3DRender

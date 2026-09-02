@@ -22,7 +22,7 @@ void CoreAsset::TextureStorer::StoreAssetFile(Arch &arch, Asset *asset, AssetMet
     // texture header serialize 가능
     TextureCommonHeader textureCommonHeader;
     TextureMetaData *textureMetaData = static_cast<TextureMetaData *>(assetMetaData);
-    textureCommonHeader.mRawFileName = textureMetaData->mRawFileName;
+    // textureCommonHeader.mRawFileName = textureMetaData->mRawFileName;
 
     textureCommonHeader.Serialize(arch);
 

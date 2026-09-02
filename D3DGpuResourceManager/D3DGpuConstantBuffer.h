@@ -16,7 +16,10 @@ class GPURESOURCE_MANAGER_API D3DGpuConstantBuffer : public D3DGpuBuffer
 
     void SetDescriptorHandleVector(const std::vector<D3DDescriptorHandle> &handleVector);
 
+    D3DDescriptorHandle GetConstantDescriptorHandle(uint32_t index) const;
+
     size_t GetConstantBufferNum() const;
+    size_t GetConstnatBufferSize() const;
 
   private:
     std::vector<D3DDescriptorHandle> mDescriptorHandleVector; // 상수버퍼의 개수만큼존재한다.

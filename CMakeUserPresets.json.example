@@ -1,0 +1,28 @@
+
+예시입니다. 
+
+{
+    "version":3,
+     "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25
+  },
+  "configurePresets": [
+    {
+        "name":"user-debug-ninja",
+        "inherits":"debug-ninja",
+        "cacheVariables":{
+            "FBXSDK_ROOT":"C:/Program Files/Autodesk/FBX/FBX SDK/2020.3.9/"
+        }
+    }
+  ],
+  "buildPresets": [
+    {
+        "name":"user-debug-ninja",
+        "configurePreset":"user-debug-ninja"
+        
+    }
+  ]
+
+
+}

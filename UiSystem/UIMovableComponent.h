@@ -2,12 +2,14 @@
 #include <ReflectSystem/ReflectionMacro.h>
 #include <UiSystem/IUIComponent.h>
 
-#include <UiSystem/Generated/UIMovableComponent.generated.h>
+#include <UIMovableComponent.generated.h>
 
 namespace UI
 {
 
-class UISYSTEM_API REFLECT_CLASS UIMovableComponent : public IUIComponent
+class UIMultiRectComponent;
+
+class UISYSTEM_API REFLECT_CLASS(EngineClass) UIMovableComponent : public IUIComponent
 {
     GENERATED_BODY(UIMovableComponent)
 
@@ -15,11 +17,24 @@ class UISYSTEM_API REFLECT_CLASS UIMovableComponent : public IUIComponent
     UIMovableComponent();
     virtual ~UIMovableComponent();
 
-    virtual void Update() override;
+    virtual void Update(float deltaTime) override;
 
-    virtual bool IsPointInside(float x, float y) const override;
+    virtual int IsPointInside(float x, float y) const override;
     virtual void UpdateMouseInputEvent(const UIManagerMouseInputContext &mouseInputContext,
                                        bool &oCaptureActiveRequestFlag, bool &oCaptureReleaseRequestFlag) override;
+
+#pragma region Input
+    virtual void HandleInput(const Quad::RawInputData &inputData, bool &bConsume) override;
+
+    virtual void OnHover(int x, int y) override;
+    virtual void OnReleaseHover() override;
+    virtual void OnMouseMove(const Quad::RawInputData &inputData, float worldPosX, float worldPosY) override;
+    virtual void OnMouseClick(const Quad::RawInputData &inputData, bool &bConsume) override;
+    virtual void OnMouseDown(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
+                             bool &bConsume) override;
+    virtual void OnMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
+                           bool &bConsume) override;
+#pragma endregion
 
   private:
     // 캡처상태가아닌 hover상태에서의 업데이트
@@ -31,8 +46,11 @@ class UISYSTEM_API REFLECT_CLASS UIMovableComponent : public IUIComponent
                          bool &oCaptureReleaseRequestFlag);
 
     // 얼만큼 마우스가 이동했는지 구하기위한 정보
-    float mPreMouseWorldPosX = 0;
-    float mPreMouseWorldPosY = 0;
+    float mMouseDownOffsetX = 0;
+    float mMouseDownOffsetY = 0;
+
+    bool bHover;
+    bool bPress;
 };
 
 } // namespace UI

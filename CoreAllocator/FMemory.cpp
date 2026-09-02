@@ -1,10 +1,13 @@
 ﻿#include "FMemory.h"
 #include "CoreAllocator/DefaultAllocator.h"
+#include "AllocatorManager.h"
 CoreAlloc::FMemory *CoreAlloc::FMemory::GetInstance()
 {
     static FMemory instance;
     return &instance;
 }
+
+
 
 CoreAlloc::FMemory::FMemory()
 {

@@ -1,11 +1,11 @@
-add_library(PhysicalFileSystem SHARED
+﻿add_library(PhysicalFileSystem SHARED
 PhysicalFileSystem.cpp
 PhysicalFileSystem.h
 PhysicalFileSystemDLLMacro.h
 WindowHandleRef.cpp
 WindowHandleRef.h
-WindowPhysicalFileSystem.cpp
-WindowPhysicalFileSystem.h
+"StandardPhysicalFileSystem.cpp"
+"StandardPhysicalFileSystem.h"
 )
 
 
@@ -19,7 +19,7 @@ target_include_directories(PhysicalFileSystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 
 
 
-target_link_libraries(PhysicalFileSystem PUBLIC compiler_flags headerDir Utility)
+target_link_libraries(PhysicalFileSystem PUBLIC compiler_flags headerDir Utility Logger)
 
 
 

@@ -39,6 +39,9 @@ Quad::EditorShaderImporter::~EditorShaderImporter() {}
 bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
 {
 
+    // 조금복잡해 key - value처리하는게,
+    // 확실히 테이블을 key - fun 으로 구축해서 value를 처리하도록 개선하면좋을것
+
     std::string folderPath = CoreUtility::Utility::GetParentFolderPathFromPath(shaderFile);
 
     //.shader파일을 읽어서
@@ -132,8 +135,28 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
                         textureResourceInfo.mType = Render::EShaderResourceType::eTexture;
                         textureResourceInfo.mDimension = Render::EShaderResourceDimension::eTex2D;
                         textureResourceInfo.mFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM;
-                        creationMaterialInfo.mShaderResourceInfoSet.mTextureShaderResourceInfoVector.push_back(
-                            std::move(textureResourceInfo));
+
+                        // bindingType
+                        mJsonParser->NextReadPointer();
+                        std::string bindingTypeKey = mJsonParser->GetKeyFromReadPointer();
+
+                        if (bindingTypeKey != "BindingType")
+                        {
+                            return false;
+                        }
+                        std::string bindingType;
+                        mJsonParser->GetValueFromReadPointer<std::string>(bindingType);
+
+                        if (bindingType == "Object")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mObjectTextureShaderResourceInfoVector
+                                .push_back(std::move(textureResourceInfo));
+                        }
+                        else if (bindingType == "Pass")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mPassTextureShaderResourceInfoVector.push_back(
+                                std::move(textureResourceInfo));
+                        }
                     }
                     else if (resourceType == "Buffer")
                     {
@@ -156,8 +179,28 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
                         Render::BufferShaderResourceInfo bufferResourceInfo;
                         bufferResourceInfo.mName = userResourceName;
                         bufferResourceInfo.mBufferID = bufferID;
-                        creationMaterialInfo.mShaderResourceInfoSet.mBufferShaderResourceInfoVector.push_back(
-                            std::move(bufferResourceInfo));
+
+                        // bindingType
+                        mJsonParser->NextReadPointer();
+                        std::string bindingTypeKey = mJsonParser->GetKeyFromReadPointer();
+
+                        if (bindingTypeKey != "BindingType")
+                        {
+                            return false;
+                        }
+                        std::string bindingType;
+                        mJsonParser->GetValueFromReadPointer<std::string>(bindingType);
+
+                        if (bindingType == "Object")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector.push_back(
+                                std::move(bufferResourceInfo));
+                        }
+                        else if (bindingType == "Pass")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mPassBufferShaderResourceInfoVector.push_back(
+                                std::move(bufferResourceInfo));
+                        }
                     }
                     else if (resourceType == "Sampler")
                     {
@@ -182,15 +225,29 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
                         samplerResourceInfo.mType = Render::EShaderResourceType::eSampler;
                         samplerResourceInfo.mDimension = Render::EShaderResourceDimension::eSampler;
                         samplerResourceInfo.mSamplerID = samplerID;
-                        creationMaterialInfo.mShaderResourceInfoSet.mSamplerShaderResourceInfoVector.push_back(
-                            std::move(samplerResourceInfo));
-                    }
-                    /*
 
-                else
-                    {
-                        return false;
-                    }*/
+                        // bindingType
+                        mJsonParser->NextReadPointer();
+                        std::string bindingTypeKey = mJsonParser->GetKeyFromReadPointer();
+
+                        if (bindingTypeKey != "BindingType")
+                        {
+                            return false;
+                        }
+                        std::string bindingType;
+                        mJsonParser->GetValueFromReadPointer<std::string>(bindingType);
+
+                        if (bindingType == "Object")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mObjectSamplerShaderResourceInfoVector
+                                .push_back(std::move(samplerResourceInfo));
+                        }
+                        else if (bindingType == "Pass")
+                        {
+                            creationMaterialInfo.mShaderResourceInfoSet.mPassSamplerShaderResourceInfoVector.push_back(
+                                std::move(samplerResourceInfo));
+                        }
+                    }
 
                     mJsonParser->OutReadPointer();
                     ret = mJsonParser->NextReadPointer();
@@ -381,6 +438,76 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
                                 creationMaterialInfo.mMainRenderPass.mDepthWriteMode =
                                     (Render::EDepthWriteMode)depthWriteMode;
                             }
+                            else if (renderStateConfigKey == "StencilWriteMode")
+                            {
+                                int stencilWriteMode = 0;
+                                bool ret = mJsonParser->GetValueFromReadPointer<int>(stencilWriteMode);
+                                if (!ret)
+                                {
+                                    return false;
+                                }
+                                creationMaterialInfo.mMainRenderPass.mStencilWriteMode =
+                                    (Render::EStencilWriteMode)stencilWriteMode;
+                            }
+                            else if (renderStateConfigKey == "StencilFrontPassOp")
+                            {
+                                int value = 0;
+                                bool ret = mJsonParser->GetValueFromReadPointer<int>(value);
+                                if (!ret)
+                                {
+                                    return false;
+                                }
+                                creationMaterialInfo.mMainRenderPass.mStencilFrontPassOp = (Render::EStencilOP)value;
+                            }
+                            else if (renderStateConfigKey == "StencilFrontFailOp")
+                            {
+                                int value = 0;
+                                bool ret = mJsonParser->GetValueFromReadPointer<int>(value);
+                                if (!ret)
+                                {
+                                    return false;
+                                }
+                                creationMaterialInfo.mMainRenderPass.mStencilFrontFailOp = (Render::EStencilOP)value;
+                            }
+                            else if (renderStateConfigKey == "StencilFrontCompareMode")
+                            {
+                                int value = 0;
+                                bool ret = mJsonParser->GetValueFromReadPointer<int>(value);
+                                if (!ret)
+                                {
+                                    return false;
+                                }
+                                creationMaterialInfo.mMainRenderPass.mStencilFrontCompareMode =
+                                    (Render::EDepthStencilCompareMode)value;
+                            }
+                            else if (renderStateConfigKey == "CCW")
+                            {
+                                bool ccw = false;
+                                bool ret = mJsonParser->GetValueFromReadPointer<bool>(ccw);
+                                if (!ret)
+                                {
+                                    // log
+                                    return false;
+                                }
+
+                                creationMaterialInfo.mMainRenderPass.mCCW = ccw;
+                            }
+                            else if (renderStateConfigKey == "BlendSrc")
+                            {
+
+                                mJsonParser->GetValueFromReadPointer<std::string>(
+                                    creationMaterialInfo.mMainRenderPass.mBlendSrc);
+                            }
+                            else if (renderStateConfigKey == "BlendDest")
+                            {
+                                mJsonParser->GetValueFromReadPointer<std::string>(
+                                    creationMaterialInfo.mMainRenderPass.mBlendDest);
+                            }
+                            else if (renderStateConfigKey == "BlendOp")
+                            {
+                                mJsonParser->GetValueFromReadPointer<std::string>(
+                                    creationMaterialInfo.mMainRenderPass.mBlendOp);
+                            }
 
                             if (mJsonParser->NextReadPointer() == false)
                                 break;
@@ -441,7 +568,26 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
 
     GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
 
-    for (auto &bufferResourceInfoElement : creationMaterialInfo.mShaderResourceInfoSet.mBufferShaderResourceInfoVector)
+    for (auto &bufferResourceInfoElement :
+         creationMaterialInfo.mShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector)
+    {
+        // bufferID를 통해 gpu버퍼컨텍스트를 얻어온다.
+        uint32_t bufferID = bufferResourceInfoElement.mBufferID;
+        GRM::GpuBufferContext *gpuBufferContext = gpuBufferContextSystem->GetGpuBufferContext(bufferID);
+        if (gpuBufferContext == nullptr)
+        {
+            LOG_MESSAGE_ERROR("EditorShaderImporter",
+                              ("버퍼컨텍스트가 존재하지않습니다. 버퍼ID: " + std::to_string(bufferID)).c_str());
+            assert(0);
+        }
+        bufferResourceInfoElement.mDimension = Render::EShaderResourceDimension::eBuffer;
+        bufferResourceInfoElement.mType = ConvertToRenderShaderResourceType(gpuBufferContext->mBufferDesc.mBufferUsage);
+        bufferResourceInfoElement.mSize = gpuBufferContext->mBufferDesc.mElementDataSize;
+    }
+    // pass
+
+    for (auto &bufferResourceInfoElement :
+         creationMaterialInfo.mShaderResourceInfoSet.mPassBufferShaderResourceInfoVector)
     {
         // bufferID를 통해 gpu버퍼컨텍스트를 얻어온다.
         uint32_t bufferID = bufferResourceInfoElement.mBufferID;
@@ -458,12 +604,12 @@ bool Quad::EditorShaderImporter::Import(const std::string &shaderFile)
     }
 
     // MaterialManager(Gpu버전)에게 gpu머터리얼생성요청
-    Render::MaterialID materialID = mGpuMaterialManager->CreateMaterial(creationMaterialInfo);
+    //   Render::MaterialID materialID = mGpuMaterialManager->CreateMaterial(creationMaterialInfo);
 
-    if (materialID == MaterialIDNone)
+    /*if (materialID == MaterialIDNone)
     {
         return false;
-    }
+    }*/
 
     // Asset Material생성 요청? 여기서는 아니야
 

@@ -1,4 +1,5 @@
-﻿#include "pch.h"
+﻿#include "D3DSystemInitializer.h"
+#include "pch.h"
 
 #include "SystemInitializer/D3DSystemInitializer.h"
 #include <CoreDevice/D3DCoreDevice.h>
@@ -7,30 +8,19 @@
 #include <RenderSystem/D3DRenderSystem.h>
 D3DSystemInitializer::D3DSystemInitializer::D3DSystemInitializer() {}
 
+D3DSystemInitializer::D3DSystemInitializer::~D3DSystemInitializer() = default;
+
 void D3DSystemInitializer::D3DSystemInitializer::Initialize()
 {
 
-#ifdef _DEBUG
-    OutputDebugStringW(L"Before debugController declaration\n");
-
-    Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
-
-    OutputDebugStringW(L"After debugController declaration\n");
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-    {
-        debugController->EnableDebugLayer();
-    }
-
-#endif
-
     Core::D3DCoreDevice *coreDevice = static_cast<Core::D3DCoreDevice *>(Core::CoreDevice::GetInstance());
 
-    mD3DGpuResourceManager = new D3DGRM::D3DGpuResourceManager(coreDevice->mDevice, coreDevice->mCommandQueue);
-    GRM::IGpuResourceManager::SetGpuResourceManagerImpl(mD3DGpuResourceManager);
+    mD3DGpuResourceManager = std::make_unique<D3DGRM::D3DGpuResourceManager>(coreDevice->mDevice);
+    GRM::IGpuResourceManager::SetGpuResourceManagerImpl(mD3DGpuResourceManager.get());
 
-    mD3DRenderSystem = new D3DRender::D3DRenderSystem(coreDevice->mFactory, coreDevice->mDevice,
-                                                      coreDevice->mCommandQueue, mD3DGpuResourceManager);
-    Render::IRenderSystem::SetRenderSystemImpl(mD3DRenderSystem);
+    mD3DRenderSystem = std::make_unique<D3DRender::D3DRenderSystem>(
+        coreDevice->mFactory, coreDevice->mDevice, coreDevice->mCommandQueue, mD3DGpuResourceManager.get());
+    Render::IRenderSystem::SetRenderSystemImpl(mD3DRenderSystem.get());
 
     // materialManager는 렌더시스템내부에서 생성초기화된다
     /*mMaterialManager = new D3DRender::D3DMaterialManager(mDevice, mD3DGpuResourceManager);

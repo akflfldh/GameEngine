@@ -3,6 +3,8 @@
 #include <Windows.h>
 
 #include <functional>
+class IWindowEventHandler;
+
 namespace Quad
 {
 
@@ -14,12 +16,14 @@ class BaseWindow
     // 다른 창들은 항상 playmode true인것 //항상작동하니
     // gamePlayWindow는 에디터모드가있고 ,게임플레이모드 두가지모드사이를 전환할수있다.
 
-    void Initialize(const std::function<LRESULT(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)> &wndCallback);
+    void Initialize();
 
     bool CreateWindowClass(LPCWSTR windowClassName, LPCWSTR windowName, DWORD windowStyle = WS_OVERLAPPEDWINDOW,
                            UINT windowClassStyle = CS_HREDRAW | CS_VREDRAW);
 
     void SetVisible(bool flag);
+
+    void SetIWindowEventHandler(IWindowEventHandler *windowEventHandler);
 
   public:
     HINSTANCE GetHInstance() const;
@@ -45,12 +49,16 @@ class BaseWindow
     unsigned short GetMinClientHeight() const;
 
     void SetMouseCapture(bool flag);
+    void SetKeyboardCapture(bool flag);
 
-    const std::function<LRESULT CALLBACK(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)> &GetWinProc();
+    //
+    void ShutDown();
 
   protected:
     static LRESULT CALLBACK InnerWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    std::function<LRESULT CALLBACK(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)> mWindowProc;
+
+    LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    bool RegisterRawInputDevice();
 
     int mClientMousePosX = 0;
     int mClientMousePosY = 0;
@@ -58,6 +66,7 @@ class BaseWindow
   private:
     HINSTANCE mHInstance;
     HWND mWindowHandle;
+    DWORD mWinStyle;
 
     unsigned short mClientWidth;
     unsigned short mClientHeight;
@@ -70,5 +79,11 @@ class BaseWindow
 
     float mWindowPositionX;
     float mWindowPositionY;
+
+    IWindowEventHandler *mIWindowEventHandler;
+
+    POINT mLastClientPos = {0, 0};
+
+    bool mInitialized = false;
 };
 } // namespace Quad

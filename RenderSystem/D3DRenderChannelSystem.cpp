@@ -16,7 +16,7 @@ D3DRender::D3DRenderChannelSystem::D3DRenderChannelSystem(const Render::Creation
                                                           D3DGRM::D3DGpuResourceManager *gpuResourceManager,
                                                           std::vector<std::unique_ptr<ID3DRenderPass>> renderPipeline)
 
-    : mWindowHandle(creationChannelInfo.mWindowHandle),
+    : mWindowHandle((HWND)creationChannelInfo.mWindowHandle),
       mViewport({creationChannelInfo.mLeft, creationChannelInfo.mTop, creationChannelInfo.mWidth,
                  creationChannelInfo.mHeight, creationChannelInfo.mMinZ, creationChannelInfo.mMaxZ}),
       mDevice(device), mCommandQueue(commandQueue), mGpuResourceManager(gpuResourceManager)
@@ -136,4 +136,13 @@ void D3DRender::D3DRenderChannelSystem::EndFrame()
     mCommandQueue->ExecuteCommandLists(1, commandList);
 
     mRenderItemVector.clear();
+}
+
+void D3DRender::D3DRenderChannelSystem::StartView()
+{
+
+    // 동작: 최소한의 초기화,설정만 수행한다.
+
+    // mCommandAllocator->Reset();
+    // mCommandList->Reset(mCommandAllocator.Get(), nullptr);
 }

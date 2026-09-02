@@ -34,7 +34,7 @@ bool TextWriter::Close(const char *file)
 
 template <typename T> void TextWriter::Write(T value)
 {
-    mStringStream << value;
+    mStringStream << value << "\n";
 
     //  std::string str = ss.str();
 

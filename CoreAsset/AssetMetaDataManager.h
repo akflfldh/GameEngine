@@ -7,6 +7,7 @@
 
 namespace CoreAsset
 {
+class Asset;
 // 정확히 외부메타데이터를 유지한다.
 // 내부 메타데이터(ex texture : width,height, miplevels등은 각 asset들이 직접 유지한다)
 class CORE_ASSET_API AssetMetaDataManager
@@ -24,6 +25,8 @@ class CORE_ASSET_API AssetMetaDataManager
 
   private:
     AssetMetaDataManager();
+
+    void SetRawFileName(AssetMetaData *metaData);
 
   private:
     // 타입별로 테이블

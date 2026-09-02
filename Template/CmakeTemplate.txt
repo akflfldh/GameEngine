@@ -1,0 +1,94 @@
+cmake_minimum_required(VERSION  3.25)
+project(@USER_PROJECT_NAME@ VERSION 1.0 LANGUAGES CXX)
+
+file(GLOB_RECURSE USER_SOURCES "Source/*.cpp" "Source/*.h")
+
+set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/Generated)
+file(MAKE_DIRECTORY ${GEN_DIR})
+
+
+
+
+file(GLOB_RECURSE ALL_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Source/*.h")
+# --- REFLECT_CLASS 매크로가 있는 헤더만 선별 ---
+set(REFLECT_TARGETS "")
+foreach(HEADER_FILE IN LISTS ALL_HEADERS)
+    file(READ "${HEADER_FILE}" FILE_CONTENT)
+    string(REGEX MATCH "REFLECT_CLASS|REFLECT_STRUCT" IS_TARGET "${FILE_CONTENT}")
+    if(IS_TARGET)
+        list(APPEND REFLECT_TARGETS "${HEADER_FILE}")
+    endif()
+endforeach()
+
+
+# 4. 코드 생성 함수 (유저님의 기존 로직 재사용)
+set(CODEGEN_CMD "@ENGINE_PATH@/CodeGenerator.exe")
+set(ALL_GPP_FILES "")
+set(ALL_GH_FILES "")
+
+function(add_analysis_step INPUT_PATH)
+    get_filename_component(FILE_BASENAME ${INPUT_PATH} NAME_WE)
+    set(OUT_GPP "${GEN_DIR}/${FILE_BASENAME}.generated.cpp")
+    set(OUT_GH "${GEN_DIR}/${FILE_BASENAME}.generated.h") 
+    set(DEP_FILE "${GEN_DIR}/${FILE_BASENAME}.d")
+
+    add_custom_command(
+        OUTPUT      "${OUT_GPP}" "${OUT_GH}"
+        COMMAND     ${CMAKE_COMMAND} -E touch "${OUT_GH}"
+        COMMAND     ${CODEGEN_CMD} scan 
+                    --outputGpp "${OUT_GPP}" 
+                    --outputGh "${OUT_GH}" 
+                    --depfile "${DEP_FILE}" 
+                    --deptarget "${OUT_GPP}" 
+                    "${INPUT_PATH}" 
+                    -- -x c++ -std=c++20 --target=x86_64-pc-windows-msvc -D_DEBUG 
+                    -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
+                    -I${CMAKE_CURRENT_SOURCE_DIR}/Source
+                    -I${GEN_DIR}
+                    -I@ENGINE_PATH@/Include
+                    -I@ENGINE_PATH@
+                    -I@ENGINE_PATH@/build/debug-ninja/Core/Generated
+                    -I@ENGINE_PATH@/build/debug-ninja/CoreMath/Generated
+                    -I@ENGINE_PATH@/build/debug-ninja/UiSystem/Generated
+        DEPENDS     "${INPUT_PATH}"
+        COMMENT     "Analyzing User Header: ${INPUT_PATH}"
+        VERBATIM
+    )
+    list(APPEND ALL_GPP_FILES "${OUT_GPP}")
+    list(APPEND ALL_GH_FILES "${OUT_GH}")
+    set(ALL_GPP_FILES ${ALL_GPP_FILES} PARENT_SCOPE)
+    set(ALL_GH_FILES ${ALL_GH_FILES} PARENT_SCOPE)
+endfunction()
+
+foreach(IN_FILE IN LISTS REFLECT_TARGETS)
+    add_analysis_step("${IN_FILE}")
+endforeach()
+
+
+
+
+# 5. 유저 DLL 타겟 생성
+add_library(@USER_PROJECT_NAME@ SHARED ${USER_SOURCES} ${ALL_GPP_FILES} ${ALL_GH_FILES})
+
+target_compile_features(@USER_PROJECT_NAME@ PRIVATE cxx_std_20)
+
+# 6. 엔진 헤더 및 라이브러리 링크
+target_include_directories(@USER_PROJECT_NAME@ PUBLIC ${GEN_DIR} "@ENGINE_PATH@" "${CMAKE_CURRENT_SOURCE_DIR}/Source/"
+ "${CMAKE_CURRENT_BINARY_DIR}/Generated"  # 유저 본인의 Generated 폴더
+    "@ENGINE_PATH@/build/debug-ninja/Core/Generated"
+    "@ENGINE_PATH@/build/debug-ninja/CoreMath/Generated"
+    "@ENGINE_PATH@/build/debug-ninja/UiSystem/Generated"
+)
+
+file(GLOB ENGINE_LIBS "@ENGINE_PATH@/build/debug-ninja/lib/Debug/*.lib")
+target_link_libraries(@USER_PROJECT_NAME@ PUBLIC ${ENGINE_LIBS})
+
+
+
+set_target_properties(@USER_PROJECT_NAME@ PROPERTIES 
+VS_DEBUGGER_COMMAND @ENGINE_PATH@/build/debug-ninja/bin/Debug/EditorDirector.exe
+
+VS_DEBUGGER_COMMAND_ARGUMENTS "1 @USER_PROJECT_NAME@ ${CMAKE_SOURCE_DIR}"
+
+VS_DEBUGGER_WORKING_DIRECTORY @ENGINE_PATH@/build/debug-ninja/bin/Debug/
+)

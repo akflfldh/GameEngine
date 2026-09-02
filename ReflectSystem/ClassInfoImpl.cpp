@@ -34,7 +34,7 @@ void *Quad::ClassInfoImpl::GetPropertyValuePtr(void *instance, const char *prope
     return static_cast<char *>(instance) + propInfo->mOffset;
 }
 
-const char *Quad::ClassInfoImpl::GetClassName() const
+const char *Quad::ClassInfoImpl::GetTypeName() const
 {
     return mClassName;
 }

@@ -1,8 +1,9 @@
 ﻿#pragma once
 
+#include <CoreBase/Blitable_Trait.h>
 #include <CoreBase/CoreBaseDllMacro.h>
 #include <string>
-
+#include <vector>
 // 오 Arch 현재 상태를 유지하고 , get하는 코드가있으면 좋겠는데 ?
 // 외부의 사용자가 필요할때마다 상태를 get해서 적절하게 처리하는거지 , 물론 내부적으로 상태를 점검하면서 안전하게
 // 프로그램이 유지되도록할수있고
@@ -14,6 +15,14 @@
 #define QUAD_SERIALIZEBUFFER(pData, size) Arch::Buffer(pData, size)
 
 class FString;
+struct COREBASE_API ArchProperty
+{
+    std::string mName;
+    std::string mType;
+    const char *pValue; // 메모리버퍼에서의 데이터를 가리키는 포인터
+    uint64_t pValuePointerPos;
+    uint32_t mValueSize;
+};
 
 class COREBASE_API Arch
 {
@@ -33,7 +42,9 @@ class COREBASE_API Arch
     {
         void *mData;
         size_t mSize;
-        Buffer(void *data, size_t size) : mData(data), mSize(size) {}
+        Buffer(void *data, size_t size)
+            : mData(data), mSize(size)
+        {} // 사이즈는 따로 기록하지않는다, 따라서 앞서서 사이즈를 기록하거나 ,읽어오는 코드를 작성해야할것이다.
     };
 
     using ArchCallback = void (*)(Arch &arch, void *instance);
@@ -60,6 +71,8 @@ class COREBASE_API Arch
     virtual Arch &operator<<(int16_t &value) = 0;
     virtual Arch &operator<<(int32_t &value) = 0;
     virtual Arch &operator<<(int64_t &value) = 0;
+    virtual Arch &operator<<(long &value) = 0;
+    virtual Arch &operator<<(unsigned long &value) = 0;
 
     // Unsigned Integers
     virtual Arch &operator<<(uint8_t &value) = 0;
@@ -73,6 +86,8 @@ class COREBASE_API Arch
 
     Arch &operator<<(const Buffer &buffer);
     virtual Arch &operator<<(FString &fstring) = 0;
+
+    virtual Arch &operator<<(std::string &str) = 0;
 
     // 외부 타입들은 operator<< 오버로딩하면서 내부적으로는 return arch.ProcessObject(ob, read, write)를
     // 호출해주면된다 이러면 상태판정, 상태에따른 read, writer 분기가 내부적으로 처리되기에 유저는 상위 부분(커스텀
@@ -92,6 +107,32 @@ class COREBASE_API Arch
 
     // Arch의 상태를 모두 초기화하고 Good 상태만 설정한다.
     void Reset();
+
+#pragma region Table
+    virtual void StartTable(std::string &tableName) = 0;
+    virtual void EndTable() = 0;
+
+    virtual void ReadPropertyHeader(std::string &propertyName, std::string &propertyType,
+                                    uint32_t &propertyValueSize) = 0;
+    virtual void WritePropertyHeader(const std::string &propertyName, const std::string &propertyType) = 0;
+
+    // 반드시 헤더를 먼저읽고 호출
+    virtual void SkipProperty(uint32_t propertyValueSize) = 0;
+
+    // 앞 4바이트는 value크기를 담는 공간으로 예약
+    // Load시에는 해당 프로퍼티를 준비해준다.
+    // Write시에는 호출후 EndProperty호출전까지가 property의 value이다.
+    virtual bool StartProperty(const std::string &propertyName, const std::string &propertyType) = 0;
+    // EndProperty호출시 offset을 계산하여 value의 크기를 기록한다.( 파생된 구현부에서 지켜야하는 약속 )
+    virtual void EndProperty() = 0; // write
+
+    // 현재 처리되는 프로퍼티의 사이즈
+    virtual uint32_t GetPropertySize() const = 0;
+
+    // 다음 시작테이블의 이름을 엿본다.
+    virtual void peekTableName(std::string &oTableName) = 0;
+
+#pragma endregion
 
   protected:
     Arch &SerializeInterface(void *data, size_t size);
@@ -146,4 +187,78 @@ template <typename T> inline Arch &Arch::ProcessObject(T &value, ArchCallback re
 inline uint8_t Arch::GetState() const
 {
     return mState;
+}
+
+template <typename T> Arch &operator<<(Arch &arch, std::vector<T> &vec)
+{
+
+    // 한번에 처리할수있는 타입인가? (커스텀 타입 트레잇 ())
+    // 후에 일단 빅엔디안, 리틀엔디안 문제처리
+    //
+
+    if constexpr (Blitable_Trait<T>::value)
+    {
+        // 요소들을 블럭통쨰로 직렬화가능한 원소 타입
+        uint64_t vecSize = 0;
+        if (arch.GetLoadingFlag())
+        {
+            arch << vecSize;
+            vec.resize(vecSize);
+            arch << QUAD_SERIALIZEBUFFER(vec.data(), sizeof(T) * vecSize);
+        }
+        else
+        {
+            vecSize = vec.size();
+            arch << vecSize;
+            arch << QUAD_SERIALIZEBUFFER(vec.data(), sizeof(T) * vecSize);
+        }
+    }
+    else
+    {
+
+        // 그렇지 않다면
+        // 원소 하나하나 처리
+        // 당연히 엔디안문제도
+        // 특히나 구조체의경우에 개별 멤버변수들 하나하나 처리해야한다. 즉 직렬화 함수 operator<<를 만들어둘필요가있다.
+        uint64_t vecSize = 0;
+        if (arch.GetLoadingFlag())
+        {
+            arch << vecSize;
+            vec.resize(vecSize);
+        }
+        else
+        {
+            vecSize = vec.size();
+            arch << vecSize;
+        }
+
+        for (uint64_t i = 0; i < vecSize; ++i)
+        {
+            arch << vec[i];
+        }
+    }
+
+    return arch;
+}
+
+template <typename EnumType>
+std::enable_if_t<std::is_enum_v<EnumType>, Arch &> operator<<(Arch &arch, EnumType &enumValue)
+{
+
+    using UnderlyingType = std::underlying_type_t<EnumType>;
+
+    if (arch.GetLoadingFlag())
+    {
+        UnderlyingType temp;
+        arch << temp;
+
+        enumValue = static_cast<EnumType>(temp);
+    }
+    else
+    {
+        UnderlyingType temp = static_cast<UnderlyingType>(enumValue);
+        arch << temp;
+    }
+
+    return arch;
 }

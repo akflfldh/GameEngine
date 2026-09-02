@@ -1,15 +1,19 @@
 ﻿#pragma once
 
 #include <CoreAsset/CoreAssetDLLMacro.h>
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreBase/FString.h>
-#include <CoreBase/FVector.h>
+#include <filesystem>
+#include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace CoreAsset
 {
 
 class IAssetImporter;
 struct IntermediateAsset;
+struct ImportExecutionContext;
 
 class CORE_ASSET_API AssetImporterManager
 {
@@ -22,7 +26,7 @@ class CORE_ASSET_API AssetImporterManager
     void RegisterAssetImporter(const FString &extension, IAssetImporter *importer);
     void ReleaseAssetImporter(const FString &extension);
 
-    FVector<IntermediateAsset *> Import(const char *filePath);
+    ImportPackage Import(const std::filesystem::path &filePath, const ImportExecutionContext &executionContext);
 
   private:
     std::unordered_map<FString, IAssetImporter *> mAssetImporterTable;

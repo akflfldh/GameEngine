@@ -1,17 +1,17 @@
 ﻿#include "Window/BaseWindow.h"
+#include <Window/IWindowEventHandler.h>
 
 Quad::BaseWindow::BaseWindow(HINSTANCE hInstance)
     : mHInstance(hInstance), mClientWidth(600), mClientHeight(800), mMaxClientWidth(1200), mMaxClientHeight(1200),
-      mMinClientWidth(200), mMinClientHeight(200)
+      mMinClientWidth(200), mMinClientHeight(200), mIWindowEventHandler(nullptr)
 {
 }
 
 Quad::BaseWindow::~BaseWindow() {}
 
-void Quad::BaseWindow::Initialize(
-    const std::function<LRESULT(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)> &wndCallback)
+void Quad::BaseWindow::Initialize()
 {
-    mWindowProc = wndCallback;
+    RegisterRawInputDevice();
 }
 
 LRESULT CALLBACK Quad::BaseWindow::InnerWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -22,16 +22,197 @@ LRESULT CALLBACK Quad::BaseWindow::InnerWndProc(HWND hwnd, UINT msg, WPARAM wPar
     {
         CREATESTRUCT *createStrcut = (CREATESTRUCT *)lParam;
         SetWindowLongPtrA(hwnd, GWLP_USERDATA, (LONG_PTR)createStrcut->lpCreateParams);
-        return true;
+        return DefWindowProc(hwnd, msg, wParam, lParam);
     }
     break;
     }
 
     Quad::BaseWindow *window = (Quad::BaseWindow *)(GetWindowLongPtrA(hwnd, GWLP_USERDATA));
     if (window)
-        return window->GetWinProc()(hwnd, msg, wParam, lParam);
+        return window->WndProc(hwnd, msg, wParam, lParam);
     else
         return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+LRESULT CALLBACK Quad::BaseWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+
+    switch (msg)
+    {
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        TextOutW(hdc, 10, 10, L"Hello, Windows!", 16);
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+
+    case WM_GETMINMAXINFO:
+    {
+
+        MINMAXINFO *minmaxInfo = (MINMAXINFO *)lParam;
+        RECT clientMaxRect = {0, 0, mMaxClientWidth, mMaxClientHeight};
+
+        AdjustWindowRect(&clientMaxRect, mWinStyle, false);
+
+        minmaxInfo->ptMaxSize.x = clientMaxRect.right;
+        minmaxInfo->ptMaxSize.y = clientMaxRect.bottom;
+    }
+        return 0;
+    case WM_SIZE:
+    {
+
+        if (mIWindowEventHandler)
+        {
+
+            if (wParam == SIZE_MINIMIZED)
+            {
+                mIWindowEventHandler->OnWindowMinimized();
+            }
+            else
+            {
+
+                RECT clientRect;
+                GetClientRect(hwnd, &clientRect);
+                mClientWidth = clientRect.right;
+                mClientHeight = clientRect.bottom;
+
+                if (mClientWidth == 0)
+                {
+                    return 0;
+                }
+
+                mIWindowEventHandler->OnWindowResize(clientRect.right, clientRect.bottom);
+            }
+        }
+    }
+        return 0;
+    case WM_CHAR:
+    {
+        if (mIWindowEventHandler)
+        {
+            mIWindowEventHandler->OnCharEvent(wParam);
+        }
+    }
+        return 0;
+    case WM_INPUT:
+    {
+        if (mIWindowEventHandler == nullptr)
+            break;
+
+        // raw input
+        UINT dwSize;
+
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+        LPBYTE lpb = new BYTE[dwSize];
+
+        if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+        {
+            OutputDebugString(TEXT("GetRawInputData가 올바른 사이즈를 리턴하지않았다\n"));
+        }
+
+        mIWindowEventHandler->OnInput();
+
+        RAWINPUT *raw = (RAWINPUT *)lpb;
+        DWORD rawInputType = raw->header.dwType;
+
+        if (rawInputType == RIM_TYPEMOUSE)
+        {
+            RAWMOUSE &rawMouse = raw->data.mouse;
+
+            USHORT mouseFlags = rawMouse.usFlags;
+            // TO DO  : 마우스 위치를 화면에 텍스트 출력
+            if (mouseFlags & MOUSE_MOVE_ABSOLUTE)
+            {
+
+                // rawMouse.lLastX;
+                // rawMouse.lLastY;
+            }
+            else if (rawMouse.lLastX != 0 || rawMouse.lLastY != 0)
+            {
+
+                POINT screenPoint, clientPoint;
+
+                GetCursorPos(&screenPoint);
+                mLastClientPos = screenPoint;
+                ScreenToClient(hwnd, &mLastClientPos);
+                //  mInitialized = true;
+
+                GetCursorPos(&screenPoint);
+                // clientPoint = screenPoint;
+                // ScreenToClient(hwnd, &clientPoint);
+
+                mIWindowEventHandler->SetMousePos(screenPoint.x, screenPoint.y, mLastClientPos.x, mLastClientPos.y);
+                /* mIWindowEventHandler->SetMousePos(screenPoint.x, screenPoint.y, mLastClientPos.x,
+                 * mLastClientPos.y);*/
+                mIWindowEventHandler->OnMouseMove(rawMouse.lLastX, rawMouse.lLastY);
+            }
+
+            EInputState mouseInputState = EInputState::eNone;
+
+            if (rawMouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN)
+            {
+                mouseInputState |= EInputState::eMouseLButtonDown;
+            }
+            else if (rawMouse.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP)
+            {
+                mouseInputState |= EInputState::eMouseLButtonUp;
+            }
+
+            if (rawMouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN)
+            {
+
+                mouseInputState |= EInputState ::eMouseRButtonDown;
+            }
+            else if (rawMouse.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP)
+            {
+                mouseInputState |= EInputState::eMouseRButtonUp;
+            }
+
+            if (rawMouse.usButtonFlags & RI_MOUSE_WHEEL)
+            {
+                //A mouseInputState |= EInputState::eMouseWheel;
+                mIWindowEventHandler->OnMouseWheel((short)rawMouse.usButtonData);
+            }
+
+            if (mouseInputState != 0)
+            {
+                mIWindowEventHandler->OnMouseButtonEvent(mouseInputState);
+            }
+        }
+        else if (rawInputType == RIM_TYPEKEYBOARD)
+        {
+            RAWKEYBOARD &rawKeyboard = raw->data.keyboard;
+
+            bool bKeyUp = rawKeyboard.Flags & RI_KEY_BREAK;
+
+            EInputState inputState;
+            if (bKeyUp)
+            {
+                inputState = EInputState::eKeyUp;
+            }
+            else
+            {
+                // key down
+                inputState = EInputState::eKeyDown;
+            }
+
+            if (rawKeyboard.VKey != 0)
+                mIWindowEventHandler->OnKeyEvent(inputState, rawKeyboard.MakeCode); // rawKeyboard.MakeCode
+        }
+
+        delete[] lpb;
+    }
+        return 0;
+
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
 }
 
 bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName, LPCWSTR windowName, DWORD windowStyle,
@@ -59,13 +240,15 @@ bool Quad::BaseWindow::CreateWindowClass(LPCWSTR windowClassName, LPCWSTR window
     RECT windowClientRect{0, 0, (LONG)GetClientWidth(), (LONG)GetClientHeight()};
     int windowWidth = 0;
     int windowHeight = 0;
-    if (AdjustWindowRect(&windowClientRect, windowStyle, false))
+
+    mWinStyle = windowStyle;
+    if (AdjustWindowRect(&windowClientRect, mWinStyle, false))
     {
         windowWidth = windowClientRect.right - windowClientRect.left;
         windowHeight = windowClientRect.bottom - windowClientRect.top;
     }
 
-    HWND hwnd = CreateWindowW(wc.lpszClassName, windowName, windowStyle, 0, 0, windowWidth, windowHeight, 0, 0,
+    HWND hwnd = CreateWindowW(wc.lpszClassName, windowName, mWinStyle, 0, 0, windowWidth, windowHeight, 0, 0,
                               GetHInstance(), this);
 
     ////  SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
@@ -102,10 +285,10 @@ void Quad::BaseWindow::SetVisible(bool flag)
     UpdateWindow(mWindowHandle);
 }
 
-const std::function<LRESULT(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)> &Quad::BaseWindow::GetWinProc()
+void Quad::BaseWindow::SetIWindowEventHandler(IWindowEventHandler *windowEventHandler)
 {
-    return mWindowProc;
-    // TODO: 여기에 return 문을 삽입합니다.
+
+    mIWindowEventHandler = windowEventHandler;
 }
 
 HINSTANCE Quad::BaseWindow::GetHInstance() const
@@ -206,4 +389,53 @@ void Quad::BaseWindow::SetMouseCapture(bool flag)
         SetCapture(mWindowHandle);
     else
         ReleaseCapture();
+}
+
+void Quad::BaseWindow::SetKeyboardCapture(bool flag)
+{
+
+    if (flag)
+    {
+        SetFocus(mWindowHandle);
+    }
+    else
+    {
+        // Releasing the app-level keyboard capture should not drop native window focus.
+        // Clearing focus here causes Win32 to emit the default beep after finishing text input
+        // because subsequent key input no longer has a focused target window.
+    }
+}
+
+void Quad::BaseWindow::ShutDown()
+{
+    if (mWindowHandle)
+    {
+        PostQuitMessage(0);
+    }
+}
+
+bool Quad::BaseWindow::RegisterRawInputDevice()
+{
+    RAWINPUTDEVICE Rid[2]; // mouse , keyboard
+
+    // mouse
+    Rid[0].usUsagePage = 0x0001;
+    Rid[0].usUsage = 0x0002;
+    Rid[0].dwFlags = 0;
+    Rid[0].hwndTarget = 0;
+
+    // keyboard
+    Rid[1].usUsagePage = 0x0001;
+    Rid[1].usUsage = 0x0006;
+    Rid[1].dwFlags = 0;
+    Rid[1].hwndTarget = 0;
+
+    if (!RegisterRawInputDevices(Rid, 2, sizeof(Rid[0])))
+    {
+
+        // error;
+        return false;
+    }
+
+    return true;
 }

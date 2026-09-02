@@ -9,12 +9,18 @@ const char *CoreAsset::GetAssetFileExtension()
     return "asset";
 }
 
+const char *CoreAsset::GetAssetDotFileExtension()
+{
+    return ".asset";
+}
+
 const char *CoreAsset::GetAssetFileExtension(EAssetType assetType)
 {
 
     switch (assetType)
     {
-    case EAssetType::eMesh:
+    case EAssetType::eStaticMesh:
+    case EAssetType::eSkinningMesh:
     case EAssetType::eMaterial:
     case EAssetType::eTexture:
     case EAssetType::eAnimation:

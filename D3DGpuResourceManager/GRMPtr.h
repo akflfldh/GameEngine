@@ -2,16 +2,17 @@
 
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
 
+#include <atomic>
 namespace GRM
 {
 
 class IGpuResourceManager;
 class IGpuResource;
 class GRMPtr;
-struct GRMPtrControlBlcok
+struct GPURESOURCE_MANAGER_API GRMPtrControlBlcok
 {
     IGpuResource *mGpuResource;
-    size_t mRefCount;
+    std::atomic<size_t> mRefCount;
     // IGpuResourceManager* mGpuResourceManager;	//이건 필요없을수도, 전역적으로 얻을수있기에
 };
 

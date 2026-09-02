@@ -19,7 +19,7 @@ class CORE_ASSET_API AssetFactoryManager
     static AssetFactoryManager *GetInstance();
     ~AssetFactoryManager();
 
-    void ReigsterAssetFactory(EAssetType assetType, IAssetFactory *assetFactory);
+    void RegisterAssetFactory(EAssetType assetType, IAssetFactory *assetFactory);
 
     Asset *CreateEmptyAsset(const AssetMetaData &assetMetaData);
     Asset *CreateEmptyAsset(EAssetType assetType);

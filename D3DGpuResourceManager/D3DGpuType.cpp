@@ -1,4 +1,6 @@
-﻿#include "D3DGpuResourceManager/D3DGpuType.h"
+﻿#include "D3DGpuType.h"
+#include "D3DGpuResourceManager/D3DGpuType.h"
+#include "D3DGpuType.h"
 
 DXGI_FORMAT D3DGRM::ConvertToDxgiFormat(GRM::ETextureFormat format)
 {
@@ -22,6 +24,10 @@ DXGI_FORMAT D3DGRM::ConvertToDxgiFormat(GRM::ETextureFormat format)
         return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
     case GRM::ETextureFormat::eB8G8R8A8_UNORM_SRGB:
         return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    case GRM::ETextureFormat::eB8G8R8X8_UNORM:
+        return DXGI_FORMAT_B8G8R8X8_UNORM;
+    case GRM::ETextureFormat::eB8G8R8X8_UNORM_SRGB:
+        return DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
 
     case GRM::ETextureFormat::eR16_FLOAT:
         return DXGI_FORMAT_R16_FLOAT;
@@ -174,5 +180,68 @@ D3DGRM::ConvertToSamplerAddressMode(GRM::ESamplerAddressMode addressMode)
         return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     case GRM::ESamplerAddressMode::eClamp:
         return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    }
+}
+
+GPURESOURCE_MANAGER_API D3D12_RESOURCE_STATES D3DGRM::ConvertToD3DResourceState(EResourceState resourceState)
+{
+    {
+
+        switch (resourceState)
+        {
+        case EResourceState::eNone:
+            return D3D12_RESOURCE_STATE_COMMON;
+        case EResourceState::eRenderTarget:
+            return D3D12_RESOURCE_STATE_RENDER_TARGET;
+        case EResourceState::eGenericRead:
+            return D3D12_RESOURCE_STATE_GENERIC_READ;
+        case EResourceState::ePresent:
+            return D3D12_RESOURCE_STATE_PRESENT;
+        case EResourceState::eReadDepthStencil:
+            return D3D12_RESOURCE_STATE_DEPTH_READ;
+        case EResourceState::eWriteDepthStencil:
+            return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        case EResourceState::eCopySource:
+            return D3D12_RESOURCE_STATE_COPY_SOURCE;
+        case EResourceState::eCopyDest:
+            return D3D12_RESOURCE_STATE_COPY_DEST;
+        default:
+            return D3D12_RESOURCE_STATE_COMMON;
+        }
+    }
+}
+
+GPURESOURCE_MANAGER_API EResourceState D3DGRM::ConvertFromD3D12ResourceState(D3D12_RESOURCE_STATES resourceState)
+{
+
+    switch (resourceState)
+    {
+        //   case D3D12_RESOURCE_STATE_COMMON: // 또는 D3D12_RESOURCE_STATE_PRESENT (0번 비트 공유 시)
+        //       return EResourceState::eNone;
+
+    case D3D12_RESOURCE_STATE_RENDER_TARGET:
+        return EResourceState::eRenderTarget;
+
+    case D3D12_RESOURCE_STATE_GENERIC_READ:
+        return EResourceState::eGenericRead;
+
+    case D3D12_RESOURCE_STATE_PRESENT:
+        return EResourceState::ePresent;
+
+    case D3D12_RESOURCE_STATE_DEPTH_READ:
+        return EResourceState::eReadDepthStencil;
+
+    case D3D12_RESOURCE_STATE_DEPTH_WRITE:
+        return EResourceState::eWriteDepthStencil;
+
+    case D3D12_RESOURCE_STATE_COPY_SOURCE:
+        return EResourceState::eCopySource;
+
+    case D3D12_RESOURCE_STATE_COPY_DEST:
+        return EResourceState::eCopyDest;
+
+    default:
+        // 매칭되는 상태가 없거나 복합 상태일 경우 기본값 반환
+        return EResourceState::eNone;
     }
 }

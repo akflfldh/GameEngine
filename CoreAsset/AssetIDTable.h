@@ -23,7 +23,11 @@ class CORE_ASSET_API AssetIDTable
     Asset *GetAsset(AssetID id) const;
     Asset *GetAsset(const std::string &name) const;
 
+    void GetAssetsByType(EAssetType type, std::vector<Asset *> &oAssetList) const;
+
     bool SetAsset(const std::string &name, AssetID id, Asset *asset);
+
+    size_t GetAssetNum() const;
 
   private:
     using AssetNameIDTableType = std::unordered_map<std::string, AssetID>;

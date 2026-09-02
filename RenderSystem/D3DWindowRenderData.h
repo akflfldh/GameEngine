@@ -9,6 +9,7 @@
 #include <D3DGpuResourceManager/GRMPtr.h>
 #include <d3d12.h>
 #include <dxgi.h>
+#include <dxgi1_4.h>
 #include <wrl.h>
 namespace GRM
 {
@@ -34,11 +35,13 @@ class RENDER_SYSTEM_API D3DWindowRenderData
                         const Render::CreationRenderChannelInfo &creationInfo);
     ~D3DWindowRenderData();
 
-    void ResizeWindow();
+    int ResizeWindow();
 
     // 스왑체인,후면/깊이버퍼
     GRM::GRMPtr GetBackBuffer(int index) const; // index : 0 ,1
     GRM::GRMPtr GetDepthStencilBuffer() const;
+
+    GRM::GRMPtr GetCurrentBackBuffer() const;
 
     int GetCurrentBackBufferIndex() const;
     void IncrementBackBufferIndex();
@@ -52,7 +55,8 @@ class RENDER_SYSTEM_API D3DWindowRenderData
 
   private:
     void CreateSwapChain(const Render::CreationRenderChannelInfo &creationInfo);
-    void ResizeBackBuffer(UINT clientWidth, UINT clientHeight);
+    // backbuffer index return
+    int ResizeBackBuffer(UINT clientWidth, UINT clientHeight);
     void ResizeDepthStencilBuffer(UINT clientWidth, UINT clientHeight);
     void CreateDepthStencilBuffer(const Render::CreationRenderChannelInfo &creationInfo);
 
@@ -61,11 +65,11 @@ class RENDER_SYSTEM_API D3DWindowRenderData
 
     Microsoft::WRL::ComPtr<ID3D12Device> mDevice;
     Microsoft::WRL::ComPtr<IDXGIFactory> mFactory;
-    Microsoft::WRL::ComPtr<IDXGISwapChain> mSwapChain;
+    Microsoft::WRL::ComPtr<IDXGISwapChain3> mSwapChain;
     Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCommandQueue;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
+    // Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
+    // Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
     size_t mCurrentFenceValue;
 
     // Microsoft::WRL::ComPtr<ID3D12Resource> mBackBuffer[2];

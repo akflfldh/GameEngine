@@ -5,7 +5,6 @@
 #include <CoreBase/FBuffer.h>
 
 #include <utility>
-class FString;
 
 class COREBASE_API FString
 {
@@ -41,7 +40,7 @@ class COREBASE_API FString
     size_t CalculateCapacity(size_t length);
     void Swap(FString &lhs) noexcept;
 
-    //공간예약
+    // 공간예약
     void Reserve(size_t requiredSize);
 
   private:

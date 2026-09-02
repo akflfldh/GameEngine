@@ -1,12 +1,101 @@
-add_library(CoreMath STATIC
+﻿add_library(CoreMath SHARED
 CoreMath.cpp
 CoreMath.h
 
 
-)
+ "CoreMathDllMacro.h" "Geometry.h" "Geometry.cpp")
+
+target_compile_definitions(CoreMath PRIVATE COREMATH_LIB)
 
 
-
-target_link_libraries(CoreMath PUBLIC compiler_flags headerDir)
+target_link_libraries(CoreMath PUBLIC compiler_flags headerDir ReflectSystem)
 
 target_include_directories(CoreMath PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+
+# (B) 외부 exe 또는 PATH에 있음:
+set(CODEGEN_CMD "${CMAKE_CURRENT_SOURCE_DIR}/../CodeGenerator.exe")   # 경로 있으면 풀경로로 바꿔도 됨
+
+
+
+
+
+
+# 2) 생성물 폴더 및 포함 (그대로 OK)
+set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/Generated)
+file(MAKE_DIRECTORY ${GEN_DIR})
+target_include_directories(CoreMath PUBLIC ${GEN_DIR})
+
+
+# --- 리플렉션 대상 헤더 검색 ---
+file(GLOB_RECURSE ALL_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+string(REPLACE "\\" "/" SRC_DIR_REGEX "${CMAKE_SOURCE_DIR}")
+list(FILTER ALL_HEADERS EXCLUDE REGEX "${SRC_DIR_REGEX}/out/.*")
+list(FILTER ALL_HEADERS EXCLUDE REGEX "${SRC_DIR_REGEX}/Generated/.*")
+list(REMOVE_DUPLICATES ALL_HEADERS)
+
+# --- REFLECT_CLASS 매크로가 있는 헤더만 선별 ---
+set(REFLECT_TARGETS "")
+foreach(HEADER_FILE IN LISTS ALL_HEADERS)
+    file(READ "${HEADER_FILE}" FILE_CONTENT)
+    string(REGEX MATCH "REFLECT_CLASS|REFLECT_STRUCT" IS_TARGET "${FILE_CONTENT}")
+    if(IS_TARGET)
+        list(APPEND REFLECT_TARGETS "${HEADER_FILE}")
+    endif()
+endforeach()
+
+# --- 코드 생성 함수 ---
+set(ALL_GPP_FILES "")
+set(ALL_GH_FILES "") 
+
+
+
+function(add_analysis_step INPUT_PATH)
+
+    get_filename_component(FILE_BASENAME ${INPUT_PATH} NAME_WE)
+    file(RELATIVE_PATH REL_PATH "${CMAKE_SOURCE_DIR}" "${INPUT_PATH}")
+    string(REPLACE "/" "_" SAFE_BASE_NAME "${REL_PATH}")
+    string(REPLACE "." "_" SAFE_BASE_NAME "${SAFE_BASE_NAME}")
+    set(DEP_FILE "${GEN_DIR}/${SAFE_BASE_NAME}.d")
+    set(OUT_GPP "${GEN_DIR}/${FILE_BASENAME}.generated.cpp")
+    set(OUT_GH "${GEN_DIR}/${FILE_BASENAME}.generated.h") 
+
+    # 하위 폴더 생성 보장 (중간 경로 포함)
+get_filename_component(OUT_GH_DIR "${OUT_GH}" DIRECTORY)
+
+
+file(MAKE_DIRECTORY "${OUT_GH_DIR}")
+
+    add_custom_command(
+        OUTPUT      "${OUT_GPP}" "${OUT_GH}"
+        COMMAND     ${CMAKE_COMMAND} -E touch "${OUT_GH}"
+
+        
+        COMMAND     ${CODEGEN_CMD} scan
+                    --outputGpp   "${OUT_GPP}"
+                    --outputGh    "${OUT_GH}"
+                    --depfile     "${DEP_FILE}"
+                    --deptarget   "${OUT_GPP}"
+                    "${INPUT_PATH}"
+                    -- -x c++ -std=c++20 --target=x86_64-pc-windows-msvc -D_DEBUG -I${CMAKE_SOURCE_DIR} -I${GEN_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS     "${INPUT_PATH}"
+        DEPFILE     "${DEP_FILE}"
+        COMMENT     "Analyzing ${INPUT_PATH}"
+        VERBATIM
+    )
+    list(APPEND ALL_GPP_FILES "${OUT_GPP}")
+    list(APPEND ALL_GH_FILES "${OUT_GH}")
+
+    set(ALL_GPP_FILES ${ALL_GPP_FILES} PARENT_SCOPE)
+    set(ALL_GH_FILES ${ALL_GH_FILES} PARENT_SCOPE)
+endfunction()
+
+# --- 선별된 헤더에 대해 코드 생성 실행 ---
+foreach(IN_FILE IN LISTS REFLECT_TARGETS)
+    add_analysis_step("${IN_FILE}")
+endforeach()
+
+# --- 생성된 파일들을 빌드에 포함 ---
+target_sources(CoreMath PRIVATE 
+${ALL_GPP_FILES}
+${ALL_GH_FILES})

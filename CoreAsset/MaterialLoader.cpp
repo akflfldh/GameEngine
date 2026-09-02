@@ -12,7 +12,8 @@ CoreAsset::MaterialLoader::MaterialLoader() {}
 
 CoreAsset::MaterialLoader::~MaterialLoader() {}
 
-bool CoreAsset::MaterialLoader::LoadAssetFile(Arch &arch, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+bool CoreAsset::MaterialLoader::LoadAssetFile(EAssetType assetType, Arch &arch,
+                                              AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
                                               std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr)
 {
 
@@ -28,6 +29,8 @@ bool CoreAsset::MaterialLoader::LoadAssetFile(Arch &arch, AssetFactoryManager *a
     oAsset = assetFactoryManager->CreateEmptyAsset(EAssetType::eMaterial);
     if (oAsset != nullptr)
         oAsset->Serialize(arch);
+
+    oAssetMetaDataPtr = std::move(materialMetaDataPtr);
 
     return true;
 }

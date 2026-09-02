@@ -2,6 +2,7 @@
 
 #include "RenderSystem/D3DMaterialManager.h"
 #include "RenderSystem/D3DOpaqueRenderPass.h"
+#include <D3DGpuResourceManager/D3DGpuConstantBuffer.h>
 #include <D3DGpuResourceManager/D3DGpuIndexBuffer.h>
 #include <D3DGpuResourceManager/D3DGpuResource.h>
 #include <D3DGpuResourceManager/D3DGpuResourceManager.h>
@@ -49,40 +50,40 @@ void D3DRender::D3DOpaqueRenderPass::Draw(ID3D12GraphicsCommandList *commandList
 {
     // 각 렌더아이템이 참조하는 머터리얼의 pso rootsignature , shader resource binding 작업과 draw수행
 
-    if (renderItems.empty())
-        return;
+    // if (renderItems.empty())
+    //     return;
 
-    const Render::InternalRenderItem *beforeRenderItem = nullptr;
-    D3DMaterialItem *beforeMaterialItem = nullptr;
+    // const Render::InternalRenderItem *beforeRenderItem = nullptr;
+    // D3DMaterialItem *beforeMaterialItem = nullptr;
 
-    for (size_t renderItemIndex = 0; renderItemIndex < renderItems.size(); ++renderItemIndex)
-    {
+    // for (size_t renderItemIndex = 0; renderItemIndex < renderItems.size(); ++renderItemIndex)
+    //{
 
-        const Render::InternalRenderItem *currRenderItem = &renderItems[renderItemIndex];
+    //    const Render::InternalRenderItem *currRenderItem = &renderItems[renderItemIndex];
 
-        D3DMaterialItem *currMaterialItem = mMaterialManager->GetMaterialItem(currRenderItem->mMaterialID);
+    //    D3DMaterialItem *currMaterialItem = mMaterialManager->GetMaterialItem(currRenderItem->mMaterialID);
 
-        D3DMainRenderPassInfo *currMatMainPass = &currMaterialItem->mMainPass;
-        D3DMainRenderPassInfo *beforeMatMainPass = nullptr;
-        if (beforeMaterialItem != nullptr)
-            beforeMatMainPass = &beforeMaterialItem->mMainPass;
+    //    D3DMainRenderPassInfo *currMatMainPass = &currMaterialItem->mMainPass;
+    //    D3DMainRenderPassInfo *beforeMatMainPass = nullptr;
+    //    if (beforeMaterialItem != nullptr)
+    //        beforeMatMainPass = &beforeMaterialItem->mMainPass;
 
-        // 이전 draw와의 비교
-        // 이전 렌더아이템들과 비교
+    //    // 이전 draw와의 비교
+    //    // 이전 렌더아이템들과 비교
 
-        BindPSOIfNeeded(commandList, beforeRenderItem, currRenderItem, beforeMatMainPass, currMatMainPass);
+    //    BindPSOIfNeeded(commandList, beforeRenderItem, currRenderItem, beforeMatMainPass, currMatMainPass);
 
-        BindScissorRectIfNeeded(commandList, beforeRenderItem, currRenderItem);
+    //    BindScissorRectIfNeeded(commandList, beforeRenderItem, currRenderItem);
 
-        BindShaderResources(commandList, currRenderItem, currMatMainPass);
+    //    BindShaderResources(commandList, currRenderItem, currMatMainPass);
 
-        BindMeshBufferIfNeeded(commandList, beforeRenderItem, currRenderItem);
+    //    BindMeshBufferIfNeeded(commandList, beforeRenderItem, currRenderItem);
 
-        DrawRenderItem(commandList, currRenderItem);
+    //    DrawRenderItem(commandList, currRenderItem);
 
-        beforeRenderItem = currRenderItem;
-        beforeMaterialItem = currMaterialItem;
-    }
+    //    beforeRenderItem = currRenderItem;
+    //    beforeMaterialItem = currMaterialItem;
+    //}
 }
 
 void D3DRender::D3DOpaqueRenderPass::EndPass(ID3D12GraphicsCommandList *commandList) {}
@@ -120,9 +121,11 @@ void D3DRender::D3DOpaqueRenderPass::BindScissorRectIfNeeded(ID3D12GraphicsComma
                                                              const Render::InternalRenderItem *beforeRenderItem,
                                                              const Render::InternalRenderItem *currRenderItem)
 {
+
     // scissorRect
     if (beforeRenderItem == nullptr || (beforeRenderItem->mScissor != currRenderItem->mScissor))
     {
+
         commandList->RSSetScissorRects(1, (D3D12_RECT *)&currRenderItem->mScissor);
         // commandList->RSSetScissorRects(0,nullptr);
     }
@@ -153,47 +156,49 @@ void D3DRender::D3DOpaqueRenderPass::BindShaderResources(ID3D12GraphicsCommandLi
                                                          const Render::InternalRenderItem *currRenderItem,
                                                          const D3DMainRenderPassInfo *currMatMainPass)
 {
-    // resourceBinding
-    // 일단동일한 패스버퍼라도 루트파라미터의 인덱스가 달라지면 다시바인딩해야하니
-    // 일단은 리소스는 항상 다시 바인딩
-    for (const auto &resourceElement : currRenderItem->mBindingGpuResourceVector)
-    {
+    //// resourceBinding
+    //// 일단동일한 패스버퍼라도 루트파라미터의 인덱스가 달라지면 다시바인딩해야하니
+    //// 일단은 리소스는 항상 다시 바인딩
+    // for (const auto &resourceElement : currRenderItem->mBindingGpuResourceVector)
+    //{
 
-        std::unordered_map<std::string, int>::const_iterator rootParameterIt =
-            currMatMainPass->mShaderResourceRootParameterBindingInfo.find(resourceElement.mName);
+    //    std::unordered_map<std::string, int>::const_iterator rootParameterIt =
+    //        currMatMainPass->mShaderResourceRootParameterBindingInfo.find(resourceElement.mName);
 
-        int rootParameterIndex = rootParameterIt->second;
+    //    int rootParameterIndex = rootParameterIt->second;
 
-        D3DGRM::D3DDescriptorHandle handle;
-        switch (resourceElement.mType)
-        {
-        case Render::EShaderResourceType::eConstantBuffer:
-        {
+    //    D3DGRM::D3DDescriptorHandle handle;
+    //    switch (resourceElement.mType)
+    //    {
+    //    case Render::EShaderResourceType::eConstantBuffer:
+    //    {
 
-            D3DGRM::D3DGpuTexture *d3dConstantBuffer = (D3DGRM::D3DGpuTexture *)resourceElement.gpuResource;
-            d3dConstantBuffer->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eCBV, handle);
-        }
-        break;
-        case Render::EShaderResourceType::eStructuredBuffer:
-        case Render::EShaderResourceType::eTexture:
-        {
-            D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
-            d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
-        }
-        break;
-        case Render::EShaderResourceType::eSampler:
+    //        D3DGRM::D3DGpuConstantBuffer *d3dConstantBuffer =
+    //            (D3DGRM::D3DGpuConstantBuffer *)resourceElement.gpuResource;
+    //        // d3dConstantBuffer->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eCBV, handle);
+    //        handle = d3dConstantBuffer->GetConstantDescriptorHandle(resourceElement.mOffset);
+    //    }
+    //    break;
+    //    case Render::EShaderResourceType::eStructuredBuffer:
+    //    case Render::EShaderResourceType::eTexture:
+    //    {
+    //        D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
+    //        d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
+    //    }
+    //    break;
+    //    case Render::EShaderResourceType::eSampler:
 
-        {
+    //    {
 
-            D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
-            d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSMP, handle);
-        }
+    //        D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
+    //        d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSMP, handle);
+    //    }
 
-        break;
-        }
+    //    break;
+    //    }
 
-        commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle.mGpuDescriptorHandle);
-    }
+    //    commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle.mGpuDescriptorHandle);
+    //}
 }
 
 void D3DRender::D3DOpaqueRenderPass::DrawRenderItem(ID3D12GraphicsCommandList *commandList,

@@ -8,8 +8,8 @@ enum class EMeshType : int
     eLine
 };
 
-struct UIVertex
-{
-    CoreMath::Vector3 mPos;
-    CoreMath::Vector2 mTex;
-};
+// struct UIVertex
+//{
+//     CoreMath::Vector3 mPos;
+//     CoreMath::Vector2 mTex;
+// };

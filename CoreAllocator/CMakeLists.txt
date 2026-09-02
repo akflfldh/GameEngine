@@ -3,7 +3,7 @@
     IAllocator.h
     IAllocator.cpp
 
- "CoreAllocatorDllMacro.h" "FMemory.h" "FMemory.cpp" "DefaultAllocator.h" "DefaultAllocator.cpp")
+ "CoreAllocatorDllMacro.h" "FMemory.h" "FMemory.cpp" "DefaultAllocator.h" "DefaultAllocator.cpp" "AllocatorManager.h" "AllocatorManager.cpp")
 
 
 target_compile_definitions(CoreAllocator PRIVATE CORE_ALLOC_LIB)

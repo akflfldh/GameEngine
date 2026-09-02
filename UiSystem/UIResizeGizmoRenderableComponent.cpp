@@ -1,9 +1,11 @@
 ﻿#include "UiSystem/UIResizeGizmoRenderableComponent.h"
+#include "UIImageComponent.h"
 #include "UiSystem/UIElement.h"
 #include <CoreAsset/UIMaterialManager.h>
 
 UI::UIResizeGizmoRenderableComponent::UIResizeGizmoRenderableComponent()
-    : mThickness(10.0f), mActiveBorder(-1), mActiveColor({1.0f, 0.0f, 0.0f, 1.0f})
+    : mThickness(10.0f), mActiveBorder(-1), mActiveColor({1.0f, 0.0f, 0.0f, 1.0f}), bHover(false), bPress(false)
+
 {
 
     CoreAsset::UIMaterialManager *uiMaterialManager = CoreAsset::UIMaterialManager::GetInstance();
@@ -14,13 +16,14 @@ UI::UIResizeGizmoRenderableComponent::UIResizeGizmoRenderableComponent()
 
 UI::UIResizeGizmoRenderableComponent::~UIResizeGizmoRenderableComponent() {}
 
-void UI::UIResizeGizmoRenderableComponent::Update() {}
+void UI::UIResizeGizmoRenderableComponent::Update(float deltaTime) {}
 
-void UI::UIResizeGizmoRenderableComponent::SetColor(const CoreMath::Vector4 &color)
+void UI::UIResizeGizmoRenderableComponent::SetColor(const glm::vec4 &color)
 {
     mColor = color;
 }
-const CoreMath::Vector4 &UI::UIResizeGizmoRenderableComponent::GetColor() const
+
+const glm::vec4 &UI::UIResizeGizmoRenderableComponent::GetColor() const
 {
     return mColor;
 }
@@ -40,17 +43,23 @@ inline size_t UI::UIResizeGizmoRenderableComponent::GetVertexNum() const
     return 16;
 }
 
-void UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) const
+uint32_t UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) const
 {
+
+    if (oUIVertices == nullptr)
+    {
+        return 16;
+    }
+
     float halfThickness = mThickness / 2;
 
     UIElement *uiElement = GetOwnerUIElement();
 
     // 4개의 꼭짓점 좌표를 얻는다.
-    CoreMath::Vector2 vertices[4];
+    glm::vec2 vertices[4];
     uiElement->mTransform.GetQuadWorldPoints(vertices);
 
-    // 각 모서리별로 4개의 정점을 계산한다.
+    //    각 모서리별로 4개의 정점을 계산한다.
 
     // 0 - 1 (topleft, top right)
     oUIVertices[0].mPos = vertices[0];
@@ -58,11 +67,11 @@ void UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) co
     oUIVertices[2].mPos = vertices[1];
     oUIVertices[3].mPos = vertices[0];
 
-    oUIVertices[0].mPos.Y += halfThickness;
-    oUIVertices[3].mPos.Y -= halfThickness;
+    oUIVertices[0].mPos.y -= halfThickness;
+    oUIVertices[3].mPos.y += halfThickness;
 
-    oUIVertices[1].mPos.Y += halfThickness;
-    oUIVertices[2].mPos.Y -= halfThickness;
+    oUIVertices[1].mPos.y -= halfThickness;
+    oUIVertices[2].mPos.y += halfThickness;
 
     // 1-2 (top right, bottom right)
     oUIVertices[4].mPos = vertices[1];
@@ -70,11 +79,11 @@ void UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) co
     oUIVertices[6].mPos = vertices[2];
     oUIVertices[7].mPos = vertices[2];
 
-    oUIVertices[4].mPos.X -= halfThickness;
-    oUIVertices[7].mPos.X -= halfThickness;
+    oUIVertices[4].mPos.x -= halfThickness;
+    oUIVertices[5].mPos.x += halfThickness;
 
-    oUIVertices[5].mPos.X += halfThickness;
-    oUIVertices[6].mPos.X += halfThickness;
+    oUIVertices[6].mPos.x += halfThickness;
+    oUIVertices[7].mPos.x -= halfThickness;
 
     // 0 - 3 (top left , bottom left)
     oUIVertices[8].mPos = vertices[0];
@@ -82,11 +91,11 @@ void UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) co
     oUIVertices[10].mPos = vertices[3];
     oUIVertices[11].mPos = vertices[3];
 
-    oUIVertices[8].mPos.X -= halfThickness;
-    oUIVertices[9].mPos.X += halfThickness;
+    oUIVertices[8].mPos.x -= halfThickness;
+    oUIVertices[9].mPos.x += halfThickness;
 
-    oUIVertices[10].mPos.X += halfThickness;
-    oUIVertices[11].mPos.X -= halfThickness;
+    oUIVertices[10].mPos.x += halfThickness;
+    oUIVertices[11].mPos.x -= halfThickness;
 
     // 3 - 2 (bottom left, bottom right)
     oUIVertices[12].mPos = vertices[3];
@@ -94,23 +103,25 @@ void UI::UIResizeGizmoRenderableComponent::GetVertices(UIVertex *oUIVertices) co
     oUIVertices[14].mPos = vertices[2];
     oUIVertices[15].mPos = vertices[3];
 
-    oUIVertices[12].mPos.Y += halfThickness;
-    oUIVertices[15].mPos.Y -= halfThickness;
+    oUIVertices[12].mPos.y -= halfThickness;
+    oUIVertices[15].mPos.y += halfThickness;
 
-    oUIVertices[13].mPos.Y += halfThickness;
-    oUIVertices[14].mPos.Y -= halfThickness;
+    oUIVertices[13].mPos.y -= halfThickness;
+    oUIVertices[14].mPos.y += halfThickness;
     // 컬러를 적용한다.
 
     for (int i = 0; i < 16; ++i)
     {
-        oUIVertices[i].mColor = mColor;
+        oUIVertices[i].mColor = UIColorUtility::PackColor(mColor);
     }
 
     if (mActiveBorder != -1)
     {
         for (int i = 0; i < 4; ++i)
-            oUIVertices[mActiveBorder * 4 + i].mColor = mActiveColor;
+            oUIVertices[mActiveBorder * 4 + i].mColor = UIColorUtility::PackColor(mActiveColor);
     }
+
+    return 16;
 }
 
 size_t UI::UIResizeGizmoRenderableComponent::GetIndexNum() const
@@ -137,7 +148,7 @@ void UI::UIResizeGizmoRenderableComponent::GetIndices(uint32_t *oIndices) const
     }
 }
 
-bool UI::UIResizeGizmoRenderableComponent::IsPointInside(float x, float y) const
+int UI::UIResizeGizmoRenderableComponent::IsPointInside(float x, float y) const
 {
 
     std::vector<UI::UIVertex> vertices(16);
@@ -152,29 +163,156 @@ bool UI::UIResizeGizmoRenderableComponent::IsPointInside(float x, float y) const
         int leftTopIndex = i * 4 + 0;
         int rightBottomIndex = i * 4 + 2;
 
-        if (vertices[leftTopIndex].mPos.X > x)
+        if (vertices[leftTopIndex].mPos.x > x)
             continue;
-        if (vertices[rightBottomIndex].mPos.X < x)
+        if (vertices[rightBottomIndex].mPos.x < x)
             continue;
-        if (vertices[leftTopIndex].mPos.Y < y)
+        if (vertices[leftTopIndex].mPos.y > y)
             continue;
-        if (vertices[rightBottomIndex].mPos.Y > y)
+        if (vertices[rightBottomIndex].mPos.y < y)
             continue;
 
-        return true;
+        return i + 1;
     }
-    return false;
+    return 0;
 }
 
 void UI::UIResizeGizmoRenderableComponent::UpdateMouseInputEvent(const UIManagerMouseInputContext &mouseInputContext,
                                                                  bool &oCaptureActiveRequestFlag,
                                                                  bool &oCaptureReleaseRequestFlag)
 {
+}
 
-    if (mouseInputContext.mCaptureState != UI::EUIMouseCaptureType::eNone)
-        UpdateOnCapture(mouseInputContext, oCaptureActiveRequestFlag, oCaptureReleaseRequestFlag);
-    else
-        UpdateOnHover(mouseInputContext, oCaptureActiveRequestFlag, oCaptureReleaseRequestFlag);
+void UI::UIResizeGizmoRenderableComponent::OnHover(int x, int y)
+{
+
+    bHover = true;
+
+    // 이미 border이 눌러지고있다면 새로운 hover는 무시한다.
+    // if (bPress == true)
+    //    return;
+
+    // int borderNum = EvaluateActiveBorder(x, y);
+    // if (borderNum != -1)
+    //{
+    //     if (mActiveBorder != borderNum)
+    //     {
+    //         // 기존에 활성화된 border을 비활성화한다.
+    //     }
+
+    //    mActiveBorder = borderNum;
+    //    bHover = true;
+    //}
+}
+
+void UI::UIResizeGizmoRenderableComponent::OnReleaseHover()
+{
+    bHover = false;
+    if (bPress == false)
+    {
+        mActiveBorder = -1;
+    }
+}
+
+void UI::UIResizeGizmoRenderableComponent::OnMouseMove(const Quad::RawInputData &inputData, float worldPosX,
+                                                       float worldPosY)
+{
+
+    if (bPress && inputData.mouseMoveData.mAccumulateFlag)
+    {
+
+        float cursorX = worldPosX;
+        float cursorY = worldPosY;
+
+        UIElement *uiElement = GetOwnerUIElement();
+        glm::vec2 centerWorld = uiElement->mTransform.GetWorldPosition();
+        glm::vec2 centerLocal = uiElement->mTransform.GetLocalPosition();
+
+        glm::vec2 size = uiElement->mTransform.GetSize();
+
+        float distance = 0.0f;
+        if (mActiveBorder == 0)
+        {
+            // 위
+            float topPos = centerWorld.y;
+
+            distance = topPos - cursorY;
+
+            centerLocal.y -= distance;
+            size.y += distance;
+        }
+        else if (mActiveBorder == 1)
+        {
+            // 오
+            float rightPos = centerWorld.x + size.x;
+            // 커서와 왼쪽 좌표사이의거리 만큼 center를 이동시켜 조정하고
+            distance = cursorX - rightPos;
+
+            size.x += distance;
+        }
+        else if (mActiveBorder == 2)
+        {
+            // 왼
+            float leftPos = centerWorld.x;
+            // 커서와 왼쪽 좌표사이의거리 만큼 center를 이동시켜 조정하고
+            distance = cursorX - leftPos;
+
+            centerLocal.x += distance;
+            size.x -= distance;
+        }
+        else if (mActiveBorder == 3)
+        {
+            // 아래
+
+            float bottomPos = centerWorld.y + size.y;
+
+            distance = cursorY - bottomPos;
+            size.y += distance;
+        }
+
+        uiElement->SetSize(size);
+        uiElement->SetPositionLocal(centerLocal);
+    }
+}
+
+void UI::UIResizeGizmoRenderableComponent::OnMouseDown(const Quad::RawInputData &inputData, float worldPosX,
+                                                       float worldPosY, bool &bConsume)
+{
+    if (bHover)
+    {
+
+        bPress = true;
+        bConsume = true;
+        GetOwnerUIElement()->RequestMouseCaptureInput(this);
+    }
+}
+
+void UI::UIResizeGizmoRenderableComponent::OnMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
+                                                     bool &bConsume)
+{
+    if (bPress)
+    {
+        bPress = false;
+        bConsume = true;
+
+        GetOwnerUIElement()->ReleaseMouseCaptureInput();
+    }
+}
+
+bool UI::UIResizeGizmoRenderableComponent::IsHovered() const
+{
+    return bHover;
+}
+
+void UI::UIResizeGizmoRenderableComponent::OnChangeHoverPart(int before, int after)
+{
+    // press상태라면 캡처상태이니 영역을 교체하지않는다.
+    // 따라서 press상태가 아닐때만 교체된다.
+    if (!bPress)
+    {
+        UIRenderableComponent::OnChangeHoverPart(before, after);
+        mActiveBorder = after - 1;
+    }
 }
 
 int UI::UIResizeGizmoRenderableComponent::EvaluateActiveBorder(float x, float y) const
@@ -188,157 +326,20 @@ int UI::UIResizeGizmoRenderableComponent::EvaluateActiveBorder(float x, float y)
         int topLeftIndex = i * 4 + 0;
         int bottomRightIndex = i * 4 + 2;
 
-        if (vertices[topLeftIndex].mPos.X > x)
+        if (vertices[topLeftIndex].mPos.x > x)
             continue;
 
-        if (vertices[bottomRightIndex].mPos.X < x)
+        if (vertices[bottomRightIndex].mPos.x < x)
             continue;
 
-        if (vertices[topLeftIndex].mPos.Y < y)
+        if (vertices[topLeftIndex].mPos.y > y)
             continue;
 
-        if (vertices[bottomRightIndex].mPos.Y > y)
+        if (vertices[bottomRightIndex].mPos.y < y)
             continue;
 
         return i;
     }
 
     return -1;
-}
-
-void UI::UIResizeGizmoRenderableComponent::UpdateOnCapture(const UIManagerMouseInputContext &mouseInputContext,
-                                                           bool &captureActiveRequestFlag,
-                                                           bool &oCaptureReleaseRequestFlag)
-{
-    if (mouseInputContext.mCaptureState == EUIMouseCaptureType::eEnter)
-    {
-        // 캡처 요청이 수락됨
-
-        mActiveColor = {1, 1, 0, 1};
-    }
-    else if (mouseInputContext.mCaptureState == EUIMouseCaptureType::eHeld)
-    {
-
-        // l버튼이 release되었다 그러면 capture해제요청
-        if (mouseInputContext.mMouseContext.mMouseState & Quad::EMouseState::eLButtonReleased)
-        {
-            oCaptureReleaseRequestFlag = true;
-            mActiveColor = {1, 0, 0, 1};
-            mActiveBorder = -1;
-        }
-
-        if (mouseInputContext.mMouseContext.mMouseState & Quad::EMouseState::eMoved)
-        {
-            float cursorX = mouseInputContext.mMouseContext.mWorldPosX;
-            float cursorY = mouseInputContext.mMouseContext.mWorldPosY;
-
-            UIElement *uiElement = GetOwnerUIElement();
-            CoreMath::Vector2 centerWorld = uiElement->mTransform.GetWorldPosition();
-            CoreMath::Vector2 centerLocal = uiElement->mTransform.GetLocalPosition();
-
-            CoreMath::Vector2 size = uiElement->mTransform.GetSize();
-
-            float distance = 0.0f;
-            if (mActiveBorder == 0)
-            {
-                // 위
-                float topPos = centerWorld.Y + size.Y / 2;
-
-                distance = cursorY - topPos;
-
-                centerLocal.Y += distance / 2;
-                size.Y += distance;
-            }
-            else if (mActiveBorder == 1)
-            {
-                // 오
-                float rightPos = centerWorld.X + size.X / 2;
-                // 커서와 왼쪽 좌표사이의거리 만큼 center를 이동시켜 조정하고
-                distance = cursorX - rightPos;
-
-                centerLocal.X += distance / 2;
-                size.X += distance;
-            }
-            else if (mActiveBorder == 2)
-            {
-                // 왼
-                float leftPos = centerWorld.X - size.X / 2;
-                // 커서와 왼쪽 좌표사이의거리 만큼 center를 이동시켜 조정하고
-                distance = cursorX - leftPos;
-
-                centerLocal.X += distance / 2;
-                size.X -= distance;
-            }
-            else if (mActiveBorder == 3)
-            {
-                // 아래
-
-                float bottomPos = centerWorld.Y - size.Y / 2;
-
-                distance = cursorY - bottomPos;
-
-                centerLocal.Y += distance / 2;
-                size.Y -= distance;
-            }
-
-            uiElement->mTransform.SetSize(size);
-            uiElement->mTransform.SetPositionLocal(centerLocal);
-        }
-    }
-    else if (mouseInputContext.mCaptureState == EUIMouseCaptureType::eRelease)
-    {
-    }
-}
-
-void UI::UIResizeGizmoRenderableComponent::UpdateOnHover(const UIManagerMouseInputContext &mouseInputContext,
-                                                         bool &oCaptureActiveRequestFlag,
-                                                         bool &oCaptureReleaseRequestFlag)
-{
-    // hover에 들어갔든 빠져나갔든, l버튼이 release되었다면 , 색상은 빨강, 테투리막대 비활성화
-    if ((mouseInputContext.mMouseContext.mMouseState & Quad::EMouseState::eLButtonReleased))
-    {
-        mActiveColor = {1, 0, 0, 1};
-        mActiveBorder = -1;
-    }
-
-    switch (mouseInputContext.mHoverState)
-    {
-    case EUIMouseHoverType::eEnter:
-    {
-        // 어떤 테투리에 HOVER인지 판정
-        mActiveBorder = EvaluateActiveBorder(mouseInputContext.mMouseContext.mWorldPosX,
-                                             mouseInputContext.mMouseContext.mWorldPosY); // 활성화된 테투리 번호 지정
-    }
-    break;
-
-    case EUIMouseHoverType::eHeld:
-
-        // hover상태에서 처음눌르는경우
-        //
-        if ((mouseInputContext.mMouseContext.mMouseState & Quad::EMouseState::eLButtonPressed))
-        {
-            // hover상태에서 lbutton 클릭 -> capture 요청
-            // 캡처상테에서만 노란색이 유지될거다.
-            oCaptureActiveRequestFlag = true;
-        }
-        else
-        {
-            mActiveBorder =
-                EvaluateActiveBorder(mouseInputContext.mMouseContext.mWorldPosX,
-                                     mouseInputContext.mMouseContext.mWorldPosY); // 활성화된 테투리 번호 지정
-
-            mActiveColor = {1, 0, 0, 1};
-        }
-
-        break;
-    case EUIMouseHoverType::eRelease:
-        // release가 필요없을거 같다
-        {
-
-            mActiveBorder = -1;
-            mActiveColor = {1, 0, 0, 1};
-        }
-
-        break;
-    }
 }

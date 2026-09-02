@@ -15,12 +15,11 @@ Quad::SuperAssetBrowerController::SuperAssetBrowerController() {}
 
 Quad::SuperAssetBrowerController::~SuperAssetBrowerController() {}
 
-void Quad::SuperAssetBrowerController::Initialize()
+void Quad::SuperAssetBrowerController::Initialize(Render::RenderPipelineManager &renderPipelineManager)
 {
-    mWindow = new BaseWindow(GlobalAppHelper::GetHinstance());
+    mWindow = new BaseWindow(Core::GlobalAppHelper::GetHinstance());
 
-    mWindow->Initialize(std::bind(&SuperAssetBrowerController::WndProc, this, std::placeholders::_1,
-                                  std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+    mWindow->Initialize();
     mWindow->CreateWindowClass(L"AssetBrower", L"AssetBrower");
 
     auto inputSystem = InputSystem::GetInstance();
@@ -28,15 +27,19 @@ void Quad::SuperAssetBrowerController::Initialize()
                                         &SuperAssetBrowerController::TestRButtonDown, 0);*/
 }
 
+void Quad::SuperAssetBrowerController::Begin() {}
+
 void Quad::SuperAssetBrowerController::PreUpdate() {}
 
 void Quad::SuperAssetBrowerController::Update(float deltaTime) {}
 
 void Quad::SuperAssetBrowerController::EndUpdate() {}
 
-void Quad::SuperAssetBrowerController::Draw() {}
+void Quad::SuperAssetBrowerController::Draw(Render::RenderPipelineManager &renderPipelineManager) {}
 
-Quad::BaseWindow *Quad::SuperAssetBrowerController::GetWindow()
+void Quad::SuperAssetBrowerController::ShutDownWindow() {}
+
+Quad::BaseWindow *Quad::SuperAssetBrowerController::GetWindow() const
 {
     return mWindow;
 }
@@ -46,33 +49,33 @@ void Quad::SuperAssetBrowerController::TestRButtonDown()
     MessageBoxW(mWindow->GetWindowHandle(), L"마우스 R 클릭!", L"알림", MB_OK);
 }
 
-void Quad::SuperAssetBrowerController::UpdateMouseInput(MouseContext &mouseContext) {}
+// void Quad::SuperAssetBrowerController::UpdateMouseInput(MouseContext &mouseContext) {}
 
-LRESULT CALLBACK Quad::SuperAssetBrowerController::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void Quad::SuperAssetBrowerController::SetMouseCapture(Core::LogicalWindow *window)
 {
-    InputSystem *inputSystem = InputSystem::GetInstance();
 
-    switch (msg)
-    {
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        TextOutW(hdc, 10, 10, L"Hello, Windows!", 16);
-        EndPaint(hwnd, &ps);
-        return 0;
-    }
+    mWindow->SetMouseCapture(true);
+}
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+void Quad::SuperAssetBrowerController::ReleaseMouseCapture()
+{
 
-        // 기타 메시지들 추가 가능
-    case WM_RBUTTONDOWN:
+    mWindow->SetMouseCapture(false);
+}
 
-        return 0;
+void Quad::SuperAssetBrowerController::SetKeyboardCapture(Core::LogicalWindow *window)
+{
 
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
+    mWindow->SetKeyboardCapture(true);
+}
+
+void Quad::SuperAssetBrowerController::ReleaseKeyboardCapture()
+{
+
+    mWindow->SetKeyboardCapture(false);
+}
+
+std::pair<uint32_t, uint32_t> Quad::SuperAssetBrowerController::GetWindowSize() const
+{
+    return std::pair<int, int>();
 }

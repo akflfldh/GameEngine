@@ -14,13 +14,9 @@ GRM::GRMPtr::GRMPtr(IGpuResource *gpuResource) : mControlBlock(new GRM::GRMPtrCo
 
 GRM::GRMPtr::~GRMPtr()
 {
-    // 스레드에 안전하게 만들필요가있겠다.
-
     if (mControlBlock)
     {
-        --(mControlBlock->mRefCount);
-
-        if (mControlBlock->mRefCount == 0)
+        if (mControlBlock->mRefCount.fetch_sub(1, std::memory_order_acq_rel) == 1)
         {
             Release();
         }
@@ -29,10 +25,9 @@ GRM::GRMPtr::~GRMPtr()
 
 GRM::GRMPtr::GRMPtr(const GRMPtr &ptr)
 {
-    // 스레드에 안전하게 만들자.
-
     mControlBlock = ptr.mControlBlock;
-    ++(mControlBlock->mRefCount);
+    if (mControlBlock)
+        mControlBlock->mRefCount.fetch_add(1, std::memory_order_relaxed);
 }
 
 GRM::GRMPtr &GRM::GRMPtr::operator=(const GRMPtr &ptr)
@@ -47,8 +42,7 @@ GRM::GRMPtr &GRM::GRMPtr::operator=(const GRMPtr &ptr)
     if (mControlBlock)
     {
 
-        --(mControlBlock->mRefCount);
-        if ((mControlBlock->mRefCount) == 0)
+        if (mControlBlock->mRefCount.fetch_sub(1, std::memory_order_acq_rel) == 1)
         {
             // 해제요청
             Release();
@@ -57,7 +51,7 @@ GRM::GRMPtr &GRM::GRMPtr::operator=(const GRMPtr &ptr)
     // 새로운리소스
     mControlBlock = ptr.mControlBlock;
     if (mControlBlock)
-        ++(mControlBlock->mRefCount);
+        mControlBlock->mRefCount.fetch_add(1, std::memory_order_relaxed);
 
     return *this;
 }
@@ -79,9 +73,7 @@ GRM::GRMPtr &GRM::GRMPtr::operator=(GRMPtr &&rhs)
 
     if (mControlBlock)
     {
-        --(mControlBlock->mRefCount);
-
-        if ((mControlBlock->mRefCount) == 0)
+        if (mControlBlock->mRefCount.fetch_sub(1, std::memory_order_acq_rel) == 1)
         {
             Release();
         }

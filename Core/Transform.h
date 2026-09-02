@@ -1,35 +1,46 @@
 ﻿#pragma once
+
 #include <Core/CoreDllExport.h>
 #include <CoreMath/CoreMath.h>
 #include <ReflectSystem/ReflectionMacro.h>
 
+#include "Transform.generated.h"
+
+class Arch;
+
+class SceneComponent;
 namespace Core
 {
 
-class SceneComponent;
+// Rotation 단위는 Degree
 
-class CORE_API_LIB Transform
+struct CORE_API_LIB REFLECT_STRUCT(EngineClass) Transform
 {
+    GENERATED_BODY(Transform)
   public:
     Transform();
     ~Transform();
 
     // --- 로컬 프로퍼티 Getters ---
-    // const& (상수 참조)로 반환하여 불필요한 데이터 복사를 방지하고 성능을 높입니다.
-    // const 함수로 선언하여 이 함수가 객체의 상태를 변경하지 않음을 명시합니다.
     const CoreMath::Vector3 &GetScaleLocal() const;
     const CoreMath::Quaternion &GetQuaternionLocal() const;
+    const CoreMath::Vector3 GetRotationLocal() const; // 오일러 각 반환
     const CoreMath::Vector3 &GetPositionLocal() const;
 
     // --- 로컬 프로퍼티 Setters ---
-    // 이 함수들을 통해 로컬 값이 변경되면, mDirtyLocal 플래그가 자동으로 설정됩니다.
     void SetScaleLocal(const CoreMath::Vector3 &scale);
     void SetQuaternionLocal(const CoreMath::Quaternion &quaternion);
+    void SetRotationLocal(const CoreMath::Vector3 &rotation); // 오일러 각 설정 Degree
     void SetPositionLocal(const CoreMath::Vector3 &position);
+
+    // --Local Add
+    void AddQuaternionLocal(const CoreMath::Quaternion &quaternion);
+    void AddRotationLocal(const CoreMath::Vector3 &rotation);
 
     // --- 월드 프로퍼티 Getters (캐시된 데이터 접근) ---
     const CoreMath::Vector3 &GetScaleWorld() const;
     const CoreMath::Quaternion &GetQuaternionWorld() const;
+    const CoreMath::Vector3 GetRotationWorld() const; // 오일러 각 반환
     const CoreMath::Vector3 &GetPositionWorld() const;
 
     // --- 행렬 Getters (캐시된 데이터 접근) ---
@@ -37,29 +48,51 @@ class CORE_API_LIB Transform
     const CoreMath::Matrix4X4 &GetTransformWorld() const;
 
     // --- 캐시 데이터 Setters (주로 SceneComponent가 사용) ---
-    // SceneComponent가 계산한 결과를 Transform 내부에 캐싱하기 위한 함수들입니다.
     void SetTransformLocal(const CoreMath::Matrix4X4 &matrix) const;
     void SetTransformWorld(const CoreMath::Matrix4X4 &matrix) const;
     void SetScaleWorld(const CoreMath::Vector3 &scale) const;
     void SetQuaternionWorld(const CoreMath::Quaternion &quaternion) const;
+    void SetRotationWorld(const CoreMath::Vector3 &rotation) const; // 오일러 각 설정 Degree
     void SetPositionWorld(const CoreMath::Vector3 &position) const;
 
     // --- 상태 관리(State Management) ---
     bool IsDirty() const;
     void ClearDirtyFlag() const;
 
+    void Serialize(Arch &arch);
+
+    void MarkDirty();
+
+    CoreMath::Vector3 GetForwardWorld() const;
+    CoreMath::Vector3 GetUpWorld() const;
+    CoreMath::Vector3 GetRightWorld() const;
+
   private:
-    // 로컬 프로퍼티는 이 클래스가 소유한 원본 데이터입니다.
+    // 로컬 프로퍼티 (원본 데이터)
+    // glm::vec3 mScaleLocal;
+    // glm::quat mQuaternionLocal;
+    // glm::vec3 mPositionLocal;
+
+    REFLECT_PROPERTY()
     CoreMath::Vector3 mScaleLocal;
+    REFLECT_PROPERTY()
     CoreMath::Quaternion mQuaternionLocal;
+    REFLECT_PROPERTY()
     CoreMath::Vector3 mPositionLocal;
 
-    // 월드 프로퍼티는 SceneComponent에 의해 계산된 결과가 캐싱되는 곳입니다.
+    // 월드 프로퍼티 (계산 결과 캐싱)
+    // mutable glm::vec3 mScaleWorld;
+    // mutable glm::quat mQuaternionWorld;
+    // mutable glm::vec3 mPositionWorld;
+
     mutable CoreMath::Vector3 mScaleWorld;
     mutable CoreMath::Quaternion mQuaternionWorld;
     mutable CoreMath::Vector3 mPositionWorld;
 
-    // 행렬 또한 계산된 결과가 캐싱되는 곳입니다.
+    // 행렬 (계산 결과 캐싱)
+    // mutable glm::mat4 mTransformLocal;
+    // mutable glm::mat4 mTransformWorld;
+
     mutable CoreMath::Matrix4X4 mTransformLocal;
     mutable CoreMath::Matrix4X4 mTransformWorld;
 

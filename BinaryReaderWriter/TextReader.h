@@ -1,6 +1,7 @@
 ﻿#pragma once
+#include <sstream>
+#include <string>
 #include <vector>
-
 namespace QuadPF
 {
 class PhysicalFileSystem;
@@ -19,7 +20,9 @@ class TextReader
     // 일단 맨처음은 파일을 모두읽는게 끝
 
     bool StartRead(const char *filePath);
+    bool StartRead(const std::string &filPath);
 
+    template <typename T> void Read(T &value);
     // size값을 지정하여 읽는다.
     // oBuffer는 size만큼의 크기가 보장되어야한다.
     // 실제 읽은 바이트수를 리턴한다.
@@ -40,6 +43,7 @@ class TextReader
     QuadPF::PhysicalFileSystem *mPhysicalFileSystem;
     std::vector<uint8_t> mBuffer;
     uint64_t mReadPointer;
+    std::stringstream mStringStream;
 };
 
 } // namespace QuadRW

@@ -9,6 +9,8 @@
 #include <CoreBase/BinaryArch.h>
 #include <Logger/Logger.h>
 
+uint32_t CoreAsset::AssetIOManager::mCurrentEngineVerison = 1;
+
 CoreAsset::AssetIOManager *CoreAsset::AssetIOManager::GetInstance()
 {
 
@@ -31,9 +33,9 @@ void CoreAsset::AssetIOManager::RegisterAssetStorer(EAssetType assetType, AssetS
     mAssetStorerTable[assetType] = assetStorer;
 }
 
-bool CoreAsset::AssetIOManager::LoadAssetFromMetaData(const std::string &filePath,
-                                                      CoreAsset::AssetFactoryManager *assetFactoryManager,
-                                                      Asset *&oAsset, std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr)
+CoreAsset::AssetLoadResult CoreAsset::AssetIOManager::LoadAssetFromMetaData(
+    const std::filesystem::path &filePath, CoreAsset::AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+    std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr, const AssetLoadExecutionContext &executionContext)
 {
 
     // 모든 에셋들에대해서 공통으로 적용되는 header
@@ -45,19 +47,68 @@ bool CoreAsset::AssetIOManager::LoadAssetFromMetaData(const std::string &filePat
 
     // 타입을 구분해서 적절한 AssertLoader를 의 LoadAssetFile을 호출
 
+    AssetLoadResult result;
+    result.mResultFlag = EAssetLoadResultFlag::eFail;
+
     BinaryArch binaryArch(true);
-    binaryArch.SetFile(filePath.c_str());
+    binaryArch.SetFile(filePath.string().data());
     binaryArch.Start();
 
     AssetCommonHeader assetCommonHeader;
     assetCommonHeader.Serialize(binaryArch);
 
-    bool ret = mAssetLoaderTable[assetCommonHeader.mAssetType]->LoadAssetFile(binaryArch, assetFactoryManager, oAsset,
-                                                                              oAssetMetaDataPtr);
+    if (assetCommonHeader.mMagic != AssetCommonHeader::Magic)
+    {
+        binaryArch.End();
+        return result;
+    }
+
+    if (assetCommonHeader.mVersion > mCurrentEngineVerison)
+    {
+        binaryArch.End();
+        return result;
+    }
+
+    result.mAssetType = assetCommonHeader.mAssetType;
+
+    if (executionContext.mIgnoredAssetType == assetCommonHeader.mAssetType)
+    {
+        result.mResultFlag = EAssetLoadResultFlag::eIgnore;
+        return result;
+    }
+
+    AssetLoader *loader = GetLoader(assetCommonHeader.mAssetType);
+
+    if (loader == nullptr)
+    {
+        binaryArch.End();
+        return result;
+    }
+
+    bool ret =
+        loader->LoadAssetFile(assetCommonHeader.mAssetType, binaryArch, assetFactoryManager, oAsset, oAssetMetaDataPtr);
+
+    if (ret == false || oAsset == nullptr || oAssetMetaDataPtr == nullptr)
+    {
+        binaryArch.End();
+        result.pAsset = oAsset;
+        return result;
+    }
 
     oAssetMetaDataPtr->mAssetID = assetCommonHeader.mAssetID;
     // oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName.GetStr();
     oAssetMetaDataPtr->mAssetType = assetCommonHeader.mAssetType;
+    oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName;
+    oAssetMetaDataPtr->mRawFileName = assetCommonHeader.mAssetRawName;
+
+    if (oAsset)
+    {
+        oAsset->SetAssetID(assetCommonHeader.mAssetID);
+        oAsset->SetName(assetCommonHeader.mAssetName.c_str());
+
+        result.pAsset = oAsset;
+        result.mResultFlag = EAssetLoadResultFlag::eSuccess;
+    }
 
     // 리턴받는것을 출력매개변수로받는게 좋을듯.
 
@@ -67,22 +118,29 @@ bool CoreAsset::AssetIOManager::LoadAssetFromMetaData(const std::string &filePat
     // 등록하도록하는것이 좋다)
 
     binaryArch.End();
-    return ret;
+    return result;
 }
 
-bool CoreAsset::AssetIOManager::LoadAssetRawData(Asset *asset, const std::string &path)
+bool CoreAsset::AssetIOManager::LoadAssetRawData(Asset *asset, const std::filesystem::path &path)
 {
 
-    if (path == "")
+    if (path.empty())
         return true;
 
     BinaryArch binaryArch(true);
 
-    binaryArch.SetFile(path.c_str());
+    binaryArch.SetFile(path);
 
     binaryArch.Start();
 
-    bool ret = mAssetLoaderTable[asset->GetType()]->LoadAssetRawFile(binaryArch, asset);
+    AssetLoader *loader = GetLoader(asset->GetType());
+    if (loader == nullptr)
+    {
+        binaryArch.End();
+        return false;
+    }
+
+    bool ret = loader->LoadAssetRawFile(binaryArch, asset);
 
     binaryArch.End();
 
@@ -101,7 +159,7 @@ bool CoreAsset::AssetIOManager::LoadAssetRawData(Asset *asset, const std::string
 //     return serializedRawPtr;
 // }
 
-bool CoreAsset::AssetIOManager::StoreAsset(CoreAsset::Asset *asset, const std::string &filePath,
+bool CoreAsset::AssetIOManager::StoreAsset(CoreAsset::Asset *asset, const std::filesystem::path &filePath,
                                            AssetMetaData *assetMetaData)
 {
     /*asset type을 보고*/
@@ -111,6 +169,9 @@ bool CoreAsset::AssetIOManager::StoreAsset(CoreAsset::Asset *asset, const std::s
     // 저장
     {
 
+        if (asset == nullptr || assetMetaData == nullptr)
+            return false;
+
         BinaryArch binaryArch(false);
         binaryArch.SetFile(filePath.c_str());
         binaryArch.Start();
@@ -119,28 +180,65 @@ bool CoreAsset::AssetIOManager::StoreAsset(CoreAsset::Asset *asset, const std::s
         assetCommonHeader.mAssetID = asset->GetID();
         assetCommonHeader.mAssetType = asset->GetType();
         assetCommonHeader.mAssetName = asset->GetName().c_str();
+        assetCommonHeader.mAssetRawName = assetMetaData->mRawFileName;
+        assetCommonHeader.mVersion = mCurrentEngineVerison;
         assetCommonHeader.Serialize(binaryArch);
 
-        mAssetStorerTable[assetCommonHeader.mAssetType]->StoreAssetFile(binaryArch, asset, assetMetaData);
+        AssetStorer *storer = GetStorer(assetCommonHeader.mAssetType);
+        if (storer == nullptr)
+        {
+            binaryArch.End();
+            return false;
+        }
+
+        storer->StoreAssetFile(binaryArch, asset, assetMetaData);
 
         binaryArch.End();
     }
     return true;
 }
 
-bool CoreAsset::AssetIOManager::StoreAssetRawData(CoreAsset::Asset *asset, const std::string &filePath,
+bool CoreAsset::AssetIOManager::StoreAssetRawData(CoreAsset::Asset *asset, const std::filesystem::path &filePath,
                                                   AssetMetaData *assetMetaData)
 {
     if (asset == nullptr)
         return false;
 
     BinaryArch binaryArch(false);
-    binaryArch.SetFile(filePath.c_str());
+    binaryArch.SetFile(filePath);
     binaryArch.Start();
 
-    bool ret = mAssetStorerTable[asset->GetType()]->StoreAssetRawDataFile(binaryArch, asset, assetMetaData);
+    AssetStorer *storer = GetStorer(asset->GetType());
+    if (storer == nullptr)
+    {
+        binaryArch.End();
+        return false;
+    }
+
+    bool ret = storer->StoreAssetRawDataFile(binaryArch, asset, assetMetaData);
 
     binaryArch.End();
 
     return ret;
+}
+
+CoreAsset::AssetStorer *CoreAsset::AssetIOManager::GetStorer(EAssetType type) const
+{
+    auto iter = mAssetStorerTable.find(type);
+
+    if (iter == mAssetStorerTable.end())
+        return nullptr;
+
+    return iter->second;
+}
+
+CoreAsset::AssetLoader *CoreAsset::AssetIOManager::GetLoader(EAssetType type) const
+{
+
+    auto iter = mAssetLoaderTable.find(type);
+
+    if (iter == mAssetLoaderTable.end())
+        return nullptr;
+
+    return iter->second;
 }

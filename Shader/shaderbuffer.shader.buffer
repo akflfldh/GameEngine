@@ -5,13 +5,19 @@
         {
             "ID": 1,
             "UploadType" : 0,  
-            "Size" : 128
+            "Size" : 256
+        },
+        {
+            "ID": 2,
+            "UploadType":1,
+            "Size":128
+        },
+          {
+            "ID": 3,
+            "UploadType":1,
+            "Size":256
         }
-    ],
-
-    "StructuredBuffer":
-    [
-
     ]
+
 
 }

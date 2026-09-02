@@ -1,42 +1,80 @@
 ﻿#pragma once
 
 #include <Core/Component.h>
-#include <Core/QuadVector.h>
+#include <Core/CoreDllExport.h>
 #include <Core/Transform.h>
-namespace Core
-{
+#include <CoreMath/CoreMath.h>
+#include <vector>
 
-class SceneComponent : public Component
-{
+#include "SceneComponent.generated.h"
 
+class Map;
+
+class CORE_API_LIB REFLECT_CLASS(EngineClass) SceneComponent : public Component
+{
+    friend class Map;
+
+    GENERATED_BODY(SceneComponent)
   public:
     SceneComponent();
     virtual ~SceneComponent() override;
 
-    virtual void Start() override;
+    virtual void OnBegin() override;
 
-    void SetParent(SceneComponent *parentCom);
+    // bKeepWorld : true  ->  자식의 월드가 유지되고 로컬이 변경된다.
+    // bKeepWorld : false ->  자식의 로컬이 유지되고 자식의 월드가 변경된다.
+    void SetParent(SceneComponent *parentCom, bool bKeepWorld = true);
     SceneComponent *GetParent() const;
 
     void SetScaleLocal(const CoreMath::Vector3 &scaleLocal);
     void SetQuaternionLocal(const CoreMath::Quaternion &quaternionLocal);
-    void SetRotationLocal(const CoreMath::Vector3 &rotataionLocal);
+    void SetRotationLocal(const CoreMath::Vector3 &rotationLocal);
     void SetPositionLocal(const CoreMath::Vector3 &positionLocal);
+    void AddQuaternionLocal(const CoreMath::Quaternion &quaternion);
+    void AddRotationLocal(const CoreMath::Vector3 &rotation);
+    void TranslationLocal(const CoreMath::Vector3 &shift);
 
-    CoreMath::Vector3 GetScaleLocal() const;
-    CoreMath::Quaternion GetQuaternionLocal() const;
+    void SetPositionWorld(const CoreMath::Vector3 &positionWorld);
+    void SetScaleWorld(const CoreMath::Vector3 &scaleWorld);
+    void SetRotationWorld(const CoreMath::Vector3 &rotationWorld);
+    void SetQuaternionWorld(const CoreMath::Quaternion &quaterionWorld);
+
+    void AddMovementWorld(const CoreMath::Vector3 &movement);
+
+    const CoreMath::Vector3 &GetScaleLocal() const;
+    const CoreMath::Quaternion &GetQuaternionLocal() const;
     CoreMath::Vector3 GetRotationLocal() const;
-    CoreMath::Vector3 GetPositionLocal() const;
+    const CoreMath::Vector3 &GetPositionLocal() const;
     const CoreMath::Matrix4X4 &GetTransformLocal() const;
 
-    CoreMath::Vector3 GetScaleWorld() const;
-    CoreMath::Quaternion GetQuaternionWorld() const;
-    CoreMath::Vector3 GetPositionWorld() const;
+    const CoreMath::Vector3 &GetScaleWorld() const;
+    const CoreMath::Quaternion &GetQuaternionWorld() const;
+    const CoreMath::Vector3 &GetPositionWorld() const;
     CoreMath::Vector3 GetRotationWorld() const;
     const CoreMath::Matrix4X4 &GetTransformWorld() const;
 
-  private:
+    // virtual void Serialize(Arch &arch) override;
 
+    const CoreMath::Vector3 GetForwardWorld() const;
+    const CoreMath::Vector3 GetUpWorld() const;
+    const CoreMath::Vector3 GetRightWorld() const;
+
+    bool IsChildOf(SceneComponent *targetCom);
+
+    virtual void OnTransformChanged();
+
+    virtual void Serialize(Arch &arch) override;
+
+    void ClearChildSceneComponentsForLoad();
+    void AddChildSceneComponentForLoad(SceneComponent *com);
+
+    const std::vector<SceneComponent *> &GetChildSceneComponentList() const;
+
+    void SyncPrefabComponentFrom(Component *prefabComponent) override;
+
+    unsigned long long GetTransformVersion() const;
+
+  private:
     // dirty이거나, 부모의 version num와 일치하지않는다면 update한다.
     void UpdateIfDirty() const;
     void UpdateTransformLocal() const;
@@ -49,13 +87,19 @@ class SceneComponent : public Component
     // 따라서 다음에는 무조건 월드 트랜스폼을 다시 갱신한다..
     void ResetParentTransformVersion();
 
+    void NotifyTransformPropertyChanged();
+    void MarkOwnerMapAssetDirty();
+
+    virtual void OnDestoryRequested() override;
+
   private:
-    Transform mTransform;
+    REFLECT_PROPERTY()
+    Core::Transform mTransform;
     mutable unsigned long long mTransformVersion;
     // 부모가 가진 버전넘버와 비교하여 자신의 transform을 업데이트해야하는지를 결정한다.
     mutable unsigned long long mParentTransformVersion;
 
+    REFLECT_PROPERTY(IsReference)
     SceneComponent *mParentSceneComponent;
-    QuadVector<SceneComponent *> mChildSceneComponentList;
+    std::vector<SceneComponent *> mChildSceneComponentList;
 };
-} // namespace Core

@@ -20,10 +20,12 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
     Asset *GetAsset(AssetID id) const;
     Asset *GetAsset(const std::string &name) const;
 
-    AssetID GetNextAssetID();
+    void GetAssetsByType(CoreAsset::EAssetType type, std::vector<Asset *> &oAssetList) const;
+
+    AssetID GetNextAssetID(bool bEngine);
 
     // 등록하기전 assetID를 asset에 설정해아한다.
-    bool RegisterAsset(Asset *asset, const std::string &name);
+    bool RegisterAsset(Asset *asset, const std::string &name, bool bEngine = false);
 
     bool HasName(const std::string &name) const;
 
@@ -34,11 +36,17 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
     void SetNextAssetID(AssetID id);
     AssetID PeekNextAssetID() const;
 
+    void ClearDirtyAssetList();
+
+    size_t GetAssetNum() const;
+
   private:
     AssetIDTable mAssetTable;
-    AssetIDGenerator mAssetIDGenerator;
+    AssetIDGenerator mAssetIDGenerator;       // EnginAssetLimit+1 ~
+    AssetIDGenerator mEngineAssetIDGenerator; // 1 ~ EnginAssetLimit
 
     std::vector<AssetPtr> mDirtyAssetList;
+    const AssetID mEngineAssetLimit = 1000;
 };
 
 } // namespace CoreAsset

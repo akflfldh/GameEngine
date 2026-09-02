@@ -3,6 +3,7 @@
 #include "CoreDevice/CoreDevice.h"
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <stdint.h>
 #include <wrl.h>
 
 namespace Core
@@ -23,10 +24,16 @@ class CORE_DEVICE_API D3DCoreDevice : public CoreDevice
 
     Microsoft::WRL::ComPtr<ID3D12Fence> mFence;
 
-    void FlushCommandQueue();
+    void FlushCommandQueue() override;
+    virtual uint64_t GetNextFenceValue() override;
+    virtual void IncreaseNextFenceValue() override;
+    virtual void WaitFenceValue(uint64_t value) override;
+
+    virtual void SetFence(uint64_t value) override;
+    virtual void FlushGpu() override;
 
   private:
-    UINT64 mFenceValue = 0;
+    UINT64 mFenceValue = 1;
 };
 
 } // namespace Core

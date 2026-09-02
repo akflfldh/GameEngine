@@ -1,19 +1,27 @@
 ﻿#include "BinaryReaderWriter/BinaryWriter.h"
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
-QuadRW::BinaryWriter::BinaryWriter() : mPhysicalFileSystem(QuadPF::PhysicalFileSystem::GetInstance()) {}
+QuadRW::BinaryWriter::BinaryWriter() : mPhysicalFileSystem(QuadPF::PhysicalFileSystem::GetInstance()), mWritePointer(0)
+{
+}
 
 QuadRW::BinaryWriter::~BinaryWriter() {}
 
 void QuadRW::BinaryWriter::StartWrite()
 {
-    mBuffer.clear();
+    mWritePointer = 0;
 }
-bool QuadRW::BinaryWriter::Close(const std::string &path)
+bool QuadRW::BinaryWriter::Close(const std::filesystem::path &filePath)
 {
 
-    bool ret = mPhysicalFileSystem->WriteBufferToFile(path, mBuffer.data(), mBuffer.size());
-
+    bool ret = mPhysicalFileSystem->WriteBufferToFile(filePath, mBuffer.data(), mBuffer.size());
+    mBuffer.clear();
     return ret;
+}
+
+bool QuadRW::BinaryWriter::Close()
+{
+    mBuffer.clear();
+    return true;
 }
 
 void QuadRW::BinaryWriter::Write(const std::string &str)
@@ -24,7 +32,15 @@ void QuadRW::BinaryWriter::Write(const std::string &str)
     if (size != 0)
     {
         const uint8_t *pData = reinterpret_cast<const uint8_t *>(str.data());
-        mBuffer.insert(mBuffer.end(), pData, pData + size);
+
+        if (mBuffer.size() < mWritePointer + size)
+        {
+            mBuffer.resize(mWritePointer + size);
+        }
+
+        memcpy(&mBuffer[mWritePointer], pData, size);
+        // mBuffer.insert(mBuffer.end(), pData, pData + size);
+        mWritePointer += size;
     }
 }
 
@@ -46,6 +62,8 @@ void QuadRW::BinaryWriter::WriteRaw(const void *data, size_t size)
 
     const uint8_t *pData = reinterpret_cast<const uint8_t *>(data);
     mBuffer.insert(mBuffer.end(), pData, pData + size);
+
+    mWritePointer += size;
 }
 
 // 일반 타입
@@ -54,7 +72,39 @@ template <typename T> void QuadRW::BinaryWriter::Write(T data)
 
     const uint8_t *pData = reinterpret_cast<const uint8_t *>(&data);
 
-    mBuffer.insert(mBuffer.end(), pData, pData + sizeof(data));
+    if (mBuffer.size() < mWritePointer + sizeof(data))
+    {
+        mBuffer.resize(mWritePointer + sizeof(data));
+    }
+
+    memcpy(&mBuffer[mWritePointer], &data, sizeof(data));
+    // mBuffer.insert(mBuffer.end(), pData, pData + sizeof(data));
+    mWritePointer += sizeof(data);
+}
+
+void QuadRW::BinaryWriter::WriteRaw(const void *data, size_t size, size_t writePointer)
+{
+
+    if (mBuffer.size() < writePointer + size)
+    {
+        mBuffer.resize(writePointer + size);
+    }
+    memcpy(&mBuffer[writePointer], data, size);
+}
+
+uint64_t QuadRW::BinaryWriter::GetCurrentWritePointer() const
+{
+
+    return mWritePointer;
+}
+
+uint8_t *QuadRW::BinaryWriter::GetBufferPointer()
+{
+    return mBuffer.data();
+}
+size_t QuadRW::BinaryWriter::GetBufferSize() const
+{
+    return mBuffer.size();
 }
 
 template void QuadRW::BinaryWriter::Write<bool>(bool data);

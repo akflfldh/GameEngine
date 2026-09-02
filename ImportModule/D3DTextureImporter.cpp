@@ -1,6 +1,7 @@
 ﻿
 
 #ifdef D3DX
+#include "FBXImporter.h"
 #include "ImportModule/D3DHelper.h"
 #include "ImportModule/TextureImporter.h"
 #include <CommonHeader/GpuTypes.h>
@@ -28,21 +29,22 @@ Import::TextureImporter::TextureImporter()
 
 Import::TextureImporter::~TextureImporter() {}
 
-FVector<CoreAsset::IntermediateAsset *> Import::TextureImporter::Import(
-    const char *filePath, CoreAsset::AssetImporterManager *assetImporterManagaer) const
+CoreAsset::ImportPackage Import::TextureImporter::Import(
+    const std::filesystem::path &path, CoreAsset::AssetImporterManager *assetImporterManagaer,
+    const CoreAsset::ImportExecutionContext &executionContext) const
 {
 
     // utility get extension
 
     GRM::TextureDesc textureDesc;
 
-    const std::wstring &filePathW = CoreUtility::Utility::ConvertToWString(filePath, true);
+    // const std::wstring &filePathW = CoreUtility::Utility::ConvertToWString(filePath, true);
 
     DirectX::ScratchImage d3dScratchImage;
     DirectX::TexMetadata texMetaData;
 
     HRESULT result =
-        DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_NONE, &texMetaData, d3dScratchImage);
+        DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS::WIC_FLAGS_NONE, &texMetaData, d3dScratchImage);
 
     if (FAILED(result))
     {
@@ -97,19 +99,30 @@ FVector<CoreAsset::IntermediateAsset *> Import::TextureImporter::Import(
     textureDesc.mTextureUsage = GRM::ETextureUsage::eShaderResource;
     // textureManager에게 ScratchImage 전달
 
-    CoreAsset::IntermediateAssetFactory *intermediateAssetFactory = CoreAsset::IntermediateAssetFactory::GetInstance();
-    CoreAsset::IntermediateTexture *intermediateTexture = intermediateAssetFactory->CreateIntermediateTexture();
+    //   CoreAsset::IntermediateAssetFactory *intermediateAssetFactory =
+    //   CoreAsset::IntermediateAssetFactory::GetInstance();
+    std::unique_ptr<CoreAsset::IntermediateTexture> intermediateTexture =
+        std::make_unique<CoreAsset::IntermediateTexture>();
 
     intermediateTexture->mAssetType = CoreAsset::EAssetType::eTexture;
 
-    std::string name = CoreUtility::Utility::GetFileNameFromPath(filePath);
+    std::string name = path.filename().string();
+    // CoreUtility::Utility::GetFileNameFromPath(filePath);
     name = CoreUtility::Utility::RemoveExtension(name);
     intermediateTexture->mAssetName = name.c_str();
     intermediateTexture->mTextureRawData = std::move(textureDesc);
 
-    FVector<CoreAsset::IntermediateAsset *> retVector;
-    retVector.Push_Back(intermediateTexture);
-    return retVector;
+    std::vector<std::unique_ptr<CoreAsset::IntermediateAsset>> retVector;
+    retVector.push_back(std::move(intermediateTexture));
+
+    CoreAsset::ImportPackage importPackage;
+    importPackage.mInteremdiateAssets.resize(retVector.size());
+    for (int i = 0; i < retVector.size(); ++i)
+    {
+        importPackage.mInteremdiateAssets[i].mIntermediateAsset = std::move(retVector[i]);
+    }
+
+    return importPackage;
 }
 
 #endif

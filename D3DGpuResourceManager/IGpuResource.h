@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
+#include <D3DGpuResourceManager/GpuResourceTypes.h>
 
 namespace GRM
 {
@@ -12,19 +13,24 @@ enum class EGpuResourceType
 
 class GPURESOURCE_MANAGER_API IGpuResource
 {
+    friend class IGpuResourceManager;
+
   public:
     virtual ~IGpuResource() = 0;
 
     GRM::EGpuResourceType GetGpuResourceType() const;
-
+    EResourceState GetCurrentResourceState() const;
     // 내부적으로 gpuResourceManager의 release를 호출해서 제거할것을 요청한다,(정확히는 등록한다)
     // 이것을 스마트포인터가 manager의 release를 호출해줘야할거같다.
     virtual void Release();
 
   protected:
     IGpuResource();
-
+    void SetCurrentResourceState(EResourceState state);
     GRM::EGpuResourceType mGpuResourceType;
+    EResourceState mCurrentResourceState;
+
+  private:
 };
 
 } // namespace GRM

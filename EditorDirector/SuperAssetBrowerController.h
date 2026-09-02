@@ -1,31 +1,38 @@
 ﻿#pragma once
 
-#include "EditorDirector/SuperController.h"
-#include <Windows.h>
+#include <Core/SuperController.h>
+
 namespace Quad
 {
 class BaseWindow;
 
-class SuperAssetBrowerController : public SuperController
+class SuperAssetBrowerController : public Core::SuperController
 {
   public:
     static SuperAssetBrowerController *GetInstance();
     virtual ~SuperAssetBrowerController();
-    virtual void Initialize() override;
+    virtual void Initialize(Render::RenderPipelineManager &renderPipelineManager) override;
 
+    virtual void Begin() override;
     virtual void PreUpdate() override;
     virtual void Update(float deltaTime) override;
     virtual void EndUpdate() override;
-    virtual void Draw() override;
-
-    virtual BaseWindow *GetWindow() override;
+    virtual void Draw(Render::RenderPipelineManager &renderPipelineManager) override;
+    virtual void ShutDownWindow() override;
+    virtual BaseWindow *GetWindow() const override;
 
     void TestRButtonDown();
-    virtual void UpdateMouseInput(MouseContext &mouseContext) override;
+    //   virtual void UpdateMouseInput(MouseContext &mouseContext) override;
+
+    virtual void SetMouseCapture(Core::LogicalWindow *window) override;
+    virtual void ReleaseMouseCapture() override;
+
+    virtual void SetKeyboardCapture(Core::LogicalWindow *window) override;
+    virtual void ReleaseKeyboardCapture() override;
+
+    std::pair<uint32_t, uint32_t> GetWindowSize() const override;
 
   private:
-    LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
     SuperAssetBrowerController();
 
   private:

@@ -22,7 +22,7 @@ class REFLECT_SYSTEM_API ClassInfoImpl
 
     void *GetPropertyValuePtr(void *instance, const char *propertyName) const;
 
-    const char *GetClassName() const;
+    const char *GetTypeName() const;
 
     size_t GetClassSize() const;
 

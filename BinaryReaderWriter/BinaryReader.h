@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 namespace QuadPF
@@ -16,7 +17,10 @@ class BinaryReader
     ~BinaryReader();
 
     // 내부버퍼를 비우고 ,새로운파일을 읽는다.
-    bool StartRead(const std::string &filePath);
+    bool StartRead(const std::filesystem::path &filePath);
+
+    // 메모리로부퍼 읽는다.(복사수행)
+    bool StartRead(uint8_t *buffer, size_t size);
 
     template <typename T> bool Read(T &oData);
     bool Read(std::string &oStr);
@@ -31,7 +35,7 @@ class BinaryReader
     // oBuffer는 size만큼의 크기가 보장되어야한다.
     bool ReadRaw(void *oBuffer, size_t size);
 
-    //기록된 size값 만큼읽는다. 크기가 부족하면 실패
+    // 기록된 size값 만큼읽는다. 크기가 부족하면 실패
     bool Read(void *oBuffer, size_t bufferSize);
 
     bool SetReadPointer(uint64_t pointerPos);

@@ -6,10 +6,10 @@ uint32_t GetScissorRecttHash(const Render::ScissorRect &rect)
     // fnv-1a hash
     uint32_t hash = 2166136261u;
 
-    hash = (hash ^ rect.Left) * 16777619u;
-    hash = (hash ^ rect.Right) * 16777619u;
-    hash = (hash ^ rect.Top) * 16777619u;
-    hash = (hash ^ rect.Bottom) * 16777619u;
+    // hash = (hash ^ rect.mLeft) * 16777619u;
+    // hash = (hash ^ rect.Right) * 16777619u;
+    // hash = (hash ^ rect.Top) * 16777619u;
+    // hash = (hash ^ rect.Bottom) * 16777619u;
 
     return hash;
 
@@ -34,7 +34,8 @@ uint64_t GetMeshItemHash(const Render::MeshItem &meshItem)
 uint64_t Render::GetRenderItemFirstSortKey(ScissorRect scissorRect, MaterialID matID)
 {
 
-    uint64_t scissorRectKey = (uint64_t)(GetScissorRecttHash(scissorRect)); // 상위 32비트
+    uint64_t scissorRectKey = 0;
+    //(uint64_t)(GetScissorRecttHash(scissorRect)); // 상위 32비트
 
     uint64_t matSortKey = (uint64_t)matID; // matID는 32비트라 가정하자 (하위  32비트)
 

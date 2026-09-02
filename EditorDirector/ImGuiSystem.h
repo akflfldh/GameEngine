@@ -21,6 +21,8 @@ class LogicalFolder;
 namespace Quad
 {
 
+class EditorAssetManager;
+
 struct ImGpuAssetMaterialCreationContext
 {
     Render::MaterialID mGpuMaterialID;
@@ -42,7 +44,7 @@ class ImGuiSystem
     void InitPlatform(HWND hwnd, ID3D12Device *device, ID3D12CommandQueue *commandQueue);
 
     void SetDependency(QuadLF::LogicalFileSystem *logicalFileSystem, CoreAsset::TextureManager *textureManager,
-                       CoreAsset::MaterialManager *materialManager);
+                       CoreAsset::MaterialManager *materialManager, EditorAssetManager *editorAssetManager);
 
     void Draw();
 
@@ -58,10 +60,14 @@ class ImGuiSystem
     ID3D12DescriptorHeap *m_ImGuiSrvHeap;
     ID3D12CommandQueue *mCommandQueue;
 
+    ID3D12CommandAllocator *mCommandAllcator;
+    ID3D12GraphicsCommandList *mCommandList;
+
     HWND mHwnd;
     QuadLF::LogicalFileSystem *mLogicalFileSystem;
     CoreAsset::TextureManager *mTextureManager;
     CoreAsset::MaterialManager *mMaterialManager;
+    EditorAssetManager *mEditorAssetManager;
 
     bool selectedA = false;
     bool selectedB = true;

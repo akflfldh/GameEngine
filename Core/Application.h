@@ -1,14 +1,15 @@
 ﻿#pragma once
 // #include"header.h"
-#include "Core/GameTimer.h"
-#include "Predeclare.h"
 
+#include "Predeclare.h"
+#include <RuntimeServices.h>
 #include <wrl.h>
 // using namespace Microsoft::WRL;
 
 // #pragma comment(lib,"d2d1_1.lib")
 #include "Core/CoreDllExport.h"
 #include <memory>
+#include <vector>
 
 namespace SystemInitializer
 {
@@ -28,6 +29,11 @@ namespace Import
 {
 class TextureImporter;
 
+}
+
+namespace Core
+{
+class LogicalWindow;
 }
 
 namespace Quad
@@ -53,6 +59,11 @@ class CORE_API_LIB Application
 
     bool Initialize(AppInitData &appInitData);
     int Run();
+
+    virtual void EndSystem();
+
+    void MoveToNextFrame();
+
     //	LRESULT Proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     // LRESULT FileWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -65,56 +76,43 @@ class CORE_API_LIB Application
     // DescriptorHeapManagerMaster* GetDescriptorHeapManagerMaster() ;
     HINSTANCE GetHinstance() const;
 
+    void NotifyLogicalWindowActive(Core::LogicalWindow *logicalWindow);
+    void RegisterLogicalWindow(Core::LogicalWindow *logicalWindow);
+    void UnRegisterLogicalWindow(Core::LogicalWindow *logicalWindow);
+
+    int GetCurrentFrameIndex() const;
+    uint64_t GetCurrentFrameFenceValue() const;
+    uint64_t GetTotalFrameCount() const;
+
+    uint64_t GetLastCompletedFenceValue() const;
+
+    int GetCurrentBackBufferIndex() const;
+
+    void SetRenderStop(bool flag);
+    void SetMinimizeFlag(bool flag);
+
   protected:
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
     Application(Application &&) = delete;
     Application &operator=(Application &&) = delete;
 
-    bool InitD3d();
     void InitSystems();
     void InitCommonSystems();
-    /*void InitGamePlayWindow();
-    void InitFileUiWindow();
-    void InitAttributeWindow();
-    void InitFrameWindow();
-    void InitDragAndDropWindow();
-    void InitPopupWindow();*/
 
-    /*void InitGameProject(TaskWindow* window, DockingWindowController* controller,
-        GamePlaySystem* gamePlaySystem, GamePlayUiSystem* gamePlayUiSystem,
-        WindowChromeSystem* windowLayoutSystem, ChildWindowDockingSystem* windowDockingSystem);
-    void InitGamePlaySystem(TaskWindow* window,GamePlaySystem * system);
-    void InitGamePlayUiSystem(TaskWindow* window,GamePlayUiSystem* system);
-    void InitAttributeSystem(TaskWindow* window,AttributeSystem* system);
-    void InitAttributeUiSystem(TaskWindow* window,AttributeUiSystem* system);
-    void InitFileUiUiSystem(TaskWindow* windows, FileUiUiSystem* system);
-    void InitFileUiSystem(TaskWindow* windows, FileUiSystem* system);
+    void InitReflectSystem();
 
-    void InitFrameWindowSystem(TaskWindow* window, FrameWindowSystem* system);
-    void InitFrameWindowUiSystem(TaskWindow* window, FrameWindowUiSystem* system);
-
-
-
-
-    void InitGamePlayWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    void InitAttributeWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    void InitFileUiWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-    void InitFrameWindowLayoutSystem(TaskWindow* window, WindowChromeSystem* system);
-
-
-    void InitFrameWindowDockingSystem(TaskWindow * window, FrameWindowDockingSystem* system);
-    void InitChildWindowDockingSystem(TaskWindow * window, ChildWindowDockingSystem * system);*/
-
-    void CreateInitGameWindowEntity(GamePlaySystem *system);
+    // void CreateInitGameWindowEntity(GamePlaySystem *system);
 
     void CreateCommandObjects();
 
-    void PreUpdate(GameTimer &timer);
-    void Update(GameTimer &timer);
-    void EndUpdate(GameTimer &timer);
+    void Begin();
+    void PreUpdate(float deltaTime);
+    void Update(float deltaTime);
+    void EndUpdate(float deltaTime);
+    void CleanUp();
 
-    void Draw(GameTimer &timer);
+    void Draw(float timer);
     void EndFrame();
 
     void OnResize();
@@ -124,7 +122,7 @@ class CORE_API_LIB Application
 
     void FlushCommandQueue();
 
-    float GetAspectRatio() const;
+    // float GetAspectRatio() const;
 
   protected:
     void CalculateFrameStats();
@@ -166,17 +164,16 @@ class CORE_API_LIB Application
     // DXGI_FORMAT mBackBufferForamt = DXGI_FORMAT_R8G8B8A8_UNORM;
     // DXGI_FORMAT mSwapchainDepthStencilBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-    GameTimer mGameTimer;
     bool mIspaused = false;
 
     bool mIsMinimized = false;
     bool mIsMaximized = false;
     bool mIsResizing = false;
 
+    bool mRenderStop = false;
+
   public:
   private:
-    void AddEffect(RenderSystem *renderSystem, Effect *effect);
-
     // 필요한 핵심 object들을 생성 ex) 화면전체렌더링을 위한 직사각형 메시와 object
     void CreateDefaultCoreResource();
 
@@ -291,6 +288,17 @@ class CORE_API_LIB Application
     //	std::unique_ptr<UI::UISystem> mUISystem;
 
     std::unique_ptr<CoreAsset::TextureManager> mTextureManager;
+
+    std::vector<Core::LogicalWindow *> mLogicalWindowList;
+    Core::LogicalWindow *mCurrentActiveLogcialWindow;
+
+    int mCurrentFrame;
+    uint64_t mTotalFrameCount = 0;
+    uint64_t mFrameFenceValue[3];
+    uint64_t mLastCompletedFenceValue = 0;
+    int mBackbufferIndex;
+
+    RuntimeServices mRuntimeServiecs;
 };
 
 } // namespace Quad

@@ -16,7 +16,7 @@ GpuBufferContextSystemImpl.h
 GpuSamplerSystem.cpp 
 GpuSamplerSystem.h 
 
-)
+ "D3DGpuStructuredBuffer.h" "D3DGpuStructuredBuffer.cpp" "GpuResourceTypes.h")
 
 
 

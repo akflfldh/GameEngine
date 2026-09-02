@@ -41,6 +41,15 @@ GRM::ETextureFormat ConvertToDxgiFormat(DXGI_FORMAT dxgiFormat)
         return eR8G8B8A8_SINT;
     case DXGI_FORMAT_B8G8R8A8_UNORM:
         return eB8G8R8A8_UNORM;
+    case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+        return eB8G8R8A8_UNORM_SRGB;
+
+    // [여기 추가됨] B8G8R8X8 (알파 무시/패딩)
+    // *커스텀 enum에도 해당 타입을 정의해주세요*
+    case DXGI_FORMAT_B8G8R8X8_UNORM:
+        return eB8G8R8X8_UNORM;
+    case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+        return eB8G8R8X8_UNORM_SRGB;
 
         // --- 16-bit formats ---
     case DXGI_FORMAT_R16_FLOAT:

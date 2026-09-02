@@ -413,3 +413,15 @@ FodyWeavers.xsd
 
 
 **/out/
+
+
+
+CMakeUserPresets.json
+*.zip
+
+Agents.md
+
+LocalDevSetup.h
+ProjectList.txt
+
+EngineDependencies-v0.0.1.zip

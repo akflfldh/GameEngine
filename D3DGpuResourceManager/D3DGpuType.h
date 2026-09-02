@@ -1,8 +1,12 @@
 ﻿#pragma once
 
+#ifdef D3DX
+
 #include "D3DGpuResourceManager/GpuResourceDllMacro.h"
 #include <CommonHeader/GpuTypes.h>
+#include <D3DGpuResourceManager/GpuResourceTypes.h>
 #include <d3d12.h>
+
 namespace D3DGRM
 {
 struct D3DDescriptorHandle
@@ -37,4 +41,9 @@ enum class ED3DResourceDescriptorType
     eSMP
 };
 
+GPURESOURCE_MANAGER_API D3D12_RESOURCE_STATES ConvertToD3DResourceState(EResourceState resourceState);
+
+GPURESOURCE_MANAGER_API EResourceState ConvertFromD3D12ResourceState(D3D12_RESOURCE_STATES resourceState);
 } // namespace D3DGRM
+
+#endif

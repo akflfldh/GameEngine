@@ -11,7 +11,7 @@
 #include <CommonHeader/GpuTypes.h>
 #include <CoreAsset/IAssetImporter.h>
 #include <CoreAsset/IntermediateAsset.h>
-#include <CoreBase/FVector.h>
+#include <memory>
 
 namespace CoreAsset
 {
@@ -28,8 +28,8 @@ class TextureImporter : public CoreAsset::IAssetImporter
     virtual ~TextureImporter();
 
     // dds, jpg, png
-    FVector<CoreAsset::IntermediateAsset *> Import(const char *filePath,
-                                                   CoreAsset::AssetImporterManager *importerManager) const override;
+    CoreAsset::ImportPackage Import(const std::filesystem::path &path, CoreAsset::AssetImporterManager *importerManager,
+                                    const CoreAsset::ImportExecutionContext &executionContext) const override;
 
   private:
     // 에디터에서 사용할 메타데이터

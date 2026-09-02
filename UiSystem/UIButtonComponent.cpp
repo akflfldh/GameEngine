@@ -1,13 +1,13 @@
 ﻿
 #include <UISystem/UIButtonComponent.h>
 #include <UiSystem/UIElement.h>
-UI::UIButtonComponent::UIButtonComponent() : mCaptureAvailableFlag(true) {}
+UI::UIButtonComponent::UIButtonComponent() : mHover(false), mPress(false) {}
 
 UI::UIButtonComponent::~UIButtonComponent() {}
 
-void UI::UIButtonComponent::Update() {}
+void UI::UIButtonComponent::Update(float deltaTime) {}
 
-bool UI::UIButtonComponent::IsPointInside(float x, float y) const
+int UI::UIButtonComponent::IsPointInside(float x, float y) const
 {
     return IsPointInsideDefault(x, y);
 }
@@ -15,126 +15,52 @@ bool UI::UIButtonComponent::IsPointInside(float x, float y) const
 void UI::UIButtonComponent::UpdateMouseInputEvent(const UIManagerMouseInputContext &mouseInputContext,
                                                   bool &oCaptureActiveRequestFlag, bool &oCaptureReleaseRequestFlag)
 {
-
-    if (mouseInputContext.mCaptureState != EUIMouseCaptureType::eNone)
-    {
-        UpdateOnCapture(mouseInputContext, oCaptureActiveRequestFlag, oCaptureReleaseRequestFlag);
-    }
-    else
-    {
-        UpdateOnHover(mouseInputContext, oCaptureActiveRequestFlag, oCaptureReleaseRequestFlag);
-    }
 }
 
-void UI::UIButtonComponent::RegisterOnClickCallback(void *data, void (*onClickCallback)(void *))
-{
-    mData = data;
-    mOnClickCallback = onClickCallback;
-}
-void UI::UIButtonComponent::OnClick()
+// void UI::UIButtonComponent::RegisterOnClickCallback(void *data, void (*onClickCallback)(void *))
+//{
+//     mData = data;
+//     mOnClickCallback = onClickCallback;
+// }
+
+void UI::UIButtonComponent::OnHover(int x, int y)
 {
 
-    if (mOnClickCallback != nullptr)
-    {
-        mOnClickCallback(mData);
-    }
+    mHover = true;
 }
-
-// 캡처상태가아닌 hover상태에서의 업데이트
-void UI::UIButtonComponent::UpdateOnHover(const UIManagerMouseInputContext &mouseInputContext,
-                                          bool &oCaptureActiveRequestFlag, bool &oCaptureReleaseRequestFlag)
+void UI::UIButtonComponent::OnReleaseHover()
 {
-    // hover enter
 
-    // hover held
-    //  lbutton click
-    // if capture avaliable flag    == true -> capture : false -> click상태만유지
-
-    // lbutton release
-    // click상태라면 -> onclick, 클릭상태 해제
-
-    // hover release
-    // clikc상태라면 ->  클릭상태 해제
-
-    switch (mouseInputContext.mHoverState)
-    {
-    case EUIMouseHoverType::eEnter:
-        // hover enter되었을떄 호출할 메서드를 둘 수도있다.
-
-        break;
-    case EUIMouseHoverType::eHeld:
-
-        if (mouseInputContext.mMouseContext.mMouseState & (Quad::EMouseState::eLButtonPressed))
-        {
-            mPressedState = true;
-            if (mCaptureAvailableFlag == true)
-            {
-                oCaptureActiveRequestFlag = true;
-            }
-        }
-
-        if (mouseInputContext.mMouseContext.mMouseState & (Quad::EMouseState::eLButtonReleased))
-        {
-            if (mPressedState == true)
-            {
-
-                // 클릭한것이다.
-                OnClick();
-                mPressedState = false;
-            }
-        }
-
-        break;
-    case EUIMouseHoverType::eRelease:
-
-        if (mouseInputContext.mMouseContext.mMouseState & (Quad::EMouseState::eLButtonReleased))
-        {
-            if (mPressedState == true)
-            {
-                // 클릭실패
-                mPressedState = false;
-            }
-        }
-
-        break;
-    }
+    mHover = false;
 }
 
-// 캡처상태일떄의 업데이트
-void UI::UIButtonComponent::UpdateOnCapture(const UIManagerMouseInputContext &mouseInputContext,
-                                            bool &oCaptureActiveRequestFlag, bool &oCaptureReleaseRequestFlag)
+void UI::UIButtonComponent::OnMouseMove(const Quad::RawInputData &inputData, float worldPosX, float worldPosY) {}
+
+void UI::UIButtonComponent::OnMouseDown(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
+                                        bool &bConsume)
 {
-    // 눌럿을때만 캡처된다.
-    switch (mouseInputContext.mCaptureState)
+
+    mPress = true;
+    RequestMouseCaptureInput();
+}
+
+void UI::UIButtonComponent::OnMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
+                                      bool &bConsume)
+{
+
+    ReleaseMouseCaptureInput();
+    if (mPress && mHover)
     {
-    case EUIMouseCaptureType::eEnter:
-
-        break;
-
-    case EUIMouseCaptureType::eHeld:
-
-        if (mouseInputContext.mMouseContext.mMouseState & (Quad::EMouseState::eLButtonReleased))
-        {
-            if (mPressedState == true)
-            {
-
-                // 클릭한것이다.
-                OnClick();
-                mPressedState = false;
-            }
-            oCaptureReleaseRequestFlag = true;
-        }
-
-        break;
-
-    case EUIMouseCaptureType::eRelease:
-        if (mouseInputContext.mMouseContext.mMouseState & (Quad::EMouseState::eLButtonReleased))
-        {
-
-            mPressedState = false;
-            oCaptureReleaseRequestFlag = true;
-        }
-
-        break;
+        // TODO
+        // Callback 호출
+        mButtonClickCallbackSystem.ExecuteCallbacks(worldPosX, worldPosY);
+        mPress = false;
     }
 }
+
+bool UI::UIButtonComponent::IsHovered() const
+{
+    return mHover;
+}
+
+void UI::UIButtonComponent::OnChangeHoverPart(int before, int after) {}

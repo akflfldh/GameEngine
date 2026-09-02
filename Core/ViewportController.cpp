@@ -1,5 +1,6 @@
 ﻿#include "Core/ViewportController.h"
-
+#include "SuperController.h"
+#include <Utility/Utility.h>
 Core::ViewportController::ViewportController() : mDirtyFlag(true) {}
 
 Core::ViewportController::~ViewportController() {}
@@ -10,13 +11,25 @@ void Core::ViewportController::SetViewportMode(EViewportMode mode)
     mViewportMode = mode;
 }
 
-void Core::ViewportController::ConvertToNdc(float &oClientPosX, float &oClientPosY) const
+void Core::ViewportController::ConvertToNdc(float &oClientPosX, float &oClientPosY, float viewportOffsetTopLeftX,
+                                            float viewportOffsetTopLeftY) const
 {
 
     Render::Viewport viewport = GetViewport();
 
-    oClientPosX = (oClientPosX - viewport.TopLeftX) / viewport.Width * 2 - 1;
-    oClientPosY = (oClientPosY - viewport.TopLeftY) / viewport.Height * -2 + 1;
+    oClientPosX = (oClientPosX - (viewport.TopLeftX + viewportOffsetTopLeftX)) / viewport.Width * 2 - 1;
+    oClientPosY = (oClientPosY - (viewport.TopLeftY + viewportOffsetTopLeftY)) / viewport.Height * -2 + 1;
+}
+
+bool Core::ViewportController::IntersectPoint(int px, int py, float viewportOffsetTopLeftX,
+                                              float viewportOffsetTopLeftY)
+{
+
+    Render::Viewport viewport = GetViewport();
+    return CoreUtility::Utility::IsPointInsideRect((viewport.TopLeftX + viewportOffsetTopLeftX),
+                                                   viewport.TopLeftX + viewportOffsetTopLeftX + viewport.Width,
+                                                   viewport.TopLeftY + viewportOffsetTopLeftY + viewport.Height,
+                                                   viewport.TopLeftY + viewportOffsetTopLeftY, px, py);
 }
 
 void Core::ViewportController::Update() const
@@ -218,11 +231,15 @@ int Core::ViewportController::ClampPixelWidthValue(int value)
     return value < 0 ? 0 : (value > mWindowWidth ? mWindowWidth : value);
 }
 
-void Core::ViewportController::UpdateWindowSize(UINT width, UINT height)
+void Core::ViewportController::UpdateWindowSize(uint32_t width, uint32_t height)
 {
 
     mWindowWidth = width;
     mWindowHeight = height;
+    if (mWindowHeight == 2250.0f)
+    {
+        int a = 2;
+    }
 
     mDirtyFlag = true;
     // Update();
@@ -241,6 +258,13 @@ Render::Viewport Core::ViewportController::GetViewport() const
     }
 
     return mViewport;
+}
+
+float Core::ViewportController::GetAspect() const
+{
+    const auto &viewport = GetViewport();
+
+    return viewport.Width / viewport.Height;
 }
 
 void Core::ViewportController::SetFixedPos(int left, int top)
@@ -337,25 +361,25 @@ void Core::ViewportController::SetAnchorBottomRelValue(float value)
     mDirtyFlag = true;
 }
 
-void Core::ViewportController::SetAnchorLeftPixelValue(UINT value)
+void Core::ViewportController::SetAnchorLeftPixelValue(uint32_t value)
 {
     mAnchoredContext.mLeftAnchor.mPixel = value;
     mDirtyFlag = true;
 }
 
-void Core::ViewportController::SetAnchorRightPixelValue(UINT value)
+void Core::ViewportController::SetAnchorRightPixelValue(uint32_t value)
 {
     mAnchoredContext.mRightAnchor.mPixel = value;
     mDirtyFlag = true;
 }
 
-void Core::ViewportController::SetAnchorTopPixelValue(UINT value)
+void Core::ViewportController::SetAnchorTopPixelValue(uint32_t value)
 {
     mAnchoredContext.mTopAnchor.mPixel = value;
     mDirtyFlag = true;
 }
 
-void Core::ViewportController::SetAnchorBottomPixelValue(UINT value)
+void Core::ViewportController::SetAnchorBottomPixelValue(uint32_t value)
 {
     mAnchoredContext.mBottomAnchor.mPixel = value;
     mDirtyFlag = true;
@@ -388,13 +412,13 @@ void Core::ViewportController::SetAnchorHeightRelValue(float value)
     mDirtyFlag = true;
 }
 
-void Core::ViewportController::SetAnchorWidthPixelValue(UINT value)
+void Core::ViewportController::SetAnchorWidthPixelValue(uint32_t value)
 {
 
     mAnchoredContext.mWidth.mPixel = value;
     mDirtyFlag = true;
 }
-void Core::ViewportController::SetAnchorHeightPixelValue(UINT value)
+void Core::ViewportController::SetAnchorHeightPixelValue(uint32_t value)
 {
 
     mAnchoredContext.mHeight.mPixel = value;
@@ -406,9 +430,21 @@ Core::EViewportMode Core::ViewportController::GetViewportMode() const
     return mViewportMode;
 }
 
-std::pair<UINT, UINT> Core::ViewportController::GetWindowSize() const
+std::pair<uint32_t, uint32_t> Core::ViewportController::GetWindowSize() const
 {
-    return {mWindowWidth, mWindowHeight};
+    return {mViewport.Width, mViewport.Height};
+}
+
+Core::WorkSpace *Core::SuperController::GetWorkSpace() const
+{
+
+    return mWorkSpace;
+}
+
+void Core::SuperController::SetWorkSpace(Core::WorkSpace *workspace)
+{
+
+    mWorkSpace = workspace;
 }
 
 int Core::ViewportController::GetFixedLeft() const
@@ -479,19 +515,19 @@ float Core::ViewportController::GetAnchorBottomRelValue() const
     return mAnchoredContext.mBottomAnchor.mRel;
 }
 
-UINT Core::ViewportController::GetAnchorLeftPixelValue() const
+uint32_t Core::ViewportController::GetAnchorLeftPixelValue() const
 {
     return mAnchoredContext.mLeftAnchor.mPixel;
 }
-UINT Core::ViewportController::GetAnchorRightPixelValue() const
+uint32_t Core::ViewportController::GetAnchorRightPixelValue() const
 {
     return mAnchoredContext.mRightAnchor.mPixel;
 }
-UINT Core::ViewportController::GetAnchorTopPixelValue() const
+uint32_t Core::ViewportController::GetAnchorTopPixelValue() const
 {
     return mAnchoredContext.mTopAnchor.mPixel;
 }
-UINT Core::ViewportController::GetAnchorBottomPixelValue() const
+uint32_t Core::ViewportController::GetAnchorBottomPixelValue() const
 {
     return mAnchoredContext.mBottomAnchor.mPixel;
 }
@@ -514,11 +550,11 @@ float Core::ViewportController::GetAnchorHeightRelValue() const
     return mAnchoredContext.mHeight.mRel;
 }
 
-UINT Core::ViewportController::GetAnchorWidthPixelValue() const
+uint32_t Core::ViewportController::GetAnchorWidthPixelValue() const
 {
     return mAnchoredContext.mWidth.mPixel;
 }
-UINT Core::ViewportController::GetAnchorHeightPixelValue() const
+uint32_t Core::ViewportController::GetAnchorHeightPixelValue() const
 {
     return mAnchoredContext.mHeight.mPixel;
 }

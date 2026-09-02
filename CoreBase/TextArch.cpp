@@ -83,6 +83,17 @@ Arch &TextArch::operator<<(int64_t &value)
     return *this;
 }
 
+Arch &TextArch::operator<<(long &value)
+{
+
+    return *this;
+}
+Arch &TextArch::operator<<(unsigned long &value)
+{
+
+    return *this;
+}
+
 Arch &TextArch::operator<<(uint8_t &value)
 {
     return *this;
@@ -100,6 +111,16 @@ Arch &TextArch::operator<<(uint32_t &value)
 
 Arch &TextArch::operator<<(uint64_t &value)
 {
+
+    if (GetLoadingFlag())
+    {
+        mReader.Read(value);
+    }
+    else
+    {
+        mWriter.Write(value);
+    }
+
     return *this;
 }
 Arch &TextArch::operator<<(float &value)
@@ -166,6 +187,40 @@ Arch &TextArch::operator<<(FString &fstring)
     return *this;
 }
 
+Arch &TextArch::operator<<(std::string &str)
+{
+
+    if (GetLoadingFlag())
+    {
+        // 개행문자까지가 어디인지알아야하는데 한번에 읽을수가없어
+        // 하나씩읽으면서 개행문자인지 파악할수밖에
+        mReader.Read(str);
+        // while (1)
+        //{
+        //     char c = 0;
+        //     if (mReader.Read(&c, sizeof(c)) != sizeof(c))
+        //     {
+        //         // 실패
+        //         break;
+        //     }
+
+        //    if (c == '\n')
+        //    {
+        //        // 개행문자 발견
+        //        break;
+        //    }
+        //    str += c;
+        //}
+    }
+    else
+    {
+
+        mWriter.Write(str.c_str());
+    }
+
+    return *this;
+}
+
 void TextArch::Serialize(const void *data, size_t size)
 {
 
@@ -190,3 +245,30 @@ bool TextArch::IsAvaliableSerialize() const
 
     return true;
 }
+
+void TextArch::StartTable(std::string &tableName) {}
+void TextArch::EndTable() {}
+
+void TextArch::ReadPropertyHeader(std::string &propertyName, std::string &propertyType, uint32_t &propertyValueSize) {}
+void TextArch::WritePropertyHeader(const std::string &propertyName, const std::string &propertyType) {}
+
+// 반드시 헤더를 먼저읽고 호출
+void TextArch::SkipProperty(uint32_t propertyValueSize) {}
+// 앞 4바이트는 value크기를 담는 공간으로 예약
+
+// 앞 4바이트는 value크기를 담는 공간으로 예약
+bool TextArch::StartProperty(const std::string &propertyName, const std::string &propertyType)
+{
+
+    return true;
+} // EndProperty호출시 offset을 계산하여 value의 크기를 기록한다.( 파생된 구현부에서 지켜야하는 약속 )
+void TextArch::EndProperty() {}
+
+uint32_t TextArch::GetPropertySize() const
+{
+
+    return 0;
+}
+
+// 다음 시작테이블의 이름을 엿본다.
+void TextArch::peekTableName(std::string &oTableName) {}

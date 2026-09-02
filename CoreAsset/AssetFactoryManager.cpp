@@ -14,7 +14,7 @@ CoreAsset::AssetFactoryManager::AssetFactoryManager() {}
 
 CoreAsset::AssetFactoryManager::~AssetFactoryManager() {}
 
-void CoreAsset::AssetFactoryManager::ReigsterAssetFactory(EAssetType assetType, IAssetFactory *assetFactory)
+void CoreAsset::AssetFactoryManager::RegisterAssetFactory(EAssetType assetType, IAssetFactory *assetFactory)
 {
 
     mAssetFactoryTable[assetType] = assetFactory;
@@ -23,11 +23,11 @@ void CoreAsset::AssetFactoryManager::ReigsterAssetFactory(EAssetType assetType, 
 CoreAsset::Asset *CoreAsset::AssetFactoryManager::CreateEmptyAsset(const AssetMetaData &assetMetaData)
 {
 
-    return mAssetFactoryTable[assetMetaData.mAssetType]->CreateEmptyAsset();
+    return mAssetFactoryTable[assetMetaData.mAssetType]->CreateEmptyAsset(assetMetaData.mAssetType);
 }
 CoreAsset::Asset *CoreAsset::AssetFactoryManager::CreateEmptyAsset(EAssetType assetType)
 {
-    return mAssetFactoryTable[assetType]->CreateEmptyAsset();
+    return mAssetFactoryTable[assetType]->CreateEmptyAsset(assetType);
 }
 CoreAsset::Asset *CoreAsset::AssetFactoryManager::CreateAssetFromData(const IntermediateAsset &intermediateAsset)
 {
@@ -43,6 +43,8 @@ CoreAsset::Asset *CoreAsset::AssetFactoryManager::CreateAssetFromData(const Inte
         // asset 생성 실패
         return nullptr;
     }
+
+    asset->SetName(intermediateAsset.mAssetName);
 
     return asset;
 }

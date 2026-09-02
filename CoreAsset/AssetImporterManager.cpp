@@ -25,14 +25,17 @@ void CoreAsset::AssetImporterManager::ReleaseAssetImporter(const FString &extens
     mAssetImporterTable.erase(extension);
 }
 
-FVector<CoreAsset::IntermediateAsset *> CoreAsset::AssetImporterManager::Import(const char *filePath)
+CoreAsset::ImportPackage CoreAsset::AssetImporterManager::Import(const std::filesystem::path &filePath,
+                                                                 const ImportExecutionContext &executionContext)
 {
     // 리스트를반환하기위해서 FVector 를 만들자
 
     if (filePath == "")
         return {};
 
-    std::string extension = CoreUtility::Utility::GetExtensionFromPath(filePath);
+    std::string extension = filePath.extension().string();
+
+    //    CoreUtility::Utility::GetExtensionFromPath(filePath);
 
     std::unordered_map<FString, IAssetImporter *>::const_iterator it = mAssetImporterTable.find(extension.c_str());
     if (it == mAssetImporterTable.cend())
@@ -41,5 +44,5 @@ FVector<CoreAsset::IntermediateAsset *> CoreAsset::AssetImporterManager::Import(
     }
 
     IAssetImporter *importer = it->second;
-    return importer->Import(filePath, this);
+    return importer->Import(filePath, this, executionContext);
 }

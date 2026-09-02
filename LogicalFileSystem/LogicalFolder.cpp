@@ -30,10 +30,21 @@ const std::vector<QuadLF::LogicalNode *> &QuadLF::LogicalFolder::GetChildNodeLis
     return mChildNodeVector;
 }
 
+const std::vector<QuadLF::LogicalFolder *> &QuadLF::LogicalFolder::GetChildFolderNodeList() const
+{
+    return mChildFolderNodeVector;
+    // TODO: 여기에 return 문을 삽입합니다.
+}
+
 void QuadLF::LogicalFolder::AddChildNode(LogicalNode *node)
 {
     mChildNodeVector.push_back(node);
     mChildNodeTable[node->GetName()] = node;
+
+    if (node->GetNodeType() == ELogicalNodeType::eFolder)
+    {
+        mChildFolderNodeVector.push_back(static_cast<LogicalFolder *>(node));
+    }
 }
 
 const std::vector<QuadLF::LogicalNode *> &QuadLF::LogicalFolder::GetChildNodeVector() const
@@ -60,6 +71,16 @@ void QuadLF::LogicalFolder::removeChildNode(LogicalNode *node)
     {
 
         mChildNodeVector.erase(vectorIt);
+    }
+
+    if (node->GetNodeType() == ELogicalNodeType::eFolder)
+    {
+        auto it = std::find(mChildFolderNodeVector.begin(), mChildFolderNodeVector.end(), node);
+
+        if (it != mChildFolderNodeVector.end())
+        {
+            mChildFolderNodeVector.erase(it);
+        }
     }
 
     return;

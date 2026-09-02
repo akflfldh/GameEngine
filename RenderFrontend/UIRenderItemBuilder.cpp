@@ -2,9 +2,12 @@
 #include "D3DGpuResourceManager/GpuSamplerSystem.h"
 #include <Core/ViewportController.h>
 #include <CoreAsset/Material.h>
+#include <CoreBase/CoreAssert.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <Logger/Logger.h>
 #include <RenderFrontend/AssetResolver.h>
+#include <RenderFrontend/RenderPassGraph.h>
+#include <RenderFrontend/RenderPipelineManager.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <RenderSystem/RenderType.h>
 #include <UISystem/UICanvas.h>
@@ -15,6 +18,7 @@
 #include <UISystem/UIResizeGizmoRenderableComponent.h>
 #include <algorithm>
 #include <assert.h>
+#include <glm/glm.hpp>
 #include <queue>
 #include <stack>
 #include <vector>
@@ -23,11 +27,8 @@ Render::UIRenderItemBuilder *Render::UIRenderItemBuilder::mInstance = nullptr;
 
 Render::UIRenderItemBuilder *Render::UIRenderItemBuilder::GetInstance()
 {
-    if (mInstance == nullptr)
-    {
-        OutputDebugStringW(L"UI렌더아이템빌더 인스턴스가 생성되지않았습니다.\n");
-        assert(0);
-    }
+
+    CHECK(mInstance != nullptr, "UI렌더아이템빌더 인스턴스가 생성되지않았습니다");
 
     return mInstance;
 }
@@ -38,276 +39,173 @@ Render::UIRenderItemBuilder::UIRenderItemBuilder(Render::IRenderSystem *renderSy
     : mRenderSystem(renderSystem), mUiManager(uiManager), mGpuResourceManager(gpuResourceManager),
       mAssetResolver(assetResolver), mCurrVertexBufferOffset(0), mCurrIndexBufferOffset(0)
 {
+    CHECK(mInstance == nullptr, "UI렌더아이템빌더 생성자 두번호출하였습니다. 한번만 호출해야합니다");
 
-    if (mInstance != nullptr)
+    // TODO 프레임별 버퍼필요 3개
+    mVertexBufferGpuPerFrame.resize(3);
+    mIndexBufferGpuPerFrame.resize(3);
+
+    for (int i = 0; i < 3; ++i)
     {
-        OutputDebugStringW(L"UI렌더아이템빌더 생성자 두번호출하였습니다. 한번만 호출해야합니다.\n");
-        assert(0);
+        GRM::BufferDesc vertexBufferDesc;
+
+        vertexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
+        vertexBufferDesc.mBufferUsage = GRM::EBufferUsage::eVertexBuffer;
+        vertexBufferDesc.mElementDataNum = 4 * 10000;
+        vertexBufferDesc.mElementDataSize = sizeof(UI::UIVertex);
+        vertexBufferDesc.mBufferSize = 4 * 10000 * vertexBufferDesc.mElementDataSize;
+        vertexBufferDesc.mData = nullptr;
+        mVertexBufferGpuPerFrame[i] = mGpuResourceManager->CreateBuffer(vertexBufferDesc);
+
+        GRM::BufferDesc indexBufferDesc;
+
+        indexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
+        indexBufferDesc.mBufferUsage = GRM::EBufferUsage::eIndexBuffer;
+        indexBufferDesc.mElementDataNum = 6 * 10000;
+        indexBufferDesc.mElementDataSize = sizeof(uint32_t);
+        indexBufferDesc.mBufferSize = 6 * 10000 * indexBufferDesc.mElementDataSize;
+        indexBufferDesc.mData = nullptr;
+        mIndexBufferGpuPerFrame[i] = mGpuResourceManager->CreateBuffer(indexBufferDesc);
     }
-
-    GRM::BufferDesc vertexBufferDesc;
-
-    vertexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
-    vertexBufferDesc.mBufferUsage = GRM::EBufferUsage::eVertexBuffer;
-    vertexBufferDesc.mElementDataNum = 4 * 10000;
-    vertexBufferDesc.mElementDataSize = sizeof(UI::UIVertex);
-    vertexBufferDesc.mBufferSize = 4 * 10000 * vertexBufferDesc.mElementDataSize;
-    vertexBufferDesc.mData = nullptr;
-    mVertexBufferGpu = mGpuResourceManager->CreateBuffer(vertexBufferDesc);
-
-    GRM::BufferDesc indexBufferDesc;
-
-    indexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
-    indexBufferDesc.mBufferUsage = GRM::EBufferUsage::eIndexBuffer;
-    indexBufferDesc.mElementDataNum = 6 * 10000;
-    indexBufferDesc.mElementDataSize = sizeof(uint32_t);
-    indexBufferDesc.mBufferSize = 6 * 10000 * indexBufferDesc.mElementDataSize;
-    indexBufferDesc.mData = nullptr;
-    mIndexBufferGpu = mGpuResourceManager->CreateBuffer(indexBufferDesc);
-
     mInstance = this;
+
+    SetRenderProxyManager(this);
 }
 
 Render::UIRenderItemBuilder::~UIRenderItemBuilder() {}
 
-void Render::UIRenderItemBuilder::SubmitUIElement(UI::UICanvas *canvas, Render::RenderChannelID renderChannelID,
-                                                  const Core::ViewportController &viewportController)
-{
-
-    if (canvas == nullptr)
-        return;
-
-    const std::vector<UI::UIElement *> &uiElementVector = canvas->GetChildUIElementAll();
-    std::stack<UI::UIElement *> uiElementStack;
-
-    for (auto uiElement : uiElementVector)
-    {
-        uiElementStack.push(uiElement);
-    }
-
-    Render::Viewport viewport = viewportController.GetViewport();
-
-    std::vector<UIElementContext> &uiElementContextVector = mUIElementContextVectorPerRenderChannel[renderChannelID];
-    while (!uiElementStack.empty())
-    {
-
-        UI::UIElement *uiElement = uiElementStack.top();
-        uiElementStack.pop();
-
-        size_t renderableComNum = uiElement->GetComponentsNum<UI::UIRenderableComponent>();
-        if (renderableComNum != 0)
-        {
-            std::vector<UI::IUIComponent *> renderableComVector(renderableComNum);
-            uiElement->GetComponents<UI::UIRenderableComponent>(renderableComVector.data(), renderableComNum);
-
-            CoreMath::Vector2 rectVertices[4];
-            uiElement->mTransform.GetQuadWorldPoints(rectVertices);
-            Render::ScissorRect elementSicssorRect;
-            elementSicssorRect.Left = rectVertices[0].X + viewport.Width / 2 + viewport.TopLeftX;
-
-            elementSicssorRect.Right = rectVertices[1].X + viewport.Width / 2 + viewport.TopLeftX;
-
-            elementSicssorRect.Top = -1 * rectVertices[0].Y + viewport.Height / 2 + viewport.TopLeftY;
-
-            elementSicssorRect.Bottom = -1 * rectVertices[2].Y + viewport.Height / 2 + viewport.TopLeftY;
-
-            for (auto uiCom : renderableComVector)
-            {
-
-                UI::UIRenderableComponent *renderableCom = (UI::UIRenderableComponent *)uiCom;
-                if (renderableCom->GetActiveState() == false)
-                    continue;
-
-                UIElementContext uiElementContex;
-                //  uiElementContex.mUIElement = uiElement;
-                uiElementContex.mUIRenderableComponent = renderableCom;
-                uiElementContex.mBatchKey.mRenderChannelID = renderChannelID;
-                uiElementContex.mBatchKey.mMaterialID = renderableCom->GetUIMeshComponentRef().mUIMaterial->GetID();
-                uiElementContex.mBatchKey.mScissorRect = elementSicssorRect;
-                uiElementContextVector.push_back(uiElementContex);
-            }
-        }
-
-        for (auto childElement : uiElement->GetChildVector())
-        {
-            uiElementStack.push(childElement);
-        }
-    }
-}
-
-bool Render::UIRenderItemBuilder::BuildAndSubmitRenderItem(Render::RenderChannelID renderChannelID,
-                                                           const Render::Viewport &viewport, int clientWidth,
-                                                           int clientHeight)
-{
-
-    std::vector<UI::UIVertex> batchedVertexVector;
-    std::vector<uint32_t> batchedIndexVector;
-    // 버텍스, 인덱스들이 한 버퍼에 다 모일거다
-
-    // 그러니 같은 렌더아이템에 속한 정점들이 연속되어야한다
-    std::vector<UIElementContext> &uiElementContextVector = mUIElementContextVectorPerRenderChannel[renderChannelID];
-
-    std::sort(uiElementContextVector.begin(), uiElementContextVector.end(),
-              [](const UIElementContext &a, const UIElementContext &b) { return a.mBatchKey < b.mBatchKey; });
-
-    std::vector<Render::RenderItem> renderItemVector;
-    renderItemVector.reserve(uiElementContextVector.size());
-
-    Render::IMaterialManager *gpuMaterialManager = Render::IMaterialManager::GetInstance();
-    GRM::GpuSamplerSystem *gpuSamplerSystem = GRM::GpuSamplerSystem::GetInstance();
-
-    // 동일한 머터리얼내에서 인스턴스들의 정점오프셋
-    // index값에 추가적으로 더해지는값
-    uint32_t vertexBaseOffset = 0;
-    for (int i = 0; i < uiElementContextVector.size(); ++i)
-    {
-
-        Render::RenderItem *renderItem = nullptr;
-        if (i == 0 || uiElementContextVector[i].mBatchKey != uiElementContextVector[i - 1].mBatchKey)
-        {
-            Render::RenderItem newRenderItem;
-
-            newRenderItem.mScissor = uiElementContextVector[i].mBatchKey.mScissorRect;
-
-            CoreAsset::Material *assetMaterial =
-                uiElementContextVector[i].mUIRenderableComponent->GetUIMeshComponentRef().mUIMaterial;
-
-            newRenderItem.mMaterialID = assetMaterial->GetGpuMaterialID();
-            newRenderItem.mInstance.mInstanceCount = 1;
-
-            // 바인딩하는 세이더 리소스정보
-            const Render::ShaderResourceInfoSet &shaderResourceInfoSet =
-                gpuMaterialManager->GetMaterialShaderResourceInfo(newRenderItem.mMaterialID);
-
-            // tex resource
-            for (int i = 0; i < shaderResourceInfoSet.mTextureShaderResourceInfoVector.size(); ++i)
-            {
-                // GPUMateiral에서바인딩할 리소스 정보를 가져와서 그거에맞춰서 설정해야한다.
-                // 일단 리소스는 텍스처 하나만 바인딩한다고하자
-                // 사실상 ui는 거의 고정이다
-                Render::BindingGpuResource texShaderResoure;
-                texShaderResoure.mName = shaderResourceInfoSet.mTextureShaderResourceInfoVector[i].mName;
-                texShaderResoure.mType = shaderResourceInfoSet.mTextureShaderResourceInfoVector[i].mType;
-
-                CoreAsset::Texture *tex =
-                    static_cast<CoreAsset::Texture *>(uiElementContextVector[i]
-                                                          .mUIRenderableComponent->GetUIMeshComponentRef()
-                                                          .mUIMaterial->GetTexResourceContextList()[i]
-                                                          .mTexture.Get());
-
-                GRM::GRMPtr grmPtr = mAssetResolver->GetGpuResource(tex);
-                if (grmPtr.getResource() == nullptr)
-                {
-                    // bool ret =
-                    bool ret = mAssetResolver->ResolveAsset(tex);
-                    if (ret == false)
-                    {
-                        // 프로그램을 종료시켜야할거같다.
-                        LOG_MESSAGE_ERROR("UIRenderItemBuilder", "에셋RawData 로드 실패");
-                        // 종료 요청을 알려야한다.
-                        return false;
-                    }
-                }
-                texShaderResoure.gpuResource = mAssetResolver->GetGpuResource(tex).getResource();
-
-                newRenderItem.mBindingGpuResourceVector.push_back(texShaderResoure);
-            }
-            // sampler
-
-            const std::vector<uint32_t> materialSamplerContextList = assetMaterial->GetSamplerResourceContextList();
-            for (int i = 0; i < shaderResourceInfoSet.mSamplerShaderResourceInfoVector.size(); ++i)
-            {
-
-                Render::BindingGpuResource samplerShaderResoure;
-                samplerShaderResoure.mName = shaderResourceInfoSet.mSamplerShaderResourceInfoVector[i].mName;
-                samplerShaderResoure.mType = shaderResourceInfoSet.mSamplerShaderResourceInfoVector[i].mType;
-                GRM::GRMPtr samplerResource = gpuSamplerSystem->GetGpuSampler(materialSamplerContextList[i]);
-                samplerShaderResoure.gpuResource = samplerResource.getResource();
-                newRenderItem.mBindingGpuResourceVector.push_back(samplerShaderResoure);
-            }
-
-            // meshItem
-            newRenderItem.mMeshItem.mVertexOffset = mCurrVertexBufferOffset + batchedVertexVector.size();
-            newRenderItem.mMeshItem.mVertexNum = 0;
-            newRenderItem.mMeshItem.mVertexBuffer = mVertexBufferGpu.getResource();
-            newRenderItem.mMeshItem.mIndexBuffer = mIndexBufferGpu.getResource();
-            newRenderItem.mMeshItem.mIndexNum = 0;
-            newRenderItem.mMeshItem.mIndexOffset = mCurrIndexBufferOffset + batchedIndexVector.size();
-
-            renderItemVector.push_back(newRenderItem);
-
-            // 새로운머터리얼에대한 렌더아이템임으로  0으로 초기화
-            vertexBaseOffset = 0;
-        }
-
-        // vertexnum 정보를 얻고
-        size_t vertexNum = uiElementContextVector[i].mUIRenderableComponent->GetVertexNum();
-
-        // vertex들을 얻는다..
-        std::vector<UI::UIVertex> vertices(vertexNum);
-        uiElementContextVector[i].mUIRenderableComponent->GetVertices(vertices.data());
-
-        // indexNum정보를 얻고
-        size_t indexNum = uiElementContextVector[i].mUIRenderableComponent->GetIndexNum();
-
-        // index들을 얻는다...
-        std::vector<uint32_t> indices(indexNum);
-        uiElementContextVector[i].mUIRenderableComponent->GetIndices(indices.data());
-        // index는 vertexbaseoffset을 추가로 더해준다.
-
-        renderItem = &renderItemVector.back();
-        renderItem->mMeshItem.mVertexNum += vertexNum;
-        renderItem->mMeshItem.mIndexNum += indexNum;
-
-        // vertex들의 pos를 스크린공간으로 보낸다.
-        for (int j = 0; j < vertexNum; ++j)
-        {
-            float ndcX = (vertices[j].mPos.X / viewport.Width * 2);
-            float ndcY = (vertices[j].mPos.Y / viewport.Height * 2);
-
-            vertices[j].mPos = CoreMath::Vector2(ndcX, ndcY);
-        }
-
-        // 인덱스값들에 vertexBaseOffset을 추가로 더해준다.
-        for (size_t i = 0; i < indexNum; ++i)
-        {
-            indices[i] += vertexBaseOffset;
-        }
-        batchedIndexVector.insert(batchedIndexVector.end(), indices.begin(), indices.end());
-        /*     batchedIndexVector.push_back(vertexBaseOffset + 0);
-             batchedIndexVector.push_back(vertexBaseOffset + 1);
-             batchedIndexVector.push_back(vertexBaseOffset + 3);
-             batchedIndexVector.push_back(vertexBaseOffset + 1);
-             batchedIndexVector.push_back(vertexBaseOffset + 2);
-             batchedIndexVector.push_back(vertexBaseOffset + 3);*/
-
-        // 더 효율적으로 추가할수있는 메서드가있다.
-        batchedVertexVector.insert(batchedVertexVector.end(), vertices.begin(), vertices.end());
-
-        vertexBaseOffset += vertexNum;
-    }
-
-    // gpu 리소스로 데이터 업로드
-    mGpuResourceManager->UploadBufferData(mVertexBufferGpu, batchedVertexVector.data(), sizeof(UI::UIVertex),
-                                          batchedVertexVector.size(), mCurrVertexBufferOffset * sizeof(UI::UIVertex));
-
-    mGpuResourceManager->UploadBufferData(mIndexBufferGpu, batchedIndexVector.data(), sizeof(uint32_t),
-                                          batchedIndexVector.size(), mCurrIndexBufferOffset * sizeof(uint32_t));
-    // 렌더아이템제출
-    mRenderSystem->SubmitRenderItems(renderChannelID, renderItemVector);
-
-    uiElementContextVector.clear();
-    // 다음 호출을 위한 준비
-    mCurrVertexBufferOffset += batchedVertexVector.size();
-    mCurrIndexBufferOffset += batchedIndexVector.size();
-
-    return true;
-}
-
 void Render::UIRenderItemBuilder::EndFrame()
 {
 
-    mUIElementContextVectorPerRenderChannel.clear();
+    //  mUIElementContextVectorPerRenderChannel.clear();
+}
+
+void Render::UIRenderItemBuilder::RegisterRenderProxy(UI::UIRenderProxy *renderProxy)
+{
+
+    if (renderProxy == nullptr)
+        return;
+
+    mUIRenderProxyListTable[renderProxy->mCanvas->GetID()].push_back(renderProxy);
+}
+void Render::UIRenderItemBuilder::UnRegisterRenderProxy(UI::UIRenderProxy *renderProxy)
+{
+
+    if (renderProxy == nullptr)
+        return;
+
+    UI::UICanvasID canvasID = renderProxy->mCanvas->GetID();
+    auto it =
+        std::find(mUIRenderProxyListTable[canvasID].begin(), mUIRenderProxyListTable[canvasID].end(), renderProxy);
+
+    if (it != mUIRenderProxyListTable[canvasID].end())
+    {
+        if (mUIRenderProxyListTable[canvasID].size() == 1)
+        {
+            mUIRenderProxyListTable[canvasID].erase(it);
+        }
+        else
+        {
+            int currIndex = it - mUIRenderProxyListTable[canvasID].begin();
+            int endIndex = mUIRenderProxyListTable[canvasID].size() - 1;
+            std::swap(mUIRenderProxyListTable[canvasID][currIndex], mUIRenderProxyListTable[canvasID][endIndex]);
+
+            mUIRenderProxyListTable[canvasID].pop_back();
+        }
+    }
+}
+
+void Render::UIRenderItemBuilder::UploadStart(GRM::GRMPtr &oVertexBuffer, GRM::GRMPtr &oIndexBuffer)
+{
+    oVertexBuffer = mVertexBufferGpuPerFrame[mCurrFrame];
+    oIndexBuffer = mIndexBufferGpuPerFrame[mCurrFrame];
+    // reset
+}
+
+void Render::UIRenderItemBuilder::UploadVertexBuffer(const std::vector<UIRenderCommand> &renderCommandList,
+                                                     uint32_t &oVertexOffset, uint32_t &oIndexOffset,
+                                                     uint32_t &oVertexNum, uint32_t &oIndexNum,
+                                                     const std::vector<UI::UIVertex> &vertexBuffer,
+                                                     const std::vector<uint32_t> &indexBuffer)
+{
+
+    std::vector<UI::UIVertex> totalVertexVec;
+    std::vector<uint32_t> totalIndexVec;
+
+    for (const auto &uiRenderCommand : renderCommandList)
+    {
+        size_t vertexNum = uiRenderCommand.mVertexNum;
+
+        // base offset before insertion
+        size_t vertexBaseOffset = totalVertexVec.size();
+
+        uint32_t vertexBufferStartOffset = uiRenderCommand.mVertexStartOffset;
+        // insert new vertices (no prior resize)
+        totalVertexVec.insert(totalVertexVec.end(), vertexBuffer.begin() + vertexBufferStartOffset,
+                              vertexBuffer.begin() + vertexBufferStartOffset + vertexNum);
+
+        size_t indexNum = uiRenderCommand.mIndexNum;
+        // base index offset before insertion
+        size_t indexBaseOffset = totalIndexVec.size();
+
+        uint32_t indexBufferStartOffset = uiRenderCommand.mIndexStartOffset;
+        // insert new indices
+        totalIndexVec.insert(totalIndexVec.end(), indexBuffer.begin() + indexBufferStartOffset,
+                             indexBuffer.begin() + indexBufferStartOffset + indexNum);
+
+        // adjust only the newly inserted indices
+        for (size_t i = indexBaseOffset; i < indexBaseOffset + indexNum; ++i)
+        {
+            // add vertexBaseOffset to each index
+            totalIndexVec[i] = static_cast<uint32_t>(totalIndexVec[i] + vertexBaseOffset);
+        }
+    }
+
+    // bufferOffset은 바이트 단위로 전달해야 한다.
+    size_t vertexByteOffset = static_cast<size_t>(mCurrVertexBufferOffset) * sizeof(UI::UIVertex);
+    bool ret = mGpuResourceManager->UploadBufferData(mVertexBufferGpuPerFrame[mCurrFrame], totalVertexVec.data(),
+                                                     sizeof(UI::UIVertex), totalVertexVec.size(), vertexByteOffset);
+    if (!ret)
+    {
+        LOG_MESSAGE_ERROR("UIRenderItemBuilder", "Vertex buffer upload failed");
+    }
+
+    size_t indexByteOffset = static_cast<size_t>(mCurrIndexBufferOffset) * sizeof(uint32_t);
+    ret = mGpuResourceManager->UploadBufferData(mIndexBufferGpuPerFrame[mCurrFrame], totalIndexVec.data(),
+                                                sizeof(uint32_t), totalIndexVec.size(), indexByteOffset);
+    if (!ret)
+    {
+        LOG_MESSAGE_ERROR("UIRenderItemBuilder", "Index buffer upload failed");
+    }
+
+    // 반환값은 요소(버텍스/인덱스) 오프셋으로 유지
+    oVertexOffset = mCurrVertexBufferOffset;
+    oIndexOffset = mCurrIndexBufferOffset;
+    oVertexNum = static_cast<uint32_t>(totalVertexVec.size());
+    oIndexNum = static_cast<uint32_t>(totalIndexVec.size());
+
+    mCurrVertexBufferOffset += static_cast<uint32_t>(totalVertexVec.size());
+    mCurrIndexBufferOffset += static_cast<uint32_t>(totalIndexVec.size());
+}
+void Render::UIRenderItemBuilder::UploadIndexBuffer(const std::vector<UIRenderCommand> &renderProxyList) {}
+void Render::UIRenderItemBuilder::UploadEnd(GRM::GRMPtr &vertexPtr, GRM::GRMPtr &indexPtr) {}
+
+std::vector<UI::UIRenderProxy *> Render::UIRenderItemBuilder::GetRenderProxyList(UI::UICanvasID canvasID) const
+{
+    auto it = mUIRenderProxyListTable.find(canvasID);
+
+    if (it == mUIRenderProxyListTable.cend())
+    {
+        return {};
+    }
+
+    return it->second;
+}
+
+void Render::UIRenderItemBuilder::ResetBufferOffset(int nextFrame)
+{
+
     mCurrVertexBufferOffset = 0;
     mCurrIndexBufferOffset = 0;
+    mCurrFrame = nextFrame;
 }

@@ -43,6 +43,12 @@ class D3DRenderChannelSystem
     // 렌더패스를 순회하면서 렌더작업수행
     void EndFrame();
 
+#pragma region Refactoring
+
+    void StartView();
+
+#pragma endregion
+
   private:
     HWND mWindowHandle;
     D3D12_VIEWPORT mViewport;

@@ -58,6 +58,19 @@ CoreAsset::Asset *CoreAsset::AssetIDTable::GetAsset(const std::string &name) con
     return GetAsset(id);
 }
 
+void CoreAsset::AssetIDTable::GetAssetsByType(EAssetType type, std::vector<Asset *> &oAssetList) const
+{
+
+    for (auto e : mIDPtrTable)
+    {
+
+        if (e.second != nullptr && e.second->GetType() == type)
+        {
+            oAssetList.push_back(e.second);
+        }
+    }
+}
+
 bool CoreAsset::AssetIDTable::SetAsset(const std::string &name, CoreAsset::AssetID id, CoreAsset::Asset *asset)
 {
     Asset *checkAsset = GetAsset(name);
@@ -73,4 +86,10 @@ bool CoreAsset::AssetIDTable::SetAsset(const std::string &name, CoreAsset::Asset
     mIDPtrTable[id] = asset;
 
     return true;
+}
+
+size_t CoreAsset::AssetIDTable::GetAssetNum() const
+{
+
+    return mIDPtrTable.size();
 }

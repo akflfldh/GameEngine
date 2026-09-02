@@ -65,7 +65,7 @@ size_t Quad::ReflectionSystemImpl::GetClassSize(const char *className) const
     return classInfo->GetClassSize();
 }
 
-Quad::ClassInfo *Quad::ReflectionSystemImpl::GetClassInfo(const char *className) const
+Quad::ClassInfo *Quad::ReflectionSystemImpl::FindClassInfo(const char *className) const
 {
 
     std::unordered_map<std::string, ClassInfo *>::const_iterator it = mClassInfoTable.find(className);

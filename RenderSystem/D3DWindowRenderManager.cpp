@@ -20,14 +20,13 @@ D3DRender::D3DWindowRenderManager::~D3DWindowRenderManager() {}
 D3DRender::D3DWindowRenderManager *D3DRender::D3DWindowRenderManager::GetInstance()
 {
     assert(mInstance != nullptr);
-    std::cerr << "D3DWindowRenderManager가 생성되지 않았습니다.\n";
 
     return mInstance;
 }
 
 bool D3DRender::D3DWindowRenderManager::RegisterWindow(const Render::CreationRenderChannelInfo &creationChannelInfo)
 {
-    HWND windowHandle = creationChannelInfo.mWindowHandle;
+    HWND windowHandle = (HWND)creationChannelInfo.mWindowHandle;
     auto it = mWindowRenderDataTable.find(windowHandle);
 
     if (it != mWindowRenderDataTable.end())
@@ -50,12 +49,38 @@ std::shared_ptr<D3DRender::D3DWindowRenderData> D3DRender::D3DWindowRenderManage
     return it != mWindowRenderDataTable.cend() ? it->second : nullptr;
 }
 
-void D3DRender::D3DWindowRenderManager::WindowResize(HWND hwnd)
+int D3DRender::D3DWindowRenderManager::WindowResize(HWND hwnd)
 {
 
     std::shared_ptr<D3DRender::D3DWindowRenderData> windowData = GetWindowRenderData(hwnd);
     if (windowData == nullptr)
-        return;
+        return 0;
 
-    windowData->ResizeWindow();
+    return windowData->ResizeWindow();
+}
+
+GRM::GRMPtr D3DRender::D3DWindowRenderManager::GetCurrentSwapchainBackBuffer(void *windowHandle)
+{
+    HWND hwnd = (HWND)windowHandle;
+
+    auto windowRenderData = GetWindowRenderData(hwnd);
+    return windowRenderData->GetCurrentBackBuffer();
+}
+
+GRM::GRMPtr D3DRender::D3DWindowRenderManager::GetSwapchainBackBuffer(void *windowHandle, int index)
+{
+
+    HWND hwnd = (HWND)windowHandle;
+
+    auto windowRenderData = GetWindowRenderData(hwnd);
+    return windowRenderData->GetBackBuffer(index);
+}
+
+GRM::GRMPtr D3DRender::D3DWindowRenderManager::GetDepthStencilBuffer(void *windowHandle)
+{
+
+    HWND hwnd = (HWND)windowHandle;
+
+    auto windowRenderData = GetWindowRenderData(hwnd);
+    return windowRenderData->GetDepthStencilBuffer();
 }

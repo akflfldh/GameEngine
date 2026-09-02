@@ -1,5 +1,5 @@
 ﻿#include "D3DGpuResourceManager/D3DGpuResource.h"
-
+#include <D3DGpuResourceManager/D3DGpuType.h>
 D3DGRM::D3DGpuResource::~D3DGpuResource() {}
 
 D3DGRM::D3DGpuResource::D3DGpuResource(Microsoft::WRL::ComPtr<ID3D12Resource> resource) : mResource(resource) {}
@@ -33,6 +33,7 @@ bool D3DGRM::D3DGpuResource::GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorT
 void D3DGRM::D3DGpuResource::SetResourceState(D3D12_RESOURCE_STATES state)
 {
 
+    SetCurrentResourceState(ConvertFromD3D12ResourceState(state));
     mResourceState = state;
 }
 

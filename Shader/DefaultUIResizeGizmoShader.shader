@@ -1,7 +1,11 @@
 {
     "Name": "DefaultUIResizeGizmo",
     "UserResource": {
-
+        "PassBuffer":{
+            "Type":"Buffer",
+            "BufferID":1,
+            "BindingType": "Pass"
+        }
     },
     "DefaultShader": {
         
@@ -11,7 +15,7 @@
             "OPAQUE": true,
             "InputType": 0,
             "SKINNING": false,
-            "Uses": [],
+            "Uses": ["PassBuffer"],
             "HLSL": 
             {
                 "File":"DefaultUIResizeGizmo.hlsl",

@@ -21,11 +21,28 @@ QuadLF::ELogicalNodeType QuadLF::LogicalNode::GetNodeType() const
 
 std::string QuadLF::LogicalNode::GetFullPath() const
 {
-    // root의경우
+    //// 부모가 root의경우 (Root의 부모는 nullptr)
+    // if (mParent == nullptr)
+    //     return "";
+
+    // if (mParent->GetParent() == nullptr)
+    //     return mParent->GetName() + mName;
+
+    // return mParent->GetFullPath() + "/" + mName;
+
     if (mParent == nullptr)
         return mName;
 
-    return mParent->GetFullPath() + "/" + mName;
+    std::string parentPath = mParent->GetFullPath();
+
+    if (parentPath == "")
+    {
+        return mName;
+    }
+    else
+    {
+        return parentPath + "/" + mName;
+    }
 }
 
 QuadLF::LogicalNode *QuadLF::LogicalNode::GetParent() const

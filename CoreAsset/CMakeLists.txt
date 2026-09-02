@@ -44,15 +44,15 @@ TextureStorer.cpp
 MaterialStorer.cpp
 MaterialManager.cpp
 MaterialLoader.cpp
-AssetLoader.cpp
+AssetLoader.cpp 
 "AssetStorer.cpp"
- "AssetManager.h" "AssetManager.cpp" "AssetIOManager.h" "AssetIOManager.cpp" "AssetFactoryManager.h" "AssetFactoryManager.cpp" "IAssetFactory.h" "IAssetFactory.cpp" "TextureFactory.h" "TextureFactory.cpp" "MaterialFactory.h" "MaterialFactory.cpp" "AssetImporterManager.h" "AssetImporterManager.cpp" "IAssetImporter.h" "IAssetImporter.cpp" "IntermediateAsset.h" "IntermediateAsset.cpp" "AssetType.cpp")
+ "AssetManager.h" "AssetManager.cpp" "AssetIOManager.h" "AssetIOManager.cpp" "AssetFactoryManager.h" "AssetFactoryManager.cpp" "IAssetFactory.h" "IAssetFactory.cpp" "TextureFactory.h" "TextureFactory.cpp" "MaterialFactory.h" "MaterialFactory.cpp" "AssetImporterManager.h" "AssetImporterManager.cpp" "IAssetImporter.h" "IAssetImporter.cpp" "IntermediateAsset.h" "IntermediateAsset.cpp" "AssetType.cpp" "Mesh.h" "Mesh.cpp" "StaticMesh.h" "StaticMesh.cpp" "MeshLoader.h" "MeshLoader.cpp" "MeshStorer.h" "MeshStorer.cpp" "MeshFactory.h" "MeshFactory.cpp"   "Font.h" "Font.cpp" "FontFactory.h" "FontFactory.cpp" "GeometryGenerator.h" "GeometryGenerator.cpp" "AssetPtrDescriptor.h" "AssetPtrDescriptor.cpp")
 
 
 
 target_compile_definitions(CoreAsset PRIVATE CORE_ASSET_EXPORT)
 
-target_link_libraries(CoreAsset PUBLIC compiler_flags headerDir CoreAllocator CoreBase Logger GpuResourceManager Utility BinaryReaderWriter RenderSystem CoreDevice)
+target_link_libraries(CoreAsset PUBLIC compiler_flags headerDir CoreAllocator CoreBase Logger GpuResourceManager Utility BinaryReaderWriter RenderSystem CoreDevice CoreMath)
 
 target_include_directories(CoreAsset PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

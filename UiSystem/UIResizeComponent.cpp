@@ -15,5 +15,5 @@ UI::UIResizeComponent::UIResizeComponent() : mBorderThickness(10) {
 
 UI::UIResizeComponent::~UIResizeComponent() {}
 
-void UI::UIResizeComponent::Update() {}
+void UI::UIResizeComponent::Update(float deltaTime) {}
 

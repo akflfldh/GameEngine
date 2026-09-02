@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreAsset/AssetType.h"
+// #include <CoreBase/BaseClass.h>
 #include <CoreBase/FString.h>
 #include <stdint.h>
 #include <string>
@@ -17,6 +18,17 @@ class BinaryReader;
 
 namespace CoreAsset
 {
+template <typename T> struct AssetName; // 기본 템플릿 (정의는 없어도 됨)
+
+#define AssetClassName(AssetClass)                                                                                     \
+    template <> struct AssetName<AssetClass>                                                                           \
+    {                                                                                                                  \
+        static const char *Get()                                                                                       \
+        {                                                                                                              \
+            return #AssetClass;                                                                                        \
+        }                                                                                                              \
+    };
+
 struct AssetHeaderContext
 {
     AssetID mID; // 정수형 uniqueID
@@ -30,6 +42,7 @@ class CORE_ASSET_API Asset
 {
     friend class AssetManager;
     friend class GlobalAssetRegistrySystem;
+    friend class AssetIOManager;
 
   public:
     virtual ~Asset();
@@ -44,6 +57,11 @@ class CORE_ASSET_API Asset
     EAssetType GetType() const
     {
         return mType;
+    }
+
+    static EAssetType GetAssetType()
+    {
+        return EAssetType::eUnknown;
     }
 
     enum class LoadState
@@ -74,6 +92,11 @@ class CORE_ASSET_API Asset
 
     void SetName(const FString &name);
 
+    void SetEmptyAssetFlag(bool flag);
+
+    void SetRawDataDirty(bool flag);
+    bool GetRawDataDirty() const;
+
   protected:
     // 생성자를 protected로 두어 파생 클래스만 생성 가능하도록 제한하는 것이 일반적
     Asset(EAssetType type, AssetID id = NoneAssetID);
@@ -85,7 +108,8 @@ class CORE_ASSET_API Asset
         mLoadState = state;
     }
 
-    void SetEmptyAssetFlag(bool flag);
+  private:
+    void SetAssetID(AssetID id);
 
   private:
     AssetID mID; // 정수형 uniqueID
@@ -93,13 +117,18 @@ class CORE_ASSET_API Asset
     std::string mTag;
 
     EAssetType mType;
-    LoadState mLoadState;
+    LoadState mLoadState = LoadState::Unloaded;
 
     // Dirty flag가 켜졌다면 저장시 write될것이다.
     bool mDirtyFlag;
 
+    // RawData DirtyFlag ,
+    bool mRawDirtyFlag;
+
     // 데이터가 온전히 채워지지않은 빈 에셋인지의 여부
     bool mIsEmpty;
 };
+
+AssetClassName(Asset)
 
 } // namespace CoreAsset

@@ -1,13 +1,31 @@
 ﻿#include "EditorDirector/SuperFrameController.h"
 #include <Core/GlobalAppHelper.h>
 #include <Core/LogicalWindow.h>
-#include <CoreAsset/MaterialManager.h>
-#include <CoreAsset/TextureManager.h>
+#include <CoreAsset/AssetManager.h>
+#include <CoreAsset/Material.h>
+#include <CoreAsset/Texture.h>
+// #include <CoreAsset/TextureManager.h>
+#include <Core/Application.h>
+#include <Core/CameraComponent.h>
+#include <Core/CameraObject.h>
+#include <Core/Entity.h>
+#include <Core/Map.h>
+#include <Core/StaticMeshComponent.h>
+#include <Core/StaticMeshObject.h>
+#include <CoreAsset/StaticMesh.h>
 #include <CoreDevice/D3DCoreDevice.h>
+#include <EditorDirector/EditorAssetManager.h>
+#include <EditorDirector/EditorConfig.h>
+#include <EditorDirector/EditorSceneController.h>
 #include <EditorDirector/ImGuiSystem.h>
+#include <EditorDirector/UIAssetBrowser.h>
+#include <EditorDirector/UIScrollBox.h>
+#include <GlobalOverlayManager.h>
 #include <InputSystem/InputSystem.h>
 #include <Logger/Logger.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
+#include <ObjectHierarchyPanel.h>
+#include <RenderFrontend/RenderPipelineManager.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IRenderSystem.h>
 #include <SystemInitializer/ISystemInitializer.h>
@@ -17,9 +35,11 @@
 #include <UISystem/UIResizeGizmoRenderableComponent.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIMovableComponent.h>
+#include <UiSystem/UITextComponent.h>
 #include <Utility/Utility.h>
 #include <Window/BaseWindow.h>
 #include <sstream>
+
 #ifdef D3DX
 #include "EditorDirector/ImGui/imgui.h"
 #include <SystemInitializer/D3DSystemInitializer.h>
@@ -37,7 +57,7 @@ Quad::SuperFrameController *Quad::SuperFrameController::GetInstance()
     return &controller;
 }
 
-void Quad::SuperFrameController::Initialize()
+void Quad::SuperFrameController::Initialize(Render::RenderPipelineManager &renderPipelineManager)
 {
 
 #ifdef D3DX
@@ -49,14 +69,26 @@ void Quad::SuperFrameController::Initialize()
 
 #endif
 
-    mWindow = new BaseWindow(GlobalAppHelper::GetHinstance());
+    mWindow = new BaseWindow(Core::GlobalAppHelper::GetHinstance());
 
-    mWindow->Initialize(std::bind(&SuperFrameController::WndProc, this, std::placeholders::_1, std::placeholders::_2,
-                                  std::placeholders::_3, std::placeholders::_4));
-    mWindow->CreateWindowClass(L"FrameWindow", L"FrameWindow");
+    mWindow->Initialize();
+    mWindow->SetIWindowEventHandler(this);
+
+    if (EditorConfig::GetInstance()->GetEditorMode() == EEditorMode::eProjectBrowser)
+    {
+        mWindow->SetMaxClientWidth(3000);
+        mWindow->SetMaxClientHeight(3000);
+        mWindow->SetClientWidth(1000);
+        mWindow->SetClientHeight(1150);
+        mWindow->CreateWindowClass(L"FrameWindow", L"Editor", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+    }
+    else
+    {
+
+        mWindow->CreateWindowClass(L"FrameWindow", L"Editor");
+    }
 
     InputSystem *inputSystem = InputSystem::GetInstance();
-
     Render::IRenderSystem *renderSystem = Render::IRenderSystem::GetInstance();
 
     RECT windowClientRect2;
@@ -69,18 +101,15 @@ void Quad::SuperFrameController::Initialize()
     imGuiSystem->InitPlatform(mWindow->GetWindowHandle(), d3dCoreDevice->mDevice.Get(),
                               d3dCoreDevice->mCommandQueue.Get());
 
-    imGuiSystem->SetDependency(QuadLF::LogicalFileSystem::GetInstance(), CoreAsset::TextureManager::GetInstance(),
-                               CoreAsset::MaterialManager::GetInstance());
+    imGuiSystem->SetDependency(QuadLF::LogicalFileSystem::GetInstance(), nullptr, nullptr,
+                               EditorAssetManager::GetInstance());
 
 #endif
 
-    //  mUISystem = UI::UISystem::GetInstance();
-
-    // RenderChannel
     Render::CreationRenderChannelInfo creationRenderChannelInfo;
     creationRenderChannelInfo.mWindowHandle = mWindow->GetWindowHandle();
     RECT windowClientRect;
-    GetClientRect(creationRenderChannelInfo.mWindowHandle, &windowClientRect);
+    GetClientRect((HWND)creationRenderChannelInfo.mWindowHandle, &windowClientRect);
 
     creationRenderChannelInfo.mWidth = windowClientRect.right;
     creationRenderChannelInfo.mHeight = windowClientRect.bottom;
@@ -89,159 +118,224 @@ void Quad::SuperFrameController::Initialize()
     creationRenderChannelInfo.mMinZ = 0;
     creationRenderChannelInfo.mMaxZ = 1.0f;
 
-    mImGuiLogicalWindow.SetRenderChannelID(renderSystem->RegisterRenderChannel(creationRenderChannelInfo));
-    // mImGuiRenderChannelID = renderSystem->RegisterRenderChannel(creationRenderChannelInfo);
-    mSubLogicalWindow.SetRenderChannelID(renderSystem->RegisterRenderChannel(creationRenderChannelInfo));
-    // mSubRenderChannelID = renderSystem->RegisterRenderChannel(creationRenderChannelInfo);
+    renderSystem->RegisterWindow(creationRenderChannelInfo);
 
-    // canvas
+    mWindow->SetMaxClientWidth(3000);
+    mWindow->SetMaxClientHeight(3000);
 
-    // CoreAsset::MaterialManager *materialManager = CoreAsset::MaterialManager::GetInstance();
-
-    UI::UIManager *uiManager = UI::UIManager::GetInstance();
-
-    //// Canvas1 (default)
-    UI::UICanvasID canvasID = uiManager->CreateCanvas("DefaultCanvas", UI::ECanvasSizeMode::eFixSize);
-
-    mUICanvas = uiManager->GetCanvas(canvasID);
-    // UI::UIElement *defaultUIElement = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement");
-
-    // defaultUIElement->mTransform.SetSize({100, 100});
-    // defaultUIElement->mTransform.SetPositionLocal({200, 200});
-
-    // UI::UIImageComponent *defaultRenderCom =
-    //     defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
-
-    // defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-    // defaultRenderCom->SetTemplateMaterial(1);
-
-    // UI::UIElement *defaultUIElement2 = mUICanvas->CreateUIElement<UI::UIElement>("DefaultUIElement2");
-
-    // defaultRenderCom = defaultUIElement2->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
-
-    // defaultUIElement2->mTransform.SetSize({400, 400});
-    // defaultUIElement2->mTransform.SetPositionLocal({400, 400});
-    // defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-    // defaultRenderCom->SetTemplateMaterial(1);
-
-    // Canvas2   다른채널
-    {
-        /* UI::UICanvasID canvas2ID = uiManager->CreateCanvas("DefaultCanvas2", UI::ECanvasSizeMode::eFixSize);
-         mUICanvas2 = uiManager->GetCanvas(canvas2ID);
-
-         UI::UIElement *defaultUIElement = mUICanvas2->CreateUIElement<UI::UIElement>("DefaultUIElement3");
-
-         defaultUIElement->mTransform.SetSize({100, 100});
-         defaultUIElement->mTransform.SetPositionLocal({0, 0});
-
-         UI::UIImageComponent *defaultRenderCom =
-             defaultUIElement->CreateUIComponent<UI::UIImageComponent>("DefaultRenderCom");
-
-         defaultRenderCom->SetTexture(CoreAsset::TextureManager::GetInstance()->GetAsset(1));
-         defaultRenderCom->SetTemplateMaterial(1);
-         defaultRenderCom->SetActiveState(true);
-
-         UI::UIResizeGizmoRenderableComponent *resizeGizmoCom =
-             defaultUIElement->CreateUIComponent<UI::UIResizeGizmoRenderableComponent>("ResizeGizmoCom");
-
-         UI::UIMovableComponent *movableCom = defaultUIElement->CreateUIComponent<UI::UIMovableComponent>("moveCom");
-
-         UI::UIButton *defaultButton1 = mUICanvas2->CreateUIElement<UI::UIButton>("DefaltUIButton");*/
-    }
-
-    mImGuiLogicalWindow.AddUICanvas(mUICanvas);
-    mSubLogicalWindow.AddUICanvas(mUICanvas2);
-
-    InitViewportControllers();
-
-    mWindow->SetMaxClientWidth(1800);
-    mWindow->SetMaxClientHeight(1200);
-
-    mLogicalWindowList.push_back(&mImGuiLogicalWindow);
-    mLogicalWindowList.push_back(&mSubLogicalWindow);
+    InitWorld();
 }
 
-void Quad::SuperFrameController::PreUpdate() {}
+void Quad::SuperFrameController::SetWorkSpace(Core::WorkSpace *workspace)
+{
+    SuperController::SetWorkSpace(workspace);
+
+    workspace->OnResizeWindow(mWindow->GetClientWidth(), mWindow->GetClientHeight());
+
+    for (int i = 0; i < workspace->mWindowList.size(); ++i)
+    {
+        workspace->mWindowList[i]->SetOwnerController(this);
+    }
+}
+
+// void Quad::SuperFrameController::AddLogicalWindow(Core::LogicalWindow *window)
+//{
+//
+//     //mLogicalWindowList.push_back(window);
+//   //  window->SetOwnerController(this);
+// }
+
+void Quad::SuperFrameController::SetGlobalOverlayWindow(Core::LogicalWindow *window)
+{
+    //  mGlobalOverlayLogicalWindow = window;
+}
+
+void Quad::SuperFrameController::OnInput()
+{
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+
+    if (inputSystem)
+    {
+        inputSystem->SetCurrentWindowHandle(mWindow->GetWindowHandle());
+    }
+}
+
+void Quad::SuperFrameController::SetMousePos(int sx, int sy, int cx, int cy)
+{
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+
+    if (inputSystem)
+    {
+        inputSystem->SetMousePos(sx, sy, cx, cy);
+    }
+}
+
+void Quad::SuperFrameController::OnMouseMove(int deltaX, int deltaY)
+{
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+
+    if (inputSystem)
+    {
+        inputSystem->OnMouseMove(deltaX, deltaY);
+    }
+}
+
+void Quad::SuperFrameController::OnMouseWheel(int wheelDelta)
+{
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+
+    if (inputSystem)
+    {
+        inputSystem->OnMouseWheel(wheelDelta);
+    }
+}
+
+void Quad::SuperFrameController::OnWindowMinimized()
+{
+
+    mRenderStop = true;
+    Quad::Application::GetInstance()->SetMinimizeFlag(true);
+}
+
+void Quad::SuperFrameController::OnWindowRestored()
+{
+
+    mRenderStop = false;
+}
+
+void Quad::SuperFrameController::OnWindowResize(unsigned int width, unsigned int height)
+{
+    if (mRenderStop)
+    {
+        mRenderStop = false;
+        Quad::Application::GetInstance()->SetMinimizeFlag(false);
+    }
+    else
+    {
+
+        OnResizeWindow(width, height);
+    }
+}
+
+void Quad::SuperFrameController::OnMouseButtonEvent(EInputState mouseButtonState)
+{
+
+    // Convert WindowMouseState - > InputSystemMouseState
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+    if (inputSystem)
+    {
+        inputSystem->OnMouseButtonEvent(mouseButtonState);
+    }
+}
+
+void Quad::SuperFrameController::OnKeyEvent(EInputState keyState, uint8_t scanKey)
+{
+
+    InputSystem *inputSystem = InputSystem::GetInstance();
+    if (inputSystem)
+    {
+        inputSystem->OnKeyEvent(keyState, scanKey);
+    }
+}
+
+void Quad::SuperFrameController::OnCharEvent(uint32_t ch)
+{
+    InputSystem *inputSystem = InputSystem::GetInstance();
+    if (inputSystem)
+    {
+        inputSystem->OnCharEvent(ch);
+    }
+}
+
+void Quad::SuperFrameController::InitWorld()
+{
+    SuperController::InitWorld();
+    // map생성 world 등록
+    InitMap();
+    TestMap();
+}
+
+void Quad::SuperFrameController::Begin()
+{
+
+    /*   for (auto logicalWindow : mLogicalWindowList)
+       {
+           logicalWindow->Begin();
+       }*/
+}
+
+void Quad::SuperFrameController::PreUpdate()
+{
+
+    if (mRenderStop)
+    {
+
+        int a = 2;
+    }
+    else
+    {
+        mBackBufferIndex = (mBackBufferIndex + 1) % 2;
+    }
+}
 
 void Quad::SuperFrameController::Update(float deltaTime)
 {
 
-    // ui update
-    mUICanvas->Update(deltaTime);
+    InputSystem *inputSystem = InputSystem::GetInstance();
+    if (inputSystem)
+    {
+
+        if (mWindow && mWindow->GetWindowHandle() == inputSystem->GetCurrentWindowHandle())
+        {
+            auto handler = std::bind(&SuperFrameController::OnInputEvent, this, std::placeholders::_1);
+            inputSystem->Dispatch(handler);
+        }
+    }
 }
 
-void Quad::SuperFrameController::EndUpdate()
+void Quad::SuperFrameController::EndUpdate() {}
+
+void Quad::SuperFrameController::Draw(Render::RenderPipelineManager &renderPipelineManager)
 {
 
-    Render::UIRenderItemBuilder *uiRenderItemBuilder = Render::UIRenderItemBuilder::GetInstance();
-    //  uiRenderItemBuilder->SubmitUIElement(mUICanvas, mImGuiRenderChannelID);
-    uiRenderItemBuilder->SubmitUIElement(mUICanvas, mImGuiLogicalWindow.GetRenderChannelID(),
-                                         mImGuiLogicalWindow.mViewportController);
-    uiRenderItemBuilder->SubmitUIElement(mUICanvas2, mSubLogicalWindow.GetRenderChannelID(),
-                                         mSubLogicalWindow.mViewportController);
-}
-
-void Quad::SuperFrameController::Draw()
-{
+    if (mRenderStop)
+        return;
 
     Render::IRenderSystem *renderSystem = Render::IRenderSystem::GetInstance();
 
-    renderSystem->StartWindow(mWindow->GetWindowHandle());
+    if (mWorkSpace == nullptr)
+        return;
 
-    Render::FrameContext frameContext;
+    mWorkSpace->UpdateFrameData();
 
-    frameContext.mViewport = mImGuiLogicalWindow.mViewportController.GetViewport();
+    // for (size_t i = 0; i < mLogicalWindowList.size(); ++i)
+    //{
+    //     mLogicalWindowList[i]->UpdateFrameData();
+    // }
 
-    frameContext.mScissorRect.Left = frameContext.mViewport.TopLeftX;
-    frameContext.mScissorRect.Top = frameContext.mViewport.TopLeftY;
-    frameContext.mScissorRect.Right = frameContext.mViewport.TopLeftX + frameContext.mViewport.Width;
-    frameContext.mScissorRect.Bottom = frameContext.mViewport.TopLeftY + frameContext.mViewport.Height;
+    // LogicalWindow에서 약간은 RenderPass들의 사용을 제어할수잇는 옵션이 필요하다.
 
-    frameContext.mBackGroundColor[0] = 1.0f;
-    frameContext.mBackGroundColor[1] = 0;
-    frameContext.mBackGroundColor[2] = 1.0f;
-    frameContext.mBackGroundColor[3] = 1.0f;
-
-    Render::FrameContext frameContext2 = frameContext;
-
-    // subRenderChannel
-    frameContext2.mViewport = mSubLogicalWindow.mViewportController.GetViewport();
-
-    frameContext2.mScissorRect.Left = frameContext2.mViewport.TopLeftX;
-    frameContext2.mScissorRect.Top = frameContext2.mViewport.TopLeftY;
-    frameContext2.mScissorRect.Right = frameContext2.mViewport.TopLeftX + frameContext2.mViewport.Width;
-    frameContext2.mScissorRect.Bottom = frameContext2.mViewport.TopLeftY + frameContext2.mViewport.Height;
-
-    frameContext2.mBackGroundColor[0] = 0.0f;
-    frameContext2.mBackGroundColor[1] = 1.0f;
-    frameContext2.mBackGroundColor[2] = 0.0f;
-    frameContext2.mBackGroundColor[3] = 1.0f;
-
-    // ui
-    Render::UIRenderItemBuilder *uiRenderItemBuilder = Render::UIRenderItemBuilder::GetInstance();
-
-    uiRenderItemBuilder->BuildAndSubmitRenderItem(mImGuiLogicalWindow.GetRenderChannelID(), frameContext.mViewport, 0,
-                                                  0);
-
-    uiRenderItemBuilder->BuildAndSubmitRenderItem(mSubLogicalWindow.GetRenderChannelID(), frameContext2.mViewport, 0,
-                                                  0);
-
-    // imguiRenderChannel
-    renderSystem->BeginFrame(mImGuiLogicalWindow.GetRenderChannelID(), frameContext);
-
-    renderSystem->EndFrame(mImGuiLogicalWindow.GetRenderChannelID());
-
-    renderSystem->BeginFrame(mSubLogicalWindow.GetRenderChannelID(), frameContext2);
-
-    renderSystem->EndFrame(mSubLogicalWindow.GetRenderChannelID());
-
-    // draw
-    ImGuiSystem::GetInstance()->Draw();
-
-    renderSystem->PresentWindow(mWindow->GetWindowHandle());
+    auto app = Quad::Application::GetInstance();
+    renderPipelineManager.Execute(mWorkSpace->mWindowList, mWindow->GetWindowHandle(), app->GetCurrentFrameIndex(),
+                                  app->GetCurrentFrameFenceValue(), true, mBackBufferIndex,
+                                  Application::GetInstance()->GetTotalFrameCount());
 }
 
-Quad::BaseWindow *Quad::SuperFrameController::GetWindow()
+void Quad::SuperFrameController::ShutDownWindow()
+{
+
+    if (mWindow)
+    {
+        mWindow->ShutDown();
+    }
+}
+
+Quad::BaseWindow *Quad::SuperFrameController::GetWindow() const
 {
     return mWindow;
 }
@@ -252,239 +346,181 @@ void Quad::SuperFrameController::TestLButtonDownCallback()
     MessageBoxW(mWindow->GetWindowHandle(), L"마우스 클릭!", L"알림", MB_OK);
 }
 
-void Quad::SuperFrameController::UpdateMouseInput(MouseContext &mouseContext)
+void Quad::SuperFrameController::OnInputEvent(const Quad::RawInputData &inputData)
 {
+    Core::LogicalWindow *window = nullptr;
 
-    UI::UIManager *uiManager = UI::UIManager::GetInstance();
-
-    float mouseClientPosX = mouseContext.mClientPosX;
-    float mouseClientPosY = mouseContext.mClientPosY;
-
-    if (mControllerInputContext.mMouseCaptureFlag == true)
+    if (inputData.IsMouseEvent())
     {
-        // 마우스를 캡처한상태라면 해당 논리적윈도우채널로만 보낸다.
-        Core::ViewportController &viewportController =
-            mControllerInputContext.mTargetLogicalWindow->mViewportController;
 
-        Render::Viewport viewport = viewportController.GetViewport();
-
-        viewportController.ConvertToNdc(mouseClientPosX, mouseClientPosY);
-        float windowPosX = (mouseClientPosX * viewport.Width / 2);
-        float windowPosY = (mouseClientPosY * viewport.Height / 2);
-
-        if ((viewport.Width / 2) < windowPosX)
+        if (mMouseCapturedLogicalWindow)
         {
-            windowPosX = viewport.Width / 2;
+            window = mMouseCapturedLogicalWindow;
         }
+    }
+    else if (inputData.IsKeyboardEvent())
+    {
+        // 캡처한키보드가있더라,
 
-        if (windowPosX < (-viewport.Width / 2))
+        if (mKeyboardCapturedLogicalWindow)
         {
-            windowPosX = -viewport.Width / 2;
+            window = mKeyboardCapturedLogicalWindow;
         }
-
-        if ((viewport.Height / 2) < windowPosY)
-        {
-            windowPosY = viewport.Height / 2;
-        }
-
-        if (windowPosY < (-viewport.Height / 2))
-        {
-            windowPosY = -viewport.Height / 2;
-        }
-
-        mouseContext.mWorldPosX = windowPosX;
-        mouseContext.mWorldPosY = windowPosY;
-
-        uiManager->UpdateInputState(mouseContext, mControllerInputContext.mTargetLogicalWindow->GetUICanvasList(),
-                                    mControllerInputContext.mTargetLogicalWindow->GetUICanvasNum());
-
-        if (uiManager->IsMouseCaptureOn() == false)
-        {
-            // 마우스가 캡처가 풀렸다..
-            mControllerInputContext.mMouseCaptureFlag = false;
-            mControllerInputContext.mTargetLogicalWindow = nullptr;
-            mWindow->SetMouseCapture(false);
-        }
-
-        return;
     }
 
-    for (size_t i = 0; i < mLogicalWindowList.size(); ++i)
+    if (window == nullptr)
+        window = GetLogicalWindowOnMouse(inputData);
+
+    if (window)
     {
+        Core::GlobalAppHelper *globalAppHelper = Core::GlobalAppHelper::GetInstance();
 
-        Render::Viewport viewport = mLogicalWindowList[i]->mViewportController.GetViewport();
-        bool ret = CoreUtility::Utility::IsPointInsideRect(viewport.TopLeftX, viewport.TopLeftX + viewport.Width,
-                                                           viewport.TopLeftY + viewport.Height, viewport.TopLeftY,
-                                                           mouseContext.mClientPosX, mouseContext.mClientPosY);
-
-        if (ret == false)
-            continue;
-
-        mLogicalWindowList[i]->mViewportController.ConvertToNdc(mouseClientPosX, mouseClientPosY);
-
-        float windowPosX = (mouseClientPosX * viewport.Width / 2);
-        float windowPosY = (mouseClientPosY * viewport.Height / 2);
-
-        mouseContext.mWorldPosX = windowPosX;
-        mouseContext.mWorldPosY = windowPosY;
-        uiManager->UpdateInputState(mouseContext, mLogicalWindowList[i]->GetUICanvasList(),
-                                    mLogicalWindowList[i]->GetUICanvasNum());
-
-        if (uiManager->IsMouseCaptureOn())
+        if (inputData.IsMouseEvent())
         {
-            // 마우스가 캡처됬다.
-            mControllerInputContext.mMouseCaptureFlag = true;
-            mControllerInputContext.mTargetLogicalWindow = mLogicalWindowList[i];
-            mWindow->SetMouseCapture(true);
+            globalAppHelper->SetCurrentMouseActiveLogicalWindow(window);
+            if (inputData.mInputState & EInputState::eMouseLButtonDown)
+            {
+                globalAppHelper->SetCurrentKeyboardActiveLogicalWindow(window);
+                mKeyboardCapturedLogicalWindow = nullptr;
+            }
         }
+        /*      else if (inputData.IsKeyboardEvent())
+              {
+                  globalAppHelper->SetCurrentKeyboardActiveLogicalWindow(window);
+              }*/
 
-        return;
+        window->OnInputEvent(inputData);
     }
 }
 
-LRESULT CALLBACK Quad::SuperFrameController::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+void Quad::SuperFrameController::SetMouseCapture(Core::LogicalWindow *window)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
-    {
-        return 0;
-    }
+    if (window == nullptr)
+        return;
+    mMouseCapturedLogicalWindow = window;
+    GetWindow()->SetMouseCapture(true);
+}
 
-    InputSystem *inputSystem = InputSystem::GetInstance();
+void Quad::SuperFrameController::ReleaseMouseCapture()
+{
+    mMouseCapturedLogicalWindow = nullptr;
+    GetWindow()->SetMouseCapture(false);
+}
 
-    switch (msg)
-    {
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        TextOutW(hdc, 10, 10, L"Hello, Windows!", 16);
-        EndPaint(hwnd, &ps);
-        return 0;
-    }
+void Quad::SuperFrameController::SetKeyboardCapture(Core::LogicalWindow *window)
+{
+    if (window == nullptr)
+        return;
+    mKeyboardCapturedLogicalWindow = window;
+    GetWindow()->SetKeyboardCapture(true);
+}
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+void Quad::SuperFrameController::ReleaseKeyboardCapture()
+{
 
-        // 기타 메시지들 추가 가능
-    case WM_LBUTTONDOWN:
-        inputSystem->OnMouseEvent(EMouseState::eLButtonPressed, hwnd);
+    mKeyboardCapturedLogicalWindow = nullptr;
+    GetWindow()->SetKeyboardCapture(false);
+}
 
-        return 0;
-    case WM_RBUTTONDOWN:
-        inputSystem->OnMouseEvent(EMouseState::eRButtonPressed, hwnd);
-        return 0;
-    case WM_LBUTTONUP:
-        inputSystem->OnMouseEvent(EMouseState::eLButtonReleased, hwnd);
-        return 0;
-    case WM_RBUTTONUP:
-
-        inputSystem->OnMouseEvent(EMouseState::eRButtonReleased, hwnd);
-        return 0;
-    case WM_MOUSEMOVE:
-    {
-
-        int clientX = GET_X_LPARAM(lParam);
-        int clientY = GET_Y_LPARAM(lParam);
-        POINT screenPos = {clientX, clientY};
-        ClientToScreen(hwnd, &screenPos);
-
-        inputSystem->SetMouseScreenPos(screenPos.x, screenPos.y, clientX, clientY, hwnd);
-    }
-        return 0;
-
-    case WM_GETMINMAXINFO:
-    {
-        MINMAXINFO *pMMI = reinterpret_cast<MINMAXINFO *>(lParam);
-
-        // 최소 크기 지정
-        pMMI->ptMinTrackSize.x = mWindow->GetMinClientWidth();  // 최소 가로
-        pMMI->ptMinTrackSize.y = mWindow->GetMinClientHeight(); // 최소 세로
-
-        // 최대 크기 지정
-        pMMI->ptMaxTrackSize.x = mWindow->GetMaxClientWidth();  // 최대 가로
-        pMMI->ptMaxTrackSize.y = mWindow->GetMaxClientHeight(); // 최대 세로
-
-        return 0;
-    }
-
-    case WM_SIZE:
-    {
-        RECT clientRect;
-        GetClientRect(hwnd, &clientRect);
-        OnResizeWindow(clientRect.right, clientRect.bottom);
-    }
-        return 0;
-
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
+std::pair<uint32_t, uint32_t> Quad::SuperFrameController::GetWindowSize() const
+{
+    return {GetWindow()->GetClientWidth(), GetWindow()->GetClientHeight()};
 }
 
 void Quad::SuperFrameController::OnResizeWindow(UINT clientWidth, UINT clientHeight)
 {
-    Render::IRenderSystem *renderSystem = Render::IRenderSystem::GetInstance();
+    // Render::IRenderSystem *renderSystem = Render::IRenderSystem::GetInstance();
+
+    mBackBufferIndex = Render::RenderPipelineManager::GetInstance()->WindowResize(mWindow->GetWindowHandle());
+    mBackBufferIndex -= 1; // 그래야 다음 PreUpdate에서 다시 원래 0,1값으로시작
 
     mWindow->SetClientWidth(clientWidth);
     mWindow->SetClientHeight(clientHeight);
 
-    if (renderSystem != nullptr)
-    {
-        renderSystem->WindowResize(mWindow->GetWindowHandle());
-    }
+    // if (renderSystem != nullptr)
+    //{
+    //     renderSystem->WindowResize(mWindow->GetWindowHandle());
+    // }
 
     if (mUICanvas != nullptr)
     {
         mUICanvas->SetSize({(float)clientWidth, (float)clientHeight});
     }
 
+    if (mWorkSpace)
+        mWorkSpace->OnResizeWindow(clientWidth, clientHeight);
+    /*  for (auto logicalWindow : mLogicalWindowList)
+      {
+          logicalWindow->OnResizeWindow(clientWidth, clientHeight);
+      }*/
     // 각 채널 viewport 도 조정
-    ResizeViewportControllers(clientWidth, clientHeight);
+    //  ResizeViewportControllers(clientWidth, clientHeight);
 }
 
-void Quad::SuperFrameController::InitViewportControllers()
+void Quad::SuperFrameController::InitMap() {}
+
+void Quad::SuperFrameController::TestMap() {}
+
+Core::LogicalWindow *Quad::SuperFrameController::GetLogicalWindowOnMouse(const Quad::RawInputData &inputData)
 {
 
-    mImGuiLogicalWindow.mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+    InputSystem *inputSystem = InputSystem::GetInstance();
 
-    mImGuiLogicalWindow.mViewportController.SetAnchorLeftState(true);
-    mImGuiLogicalWindow.mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
-    mImGuiLogicalWindow.mViewportController.SetAnchorLeftRelValue(0.0f);
+    Quad::MouseContext mouseContext = inputSystem->GetMouseContext();
 
-    mImGuiLogicalWindow.mViewportController.SetAnchorRightState(true);
-    mImGuiLogicalWindow.mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
-    mImGuiLogicalWindow.mViewportController.SetAnchorRightRelValue(0.5f);
+    if (mWorkSpace == nullptr)
+        return nullptr;
 
-    mImGuiLogicalWindow.mViewportController.SetAnchorTopState(true);
-    mImGuiLogicalWindow.mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
-    mImGuiLogicalWindow.mViewportController.SetAnchorTopRelValue(0.0f);
+    Core::LogicalWindow *window = nullptr;
 
-    mImGuiLogicalWindow.mViewportController.SetAnchorBottomState(true);
-    mImGuiLogicalWindow.mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
-    mImGuiLogicalWindow.mViewportController.SetAnchorBottomRelValue(0.2f);
+    // 전역오버레이 window 먼저 ui와 충돌하는지 판정
+    if (mWorkSpace->mGloberOverlayWindow)
+    {
 
-    mSubLogicalWindow.mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+        if (mWorkSpace->mGloberOverlayWindow->HitTestUI(mouseContext.mClientPosX, mouseContext.mClientPosY))
+        {
+            window = mWorkSpace->mGloberOverlayWindow;
 
-    mSubLogicalWindow.mViewportController.SetAnchorLeftState(true);
-    mSubLogicalWindow.mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
-    mSubLogicalWindow.mViewportController.SetAnchorLeftRelValue(0.5f);
+            // return mWorkSpace->mGloberOverlayWindow;
+        }
+        else
+        {
+            if (inputData.IsMouseEvent() && inputData.mInputState & EInputState::eMouseLButtonDown)
+            {
+                GlobalOverlayManager::GetInstance()->CloseCurrentContextMenuAll();
+            }
+        }
+    }
 
-    mSubLogicalWindow.mViewportController.SetAnchorRightState(true);
-    mSubLogicalWindow.mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
-    mSubLogicalWindow.mViewportController.SetAnchorRightRelValue(0.0f);
+    if (window == nullptr)
+    {
 
-    mSubLogicalWindow.mViewportController.SetAnchorTopState(true);
-    mSubLogicalWindow.mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
-    mSubLogicalWindow.mViewportController.SetAnchorTopRelValue(0.0f);
+        for (auto logicalWindow : mWorkSpace->mWindowList)
+        {
+            if (logicalWindow->mViewportController.IntersectPoint(mouseContext.mClientPosX, mouseContext.mClientPosY))
+            {
+                window = logicalWindow;
+                break;
+                //  return logicalWindow;
+            }
+        }
+    }
 
-    mSubLogicalWindow.mViewportController.SetAnchorBottomState(true);
-    mSubLogicalWindow.mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
-    mSubLogicalWindow.mViewportController.SetAnchorBottomRelValue(0.2f);
+    if (mCurrentLogicalWindowOnMouse && (window != mCurrentLogicalWindowOnMouse))
+    {
+        mCurrentLogicalWindowOnMouse->OnMouseLeave();
+    }
+
+    if (window && (window != mCurrentLogicalWindowOnMouse))
+    {
+        //
+        mOnMouseEnterWindowCallbackSystem.ExecuteCallbacks(window);
+        window->OnMouseEnter();
+    }
+
+    mCurrentLogicalWindowOnMouse = window;
+
+    return window;
 }
 
-void Quad::SuperFrameController::ResizeViewportControllers(UINT width, UINT height)
-{
-
-    mImGuiLogicalWindow.mViewportController.UpdateWindowSize(width, height);
-    mSubLogicalWindow.mViewportController.UpdateWindowSize(width, height);
-}
+Quad::SuperFrameController::SuperFrameController() : mRenderStop(false) {}

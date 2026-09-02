@@ -21,6 +21,8 @@ class LogicalFolder : public LogicalNode
 
     const std::vector<LogicalNode *> &GetChildNodeList() const;
 
+    const std::vector<LogicalFolder *> &GetChildFolderNodeList() const;
+
   private:
     LogicalFolder(LogicalNodeID id);
 
@@ -40,6 +42,8 @@ class LogicalFolder : public LogicalNode
     // 변경할수있게함으로써(안정성을 높이자)
     std::vector<LogicalNode *> mChildNodeVector;
     std::unordered_map<std::string, LogicalNode *> mChildNodeTable;
+
+    std::vector<LogicalFolder *> mChildFolderNodeVector; // 추가로 중복해서 따로 자식폴더 리스트를 유지한다.
 };
 
 } // namespace QuadLF

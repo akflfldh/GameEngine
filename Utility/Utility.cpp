@@ -1,10 +1,16 @@
 ﻿#include "Utility/Utility.h"
 #include "uuid.h"
+#include <string.h>
 #include <unicode/errorcode.h>
 #include <unicode/ucnv.h>
 #include <unicode/unistr.h>
 #include <unicode/ustring.h>
 #include <vector>
+
+#ifdef D3DX
+#include <Windows.h>
+
+#endif
 
 std::string CoreUtility::Utility::ConvertToString(const std::wstring &wstr, bool unicode)
 {
@@ -229,4 +235,130 @@ CoreUtility::UniqueID CoreUtility::Utility::MakeUniqueID()
     std::memcpy(uniqueID.mUniqueID, (const void *)&newUUID, 16);
 
     return uniqueID;
+}
+
+std::vector<uint32_t> CoreUtility::Utility::GetUnicodeFromUTF8(const std::string &utf8)
+{
+
+    icu::UnicodeString icuString = icu::UnicodeString::fromUTF8(utf8);
+    const char16_t *buffer = icuString.getBuffer();
+    uint32_t len = icuString.length();
+
+    int32_t i = 0;
+
+    std::vector<uint32_t> vec;
+    while (i < len)
+    {
+        int32_t codepoint;
+
+        U16_NEXT(buffer, i, len, codepoint);
+
+        // 잘못된 문자
+        if (codepoint < 0)
+            continue;
+
+        vec.push_back(codepoint);
+    }
+    return vec;
+}
+
+void CoreUtility::Utility::Utility_GetCurrentDirectoryW(size_t size, wchar_t *oBuffer)
+{
+
+    GetCurrentDirectoryW(size, oBuffer);
+}
+
+bool CoreUtility::Utility::IsAllAlpha(const std::string &text)
+{
+
+    for (auto ch : text)
+    {
+        if (std::isalpha(ch) == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool CoreUtility::Utility::CreateNewProcess(const std::string &executionPath, const std::string &cmdArguments,
+                                            const std::string &currentDirectoryPath)
+{
+
+#ifdef D3DX
+
+    std::string cmdLine = executionPath;
+    if (!cmdArguments.empty())
+    {
+        //"EditorDirector "cmd1 cmd2 cmd3""
+        cmdLine += " " + cmdArguments;
+    }
+
+    char buffer[1024];
+    strcpy_s(buffer, sizeof(buffer), cmdLine.c_str());
+
+    STARTUPINFOA si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+
+    LPCSTR currentDirectory = nullptr;
+    if (currentDirectoryPath != "")
+    {
+        currentDirectory = currentDirectoryPath.c_str();
+    }
+    bool ret = CreateProcessA(nullptr, buffer, nullptr, nullptr, false, 0, nullptr, currentDirectory, &si, &pi);
+    if (ret)
+    {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return true;
+    }
+    else
+    {
+        DWORD error = GetLastError();
+    }
+
+    return false;
+
+#endif
+}
+
+void *CoreUtility::LibraryUtility::Load(const std::filesystem::path &path)
+{
+
+#ifdef D3DX
+
+    HMODULE handle = LoadLibraryA(path.string().c_str());
+    if (handle == nullptr)
+    {
+        // 에러
+        MessageBox(nullptr, "dll error", "error", MB_OK);
+        return nullptr;
+    }
+    return handle;
+
+#endif
+}
+
+bool CoreUtility::Utility::TryParseFloat(const std::string &text, float &oValue)
+{
+
+    if (text.empty())
+        return false;
+
+    try
+    {
+        size_t processedLength = 0;
+        oValue = std::stof(text, &processedLength);
+        return text.size() == processedLength;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
 }

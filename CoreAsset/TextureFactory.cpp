@@ -12,7 +12,7 @@ CoreAsset::TextureFactory::TextureFactory() {}
 
 CoreAsset::TextureFactory::~TextureFactory() {}
 
-CoreAsset::Asset *CoreAsset::TextureFactory::CreateEmptyAsset()
+CoreAsset::Asset *CoreAsset::TextureFactory::CreateEmptyAsset(EAssetType assetType)
 {
     // 임시
     return new Texture;
@@ -53,6 +53,6 @@ void CoreAsset::TextureFactory::SetPropertyMetaData(Texture *texture, const Inte
     texture->SetLoadState(Asset::LoadState::Loaded);
 
     texture->SetTextureDesc(intermediateTexture.mTextureRawData);
-    texture->SetName(intermediateTexture.mAssetName.c_str());
-    texture->SetEmptyAssetFlag(false);
+    // texture->SetName(intermediateTexture.mAssetName.c_str());
+    //    texture->SetEmptyAssetFlag(true);
 }

@@ -1,8 +1,25 @@
 ﻿#pragma once
 
 #include "LogicalFileSystem/LogicalCommon.h"
+#include <CoreBase/CallbackSystem.h>
+#include <filesystem>
 #include <string>
 #include <vector>
+
+namespace QuadLF
+{
+class LogicalFolder;
+class LogicalFile;
+class LogicalNode;
+} // namespace QuadLF
+
+// <newFolder, ParentFolder>
+using OnCreatedFolderCallbackSystem = Core::MultiCallbackSystem<QuadLF::LogicalFolder *, QuadLF::LogicalFolder *>;
+using OnRemovedFolderCallbackSystem = Core::MultiCallbackSystem<>;
+using OnCreatedFileCallbackSystem = Core::MultiCallbackSystem<QuadLF::LogicalFile *, QuadLF::LogicalFolder *>;
+
+//<folder, pre parentFolder>
+using OnRemovedFileCallbackSystem = Core::MultiCallbackSystem<QuadLF::LogicalFile *, QuadLF::LogicalFolder *>;
 
 namespace QuadPF
 {
@@ -16,9 +33,6 @@ class BinaryReader;
 
 namespace QuadLF
 {
-class LogicalFolder;
-class LogicalFile;
-class LogicalNode;
 
 // 물리적파일,폴더과 논리적파일과폴더와 연결되서 생성되었다면
 // 물리적파일,폴더를 제거할떄도 논리적파일시스템을 통해야 올바른 추적과 동작이가능하다.
@@ -41,7 +55,7 @@ class LogicalFileSystem
 
     // physcialRootPath  최상위 루프폴더가 위치한물리주소(논리적파일시스템이 물리적파일시스템을 사용하지않는다면
     // 빈문자열을 전달하면된다) ex) C:/aaa/bbb/ccc	맨 뒤 '/' 룰 붙이지 않는다
-    void Initialize(const std::string &physicalRootPath);
+    void Initialize(const std::filesystem::path &physicalRootPath, const std::filesystem::path &EngineRootPath);
 
     // logical file name(실제 물리적파일과 이름이 같을거같다),
     // logical path = 논리적경로(실제 물리적경로와 일치할수도있고 의도적으로 다르게할수도있다),
@@ -62,6 +76,9 @@ class LogicalFileSystem
     // 경로로부터 폴더를 얻는다.
     LogicalFolder *GetFolder(const std::string &path) const;
     LogicalFolder *GetRootFolder() const;
+    LogicalFolder *GetAssetFolder() const;
+    LogicalFolder *GetCXXFolder() const;
+    LogicalFolder *GetEngineFolder() const;
 
     // parentFolder밑에 존재하는 모든 file들에대해서 탐색한다 그러면
     // 디스플레이 이름이 겹칠수있다. 상관없음
@@ -72,18 +89,19 @@ class LogicalFileSystem
 
     // 물리적RootPath를 반영한 물리주소를 리턴한다.
     // 외부시스템들은 이것을 받아서 실제로 파일에 접근해서 read,write를수행한다.
-    std::string GetPhysicalFullPath(LogicalNode *node) const;
+    std::filesystem::path GetPhysicalFullPath(LogicalNode *node, bool bEngine = false) const;
 
     // LDS function
 
     // path /fileName.lds; 로저장한다.
-    bool SaveLogicalDirectoryStructureAsBinaryWriter(QuadRW::BinaryWriter &binaryWriter, const std::string &path,
-                                                     const std::string &fileName);
+    bool SaveLogicalDirectoryStructureAsBinaryWriter(QuadRW::BinaryWriter &binaryWriter,
+                                                     const std::filesystem::path &path, const std::string &fileName);
     //	void SaveLogicalDirectoryStructureAsJsonWriter();
 
     // 로드후 자동으로 구축된다
     // 기존의 구조는 없어진다. or 애초에 맨처음 한번호출하도록하는 제약을 두자.
-    bool LoadLogicalDirectoryStructureAsBinaryReader(QuadRW::BinaryReader &binaryReader, const std::string &filePath);
+    bool LoadLogicalDirectoryStructureAsBinaryReader(QuadRW::BinaryReader &binaryReader,
+                                                     const std::filesystem::path &filePath);
 
     // 단순히 flag만설정함으로 true로 변경한다해서 물리적 파일이나,폴더를 생성하거나 , 제거하는 기능은없다.
     //   이미 물리적파일,폴더가 존재해서 연결하는것또는 의도적으로 연결을끊기위해서 설정하는것이 주 용도
@@ -93,6 +111,11 @@ class LogicalFileSystem
     std::string GetCurrentLogicalFolderPath() const;
 
     void SetCurrentLogicalFolder(LogicalFolder *folder);
+
+    OnCreatedFolderCallbackSystem mOnCreatedFolderCallbackSystem;
+    OnRemovedFolderCallbackSystem mOnRemovedFolderCallbackSystem;
+    OnCreatedFileCallbackSystem mOnCreatedFileCallbackSystem;
+    OnRemovedFileCallbackSystem mOnRemovedFileCallbackSystem;
 
   private:
     static LogicalFileSystem *mInstance;
@@ -121,13 +144,17 @@ class LogicalFileSystem
     std::vector<LDSFolder> GetLDSFolderAll() const;
 
   private:
-    QuadPF::PhysicalFileSystem *mPhysicalFileSystem;
-    LogicalFolder *mRootFolder;
+    QuadPF::PhysicalFileSystem *mPhysicalFileSystem = nullptr;
+    LogicalFolder *mRootFolder = nullptr;
+    LogicalFolder *mRootAssetFolder = nullptr;
+    LogicalFolder *mRootEngineFolder = nullptr;
+    LogicalFolder *mRootCXXFolder = nullptr;
 
     LogicalNodeID mNextNodeID;
     std::vector<LogicalNodeID> mFreeNodeIDVector;
 
-    std::string mPhysicalRootPath;
+    std::filesystem::path mPhysicalRootPath;
+    std::filesystem::path mEnginePhysicalRootPath;
 
     LogicalFolder *mCurrentFolder;
 };

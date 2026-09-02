@@ -604,8 +604,8 @@ bool RapidJsonParserReadPointer::Next()
 
     if (mCurrParentValue->IsObject())
     {
-
-        if (mCurrParentValue->GetObject().MemberCount() <= (mCurrIndex + 1))
+        int memberCount = mCurrParentValue->GetObject().MemberCount();
+        if (memberCount <= (mCurrIndex + 1))
         {
             // 더이상 형제가없다.
             return false;

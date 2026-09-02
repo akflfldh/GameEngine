@@ -13,8 +13,8 @@ class CORE_ASSET_API MaterialLoader : public AssetLoader
     static MaterialLoader *GetInstance();
     ~MaterialLoader();
 
-    virtual bool LoadAssetFile(Arch &arch, AssetFactoryManager *assetFactoryManage, Asset *&oAsset,
-                               std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr) override;
+    virtual bool LoadAssetFile(EAssetType assetType, Arch &arch, AssetFactoryManager *assetFactoryManage,
+                               Asset *&oAsset, std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr) override;
 
     virtual bool LoadAssetRawFile(Arch &arch, Asset *asset) override;
 

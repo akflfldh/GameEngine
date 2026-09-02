@@ -1,25 +1,26 @@
 ﻿add_library(Core SHARED
 Application.cpp 
-GameTimer.cpp 
+ 
 GlobalAppHelper.cpp 
 
  
 IProgramDirector.cpp
 ProjectConfig.cpp 
- 
 
+ 
 
 Application.h 
-GameTimer.h 
-GlobalAppHelper.h
-
  
-IProgramDirector.h 
-MeshType.h 
+GlobalAppHelper.h 
+ 
+   
+IProgramDirector.h
+MeshType.h  
 ProjectConfig.h 
  
-CoreDllExport.h
- "ViewportController.h" "ViewportController.cpp" "CoreType.h"  "LogicalWindow.h" "LogicalWindow.cpp" "Map.h" "Map.cpp" "Transform.h" "Transform.cpp" "Component.h" "Component.cpp" "Object.h" "Object.cpp" "ObjectImpl.h" "ObjectImpl.cpp" "Entity.h" "Entity.cpp" "MapImpl.h" "MapImpl.cpp" "SceneComponent.h" "SceneComponent.cpp"   "QuadVector.h" "QuadVector.cpp" "QuadVectorImpl.h" "QuadVectorImpl.cpp"  )
+CoreDllExport.h 
+"ViewportController.h" "ViewportController.cpp" "CoreType.h"  "LogicalWindow.h" "LogicalWindow.cpp"  "Transform.h" "Transform.cpp" "Component.h" "Component.cpp" "Object.h" "Object.cpp" "ObjectImpl.h" "ObjectImpl.cpp" "Entity.h" "Entity.cpp"  "SceneComponent.h" "SceneComponent.cpp"   "QuadVector.h" "QuadVector.cpp" "QuadVectorImpl.h" "QuadVectorImpl.cpp"  "Map.h" "Map.cpp"  "World.h" "World.cpp" "MapFactory.h" "MapFactory.cpp" "StaticMeshComponent.h" "StaticMeshComponent.cpp" "MapLoader.h" "MapLoader.cpp" "MapMetaDataHeader.h"
+"MapMetaDataHeader.cpp" "MapStorer.h" "MapStorer.cpp" "CameraComponent.h" "CameraComponent.cpp" "CameraObject.h" "CameraObject.cpp" "StaticMeshObject.h" "StaticMeshObject.cpp" "IRenderProxyManager.h" "IRenderProxyManager.cpp" "MultiCallbackSystem.h" "MultiCallbackSystem.cpp" "ObjectManager.h" "ObjectManager.cpp" "ObjectTypeDef.h" "ObjectPtr.h" "ObjectPtr.cpp" "CallbackSystemDef.h" "ObjectController.h" "ObjectController.cpp" "SuperController.h" "SuperController.cpp" "SceneManager.h" "SceneManager.cpp" "IEngineMode.h" "IEngineMode.cpp" "IHittable.h" "IDrawableOutline.h" "IDrawableOutline.cpp" "RenderIDManager.h" "RenderIDManager.cpp" "MaterialSystem.h" "MaterialSystem.cpp" "LightComponent.h" "LightComponent.cpp" "LightObject.h" "LightObject.cpp" "Prefab.h" "Prefab.cpp" "PrefabFactory.h" "PrefabFactory.cpp" "PrefabLoader.h" "PrefabLoader.cpp" "PrefabMetaDataHeader.cpp" "PrefabMetaDataHeader.h" "PrefabStorer.h" "PrefabStorer.cpp" "WorkSpace.h" "WorkSpace.cpp" "IInterface.h" "IInterface.cpp" "RuntimeServices.h" "GameMode.h" "GameMode.cpp" "PlayerController.h" "PlayerController.cpp" "PlayerStart.h" "PlayerStart.cpp" "BillboardComponent.h" "BillboardComponent.cpp" "DebugDraw.h" "DebugDraw.cpp" "ColliderComponent.h" "ColliderComponent.cpp" "PhysicsBridgeSystem.h" "PhysicsBridgeSystem.cpp" "IPhysicsBodyComponent.h" "IPhysicsBodyComponent.cpp" "RigidBodyComponent.h" "RigidBodyComponent.cpp" "IPhysicsShapeProvider.h" "IPhysicsShapeProvider.cpp" "CorePhysicsType.h" "ControllableEntity.h" "ControllableEntity.cpp" "Character.h" "Character.cpp" "CharacterMovementComponent.h" "CharacterMovementComponent.cpp")
 
 
 target_compile_definitions(Core PRIVATE CORE_EXPORT_LIB)
@@ -29,7 +30,7 @@ target_include_directories(Core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(Core PUBLIC compiler_flags headerDir Utility 
 CoreAsset Logger JsonParser BinaryReaderWriter
-UiSystem SystemInitializer InputSystem CoreBase)
+UiSystem SystemInitializer InputSystem CoreBase ReflectSystem Window CoreMath Physics)
 
 
 
@@ -40,119 +41,84 @@ UiSystem SystemInitializer InputSystem CoreBase)
 set(CODEGEN_CMD "${CMAKE_CURRENT_SOURCE_DIR}/../CodeGenerator.exe")   # 경로 있으면 풀경로로 바꿔도 됨
 
 
-
-
 # 2) 생성물 폴더 및 포함 (그대로 OK)
-set(GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Generated)
+set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/Generated)
 file(MAKE_DIRECTORY ${GEN_DIR})
-target_include_directories(Core PRIVATE ${GEN_DIR})
-
-
-# 리플렉션 대상 헤더들 찾기
-set(REFLECT_INPUTS
- "${CMAKE_CURRENT_SOURCE_DIR}/Object.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Entity.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Component.h")
-
-
-
-# 빌드 폴더 안에 있는 파일은 제외
-#string(REPLACE "\\" "/" SRC_DIR_REGEX "${CMAKE_CURRENT_SOURCE_DIR}")
-
-#list(FILTER REFLECT_INPUTS EXCLUDE REGEX
-#    "${SRC_DIR_REGEX}/Generated/.*\\.generated\\.(h|cpp)$"
-#)
-
-
-#list(REMOVE_DUPLICATES REFLECT_INPUTS)
-
-# 중복 제거
-#list(REMOVE_DUPLICATES REFLECT_INPUTS)
-#list(FILTER REFLECT_INPUTS EXCLUDE REGEX ".*/pch\\.h$")
-#list(FILTER REFLECT_INPUTS EXCLUDE REGEX ".*/framework\\.h$")
-
-# 디버그용 출력
-message(STATUS "Reflection inputs for UiSystem: ${REFLECT_INPUTS}")
+target_include_directories(Core PUBLIC ${GEN_DIR})
 
 
 
 
+# --- 리플렉션 대상 헤더 검색 ---
+file(GLOB_RECURSE ALL_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+string(REPLACE "\\" "/" SRC_DIR_REGEX "${CMAKE_SOURCE_DIR}")
+list(FILTER ALL_HEADERS EXCLUDE REGEX "${SRC_DIR_REGEX}/out/.*")
+list(FILTER ALL_HEADERS EXCLUDE REGEX "${GEN_DIR}/.*")
+list(REMOVE_DUPLICATES ALL_HEADERS)
+
+# --- REFLECT_CLASS 매크로가 있는 헤더만 선별 ---
+set(REFLECT_TARGETS "")
+foreach(HEADER_FILE IN LISTS ALL_HEADERS)
+    file(READ "${HEADER_FILE}" FILE_CONTENT)
+    string(REGEX MATCH "REFLECT_CLASS|REFLECT_STRUCT" IS_TARGET "${FILE_CONTENT}")
+    if(IS_TARGET)
+        list(APPEND REFLECT_TARGETS "${HEADER_FILE}")
+    endif()
+endforeach()
+
+# --- 코드 생성 함수 ---
+set(ALL_GPP_FILES "")
+set(ALL_GH_FILES "") 
 
 
+function(add_analysis_step INPUT_PATH)
 
 
-# 4) 입력 1개당 규칙 생성하는 함수
-function(add_reflect_for_input TARGET_NAME INPUT_PATH)
-  # 소스 트리 기준 상대 경로와 디렉터리/베이스 분리
-  file(RELATIVE_PATH REL "${CMAKE_CURRENT_SOURCE_DIR}" "${INPUT_PATH}")       # 예: Core/UI/UIType.h
-  get_filename_component(BASE "${INPUT_PATH}" NAME_WE)                        # 예: UIType
-  get_filename_component(REL_DIR "${REL}" DIRECTORY)                          # 예: Core/UI
+        
+    get_filename_component(FILE_BASENAME ${INPUT_PATH} NAME_WE)
+    file(RELATIVE_PATH REL_PATH "${CMAKE_SOURCE_DIR}" "${INPUT_PATH}")
+    string(REPLACE "/" "_" SAFE_BASE_NAME "${REL_PATH}")
+    string(REPLACE "." "_" SAFE_BASE_NAME "${SAFE_BASE_NAME}")
+    set(DEP_FILE "${GEN_DIR}/${SAFE_BASE_NAME}.d")
+    set(OUT_GPP "${GEN_DIR}/${FILE_BASENAME}.generated.cpp")
+    set(OUT_GH "${GEN_DIR}/${FILE_BASENAME}.generated.h") 
 
-  # 생성물은 GEN_DIR 하위에 원본 디렉터리 구조를 그대로 만듦(이름 충돌 방지)
-  #set(OUT_DIR  "${GEN_DIR}/${REL_DIR}")                                       # 예: build/.../Generated/Core/UI
-  set(OUT_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/Generated")           
-  file(MAKE_DIRECTORY "${OUT_DIR}")
+    # 하위 폴더 생성 보장 (중간 경로 포함)
+    # ① 파일이 없을 경우 더미 파일 생성
 
-  # 생성 파일 이름은 생성기의 규칙(베이스.generated.*)에 맞춤
-  set(OUT_H    "${OUT_DIR}/${BASE}.generated.h")                               # UIType.generated.h
-  set(OUT_CPP  "${OUT_DIR}/${BASE}.generated.cpp")                             # UIType.generated.cpp
-  set(DEP      "${OUT_DIR}/${BASE}.d")
+    add_custom_command(
+         OUTPUT      "${OUT_GPP}" "${OUT_GH}"
+        COMMAND     ${CMAKE_COMMAND} -E touch "${OUT_GH}"
 
+        COMMAND     ${CODEGEN_CMD} scan
+                    --outputGpp   "${OUT_GPP}"
+                    --outputGh    "${OUT_GH}"
+                    --depfile     "${DEP_FILE}"
+                    --deptarget   "${OUT_GPP}"
+                    "${INPUT_PATH}"
+                    -- -x c++ -std=c++20 --target=x86_64-pc-windows-msvc -D_DEBUG -I${CMAKE_SOURCE_DIR} -I${GEN_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS     "${INPUT_PATH}"
+        DEPFILE     "${DEP_FILE}"
+        COMMENT     "Analyzing ${INPUT_PATH}"
+        VERBATIM
+    )
+     list(APPEND ALL_GPP_FILES "${OUT_GPP}")
+    list(APPEND ALL_GH_FILES "${OUT_GH}")
 
- # 절대 경로로 명시적 설정
-  set(INCLUDE_FLAGS 
-    -I${headerRootDirDef}
-  )
-
-
-
-
-
-
-
-
-
-  add_custom_command(
-    # VS가 먼저 만들어야 하는 '바로 그 파일'을 OUTPUT으로 지정
-    OUTPUT  "${OUT_CPP}"
-    
-    # 1) deps만 먼저 갱신 (항상 새로 씀)
-    COMMAND ${CODEGEN_CMD}
-             -p "${CMAKE_BINARY_DIR}" 
-            --deps-only
-            --outdir    "${OUT_DIR}"
-            --depfile   "${DEP}"
-            --deptarget "${OUT_CPP}"             # depfile 타겟 = OUTPUT과 '바이트 단위 동일'
-            --basename   "${BASE}" 
-            "${INPUT_PATH}"
-              -- -x c++ -std=c++20 ${INCLUDE_FLAGS}
-
-    # 2) 실제 생성 (생성기가 아무것도 안 만들 수도 있으므로, 마지막에 최소 보장)
-    COMMAND ${CODEGEN_CMD}
-            -p "${CMAKE_BINARY_DIR}" 
-            --outdir "${OUT_DIR}"
-            --basename   "${BASE}" 
-            "${INPUT_PATH}"
-            -- -x c++ -std=c++20 ${INCLUDE_FLAGS}
-
-            
- # 3) cpp 없으면 빈 파일로 보장
-    COMMAND ${CMAKE_COMMAND} -E touch "${OUT_CPP}"
-
-    # 빌드 도구에게 관계 알려주기
-    DEPFILE    "${DEP}"
-    BYPRODUCTS "${OUT_H}"                 # OUT_CPP는 OUTPUT이니 BYPRODUCTS에서 빼기
-    DEPENDS    "${INPUT_PATH}" 
-
-    VERBATIM
-    COMMAND_EXPAND_LISTS
-  )
-
-  # 생성물을 타겟에 포함
-  target_sources(${TARGET_NAME} PRIVATE "${OUT_CPP}" "${OUT_H}")
+    set(ALL_GPP_FILES ${ALL_GPP_FILES} PARENT_SCOPE)
+    set(ALL_GH_FILES ${ALL_GH_FILES} PARENT_SCOPE)
 endfunction()
 
-# 5) 모든 입력 파일에 규칙 적용
-foreach(IN_FILE IN LISTS REFLECT_INPUTS)
-  add_reflect_for_input(Core "${IN_FILE}")
+# --- 선별된 헤더에 대해 코드 생성 실행 ---
+foreach(IN_FILE IN LISTS REFLECT_TARGETS)
+    add_analysis_step("${IN_FILE}")
 endforeach()
+
+
+add_custom_target(codegen DEPENDS ${ALL_GPP_FILES} ${ALL_GH_FILES})
+add_dependencies(Core codegen)
+# 3) 생성된 소스/헤더를 Core 빌드에 포함
+target_sources(Core PRIVATE ${ALL_GPP_FILES} ${ALL_GH_FILES})
+
+# 4) (이미 있으나 재확인) 포함 경로에 GEN_DIR 추가
+target_include_directories(Core PUBLIC ${GEN_DIR})
