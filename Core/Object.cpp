@@ -233,6 +233,9 @@ void Object::DestroyDeadComponents()
 bool Object::RayHit(const CoreMath::Ray &ray, Core::HitResult &oHitResult)
 {
 
+    if (!GetActive() || GetKillState())
+        return false;
+
     bool bHit = false;
     oHitResult.mDistance = FLT_MAX;
 

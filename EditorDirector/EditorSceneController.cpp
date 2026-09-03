@@ -132,6 +132,7 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
         {
             Core::HitResult hitResult;
             bool bHit = mEditorMap->RayHit(inputData.mWorldRay, hitResult);
+            bool editorHitHandle = false;
             if (bHit)
             {
                 IEditorVisualizerObject *visualObject = dynamic_cast<IEditorVisualizerObject *>(hitResult.mHitObject);
@@ -139,9 +140,13 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
                 if (visualObject)
                 {
                     visualObject->SelectSource(mSelectionManager);
+
+                    editorHitHandle = true;
                 }
             }
-            else
+
+            // editor visualizerobject hit 실패시 일반 사용자 map에서 레이판정을 수행을 이어간다.
+            if (!editorHitHandle)
             {
 
                 // 일반 object Ray hit

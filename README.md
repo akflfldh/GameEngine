@@ -80,7 +80,7 @@
 
 ## 실행을 위한 사전 작업
 
-1. [Download Latest](https://github.com/akflfldh/GameEngine/releases/latest)에서 EngineDependencies.zip을 다운로드합니다.(하단 링크)
+1. [Download Latest](https://github.com/akflfldh/GameEngine/releases/latest)에서 EngineDependencies.zip을 다운로드합니다.
 2. 압축을 해제합니다.
 3. 다음과 같이 배치합니다.
 ```text

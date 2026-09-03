@@ -182,6 +182,13 @@ void Quad::TransformGizmo::SetActive(bool state)
 
     // mGizmoRoot->
     mGizmoRoot->SetActive(state);
+
+    if (!state)
+    {
+        SetSelectStateFalse();
+        mTargetObject = nullptr;
+        mTargetCom = nullptr;
+    }
 }
 
 bool Quad::TransformGizmo::GetActiveState() const

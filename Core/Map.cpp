@@ -777,8 +777,11 @@ bool Map::RayHit(const CoreMath::Ray &ray, Core::HitResult &oHitResult) const
 
     for (auto object : mEntityList)
     {
-        if (object->GetKillState())
+        if (object == nullptr)
             continue;
+
+        if (object->GetKillState() || !object->GetActive())
+            continue;   
 
         if (object->RayHit(ray, hitResultTemp))
         {
