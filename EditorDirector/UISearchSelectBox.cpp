@@ -4,6 +4,7 @@
 #include <UiSystem/UICanvas.h>
 #include <UiSystem/UIEditBox.h>
 #include <UiSystem/UIMouseWheelComponent.h>
+#include <UiSystem/UIPopupManager.h>
 #include <UiSystem/UITextButton.h>
 #include <UiSystem/UITextComponent.h>
 #include <UiSystem/UITextInputComponent.h>
@@ -88,6 +89,18 @@ void UISearchSelectBox::ClearSelectedText()
 
     SetSelectedText("");
 }
+
+void UISearchSelectBox::SetPopupScope(UI::UIPopupScopeID id)
+{
+
+    mPopupScopeID = id;
+    if (mIsBegun)
+    {
+        auto uiPopupManager = UI::UIPopupManager::GetInstance();
+        uiPopupManager->RegisterPopup(mListViewportPanel, mPopupScopeID);
+    }
+}
+
 void UISearchSelectBox::SetSelectedText(const std::string &text)
 {
 

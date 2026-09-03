@@ -251,6 +251,11 @@ void UI::UICanvas::RebuildRenderProxyList()
     for (auto it = mTopChildUIElementList.rbegin(); it != mTopChildUIElementList.rend(); ++it)
         elementstack.push(*it);
 
+    // 순서 - ui렌더프록시 등록 이후 - 다음  1. 일반자식 ui 2. popup 자식 ui
+    // 그 ui가 popup스코프를 가지는지 확인, 현재 그 scope 렌더리스트에 집어넣어
+    // 그러다가 더 자식 ui에 새로운 popup스코프가있다 그럼 처리할 최신스코프는 그 스코프 렌더리스트가 되고
+    // 계속 넣다가 그 스코프오너의 모든 자식들을처리햇다면 그 이후에 그 스코프 popup들을 렌더처리
+
     while (elementstack.empty() == false)
     {
 
@@ -278,11 +283,20 @@ void UI::UICanvas::RebuildRenderProxyList()
          {
              elementstack.push(child);
          }*/
+
+        // POPUP이 가장 마지막에 처리 (즉 맨위로 올라와야한다)
         const auto &children = uiElement->GetChildVector();
         for (auto it = children.rbegin(); it != children.rend(); ++it)
         {
+            //  if ((*it)->GetRenderLayer() == EUIRenderLayer::ePopup)
             elementstack.push(*it);
         }
+
+        /*    for (auto it = children.rbegin(); it != children.rend(); ++it)
+            {
+                if ((*it)->GetRenderLayer() == EUIRenderLayer::eNormal)
+                    elementstack.push(*it);
+            }*/
     }
 
     mIsRenderableListDirty = false;

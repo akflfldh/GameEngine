@@ -19,6 +19,7 @@ namespace UI
 using UIChannelID = uint32_t;
 using UICanvasID = uint32_t;
 using UIElementID = uint32_t;
+using UIPopupScopeID = uint32_t;
 
 class UIElement;
 class IUIComponent;
@@ -181,6 +182,12 @@ struct UIPosPivotContext
 
     float mHorizontalOffset = 0.0f;
     float mVerticalOffset = 0.0f;
+};
+
+enum class EUIRenderLayer
+{
+    eNormal = 0,
+    ePopup
 };
 
 } // namespace UI

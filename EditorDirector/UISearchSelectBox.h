@@ -45,6 +45,8 @@ class REFLECT_CLASS(EngineClass) UISearchSelectBox : public UI::UIImage
     void ClearSelectedText();
     void SetSelectedText(const std::string &text);
 
+    void SetPopupScope(UI::UIPopupScopeID id);
+
   protected:
     virtual void OnBegin() override;
 
@@ -105,4 +107,6 @@ class REFLECT_CLASS(EngineClass) UISearchSelectBox : public UI::UIImage
     bool mSelectingItem = false;
 
     bool mPendingClearVisibleItems = false;
+
+    UI::UIPopupScopeID mPopupScopeID;
 };

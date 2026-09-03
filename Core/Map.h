@@ -62,8 +62,10 @@ class CORE_API_LIB Map : public CoreAsset::Asset
     void AddPrefabObject(Object *object);
     void RemovePrefabObject(Object *object);
 
+    // 생성된 object를 맵에 등록하는 메서드 ( 주로 프리팹 인스턴스 용 )
     void AddPrefabInstanceObject(Object *object);
     Object *InstantiatePrefab(CoreAsset::AssetID prefabID, const char *instanceName);
+    Object *DuplicateEntity(Object *sourceObject);
 
     template <typename T> T *CreateEntity(const char *entityInstanceName);
     virtual Object *CreateEntity(const char *entityClassName, const char *entityInstanceName);

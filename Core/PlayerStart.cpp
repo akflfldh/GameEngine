@@ -12,4 +12,16 @@ void PlayerStart::OnAddedToMap()
     {
         map->RegisterPlayerStart(this);
     }
+
+    Entity::OnAddedToMap();
+}
+
+void PlayerStart::OnRemovedFromMap()
+{
+
+    if (Map *map = GetMap())
+    {
+        map->UnRegisterPlayerStart(this);
+    }
+    Entity::OnRemovedFromMap();
 }

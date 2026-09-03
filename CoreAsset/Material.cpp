@@ -3,31 +3,40 @@
 void CoreAsset::AssetMaterialTexResourceContext::Serialize(Arch &arch)
 {
     CoreAsset::AssetID id = 0;
-    if (arch.GetLoadingFlag())
-    {
-        arch << id;
-        mTexture = id;
-    }
-    else
-    {
-        id = mTexture.GetAssetID();
-        arch << id;
-    }
+    arch << mTexture;
+
+    // if (arch.GetLoadingFlag())
+    //{
+    //     //      arch << id;
+    //     //        mTexture = id;
+
+    //    arch << mTexture;
+    //}
+    // else
+    //{
+    //    arch << mTexture;
+
+    //    // id = mTexture.GetAssetID();
+    //    // arch << id;
+    //}
 }
 
 Arch &operator<<(Arch &arch, CoreAsset::AssetMaterialTexResourceContext &assetMaterialTexResourceContext)
 {
     CoreAsset::AssetID id = 0;
-    if (arch.GetLoadingFlag())
-    {
-        arch << id;
-        assetMaterialTexResourceContext.mTexture = id;
-    }
-    else
-    {
-        id = assetMaterialTexResourceContext.mTexture.GetAssetID();
-        arch << id;
-    }
+
+    arch << assetMaterialTexResourceContext.mTexture;
+
+    /*  if (arch.GetLoadingFlag())
+      {
+          arch << id;
+          assetMaterialTexResourceContext.mTexture = id;
+      }
+      else
+      {
+          id = assetMaterialTexResourceContext.mTexture.GetAssetID();
+          arch << id;
+      }*/
 
     return arch;
 }
@@ -84,11 +93,11 @@ void CoreAsset::Material::Serialize(Arch &arch)
     arch << mDiffuseFactor;
     arch << mSpecular;
     arch << mSpecularFactor;
-    arch << mSpecular;
     arch << mAmbient;
     arch << mRoughness;
     arch << mMetallic;
     arch << mShadingModel;
+    arch << mUseExplicitGpuMaterial;
 
     arch << mAlbedoResourceContextList;
     arch << mNormalMapResourceContext;

@@ -5,6 +5,7 @@
 #include <Core/Map.h>
 #include <Core/World.h>
 #include <EditorDeleteCommand.h>
+#include <EditorDirector/EditorEditMode.h>
 #include <EditorDirector/EditorMode.h>
 #include <EditorDirector/EditorSelectionManager.h>
 #include <GlobalAppHelper.h>
@@ -118,6 +119,29 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
             if (transformGizmo.RayHit(inputData.mWorldRay, gizmoHitResult))
             {
 
+                constexpr uint8_t controlVirtualKey = 0x11;
+                InputSystem *inputSystem = InputSystem::GetInstance();
+                const bool duplicateRequested = inputSystem->IsVKeyDown(controlVirtualKey);
+
+                // 오브젝트선택 + ctrl 키눌름상태에서 조작이라면 복사본생성후, 그 복사본을 기즈모의 타킷으로한다.
+                if (duplicateRequested && !transformGizmo.GetComponentControlState())
+                {
+
+                    if (dynamic_cast<EditorEditMode *>(GetWorld()->GetEngineMode()) == nullptr)
+                        return true;
+
+                    Object *sourceObject = mSelectionManager->GetSelectedObject();
+                    if (sourceObject == nullptr || sourceObject->HasObjectFlag(Core::EObjectFlag::eEngineEntity))
+                        return true;
+
+                    Object *duplicatedObject = map->DuplicateEntity(sourceObject);
+                    if (duplicatedObject == nullptr)
+                        return true;
+
+                    // 복사본을 선택되게한다.
+                    mSelectionManager->SetSelectedObject(duplicatedObject);
+                }
+
                 //       기즈모 선택플래그 킴
                 transformGizmo.SetSelectState(true, inputData.mWorldRay);
                 return true;
@@ -190,6 +214,11 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
 
         if (transformGizmo.GetSelectState())
         {
+
+            // Ctrl키 눌린상태인지?
+            // 오브젝트 복사요청,기즈모의 타켓을 해당복사본으로 설정
+            // 복사는 어디서 수행하는지? Map인지?    아니면 어디에서 복사를 해주는가?
+
             transformGizmo.OnMouseMove(inputData, inputData.mWorldRay);
 
             // 기즈모에게 입력 정보전달

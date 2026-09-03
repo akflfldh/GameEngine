@@ -34,7 +34,7 @@
 
 
 ### Prefab Editor
-![Prefab editor preview](Docs/Images/PrefabPreview.png)
+![Prefab editor preview](Docs/Images/PrefabEditingPreview.gif)
 
 </details>
 

@@ -179,6 +179,10 @@ void CoreAsset::GeometryGenerator::FinishCaculateTangent(const CoreMath::Vector3
 void CoreAsset::GeometryGenerator::CaculateVertexNoraml(std::vector<StaticVertex> &vertexVec,
                                                         const std::vector<MeshIndexType> &indexVec)
 {
+    for (CoreAsset::StaticVertex &vertex : vertexVec)
+    {
+        vertex.mNormal = CoreMath::Vector3::Zero;
+    }
 
     for (size_t i = 0; i < indexVec.size(); i += 3)
     {
@@ -841,7 +845,7 @@ CoreAsset::MeshData CoreAsset::GeometryGenerator::CreateSkySphere(float radius, 
             int a = i * ringVertexCount + j;
             int b = (i + 1) * ringVertexCount + j;
             int c = (i + 1) * ringVertexCount + j + 1;
-            int d = (i)*ringVertexCount  + j + 1;
+            int d = (i)*ringVertexCount + j + 1;
 
             indices.push_back(a);
             indices.push_back(c);
@@ -868,6 +872,11 @@ CoreAsset::MeshData CoreAsset::GeometryGenerator::CreateSkySphere(float radius, 
 void CoreAsset::GeometryGenerator::CaculateTangents(std::vector<StaticVertex> &vertices,
                                                     const std::vector<uint32_t> &indices)
 {
+    for (CoreAsset::StaticVertex &vertex : vertices)
+    {
+        vertex.mTangent = CoreMath::Vector4::Zero;
+    }
+
     std::vector<CoreMath::Vector3> biTangentList(vertices.size());
 
     for (size_t i = 0; i < indices.size() / 3; ++i)

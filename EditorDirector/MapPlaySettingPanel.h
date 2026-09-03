@@ -2,6 +2,7 @@
 
 #include <Core/CoreType.h>
 #include <UiSystem/UIImage.h>
+// #include <UiSystem/UIType.h>
 
 #include "MapPlaySettingPanel.generated.h"
 
@@ -55,4 +56,6 @@ class REFLECT_CLASS(EngineClass) MapPlaySettingPanel : public UI::UIImage
     std::vector<Core::ObjectSourceCandidate> mObjectControllerSourceList;
     uint32_t mSelectedObjectItemID = 0;
     uint32_t mSelectedControllerItemID = 0;
+
+    //  UI::UIPopupScopeID mPopupScopeID;
 };

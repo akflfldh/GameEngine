@@ -209,7 +209,7 @@ void MaterialEditUIController::ApplyEditDataToMaterial(const MaterialEditData &e
         }
     }
 
-    material.SetRawDataDirty(true);
+    // material.SetRawDataDirty(true);
     material.SetUploadDirty();
 }
 

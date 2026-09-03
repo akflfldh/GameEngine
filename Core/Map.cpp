@@ -8,6 +8,7 @@
 #include <Core/Prefab.h>
 #include <Core/SceneComponent.h>
 #include <CoreAsset/AssetManager.h>
+#include <CoreBase/BinaryArch.h>
 #include <Physics/PhysicsScene.h>
 #include <ReflectSystem/ReflectionSystem.h>
 #include <Utility/Utility.h>
@@ -197,6 +198,129 @@ Object *Map::InstantiatePrefab(CoreAsset::AssetID prefabID, const char *instance
     Object *object = prefab->Instantiate(this);
 
     return object;
+}
+
+Object *Map::DuplicateEntity(Object *sourceObject)
+{
+    if (sourceObject == nullptr || sourceObject->GetMap() != this || sourceObject->GetKillState())
+        return nullptr;
+
+    BinaryArch writerArch(false);
+    writerArch.Start();
+
+    std::string className = sourceObject->GetRunTimeClassName();
+    writerArch << className;
+
+    BaseClass *sourceBaseClass = sourceObject;
+
+    // 원본오브젝트에대해서 직렬화 수행
+    mReflectionSystem->SerializeBaseClass(writerArch, sourceBaseClass);
+    sourceObject->SerializeComponents(writerArch);
+
+    uint8_t *buffer = writerArch.GetBufferFromMemory();
+    const size_t bufferSize = writerArch.GetBufferSize();
+
+    BinaryArch readerArch(true);
+    readerArch.Start(buffer, bufferSize);
+
+    // 복사본 역직렬화 수행
+    std::string duplicatedClassName;
+    readerArch << duplicatedClassName;
+
+    BaseClass *duplicatedBaseClass = mReflectionSystem->CreateClassInstance(duplicatedClassName.c_str());
+    Object *duplicatedObject = static_cast<Object *>(duplicatedBaseClass);
+    if (duplicatedObject == nullptr)
+    {
+        writerArch.End();
+        readerArch.End();
+        return nullptr;
+    }
+
+    mReflectionSystem->SerializeBaseClass(readerArch, duplicatedBaseClass);
+    duplicatedObject->SerializeComponents(readerArch);
+
+    writerArch.End();
+    readerArch.End();
+
+    // 여기까지 복사본의 objectID가 원본과 동일하기에 이상태로 Map에 등록해서는 안된다 .
+
+    mReflectionSystem->RegisterComponentGetterCallback(
+        [this, duplicatedObject](const CoreUtility::UniqueID &id) -> BaseClass *
+        {
+            for (Component *component : duplicatedObject->GetComponentList())
+            {
+                if (component && !component->GetDeadState() && component->GetUniqueID() == id)
+                    return component;
+            }
+
+            for (Object *object : mEntityList)
+            {
+                for (Component *component : object->GetComponentList())
+                {
+                    if (component && !component->GetDeadState() && component->GetUniqueID() == id)
+                        return component;
+                }
+            }
+            return nullptr;
+        });
+
+    mReflectionSystem->ProcessComponentPointerFixup();
+
+    // 동일한 부모 유지
+    duplicatedObject->SetParent(sourceObject->GetParent());
+
+    const CoreUtility::UniqueID sourceObjectID = sourceObject->GetUniqueID();
+
+    // 아직까지 com ,object사이의 포인터 fix up을 위해서 id는 변경하지않은상태
+    mReflectionSystem->RegisterObjectGetterCallback(
+        [this, sourceObjectID, duplicatedObject](const CoreUtility::UniqueID &id) -> BaseClass *
+        {
+            if (id == sourceObjectID)
+                return duplicatedObject;
+            return GetEntity(id);
+        });
+
+    mReflectionSystem->ProcessObjectPointerFixup();
+
+    duplicatedObject->RebuildSceneComponentHierarchyForLoad();
+
+    // 완전히 재구축이 끝났으니 복사본 오브젝트의 id를 변경한다.
+    duplicatedObject->SetObjectUniqueID(CoreUtility::Utility::MakeUniqueID());
+
+    // com의 id도 변경한다.
+    for (Component *component : duplicatedObject->GetComponentList())
+    {
+        if (component == nullptr || component->GetDeadState())
+            continue;
+
+        duplicatedObject->UpdateComponentID(component->GetUniqueID(), CoreUtility::Utility::MakeUniqueID(), component);
+    }
+
+    duplicatedObject->RefreshComponentIDTable();
+    duplicatedObject->SetPrefabID(sourceObject->GetPrefabID());
+
+    // 원래버전의 콜백으로 설정
+    mReflectionSystem->RegisterComponentGetterCallback(
+        [this](const CoreUtility::UniqueID &id) -> BaseClass *
+        {
+            for (Object *object : mEntityList)
+            {
+                for (Component *component : object->GetComponentList())
+                {
+                    if (component && !component->GetDeadState() && component->GetUniqueID() == id)
+                        return component;
+                }
+            }
+            return nullptr;
+        });
+
+    mReflectionSystem->RegisterObjectGetterCallback([this](const CoreUtility::UniqueID &id) -> BaseClass *
+                                                    { return GetEntity(id); });
+
+    // 맵에 등록한다.
+    AddPrefabInstanceObject(duplicatedObject);
+    duplicatedObject->FlushPropertyDirty();
+    return duplicatedObject;
 }
 
 void Map::RequestDestoryEntity(Object *entity)
@@ -781,7 +905,7 @@ bool Map::RayHit(const CoreMath::Ray &ray, Core::HitResult &oHitResult) const
             continue;
 
         if (object->GetKillState() || !object->GetActive())
-            continue;   
+            continue;
 
         if (object->RayHit(ray, hitResultTemp))
         {

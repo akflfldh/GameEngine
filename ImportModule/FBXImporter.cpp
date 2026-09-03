@@ -196,9 +196,8 @@ void FBXImporter::ConvertAxisSystem(FBXImportContext &importContext, fbxsdk::Fbx
     // 문제점이 생기면)
     if (scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded)
     {
-
-        //  importContext.mWindingFlipFlag = true;
         importContext.mFlipZ = true;
+        importContext.mWindingFlipFlag = true;
     }
     // fbxsdk::FbxAxisSystem::DirectX.ConvertScene(scene);
     engineAxis.ConvertScene(scene);
@@ -317,10 +316,10 @@ void FBXImporter::ExtractData(FBXImportContext &importContext) const
         // 하나의 메시라도 필요하다면 전체메시들에대해서 다 계산한다.
 
         importContext.mNeedToCalculateNormals =
-            importContext.mNeedToCalculateNormals || CheckFbxLayerNormalElement(fbxMesh);
+            importContext.mNeedToCalculateNormals || !CheckFbxLayerNormalElement(fbxMesh);
 
         importContext.mNeedToCalculateTangents =
-            importContext.mNeedToCalculateTangents || CheckFbxLayerTangentElement(fbxMesh);
+            importContext.mNeedToCalculateTangents || !CheckFbxLayerTangentElement(fbxMesh);
     }
 
     MergeMeshData(importContext.mAssetContext, importContext.mMeshToNodes, fbxMaterialKeyTable,
@@ -445,30 +444,47 @@ bool FBXImporter::ExtractVertexUV(fbxsdk::FbxMesh *fbxMesh, int polygonIndex, in
     if (fbxLayerElementUV == nullptr)
         return false;
 
-    fbxsdk::FbxLayerElement::EMappingMode mappingMode = fbxLayerElementUV->GetMappingMode();
-    fbxsdk::FbxLayerElement::EReferenceMode referenceMode = fbxLayerElementUV->GetReferenceMode();
+    fbxsdk::FbxVector2 uv;
+    bool unmapped = false;
+    bool result =
+        fbxMesh->GetPolygonVertexUV(polygonIndex, polygonVertexIndex, fbxLayerElementUV->GetName(), uv, unmapped);
 
-    int index = 0;
-    if (mappingMode == fbxsdk::FbxLayerElement::EMappingMode::eByControlPoint)
-    {
-        index = controlPointIndex;
-    }
-    else if (mappingMode == fbxsdk::FbxLayerElement::EMappingMode::eByPolygonVertex)
-    {
-        //   index = fbxMesh->GetPolygonVertexIndex(polygonIndex) + polygonVertexIndex;
-        index = fbxMesh->GetTextureUVIndex(polygonIndex, polygonVertexIndex);
-    }
+    if (!result || unmapped)
+        return false;
 
-    if (referenceMode == fbxsdk::FbxLayerElement::EReferenceMode::eIndexToDirect)
-    {
-        index = fbxLayerElementUV->GetIndexArray().GetAt(index);
-    }
-
-    fbxsdk::FbxVector2 fbxTex = fbxLayerElementUV->GetDirectArray().GetAt(index);
-    Copy(fbxTex, oUV);
+    Copy(uv, oUV);
     oUV.Y = 1.0f - oUV.Y;
 
     return true;
+
+    // fbxsdk::FbxLayerElement::EMappingMode mappingMode = fbxLayerElementUV->GetMappingMode();
+    // fbxsdk::FbxLayerElement::EReferenceMode referenceMode = fbxLayerElementUV->GetReferenceMode();
+
+    // int index = 0;
+    // if (mappingMode == fbxsdk::FbxLayerElement::EMappingMode::eByControlPoint)
+    //{
+    //     index = controlPointIndex;
+    //     if (referenceMode == fbxsdk::FbxLayerElement::eIndexToDirect)
+    //     {
+    //         index = fbxLayerElementUV->GetIndexArray().GetAt(index);
+    //     }
+    // }
+    // else if (mappingMode == fbxsdk::FbxLayerElement::EMappingMode::eByPolygonVertex)
+    //{
+    //     //   index = fbxMesh->GetPolygonVertexIndex(polygonIndex) + polygonVertexIndex;
+    //     index = fbxMesh->GetTextureUVIndex(polygonIndex, polygonVertexIndex);
+    // }
+
+    //// if (referenceMode == fbxsdk::FbxLayerElement::EReferenceMode::eIndexToDirect)
+    ////{
+    ////     index = fbxLayerElementUV->GetIndexArray().GetAt(index);
+    //// }
+
+    // fbxsdk::FbxVector2 fbxTex = fbxLayerElementUV->GetDirectArray().GetAt(index);
+    // Copy(fbxTex, oUV);
+    // oUV.Y = 1.0f - oUV.Y;
+
+    // return true;
 }
 
 bool FBXImporter::ExtractVertexTangent(fbxsdk::FbxMesh *fbxMesh, int polygonIndex, int polygonVertexIndex,
@@ -491,8 +507,8 @@ bool FBXImporter::ExtractVertexTangent(fbxsdk::FbxMesh *fbxMesh, int polygonInde
     }
     else if (mappingMode == fbxsdk::FbxLayerElement::EMappingMode::eByPolygonVertex)
     {
-        //   index = fbxMesh->GetPolygonVertexIndex(polygonIndex) + polygonVertexIndex;
-        index = fbxMesh->GetTextureUVIndex(polygonIndex, polygonVertexIndex);
+        index = fbxMesh->GetPolygonVertexIndex(polygonIndex) + polygonVertexIndex;
+        // index = fbxMesh->GetTextureUVIndex(polygonIndex, polygonVertexIndex);
     }
 
     if (referenceMode == fbxsdk::FbxLayerElement::EReferenceMode::eIndexToDirect)

@@ -35,6 +35,7 @@ using OnActiveElementCallbackSystme = Core::MultiCallbackSystem<bool>;
 
 namespace UI
 {
+
 class UIElement;
 
 UISYSTEM_API UIElement *CreateUIElement(UI::UIElement *parent, const char *staticClassName, const char *instanceName);
@@ -75,6 +76,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
 
     void SetOnlyVisible(bool flag);
     bool GetOnlyVisible() const;
+
+    void SetRenderLayer(EUIRenderLayer layer);
+    EUIRenderLayer GetRenderLayer() const;
 
     const std::vector<UIElement *> &GetChildVector() const;
     // 아에 Destroy메서드
@@ -258,7 +262,6 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
 
     UIElementHandle mUIElementHandle;
 
-    // 향후 c스타일 이나 abi,crt문제가없도록 수정할것
     std::vector<UIElement *> mChildVector;
 
     UICanvas *mDestCanvas;
@@ -275,6 +278,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     UIPosPivotContext mPosPviotContext;
 
     UIElement *mKeyboardCaptureScope = nullptr;
+
+    EUIRenderLayer mRenderLayer = EUIRenderLayer::eNormal;
 };
 
 template <typename T> inline T *UIElement::CreateChildUIElement(const char *instanceName)

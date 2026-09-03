@@ -1108,6 +1108,17 @@ bool UI::UIElement::GetOnlyVisible() const
 {
     return mOnlyVisible;
 }
+void UI::UIElement::SetRenderLayer(UI::EUIRenderLayer layer)
+{
+
+    mRenderLayer = layer;
+}
+
+UI::EUIRenderLayer UI::UIElement::GetRenderLayer() const
+{
+    return mRenderLayer;
+}
+
 const std::vector<UI::UIElement *> &UI::UIElement::GetChildVector() const
 {
     return mChildVector;

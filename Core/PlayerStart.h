@@ -13,6 +13,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) PlayerStart : public Entity
 
   protected:
     virtual void OnAddedToMap() override;
+    virtual void OnRemovedFromMap() override;
 
   private:
 };

@@ -228,6 +228,7 @@ void MaterialWorkSpaceManager::ApplyPreviewMaterialToTargetMaterial()
 {
 
     CopyMaterial(mPreviewMaterial, mTargetMaterial);
+    mTargetMaterial->SetRawDataDirty(true);
 }
 
 void MaterialWorkSpaceManager::CopyMaterial(CoreAsset::Material *sourceMaterial, CoreAsset::Material *targetMaterial)
@@ -263,6 +264,6 @@ void MaterialWorkSpaceManager::CopyMaterial(CoreAsset::Material *sourceMaterial,
         targetMaterial->SetNormalMapTexture(normalTexture);
     }
 
-    targetMaterial->SetRawDataDirty(true);
+    //  targetMaterial->SetRawDataDirty(true);
     targetMaterial->SetUploadDirty();
 }

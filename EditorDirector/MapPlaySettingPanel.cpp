@@ -5,13 +5,15 @@
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIText.h>
-
 MapPlaySettingPanel::MapPlaySettingPanel() {}
 
 MapPlaySettingPanel::~MapPlaySettingPanel() {}
 
 void MapPlaySettingPanel::OnBegin()
 {
+
+   /* auto uiPopupManager = UI::UIPopupManager::GetInstance();
+    mPopupScopeID = uiPopupManager->CreatePopupScope(this);*/
 
     SetColor(0.4f, 0.4f, 0.4f);
     SetWidth(600.0f);
@@ -171,9 +173,12 @@ void MapPlaySettingPanel::CreatePlayerObjectUI(float posY)
     mSearchObjectSelectBox->SetWidth(100.0f);
     mSearchObjectSelectBox->mOnSelectedItemChangedCallbackSystem.Register([this](uint32_t itemID)
                                                                           { SetSelectedObjectSource(itemID); });
+    mSearchObjectSelectBox->SetDepthValue(1);
 
     posX += 200.0f;
     mSearchObjectSelectBox->SetPositionLocal(posX, posY);
+
+    // mSearchObjectSelectBox->SetPopupScope(mPopupScopeID);
 }
 
 void MapPlaySettingPanel::CreatePlayerControllerUI(float posY)
@@ -194,6 +199,8 @@ void MapPlaySettingPanel::CreatePlayerControllerUI(float posY)
 
     posX += 200.0f;
     mSearchControllerSelectBox->SetPositionLocal(posX, posY);
+
+    // mSearchControllerSelectBox->SetPopupScope(mPopupScopeID);
 }
 
 void MapPlaySettingPanel::CreateTitle(float posY)
