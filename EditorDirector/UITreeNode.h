@@ -61,7 +61,7 @@ class REFLECT_CLASS(EngineClass) UITreeNode : public UI::UIElement
     void OnHeaderClicked(float x, float y);
 
   private:
-    UI::UIElement *mHeader;
+    UI::UIButton *mHeader;
     UI::UIElement *mChildrenPanel;
     UI::UIButton *mHeaderExpandButton;
     UI::UIImage *mHeaderIcon;

@@ -2,6 +2,7 @@
 
 #include "UiSystem/UIType.h"
 #include <CoreMath/CoreMath.h>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -12,12 +13,27 @@ namespace UI
 class UIRenderProxy;
 class UIElement;
 
+class UISYSTEM_API UITheme
+{
+  public:
+    const UIControlStyle &GetStyle(EUIStyleRole role) const;
+    const UIPalette &GetPalette() const;
+    const UIMetrics &GetMetrics() const;
+    void SetStyle(EUIStyleRole role, const UIControlStyle &style);
+
+  private:
+    UIPalette mPalette;
+    UIMetrics mMetrics;
+    std::array<UIControlStyle, StyleRoleCount> mStyles;
+};
+
 /*
     logical window- canvas는 1:1대응이되는게 맞는거같다.
     그래서 window size를 canvas가 유지하고
     uiElement들의 위치 pivot 설정에사용한다.
 
 */
+
 class UISYSTEM_API UICanvas
 {
     friend class UIManager;
@@ -30,6 +46,7 @@ class UISYSTEM_API UICanvas
 
     void Begin();
     void Update(float deltaTime);
+    void EndUpdate(float deltaTime);
 
     void AddChild(UIElement *uiElement);
 
@@ -72,6 +89,9 @@ class UISYSTEM_API UICanvas
 
     UI::UIElement *GetHittedElement(float x, float y) const;
 
+    void SetTheme(const UITheme &theme);
+    const UITheme &GetTheme() const;
+
   private:
     void AddChildInternal(UIElement *uiElement);
 
@@ -107,6 +127,8 @@ class UISYSTEM_API UICanvas
     std::vector<UI::UIRenderProxy *> mCachedRenderProxyList;
 
     CoreMath::Vector2 mWindowSize;
+
+    UITheme mTheme;
 };
 template <typename T> T *UI::UICanvas::CreateUIElement(const char *instanceName)
 {

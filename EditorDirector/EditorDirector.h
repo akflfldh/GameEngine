@@ -62,7 +62,8 @@ class WorkSpace;
 namespace UI
 {
 class UIManager;
-}
+class UITheme;
+} // namespace UI
 
 namespace Quad
 {
@@ -138,6 +139,7 @@ class EditorDirector : public IProgramDirector
 
     void InitEngineAssetLogicalFile();
 
+    void CreateCommonUITheme();
     void CreateEditWorkSpace();
 
     void CreateDefaultEditWorkSpace();
@@ -208,6 +210,8 @@ class EditorDirector : public IProgramDirector
     std::unique_ptr<Render::ObjectRenderItemBuilder> mObjectRenderItemBuilder;
 
     std::vector<IEditorTaskManager *> mEditorTaskManagerList;
+
+    std::unique_ptr<UI::UITheme> mCommonUITheme;
 };
 
 } // namespace Quad

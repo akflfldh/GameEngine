@@ -35,12 +35,23 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIImageComponent : public UIRender
     void SetColor(const UI::UIColor &color);
     glm::vec3 GetColor() const;
 
+    void SetUseBorderFlag(bool flag);
+    bool GetUseBorderFlag() const;
+
+    void SetBorderThickness(float thickness);
+    void SetBorderColor(const UI::UIColor &color);
+
   private:
     bool mUseTexture;
 
     float mColorR;
     float mColorG;
     float mColorB;
+
+    float mBorderThickness = 3.0f;
+
+    bool mUseBorderFlag = false;
+    UI::UIColor mBorderColor = UI::UIColor::Gray;
 };
 
 } // namespace UI

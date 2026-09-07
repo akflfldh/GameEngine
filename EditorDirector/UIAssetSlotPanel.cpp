@@ -24,12 +24,13 @@ void UIAssetSlotPanel::OnBegin()
     float posY = 10.0f;
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");
-    mTagText->SetFontSize(25.0f);
+    // mTagText->SetFontSize(25.0f);
     mTagText->SetPositionLocal(posX, posY);
-    mTagText->SetSize(150.0f, 30.0f);
+    // mTagText->SetSize(150.0f, 30.0f);
+    mTagText->SetWidth(150.0f);
     mTagText->SetClipingMode(UI::EUITextClipingMode::eEllipsis);
     mTagText->SetOverflowMode(UI::EUITextOverflowMode::eOverflow);
-    mTagText->SetTextColor({1, 1, 1, 1});
+    // mTagText->SetTextColor({1, 1, 1, 1});
 
     // asset slot image panel
     posY = UI::UIUtility::ShiftPosY(posY, mTagText, 10.0f);

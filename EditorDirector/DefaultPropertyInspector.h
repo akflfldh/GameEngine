@@ -23,7 +23,10 @@ class DefaultPropertyInspector : public IInspector
     virtual void DeActivateInspector() override;
     virtual void SetInspectorContext(const InspectorContext &inspectorContext) override;
 
+    void SetPanelWidth(float width);
+
   private:
     UI::UICanvas *mCanvas = nullptr;
     PropertyPanel *mPropertyPanel = nullptr;
+    float mPanelWidth = 0.0f;
 };

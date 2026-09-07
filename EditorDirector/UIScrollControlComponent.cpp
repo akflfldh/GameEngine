@@ -145,7 +145,7 @@ void UIScrollControlComponent::OnMouseDown(const Quad::RawInputData &inputData, 
         GetOwnerUIElement()->GetComponents<UI::UIImageComponent>(&imageCom, 1);
         if (imageCom)
         {
-            imageCom->SetColor(0.0f, 0.6f, 0);
+            imageCom->SetColor(UI::UIColor::Gray);
         }
 
         glm::vec2 posW = GetOwnerUIElement()->mTransform.GetWorldPosition();

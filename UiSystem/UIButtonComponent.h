@@ -56,7 +56,11 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComp
     virtual bool IsHovered() const override;
     virtual void OnChangeHoverPart(int before, int after) override;
 
+    bool IsSelected() const;
 #pragma endregion
+
+    // 외부에서호출로 버튼컴포넌트의 상태를 동기화하기위해 사용
+    void SetSelected(bool state);
 
   protected:
     void OnClick();
@@ -74,6 +78,7 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComp
     // void (*mOnClickCallback)(void *);
 
     bool mHover;
-    bool mPress;
+    bool mPress; // 짧게 눌렀을떄
+    bool mSelected;
 };
 } // namespace UI

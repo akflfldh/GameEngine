@@ -27,6 +27,8 @@ class REFLECT_CLASS(EngineClass) UIFoldoutPanel : public UI::UIImage
 
     void AddItem(UI::UIElement *item);
 
+    void SetHeaderColor(const UI::UIColor &color);
+
   private:
     void UpdatePanelSize();
 

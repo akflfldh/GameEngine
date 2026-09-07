@@ -232,15 +232,25 @@ UI::UIImage *UIDropdown::CreateHeaderPanel()
     float dropdownHeaderHeight = mTransform.GetSize().y;
 
     mHeader = CreateChildUIElement<UI::UIImage>("Header");
-    mHeader->SetSize(dropdownWidth, dropdownHeaderHeight);
-    mHeader->SetColor(0.7f, 0.18f, 0.18f);
+    mHeader->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    mHeader->SetWidth(dropdownWidth);
+
+    UI::UIControlStyleOverride headerStyleOverride;
+    headerStyleOverride.mBackgroundColor = UI::UIColor::DimGray;
+    mHeader->SetStyleOverride(headerStyleOverride);
+    //    mHeader->SetSize(dropdownWidth, dropdownHeaderHeight);
+
+    // mHeader->SetColor(0.7f, 0.18f, 0.18f);
 
     auto text = mHeader->CreateChildUIElement<UI::UIText>("HeaderText");
     text->SetClipingMode(UI::EUITextClipingMode::eEllipsis);
     text->SetOverflowMode(UI::EUITextOverflowMode::eEllipsis);
     text->SetTextColor({1, 1, 1});
-    text->SetFontSize(20.0f);
-    text->SetSize(dropdownWidth - dropdownHeaderHeight, dropdownHeaderHeight);
+    // text->SetFontSize(20.0f);
+    text->SetWidth(dropdownWidth - dropdownHeaderHeight);
+
+    //    text->SetSize(dropdownWidth - dropdownHeaderHeight, dropdownHeaderHeight);
+
     text->SetText("테스트입니다.");
 
     mHeaderText = text;
@@ -248,7 +258,9 @@ UI::UIImage *UIDropdown::CreateHeaderPanel()
     auto button = mHeader->CreateChildUIElement<UI::UIButton>("HeaderButton");
     button->SetSize(dropdownHeaderHeight, dropdownHeaderHeight);
     button->SetPositionLocal(dropdownWidth - button->mTransform.GetSize().x, 0.0f);
-    button->mUIImageComponent->SetColor(0.28f, 0.28f, 0.28f);
+    button->mUIImageComponent->UseTexture();
+    button->mUIImageComponent->SetTexture("Engine/ExpandArrowDown");
+    // button->mUIImageComponent->SetColor(0.28f, 0.28f, 0.28f);
     button->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float)
         {
@@ -261,6 +273,9 @@ UI::UIImage *UIDropdown::CreateHeaderPanel()
                 Open();
             }
         });
+
+    button->mUIImageComponent->SetUseBorderFlag(true);
+    button->mUIImageComponent->SetBorderColor(UI::UIColor::LightGray);
 
     mHeaderDropButton = button;
     mHeaderDropButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
@@ -275,9 +290,10 @@ UI::UIImage *UIDropdown::CreateListPanel()
     float dropdownHeaderHeight = mTransform.GetSize().y;
 
     mListPanel = CreateChildUIElement<UI::UIImage>("ListPanel");
+    mListPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
     mListPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalCom");
     mListPanel->SetUseScissorRect(true);
-    mListPanel->SetColor(0.12f, 0.12f, 0.12f);
+    // mListPanel->SetColor(0.12f, 0.12f, 0.12f);
 
     mListPanel->SetSize(dropdownWidth, 0.0f);
 
@@ -301,10 +317,11 @@ UI::UITextButton *UIDropdown::CreateItem(const std::string &text)
         return nullptr;
 
     auto item = mListPanel->CreateChildUIElement<UI::UITextButton>("Item");
-    item->SetSize(dropdownWidth, mItemHeight);
-    item->SetHeight(mItemHeight);
+    item->SetWidth(dropdownWidth);
+    // item->SetSize(dropdownWidth, mItemHeight);
+    //  item->SetHeight(mItemHeight);
     item->mTextComponent->SetColor(1, 1, 1);
-    item->mTextComponent->SetFontSize(20.0f);
+    // item->mTextComponent->SetFontSize(20.0f);
     item->mTextComponent->SetText(text);
     item->mTextComponent->SetClipingMode(UI::EUITextClipingMode::eEllipsis);
     item->mTextComponent->SetOverflowMode(UI::EUITextOverflowMode::eEllipsis);

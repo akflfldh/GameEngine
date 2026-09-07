@@ -28,10 +28,10 @@ void UI::UIImage::SetColor(float r, float g, float b)
         mImageCom->SetColor(r, g, b);
     }
 }
-void UI::UIImage::SetColor(glm::vec3 color)
+void UI::UIImage::SetColor(const UI::UIColor &color)
 {
 
-    SetColor(color.r, color.g, color.b);
+    SetColor(color.mR, color.mG, color.mB);
 }
 glm::vec3 UI::UIImage::GetColor() const
 {
@@ -48,6 +48,11 @@ void UI::UIImage::SetTexture(CoreAsset::AssetID id)
     mImageCom->SetTexture(id);
 }
 
+void UI::UIImage::SetTexture(const char *path)
+{
+    mImageCom->SetTexture(path);
+}
+
 void UI::UIImage::UseTexture(bool flag)
 {
 
@@ -55,4 +60,31 @@ void UI::UIImage::UseTexture(bool flag)
         mImageCom->UseTexture();
     else
         mImageCom->NotUseTexture();
+}
+
+void UI::UIImage::ApplyLayoutStyle(const UIControlStyle &style)
+{
+
+    SetHeight(style.mHeight);
+}
+
+void UI::UIImage::ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState)
+{
+
+    if (mImageCom)
+    {
+
+        switch (visualState)
+        {
+        case EUIVisualState::eNormal:
+            mImageCom->SetColor(style.mBackgroundColor);
+            break;
+        case EUIVisualState::eSelected:
+            mImageCom->SetColor(style.mSelectedColor);
+
+        case EUIVisualState::eHovered:
+            mImageCom->SetColor(style.mHoverColor);
+            break;
+        }
+    }
 }

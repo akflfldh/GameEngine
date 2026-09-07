@@ -64,12 +64,14 @@ bool PhysicsBridgeSystem::UnRegisterMap(Map *map)
     return true;
 }
 
-PhysicsBodyHandle PhysicsBridgeSystem::RegisterPhysicsBodyComponent(SceneComponent *sceneComponent,
+PhysicsBodyHandle PhysicsBridgeSystem::RegisterPhysicsBodyComponent(SceneComponent *transformSyncTarget,
+                                                                    SceneComponent *sceneComponent,
                                                                     IPhysicsBodyComponent *bodyComponent,
                                                                     IPhysicsShapeProvider *shapeProvider)
 {
 
-    if (sceneComponent == nullptr || bodyComponent == nullptr || shapeProvider == nullptr)
+    if (transformSyncTarget == nullptr || sceneComponent == nullptr || bodyComponent == nullptr ||
+        shapeProvider == nullptr)
         return PhysicsBodyHandleInValid;
 
     if (!bodyComponent->IsPhysicsEnabled())
@@ -119,6 +121,7 @@ PhysicsBodyHandle PhysicsBridgeSystem::RegisterPhysicsBodyComponent(SceneCompone
         it->second.mSceneComponentBodyHandleTable[sceneComponent] = bodyHandle;
 
         // 리스트 등록
+        binding.mTransformSyncTarget = transformSyncTarget;
         binding.mSceneComponent = sceneComponent;
         binding.mPhysicsBodyHandle = bodyHandle;
         binding.mPhysicsBodyComponent = bodyComponent;
@@ -358,11 +361,6 @@ void PhysicsBridgeSystem::SyncTransformToComponent(const PhysicsFrameResult &phy
 
             SceneComponent *sceneComponent = bodyHandleIt->second;
 
-            sceneComponent->SetPositionWorld(transformResult.mPosition);
-            sceneComponent->SetQuaternionWorld(transformResult.mRotation);
-
-            unsigned long long transformVersion = sceneComponent->GetTransformVersion();
-
             auto bindingIt =
                 std::find_if(it->second.mSceneComponentBindingList.begin(), it->second.mSceneComponentBindingList.end(),
                              [sceneComponent](const PhysicsSceneComponentBinding &binding)
@@ -374,12 +372,58 @@ void PhysicsBridgeSystem::SyncTransformToComponent(const PhysicsFrameResult &phy
                                  return false;
                              });
 
-            if (bindingIt != it->second.mSceneComponentBindingList.end())
+            SceneComponent *rootComponent = bindingIt->mTransformSyncTarget;
+
+            if (sceneComponent == rootComponent)
             {
-                bindingIt->mLastSyncedTransformVersion = transformVersion;
+
+                sceneComponent->SetPositionWorld(transformResult.mPosition);
+                sceneComponent->SetQuaternionWorld(transformResult.mRotation);
+                unsigned long long transformVersion = sceneComponent->GetTransformVersion();
+
+                if (bindingIt != it->second.mSceneComponentBindingList.end())
+                {
+                    bindingIt->mLastSyncedTransformVersion = transformVersion;
+                }
+            }
+            else
+            {
+                ApplyBodyTransformToSyncTarget(*bindingIt, transformResult);
             }
         }
     }
+}
+
+void PhysicsBridgeSystem::ApplyBodyTransformToSyncTarget(const PhysicsSceneComponentBinding &binding,
+                                                         const PhysicsTransformResult &result)
+{
+
+    SceneComponent *rootComponent = binding.mTransformSyncTarget;
+    SceneComponent *sceneComponent = binding.mSceneComponent;
+
+    CoreMath::Vector3 oldRootPosition = rootComponent->GetPositionWorld();
+    CoreMath::Quaternion oldRootRotation = rootComponent->GetQuaternionWorld();
+
+    CoreMath::Vector3 oldBodyPosition = sceneComponent->GetPositionWorld();
+    CoreMath::Quaternion oldBodyRotation = sceneComponent->GetQuaternionWorld();
+
+    CoreMath::Vector3 newBodyPosition = result.mPosition;
+    CoreMath::Quaternion newBodyRotation = result.mRotation;
+
+    CoreMath::Quaternion deltaRotation = newBodyRotation * oldBodyRotation.GetConjugate();
+    deltaRotation.Normalize();
+
+    CoreMath::Quaternion newRootRotation = deltaRotation * oldRootRotation;
+
+    CoreMath::Vector3 bodyToRoot = oldRootPosition - oldBodyPosition;
+
+    CoreMath::Vector3 newRootPosition = deltaRotation.RotateVector(bodyToRoot) + newBodyPosition;
+
+    rootComponent->SetPositionWorld(newRootPosition);
+    rootComponent->SetQuaternionWorld(newRootRotation);
+
+    //   sceneComponent->SetPositionWorld(transformResult.mPosition);
+    //  sceneComponent->SetQuaternionWorld(transformResult.mRotation);
 }
 
 void PhysicsBridgeSystem::SyncGroundResultToComponent(const PhysicsFrameResult &physicsFrameResult,

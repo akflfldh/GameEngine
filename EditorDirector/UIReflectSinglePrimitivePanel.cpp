@@ -7,6 +7,8 @@
 UIReflectSinglePrimitivePanel::UIReflectSinglePrimitivePanel()
     : mTagText(nullptr), mEditBox(nullptr), mTargetMemory(nullptr), mPropertyInfo(nullptr)
 {
+
+    SetStyleRole(UI::EUIStyleRole::ePanel);
 }
 
 UIReflectSinglePrimitivePanel::~UIReflectSinglePrimitivePanel() {}
@@ -16,17 +18,17 @@ void UIReflectSinglePrimitivePanel::OnBegin()
     UI::UIImage::OnBegin();
     SetHeight(80);
 
-    SetColor({0.4f, 0.4f, 0.4f});
+    // SetColor({0.4f, 0.4f, 0.4f});
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");
-    mTagText->SetTextColor({0, 0, 0});
+    //   mTagText->SetTextColor({0, 0, 0});
     mTagText->SetPositionLocal({20, 20});
     mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
 
     mEditBox->SetSize(300, 40);
-    mEditBox->SetTextColor({0, 0, 0});
+    // mEditBox->SetTextColor({0, 0, 0});
 
-    mEditBox->SetBackgroundColor(1.0f, 1.0f, 1.0f);
+    // mEditBox->SetBackgroundColor(1.0f, 1.0f, 1.0f);
 
     mEditBox->mOnFinishInputCallbackSystem.Register(
         [this](const std::string &str)

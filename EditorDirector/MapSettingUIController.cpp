@@ -49,7 +49,7 @@ void MapSettingUIController::BeginUI()
 
     mAmbientColorPanel = mCanvas->CreateUIElement<UIReflectVector3Panel>("AmbientColorPanel");
     mAmbientColorPanel->SetTagText("주변광 색상");
-    mAmbientColorPanel->SetColor(0.36f, 0.36f, 0.36f);
+    // mAmbientColorPanel->SetColor(0.36f, 0.36f, 0.36f);
 
     mAmbientColorPanel->BindVector3([this]() { return GetAmbientColor(); },
                                     [this](const CoreMath::Vector3 &value) { SetAmbientColor(value); });
@@ -59,7 +59,7 @@ void MapSettingUIController::BeginUI()
     mAmbientIntensityPanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("AmbientIntensityPanel");
 
     mAmbientIntensityPanel->SetTagText("주변광 강도");
-    mAmbientIntensityPanel->SetColor(0.36f, 0.36f, 0.36f);
+    // mAmbientIntensityPanel->SetColor(0.36f, 0.36f, 0.36f);
     mAmbientIntensityPanel->BindFloat([this]() { return GetAmbientIntensity(); },
                                       [this](float value) { SetAmbientIntensity(value); });
 

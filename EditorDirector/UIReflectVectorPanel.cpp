@@ -5,7 +5,11 @@
 #include <ReflectSystem/ReflectionSystem.h>
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UIImage.h>
-UIReflectVectorPanel::UIReflectVectorPanel() : mTargetMemory(nullptr) {}
+UIReflectVectorPanel::UIReflectVectorPanel() : mTargetMemory(nullptr)
+{
+
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+}
 
 UIReflectVectorPanel::~UIReflectVectorPanel() {}
 

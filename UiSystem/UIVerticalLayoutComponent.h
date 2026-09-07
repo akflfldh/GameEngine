@@ -27,6 +27,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIVerticalLayoutComponent : public
 
     void SetItemPaddingX(float x);
 
+    void SetSyncWidthFlag(bool flag);
+
   protected:
     virtual void OnBegin() override;
 
@@ -38,5 +40,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIVerticalLayoutComponent : public
     std::unordered_map<UI::UIElement *, Core::CallbackID> mActiveCallbackIDTable;
 
     float mPaddingX = 0.0f;
+
+    // 너비를 부모너비와 일치시키는 플래그
+    bool mSyncWidthFlag = false;
 };
 } // namespace UI

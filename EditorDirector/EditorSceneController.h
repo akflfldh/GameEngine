@@ -34,6 +34,8 @@ class REFLECT_CLASS(EngineClass) EditorSceneController : public ObjectController
     // 포커스 되지않을때
     virtual bool HandleInput(const Core::InputData &inputData) override;
     virtual void OnMouseCaptureLost() override;
+
+    bool TryAdjustMoveSpeed(const Quad::RawInputData &inputData);
 #pragma endregion
 
     virtual void OnBegin() override;

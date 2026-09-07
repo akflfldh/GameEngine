@@ -8,6 +8,7 @@
 UIHierarchyItem::UIHierarchyItem()
     : mHeaderHeight(30.0f), mExpandButton(nullptr), mHeaderPanel(nullptr), mContentPanel(nullptr), mIsExpanded(false)
 {
+    SetStyleRole(UI::EUIStyleRole::eListItem);
 }
 
 UIHierarchyItem ::~UIHierarchyItem() {}
@@ -18,19 +19,24 @@ void UIHierarchyItem::OnBegin()
     UI::UIImage::OnBegin();
     float itemWidth = mTransform.GetSize().x;
 
-    SetColor({1, 0, 0});
+    // SetColor({0.3, 0.3, 0.3});
 
     mHeaderPanel = CreateChildUIElement<UI::UITextButton>("HeaderPanel");
-    mHeaderPanel->SetSize(itemWidth, mHeaderHeight);
-    mHeaderPanel->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
-    mHeaderPanel->mTextComponent->SetFontSize(25.0F);
-    mHeaderPanel->mTextComponent->SetPaddingLeft(40.0f);
+    mHeaderPanel->SetStyleRole(UI::EUIStyleRole::eListItem);
+    // mHeaderPanel->SetSize(itemWidth, mHeaderHeight);
+    mHeaderPanel->SetWidth(itemWidth);
+
+    mHeaderHeight = mHeaderPanel->GetHeight();
+
+    //  mHeaderPanel->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
+    //    mHeaderPanel->mTextComponent->SetFontSize(25.0F);
 
     mHeaderPanel->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float) { mOnClickedHeaderPanelCallbackSystem.ExecuteCallbacks(); });
 
     mExpandButton = mHeaderPanel->CreateChildUIElement<UI::UIButton>("ExpandButton");
-    mExpandButton->SetSize(25, 25);
+    // mExpandButton->SetSize(25, 25);
+
     mExpandButton->mUIImageComponent->UseTexture();
     mExpandButton->mUIImageComponent->SetTexture("Engine/ExpandArrowRight");
     mExpandButton->SetPositionLocal(5, 5);
@@ -38,17 +44,28 @@ void UIHierarchyItem::OnBegin()
     mExpandButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)
                                                                            { SetExpandFlag(!GetExpandFlag()); });
 
+    mIconImage = mHeaderPanel->CreateChildUIElement<UI::UIImage>("IconImage");
+    mIconImage->SetStyleRole(UI::EUIStyleRole::eIcon);
+    mIconImage->SetWidth(mIconImage->GetHeight());
+    mIconImage->SetPositionLocal(mExpandButton->GetWidth() + 5.0f, 5);
+
+    mIconImage->RefreshStyle();
+
+    mHeaderPanel->mTextComponent->SetPaddingLeft(mIconImage->GetWidth() + mIconImage->mTransform.GetLocalPosition().x +
+                                                 10.0f);
+
     mContentPanel = CreateChildUIElement<UI::UIImage>("ContentPanel");
+    mContentPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
     mVerticalLayoutComponent = mContentPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
-    mVerticalLayoutComponent->SetItemPaddingX(25);
+    // mVerticalLayoutComponent->SetItemPaddingX(25);
     mContentPanel->SetWidth(itemWidth);
     mContentPanel->SetHeight(0.0F);
-    mContentPanel->SetPositionLocal({0, mHeaderHeight});
-    mContentPanel->SetColor(0.4, 0.4, 0.4);
+    mContentPanel->SetPositionLocal({25.0f, mHeaderHeight});
+    //  mContentPanel->SetColor(0.0, 1.0, 0.0);
 
     mContentPanel->mOnChangedSizeCallbackSystem.Register([this](UI::UIElement *contentPanel) { UpdateHeight(); });
 
-    SetHeight(mHeaderHeight);
+    // SetHeight(mHeaderHeight);
 
     // UpdateLayout
 }
@@ -56,14 +73,14 @@ void UIHierarchyItem::OnBegin()
 void UIHierarchyItem::SetHeaderHeight(float h)
 {
 
-    mHeaderHeight = h;
+    /*mHeaderHeight = h;
 
     if (mHeaderPanel)
     {
         mHeaderPanel->SetHeight(mHeaderHeight);
         mContentPanel->SetPositionLocal({0, mHeaderHeight});
         UpdateHeight();
-    }
+    }*/
     // UpdateLayout();
 }
 void UIHierarchyItem::UpdateHeight()
@@ -76,6 +93,20 @@ void UIHierarchyItem::UpdateHeight()
     }
 
     SetHeight(h);
+}
+
+void UIHierarchyItem::ApplyLayoutStyle(const UI::UIControlStyle &style)
+{
+
+    SetHeight(style.mHeight);
+    mItemHeight = style.mHeight;
+}
+
+// style일변화 , hover,등 상태변화 에서 호출
+void UIHierarchyItem::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state)
+{
+
+    SetColor(style.mBackgroundColor);
 }
 
 void UIHierarchyItem::SetHeaderText(const std::string &text)
@@ -95,15 +126,18 @@ void UIHierarchyItem::AddItem(UI::UIElement *element)
     float itemWidth = mTransform.GetSize().x;
 
     element->SetParent(mContentPanel);
-    //    element->SetPositionLocal(itemWidt, element->mTransform.GetLocalPosition().y);
+
+    // element->SetPositionLocal(itemWidth, 0.0f);
+    //  mVerticalLayoutComponent->CalculateLayout();
+    //     element->SetPositionLocal(itemWidt, element->mTransform.GetLocalPosition().y);
 }
 
 void UIHierarchyItem::SetHeaderFontSize(float size)
 {
-    if (mHeaderPanel)
-    {
-        mHeaderPanel->mTextComponent->SetFontSize(size);
-    }
+    /* if (mHeaderPanel)
+     {
+         mHeaderPanel->mTextComponent->SetFontSize(size);
+     }*/
 }
 
 float UIHierarchyItem::GetHeaderLineHeight() const
@@ -116,11 +150,10 @@ float UIHierarchyItem::GetHeaderLineHeight() const
 
 void UIHierarchyItem::SetHeaderColor(float r, float g, float b)
 {
-    if (mHeaderPanel)
-
-    {
-        mHeaderPanel->mUIImageComponent->SetColor(r, g, b);
-    }
+    /*  if (mHeaderPanel)
+      {
+          mHeaderPanel->mUIImageComponent->SetColor(r, g, b);
+      }*/
 }
 
 void UIHierarchyItem::SetWidth(float w)
@@ -134,12 +167,15 @@ void UIHierarchyItem::SetWidth(float w)
 
     if (mContentPanel)
     {
-        mContentPanel->SetWidth(w);
-    }
+        const float contentWidth = w - 25.0f;
 
-    for (auto item : mContentPanel->GetChildVector())
-    {
-        item->SetWidth(w);
+        mContentPanel->SetWidth(contentWidth);
+        //   mContentPanel->SetWidth(w);
+
+        for (auto item : mContentPanel->GetChildVector())
+        {
+            item->SetWidth(contentWidth);
+        }
     }
 }
 
@@ -151,14 +187,14 @@ void UIHierarchyItem::SetExpandFlag(bool flag)
     {
         mExpandButton->mUIImageComponent->SetTexture("Engine/ExpandArrowDown");
         mContentPanel->SetActiveFlag(true);
-        float h = mHeaderHeight + mContentPanel->mTransform.GetSize().y;
+        float h = mItemHeight + mContentPanel->mTransform.GetSize().y;
         SetHeight(h);
     }
     else
     {
         mExpandButton->mUIImageComponent->SetTexture("Engine/ExpandArrowRight");
         mContentPanel->SetActiveFlag(false);
-        SetHeight(mHeaderHeight);
+        SetHeight(mItemHeight);
     }
 }
 

@@ -260,7 +260,12 @@ void GlobalOverlayManager::CreateToobar()
 {
     // y= 0에서 높이 200을 가진다.
 
+    // Toolbar도 ListPanel 이어야할듯?
+    // Toolbar에 리스트로는 bar들이 들어가는거고
+
     mToolbar = mOverlayCanvas->CreateUIElement<UI::UIImage>("Toolbar");
+    auto *layout = mToolbar->CreateUIComponent<UI::UIVerticalLayoutComponent>("ToolbarVerticalLayout");
+
     mToolbar->SetSize(3000, 200);
     mToolbar->SetColor(0.3f, 0.3f, 0.3f);
 
@@ -274,9 +279,11 @@ void GlobalOverlayManager::CreateToobar()
 void GlobalOverlayManager::CreateProjectBar()
 {
 
-    auto projectBar = mToolbar->CreateChildUIElement<UI::UIElement>("projectBar");
-    projectBar->SetSize(mToolbar->mTransform.GetSize().r, 40);
-
+    auto projectBar = mToolbar->CreateChildUIElement<UI::UIImage>("projectBar");
+    projectBar->SetWidth(mToolbar->mTransform.GetSize().r);
+    projectBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    projectBar->mImageCom->SetUseBorderFlag(true);
+    projectBar->mImageCom->SetBorderThickness(1.0f);
     struct MenuData
     {
         std::string name;
@@ -308,11 +315,12 @@ void GlobalOverlayManager::CreateProjectBar()
 void GlobalOverlayManager::CreateSceneBar()
 {
 
-    auto sceneBar = mToolbar->CreateChildUIElement<UI::UIElement>("SceneBar");
-
-    sceneBar->SetSize(mToolbar->mTransform.GetSize().r, 40);
-
-    sceneBar->SetPositionLocal(0, 40);
+    auto sceneBar = mToolbar->CreateChildUIElement<UI::UIImage>("SceneBar");
+    sceneBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    sceneBar->SetWidth(mToolbar->mTransform.GetSize().r);
+    sceneBar->mImageCom->SetUseBorderFlag(true);
+    sceneBar->mImageCom->SetBorderThickness(1.0f);
+    // sceneBar->SetSize(mToolbar->mTransform.GetSize().r, 40);
 
     std::vector<MenuData> menus = {{"GameObject", "게임오브젝트", 200.0f}, {"SceneSetting", "씬 설정", 200.0f}};
 
@@ -336,18 +344,25 @@ void GlobalOverlayManager::CreatePlayBar()
 {
 
     auto playBar = mToolbar->CreateChildUIElement<UI::UIImage>("PlayBar");
+    playBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
 
     playBar->SetColor({0.4F, 0.4F, 0.4F});
-    playBar->SetSize(mToolbar->mTransform.GetSize().r, 120);
+    playBar->SetWidth(mToolbar->mTransform.GetSize().r);
+    // playBar->SetSize(mToolbar->mTransform.GetSize().r, 120);
 
-    playBar->SetPositionLocal(0, 80);
+    //  playBar->SetPositionLocal(0, 80);
 
     // PlayButton
     auto playButton = playBar->CreateChildUIElement<UI::UIButton>("PlayButton");
     playButton->SetUseHoverImageColor(false);
     playButton->mUIImageComponent->UseTexture();
     playButton->mUIImageComponent->SetTexture("Engine/PlayStartState");
-    playButton->SetSize(50, 50);
+
+    UI::UIControlStyleOverride buttonStyleOverride;
+    buttonStyleOverride.mHeight = 30.0f;
+    playButton->SetStyleOverride(buttonStyleOverride);
+
+    // playButton->SetSize(100, 100);
 
     playButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this, playButton](float, float)
@@ -381,7 +396,9 @@ void GlobalOverlayManager::CreatePlayBar()
     pauseButton->SetUseHoverImageColor(false);
     pauseButton->mUIImageComponent->UseTexture();
     pauseButton->mUIImageComponent->SetTexture("Engine/PlayEnd");
-    pauseButton->SetSize(50, 50);
+
+    pauseButton->SetStyleOverride(buttonStyleOverride);
+    // pauseButton->SetSize(50, 50);
     pauseButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this, playButton, pauseButton](float, float)
         {
@@ -400,11 +417,18 @@ UI::UITextButton *GlobalOverlayManager::AddMenuButton(UI::UIElement *parent, con
     UI::UIColor hoverColor = {0.7f, 0.7f, 0.7f, 1.0f};
     UI::UIColor hoverReleaseColor = baseColor;
 
+    UI::UIControlStyleOverride styleOverride;
+    styleOverride.mLeftPadding = 0.0F;
+
     auto menu = parent->CreateChildUIElement<UI::UITextButton>(objectName.c_str());
-    menu->SetSize(width, 40);
-    menu->mUIImageComponent->SetColor(baseColor);
+
+    menu->SetStyleOverride(styleOverride);
+
+    // menu->SetSize(width, 40);
+    menu->SetWidth(width);
+    //    menu->mUIImageComponent->SetColor(baseColor);
     menu->mTextComponent->SetText(name);
-    menu->mTextComponent->SetFontSize(25.0f);
+    //    menu->mTextComponent->SetFontSize(25.0f);
     menu->SetUseHoverImageColor(true);
     menu->mHoverImageColor = hoverColor;
     menu->mReleaseHoverImageColor = hoverReleaseColor;
@@ -1134,6 +1158,12 @@ void GlobalOverlayManager::ShowContextMenu(UI::UIImage *panel, UI::UITextButton 
 
     // mCurrentMenuContextPanel = panel;
     panel->SetActiveFlag(true);
+
+    if (parentButton)
+    {
+        auto buttonPos = parentButton->mTransform.GetWorldPosition();
+        panel->SetPositionWorld(buttonPos.x, buttonPos.y + parentButton->mTransform.GetSize().y);
+    }
     mCurrentMenuContextPanelList.push_back(panel);
 }
 

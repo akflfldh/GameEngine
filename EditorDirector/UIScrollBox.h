@@ -55,6 +55,12 @@ class REFLECT_CLASS(EngineClass) UIScrollBox : public UI::UIElement
 
     OnBackgroundClickedCallbackSystem mOnBackgroudClickedCallbackSystem;
 
+    void SetUseBorder(bool flag);
+    void SetBorderColor(const UI::UIColor &color);
+
+  protected:
+    UI::UIImageComponent *GetBackgroundImageComponent();
+
   private:
     float GetNextItemY() const;
     void UpdateLayout();
@@ -64,6 +70,7 @@ class REFLECT_CLASS(EngineClass) UIScrollBox : public UI::UIElement
   private:
     UI::UIImageComponent *mImageComponent;
     UI::UIMovableComponent *mMovableComponent;
+    UI::UIElement *mViewportPanel = nullptr;
     UI::UIElement *mContentPanel;
     UI::UIElement *mScrollControlPanel;
     float mItemFontSize;
@@ -72,4 +79,6 @@ class REFLECT_CLASS(EngineClass) UIScrollBox : public UI::UIElement
     // std::vector<UI::UIElement *> mItemVec;
 
     EUIScrollLayout mLayout;
+
+    float mBorderThickness = 3.0f;
 };

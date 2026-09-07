@@ -5,6 +5,7 @@
 #include <CoreAsset/Material.h>
 #include <CoreAsset/StaticMesh.h>
 #include <EditorDirector/UIDropdown.h>
+#include <EditorDirector/UIFoldoutPanel.h>
 #include <EditorInspectorUtility.h>
 #include <GlobalOverlayType.h>
 #include <UIBoolPanel.h>
@@ -15,6 +16,8 @@
 
 StaticMeshComponentUIReflectPanel::StaticMeshComponentUIReflectPanel()
 {
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+
     mVerticalLayoutCom = CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
 }
 
@@ -34,15 +37,26 @@ void StaticMeshComponentUIReflectPanel::OnBegin()
     UI::UIElement::OnBegin();
     auto canvas = GetDestCanvas();
 
+    float width = GetWidth();
+
+    mMeshFoldPanel = CreateChildUIElement<UIFoldoutPanel>("MeshFoldPanel");
+    mMeshFoldPanel->SetHeaderText("Mesh");
+    mMeshFoldPanel->SetWidth(width);
+    mMeshFoldPanel->SetExpanded(true);
+    mMeshFoldPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mMeshFoldPanel->SetHeaderColor(UI::UIColor::DarkYellow);
+
     mMeshPanel = CreateChildUIElement<UI::UIImage>("MeshPanel");
-    mMeshPanel->SetColor(0, 0.5f, 0);
-    mMeshPanel->SetSize(600, 200);
+    mMeshPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    // mMeshPanel->SetColor(0, 0.5f, 0);
+    mMeshPanel->SetHeight(200);
+    mMeshFoldPanel->AddItem(mMeshPanel);
 
     auto meshTag = mMeshPanel->CreateChildUIElement<UI::UIText>("MeshTag");
-    meshTag->SetTextColor({1, 1, 1});
+    // meshTag->SetTextColor({1, 1, 1});
     meshTag->SetText("메시");
-    meshTag->SetFontSize(20.0f);
-    meshTag->SetPositionLocal(10, 10);
+    // meshTag->SetFontSize(20.0f);
+    //    meshTag->SetPositionLocal(10, 10);
 
     auto mMeshImagePanel = mMeshPanel->CreateChildUIElement<UI::UIImage>("MeshImagePanel");
     mMeshImagePanel->SetSize(100, 100);
@@ -53,18 +67,21 @@ void StaticMeshComponentUIReflectPanel::OnBegin()
                                                             { SetMesh(payload.mAssetID); });
 
     mMeshText = mMeshPanel->CreateChildUIElement<UI::UIText>("MeshText");
-    mMeshText->SetTextColor({1, 1, 1});
-    mMeshText->SetFontSize(20.0f);
+    //    mMeshText->SetTextColor({1, 1, 1});
+    //   mMeshText->SetFontSize(20.0f);
     mMeshText->SetPositionLocal(mMeshImagePanel->mTransform.GetLocalPosition().x,
                                 mMeshImagePanel->mTransform.GetSize().y +
                                     mMeshImagePanel->mTransform.GetLocalPosition().y + 10.0f);
 
-    BuildPhysicsProperties();
-
     mMaterialPanel = CreateChildUIElement<UI::UIImage>("MaterialPanel");
-    mMaterialPanel->SetColor(0.5f, 0, 0);
-    mMaterialPanel->SetSize(600, 400);
+    mMaterialPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    // mMaterialPanel->SetColor(0.5f, 0, 0);
+    mMaterialPanel->SetSize(600, 0);
     mMaterialPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
+
+    mMeshFoldPanel->AddItem(mMaterialPanel);
+
+    BuildPhysicsProperties();
 
     if (mDestMeshComponent)
     {
@@ -75,23 +92,32 @@ void StaticMeshComponentUIReflectPanel::OnBegin()
 
 void StaticMeshComponentUIReflectPanel::BuildPhysicsProperties()
 {
-    mPhysicsPanel = CreateChildUIElement<UI::UIImage>("PhysicsPanel");
-    mPhysicsPanel->SetColor(0.25f, 0.25f, 0.25f);
-    mPhysicsPanel->SetSize(600.0f, 230.0f);
-    mPhysicsPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
+    float width = GetWidth();
 
-    auto physicsTitle = mPhysicsPanel->CreateChildUIElement<UI::UIText>("PhysicsTitle");
-    physicsTitle->SetText("Physics");
-    physicsTitle->SetTextColor({1.0f, 1.0f, 1.0f});
-    physicsTitle->SetFontSize(22.0f);
-    physicsTitle->SetHeight(35.0f);
-    physicsTitle->SetPositionLocal(20.0f, 5.0f);
+    mPhysicsPanel = CreateChildUIElement<UIFoldoutPanel>("PhysicsPanel");
+    mPhysicsPanel->SetHeaderText("Physics");
+    mPhysicsPanel->SetWidth(width);
+    mPhysicsPanel->SetExpanded(true);
+    mPhysicsPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mPhysicsPanel->SetHeaderColor(UI::UIColor::DarkYellow);
+
+    // mPhysicsPanel->SetColor(0.25f, 0.25f, 0.25f);
+    // mPhysicsPanel->SetSize(600.0f, 230.0f);
+    // mPhysicsPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
+
+    // auto physicsTitle = mPhysicsPanel->CreateChildUIElement<UI::UIText>("PhysicsTitle");
+    // physicsTitle->SetText("Physics");
+    ////  physicsTitle->SetTextColor({1.0f, 1.0f, 1.0f});
+    ////  physicsTitle->SetFontSize(22.0f);
+    // physicsTitle->SetHeight(35.0f);
+    // physicsTitle->SetPositionLocal(20.0f, 5.0f);
 
     mPhysicsEnabledPanel = mPhysicsPanel->CreateChildUIElement<UIBoolPanel>("PhysicsEnabledPanel");
+    mPhysicsPanel->AddItem(mPhysicsEnabledPanel);
 
     mPhysicsEnabledPanel->SetTagText("Enable Physics");
-    mPhysicsEnabledPanel->SetColor(0.4f, 0.4f, 0.4f);
-    mPhysicsEnabledPanel->SetWidth(250.0f);
+    //  mPhysicsEnabledPanel->SetColor(0.4f, 0.4f, 0.4f);
+    mPhysicsEnabledPanel->SetWidth(mPhysicsPanel->mTransform.GetSize().x);
 
     mPhysicsEnabledPanel->mOnValueChanged.Register(
         [this](bool value)
@@ -111,12 +137,14 @@ void StaticMeshComponentUIReflectPanel::BuildPhysicsProperties()
     mPhysicsBodyTypeDropdown->mOnSelectedItemChangedCallbackSystem.Register([this](size_t index)
                                                                             { SetPhysicsBodyTypeByIndex(index); });
 
+    mPhysicsPanel->AddItem(mPhysicsBodyTypeDropdown);
+
     //   mPhysicsBodyTypeDropdown->Open();
 
     mPhysicsGravityPanel = mPhysicsPanel->CreateChildUIElement<UIBoolPanel>("PhysicsGravityPanel");
     mPhysicsGravityPanel->SetTagText("Use Gravity");
     mPhysicsGravityPanel->SetWidth(250.0f);
-    mPhysicsGravityPanel->SetColor(0.4f, 0.4f, 0.4f);
+    //  mPhysicsGravityPanel->SetColor(0.4f, 0.4f, 0.4f);
     mPhysicsGravityPanel->mOnValueChanged.Register(
         [this](bool value)
         {
@@ -126,6 +154,8 @@ void StaticMeshComponentUIReflectPanel::BuildPhysicsProperties()
             mDestMeshComponent->SetPhysicsGravityEnabled(value);
             Quad::CommitInspectorEdit(mDestMeshComponent);
         });
+
+    mPhysicsPanel->AddItem(mPhysicsGravityPanel);
 
     mPhysicsMassPanel = mPhysicsPanel->CreateChildUIElement<UIReflectFloatPanel>("PhysicsMassPanel");
     mPhysicsMassPanel->SetTagText("Mass");
@@ -153,6 +183,8 @@ void StaticMeshComponentUIReflectPanel::BuildPhysicsProperties()
             if (mDestMeshComponent)
                 Quad::CommitInspectorEdit(mDestMeshComponent);
         });
+
+    mPhysicsPanel->AddItem(mPhysicsMassPanel);
 }
 
 void StaticMeshComponentUIReflectPanel::BindProperty(void *targetMemory, Quad::PropertyInfo *property) {}
@@ -163,13 +195,14 @@ UI::UIImage *StaticMeshComponentUIReflectPanel::CreateSubMaterialPanel()
 {
 
     auto subMatPanel = mMaterialPanel->CreateChildUIElement<UI::UIImage>("SubMatPanel");
+    subMatPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
     subMatPanel->SetWidth(600);
     subMatPanel->SetHeight(150.0f);
-    subMatPanel->SetColor(0.4f, 0.4f, 0.4f);
+    // subMatPanel->SetColor(0.4f, 0.4f, 0.4f);
 
     auto imagePanel = subMatPanel->CreateChildUIElement<UI::UIImage>("SubMatImagePanel");
     imagePanel->SetSize(100, 100);
-    imagePanel->SetPositionLocal({10, 25});
+    imagePanel->SetPositionLocal({10, 30});
 
     UIDropTargetComponent *dropTargetCom = imagePanel->CreateUIComponent<UIDropTargetComponent>("DropTargetComponent");
 
@@ -185,11 +218,11 @@ UI::UIImage *StaticMeshComponentUIReflectPanel::CreateSubMaterialPanel()
     auto tagPanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatTagPanel");
     tagPanel->SetText("머터리얼");
     tagPanel->SetPositionLocal(10, 0);
-    tagPanel->SetFontSize(20.0f);
+    //  tagPanel->SetFontSize(20.0f);
     auto namePanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatNamePanel");
-    namePanel->SetFontSize(20.0f);
+    // namePanel->SetFontSize(20.0f);
     namePanel->SetPositionLocal(100, 0);
-    namePanel->SetTextColor({1, 1, 1});
+    // namePanel->SetTextColor({1, 1, 1});
     return nullptr;
 }
 
@@ -349,4 +382,24 @@ void StaticMeshComponentUIReflectPanel::SetPhysicsBodyTypeByIndex(size_t index)
 
     mDestMeshComponent->SetPhysicsBodyType(bodyType);
     Quad::CommitInspectorEdit(mDestMeshComponent);
+}
+
+void StaticMeshComponentUIReflectPanel::OnTransformChanged(UI::ETransformChangeType type)
+{
+
+    UIImage::OnTransformChanged(type);
+
+    if (type == UI::ETransformChangeType::eSize)
+    {
+        float width = GetWidth();
+
+        if (mMeshFoldPanel)
+            mMeshFoldPanel->SetWidth(width);
+
+        if (mPhysicsPanel)
+            mPhysicsPanel->SetWidth(width);
+
+        /* if (mMaterialPanel)
+             mMaterialPanel->SetWidth(width);*/
+    }
 }

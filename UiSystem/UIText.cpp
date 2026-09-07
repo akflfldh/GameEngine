@@ -3,6 +3,7 @@
 UI::UIText::UIText()
 {
     mTextComponent = CreateUIComponent<UI::UITextComponent>("TextCom");
+    SetStyleRole(UI::EUIStyleRole::eText);
 }
 
 UI::UIText::~UIText() {}
@@ -14,7 +15,6 @@ void UI::UIText::SetText(const std::string &text)
     if (mTextComponent)
     {
 
-       
         mTextComponent->SetText(text);
     }
 }
@@ -76,4 +76,22 @@ void UI::UIText::SetTextColor(const UI::UIColor &color)
     {
         mTextComponent->SetColor(color);
     }
+}
+
+void UI::UIText ::ApplyLayoutStyle(const UIControlStyle &style)
+{
+
+    if (mTextComponent)
+    {
+        mTextComponent->SetFontSize(style.mFontSize);
+        mTextComponent->SetColor(style.mTextColor);
+    }
+
+    auto pos = mTransform.GetLocalPosition();
+
+    pos.x += style.mLeftPadding;
+    pos.y += style.mTopPadding;
+    SetHeight(style.mHeight);
+
+    SetPositionLocal(pos);
 }

@@ -90,6 +90,7 @@
 #include <UISystem/UIManager.h>
 #include <UiSystem/UIElementPtr.h>
 #include <UiSystem/UIImage.h>
+#include <UiSystem/UIType.h>
 #include <Window/BaseWindow.h>
 #include <core/PrefabStorer.h>
 #include <memory>
@@ -115,7 +116,8 @@ Quad::EditorDirector *Quad::EditorDirector::GetInstance()
 }
 
 Quad::EditorDirector::EditorDirector()
-    : mRenderPipelineManager(Render::RenderPipelineManager::GetInstance()), mApp(nullptr), mAssetManager(nullptr)
+    : mRenderPipelineManager(Render::RenderPipelineManager::GetInstance()), mApp(nullptr), mAssetManager(nullptr),
+      mCommonUITheme(std::make_unique<UI::UITheme>())
 /* :mFrameWindowSceneSwitch(0), mWindowSwitchRenderFlag(false)*/
 {
 }
@@ -211,6 +213,8 @@ void Quad::EditorDirector::EndUpdate(float deltaTime)
     // 마지막에는 각 가지고있는 채널들에대해서 렌더아이템구축후 렌더시스템으로 전달
     //  mSuperFrameController
     // mSuperAssetBrowerController
+
+    mUIManager->EndUpdate(deltaTime);
 
     mSuperFrameController->EndUpdate();
     // mSuperAssetBrowerController->EndUpdate();
@@ -408,8 +412,89 @@ void Quad::EditorDirector::InitEngineAssetLogicalFile()
     mLogicalFileSystem->MakeFile(cylinderInfo, "Cylinder", mLogicalFileSystem->GetEngineFolder());
 }
 
+void Quad::EditorDirector::CreateCommonUITheme()
+{
+    UI::UITheme &theme = *mCommonUITheme;
+    const UI::UIMetrics &metrics = theme.GetMetrics();
+
+    float commonHeight = 28.0f;
+    float commonButtonSize = 18.0f;
+    float commonButtonLargeSize = 24.0f;
+    float commonListHeight = 34.0f;
+    float commonFontSize = 18.0f;
+    float commonLeftPadding = 10.0f;
+    float commonTopPadding = 5.0f;
+    float commonSectionHeight = commonHeight + 3.0f;
+
+    UI::UIControlStyle iconStyle;
+    iconStyle.mBackgroundColor = UI::UIColor::White;
+    iconStyle.mHeight = commonHeight;
+
+    theme.SetStyle(UI::EUIStyleRole::eIcon, iconStyle);
+
+    UI::UIControlStyle buttonStyle;
+    buttonStyle.mBackgroundColor = UI::UIColor::Gray;
+    buttonStyle.mFontSize = commonFontSize;
+    buttonStyle.mHeight = commonButtonSize;
+    buttonStyle.mLeftPadding = commonLeftPadding;
+    buttonStyle.mTopPadding = commonTopPadding;
+
+    theme.SetStyle(UI::EUIStyleRole::eButton, buttonStyle);
+
+    UI::UIControlStyle textButtonStyle;
+    textButtonStyle.mBackgroundColor = UI::UIColor::DarkGray;
+    textButtonStyle.mFontSize = commonFontSize;
+    textButtonStyle.mHeight = commonHeight;
+    textButtonStyle.mHoverColor = UI::UIColor::Gray;
+    textButtonStyle.mSelectedColor = UI::UIColor::DimGray;
+    textButtonStyle.mLeftPadding = commonLeftPadding;
+
+    theme.SetStyle(UI::EUIStyleRole::eTextButton, textButtonStyle);
+
+    UI::UIControlStyle sectionHeaderStyle;
+    sectionHeaderStyle.mBackgroundColor = UI::UIColor::DarkGray;
+    sectionHeaderStyle.mSelectedColor = UI::UIColor::DimGray;
+    sectionHeaderStyle.mHoverColor = UI::UIColor::Gray;
+    sectionHeaderStyle.mHeight = commonSectionHeight;
+
+    theme.SetStyle(UI::EUIStyleRole::eSectionHeader, sectionHeaderStyle);
+
+    UI::UIControlStyle listItemStyle;
+    listItemStyle.mHeight = commonListHeight;
+    listItemStyle.mBackgroundColor = UI::UIColor::DarkGray;
+    listItemStyle.mFontSize = commonFontSize;
+    listItemStyle.mHeight = commonListHeight;
+    listItemStyle.mHoverColor = UI::UIColor::Gray;
+    listItemStyle.mSelectedColor = UI::UIColor::DimGray;
+
+    theme.SetStyle(UI::EUIStyleRole::eListItem, listItemStyle);
+
+    UI::UIControlStyle panelStyle;
+    panelStyle.mBackgroundColor = UI::UIColor::DarkGray;
+
+    theme.SetStyle(UI::EUIStyleRole::ePanel, panelStyle);
+
+    UI::UIControlStyle textStyle;
+    textStyle.mFontSize = commonFontSize;
+    textStyle.mTextColor = UI::UIColor::White;
+    textStyle.mLeftPadding = commonLeftPadding;
+    textStyle.mTopPadding = commonTopPadding;
+    textStyle.mHeight = commonHeight;
+
+    theme.SetStyle(UI::EUIStyleRole::eText, textStyle);
+
+    UI::UIControlStyle inputStyle;
+    inputStyle.mHeight = commonHeight;
+    inputStyle.mFontSize = commonFontSize;
+    inputStyle.mTopPadding = commonTopPadding;
+
+    theme.SetStyle(UI::EUIStyleRole::eInputBox, inputStyle);
+}
+
 void Quad::EditorDirector::CreateEditWorkSpace()
 {
+
+    CreateCommonUITheme();
 
     CreateDefaultEditWorkSpace();
 
@@ -439,6 +524,8 @@ void Quad::EditorDirector::CreatePrefabEditWorkSpace()
     UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
     prefabWorkSpaceManager->Initialize(canvas, mGlobalOverlayLogicalWindow.get(),
                                        EditorPrefabSelectionManager::GetInstance());
+
+    canvas->SetTheme(*mCommonUITheme);
 }
 
 void Quad::EditorDirector::CreateMaterialEditWorkSpace()
@@ -459,6 +546,17 @@ void Quad::EditorDirector::InitEditorWindows()
     InitPropertyWindow();
     InitAssetBrowerWindow();
     InitGlobalOverlayWindow();
+
+    // ui theme 적용
+
+    UI::UICanvas *propertyCanvas = mPropertyLogicalWindow->GetActiveCanvas();
+    propertyCanvas->SetTheme(*mCommonUITheme);
+
+    UI::UICanvas *globalOverlayCanvas = mGlobalOverlayLogicalWindow->GetActiveCanvas();
+    globalOverlayCanvas->SetTheme(*mCommonUITheme);
+
+    UI::UICanvas *assetBrowserCanvas = mAssetBrowserLogicalWindow->GetActiveCanvas();
+    assetBrowserCanvas->SetTheme(*mCommonUITheme);
 }
 
 void Quad::EditorDirector::InitMainSceneWindow()
@@ -473,7 +571,7 @@ void Quad::EditorDirector::InitMainSceneWindow()
 
     mMainSceneLogicalWindow->mViewportController.SetAnchorRightState(true);
     mMainSceneLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
-    mMainSceneLogicalWindow->mViewportController.SetAnchorRightRelValue(0.3f);
+    mMainSceneLogicalWindow->mViewportController.SetAnchorRightRelValue(0.25f);
 
     mMainSceneLogicalWindow->mViewportController.SetAnchorTopState(true);
     mMainSceneLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
@@ -599,18 +697,26 @@ void Quad::EditorDirector::InitPropertyWindow()
     mPropertyLogicalWindow = std::make_unique<Core::LogicalWindow>();
 
     //  UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    float windowWidth = mSuperFrameController->GetWindowSize().first;
+    windowWidth *= 0.25f;
 
     //// Canvas1 (default)
     UI::UICanvasID canvasID = mUIManager->CreateCanvas("DefaultCanvas", UI::ECanvasSizeMode::eFixSize);
 
     UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+
     ObjectHierarchyPanel *ohpanel = canvas->CreateUIElement<ObjectHierarchyPanel>("asds");
     ohpanel->Initialize(EditorSelectionManager::GetInstance());
 
-    ohpanel->SetPositionLocal(0, 0);
-    ohpanel->SetSize(700, 500);
+    //  float borderThickness = 3.0f;
+
+    ohpanel->SetPositionLocal(3.0f, 0);
+    ohpanel->SetSize(windowWidth, 500);
 
     ohpanel->SetScrollPanelSize(200, 300);
+
+    //  ohpanel->SetUseBorder(true);
+    //  ohpanel->SetBorderColor(UI::UIColor::Gray);
 
     /* PropertyPanel *propertyPanel = canvas->CreateUIElement<PropertyPanel>("PropertyPanel");
      propertyPanel->Initialize(EditorSelectionManager::GetInstance());
@@ -628,12 +734,13 @@ void Quad::EditorDirector::InitPropertyWindow()
 
     DefaultPropertyInspector *defaultPropertyInspector = DefaultPropertyInspector::GetInstance();
     defaultPropertyInspector->Initialize(canvas);
+    defaultPropertyInspector->SetPanelWidth(windowWidth);
     // defaultPropertyInspector->BeginUI();
 
     // MapSettingPanel
 
     MapSettingUIController *mapSettingUIController = MapSettingUIController::GetInstance();
-    mapSettingUIController->Initialize(canvas, 700, 800, {0, 500});
+    mapSettingUIController->Initialize(canvas, windowWidth, 800, {3.0f, 500});
     // mapSettingUIController->BeginUI();
 
     DefaultEditorInspectorManager *defaultEditorInspectorManager = DefaultEditorInspectorManager::GetInstance();
@@ -649,16 +756,16 @@ void Quad::EditorDirector::InitPropertyWindow()
 
     mPropertyLogicalWindow->mViewportController.SetAnchorLeftState(true);
     mPropertyLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
-    mPropertyLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.7f);
+    mPropertyLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.75f);
 
     mPropertyLogicalWindow->mViewportController.SetAnchorRightState(true);
     mPropertyLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
     mPropertyLogicalWindow->mViewportController.SetAnchorRightRelValue(0.0f);
 
     mPropertyLogicalWindow->mViewportController.SetAnchorTopState(true);
-    mPropertyLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::ePixel);
-    //  mSubLogicalWindow.mViewportController.SetAnchorTopRelValue(200.0f);
-    mPropertyLogicalWindow->mViewportController.SetAnchorTopPixelValue(200.0f);
+    mPropertyLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mPropertyLogicalWindow->mViewportController.SetAnchorTopRelValue(0.1f);
+    //  mPropertyLogicalWindow->mViewportController.SetAnchorTopPixelValue(200.0f);
 
     mPropertyLogicalWindow->mViewportController.SetAnchorBottomState(true);
     mPropertyLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);

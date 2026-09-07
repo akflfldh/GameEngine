@@ -19,6 +19,7 @@
 #include <UiSystem/UICanvas.h>
 #include <UiSystem/UIEditBox.h>
 #include <UiSystem/UIElementPtr.h>
+#include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIMouseDragComponent.h>
 #include <UiSystem/UIText.h>
@@ -96,11 +97,12 @@ void UIAssetBrowser::CreateToolbar()
     float width = mTransform.GetSize().x;
 
     auto canvas = GetDestCanvas();
-    auto toolbar = canvas->CreateUIElement<UI::UIElement>("Toolbar");
-    auto imageCom = toolbar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
+    auto toolbar = canvas->CreateUIElement<UI::UIImage>("Toolbar");
+    toolbar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    // auto imageCom = toolbar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
-    imageCom->NotUseTexture();
-    imageCom->SetColor(0.2, 0.2, 0.2);
+    toolbar->mImageCom->NotUseTexture();
+    //    imageCom->SetColor(0.2, 0.2, 0.2);
 
     toolbar->SetSize(width, mToolbarMaxHeight);
     toolbar->SetPositionLocal(0, 0);
@@ -114,19 +116,26 @@ void UIAssetBrowser::CreateNavigationBar()
     float width = mTransform.GetSize().x;
 
     auto canvas = GetDestCanvas();
-    auto bar = canvas->CreateUIElement<UI::UIElement>("Navigationobar");
-    auto imageCom = bar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
+    auto bar = canvas->CreateUIElement<UI::UIImage>("Navigationobar");
+    bar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    //    auto imageCom = bar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
-    imageCom->NotUseTexture();
-    imageCom->SetColor(0.27, 0.27, 0.27);
+    bar->mImageCom->NotUseTexture();
+    // bar->mImageCom->SetColor(0.27, 0.27, 0.27);
 
-    bar->SetSize(width, mToolbarMaxHeight);
+    bar->SetWidth(width);
+    //    bar->SetSize(width, mToolbarMaxHeight);
 
     auto backButton = bar->CreateChildUIElement<UI::UIButton>("BackButton");
     auto forwardButton = bar->CreateChildUIElement<UI::UIButton>("ForwardButton");
 
-    backButton->SetSize(40, 40);
-    forwardButton->SetSize(40, 40);
+    UI::UIControlStyleOverride buttonStyleOverride;
+    buttonStyleOverride.mHeight = 30.0f;
+    forwardButton->SetStyleOverride(buttonStyleOverride);
+    backButton->SetStyleOverride(buttonStyleOverride);
+
+    // backButton->SetSize(40, 40);
+    // forwardButton->SetSize(40, 40);
 
     backButton->SetPositionLocal(10, 0);
     forwardButton->SetPositionLocal(

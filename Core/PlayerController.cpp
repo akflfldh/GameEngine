@@ -38,6 +38,8 @@ void PlayerController ::Tick(float deltaTime)
         move -= right;
     if (inputSystem->IsVKeyDown('D'))
         move += right;
+    if (inputSystem->IsVKeyDown(' '))
+        move.Y += 1;
 
     if (move != CoreMath::Vector3::Zero)
     {

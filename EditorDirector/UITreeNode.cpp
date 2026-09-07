@@ -7,6 +7,7 @@
 #include <UiSystem/UIElementPtr.h>
 #include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
+#include <UiSystem/UIText.h>
 #include <UiSystem/UITextComponent.h>
 UITreeNode::UITreeNode() : mHeaderExpandButton(nullptr), mHeaderIcon(nullptr), mHeaderText(nullptr), mIsExpanded(false)
 {
@@ -41,18 +42,23 @@ void UITreeNode::CreateHeader()
 
     auto canvas = GetDestCanvas();
 
-    auto Header = canvas->CreateUIElement<UI::UIElement>("Header");
+    auto Header = canvas->CreateUIElement<UI::UIButton>("Header");
+    Header->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
 
-    auto headerImageCom = Header->CreateUIComponent<UI::UIImageComponent>("ImageCom");
-    headerImageCom->NotUseTexture();
-    headerImageCom->SetColor(1.0f, 0.3f, 0.3f);
+    //  auto headerImageCom = Header->CreateUIComponent<UI::UIImageComponent>("ImageCom");
+    Header->mUIImageComponent->NotUseTexture();
+    // headerImageCom->SetColor(1.0f, 0.3f, 0.3f);
+    float itemHeight = Header->GetHeight();
 
-    auto headerButtonCom = Header->CreateUIComponent<UI::UIButtonComponent>("buttonCom");
+    auto headerButtonCom =
+        Header->mUIButtonComponent; //  Header->CreateUIComponent<UI::UIButtonComponent>("buttonCom");
     headerButtonCom->mButtonClickCallbackSystem.Register(this, &UITreeNode::OnHeaderClicked);
 
     Header->SetParent(this);
     Header->SetPositionLocal(0, 0);
-    Header->SetSize(mItemWidth, mItemHeight);
+    Header->SetWidth(mItemWidth);
+
+    // Header->SetSize(mItemWidth, mItemHeight);
 
     mHeader = Header;
 
@@ -63,33 +69,41 @@ void UITreeNode::CreateHeader()
 
     ExpandButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(this, &UITreeNode::ExpandTree);
 
-    ExpandButton->SetPositionLocal(5, 5);
-    ExpandButton->SetSize(mItemHeight - 10, mItemHeight - 10);
+    // ExpandButton->SetPositionLocal(5, 5);
+    // ExpandButton->SetSize(mItemHeight - 10, mItemHeight - 10);
     ExpandButton->SetParent(Header);
     mHeaderExpandButton = ExpandButton;
 
     // Folder Icon
     auto FolderIcon = canvas->CreateUIElement<UI::UIImage>("Icon");
     //    FolderIcon->mImageCom->NotUseTexture();
+    FolderIcon->SetStyleRole(UI::EUIStyleRole::eIcon);
     FolderIcon->mImageCom->UseTexture();
     FolderIcon->mImageCom->SetTexture("Engine/Folder");
 
-    FolderIcon->SetSize(mItemHeight - 10, mItemHeight - 10);
+    FolderIcon->SetWidth(FolderIcon->GetHeight());
+    //  FolderIcon->SetSize(mItemHeight - 10, mItemHeight - 10);
     // FolderIcon->mImageCom->SetColor(0, 0, 1.0f);
     FolderIcon->SetParent(Header);
-    FolderIcon->SetPositionLocal(mItemHeight, 5);
+    FolderIcon->SetPositionLocal(Header->GetHeight(), 0);
+
+    FolderIcon->RefreshStyle();
     mHeaderIcon = FolderIcon;
     mHeaderIcon->SetOnlyVisible(true);
 
     // Text
-    auto TextPanel = canvas->CreateUIElement<UI::UIElement>("Text");
-    auto TextCom = TextPanel->CreateUIComponent<UI::UITextComponent>("TextCom");
+    auto TextPanel = canvas->CreateUIElement<UI::UIText>("Text");
+    //  auto TextCom = TextPanel->CreateUIComponent<UI::UITextComponent>("TextCom");
 
-    TextPanel->SetSize(200, mItemHeight);
-    TextPanel->SetPositionLocal(mItemHeight * 2, 0);
+    TextPanel->SetWidth(200.0f);
 
-    TextCom->SetFontSize(mItemHeight);
-    TextCom->SetText("Test TextPanel");
+    // TextPanel->SetSize(200, mItemHeight);
+
+    TextPanel->SetPositionLocal(itemHeight * 2, 0);
+
+    TextPanel->RefreshStyle();
+    // TextCom->SetFontSize(mItemHeight);
+    TextPanel->SetText("Test TextPanel");
 
     TextPanel->SetParent(Header);
     TextPanel->SetOnlyVisible(true);
@@ -107,9 +121,10 @@ void UITreeNode::CreateChildrenPanel()
     // auto bodyImageCom = Header->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     // // headerImageCom->NotUseTexture();
     //   headerImageCom->SetColor(0.3f, 0.3f, 0.3f);
+    float itemHeight = mHeader->GetHeight();
 
     mChildrenPanel->SetParent(this);
-    mChildrenPanel->SetPositionLocal(0, mItemHeight);
+    mChildrenPanel->SetPositionLocal(0, itemHeight);
     mChildrenPanel->SetSize(0, 0);
 }
 void UITreeNode::UpdateText()
@@ -146,31 +161,31 @@ float UITreeNode::LayoutRecursive()
     Init();
 
     // header 는항상 맨위
-    mHeader->SetHeight(mItemHeight);
-
-    mHeaderExpandButton->SetSize(mItemHeight - 10, mItemHeight - 10);
+    // mHeader->SetHeight(mItemHeight);
+    float itemheight = mHeader->GetHeight();
+    // mHeaderExpandButton->SetSize(mItemHeight - 10, mItemHeight - 10);
     mHeaderExpandButton->SetPositionLocal(5, 5);
 
-    mHeaderIcon->SetSize(mItemHeight - 10, mItemHeight - 10);
-    mHeaderIcon->SetPositionLocal(mItemHeight, 5);
+    //   mHeaderIcon->SetSize(mItemHeight - 10, mItemHeight - 10);
+    // mHeaderIcon->SetPositionLocal(itemheight, 5);
 
-    mHeaderText->SetSize(200, mItemHeight);
-    mHeaderText->SetPositionLocal(mItemHeight * 2, 0);
+    // mHeaderText->SetSize(200, mItemHeight);
+    // mHeaderText->SetPositionLocal(itemheight * 2, 0);
 
     UI::UITextComponent *textCom = nullptr;
     mHeaderText->GetComponents<UI::UITextComponent>(&textCom, 1);
 
     if (textCom)
     {
-        textCom->SetFontSize(mItemHeight - 20);
+        // textCom->SetFontSize(mItemHeight - 20);
     }
-
-    float currentLocalY = mItemHeight;
+    constexpr float indentWidth = 20.0f;
+    float currentLocalY = mHeader->GetHeight();
 
     if (mIsExpanded && !mChildrenNodes.empty())
     {
         // 자식 패널의 시작 위치는 헤더 바로 밑
-        mChildrenPanel->SetPositionLocal(0, mItemHeight);
+        mChildrenPanel->SetPositionLocal(indentWidth, itemheight);
 
         float panelHeight = 0.0f;
 
@@ -221,7 +236,9 @@ void UITreeNode::SetDestDirectoryTree(UIDirectoryTree *tree)
 void UITreeNode::AddChildNode(UITreeNode *childNode)
 {
 
-    childNode->SetParent(this);
+    childNode->SetParent(mChildrenPanel);
+
+    //   mChildrenPanel->SetParent(this);
     mChildrenNodes.push_back(childNode);
 }
 
@@ -250,23 +267,16 @@ void UITreeNode::SetSelected(bool flag)
 
     if (flag)
     {
-
-        if (imageCom)
-        {
-            imageCom->SetColor(0.2f, 0.2f, 0.2f);
-        }
+        mHeader->mUIButtonComponent->SetSelected(true);
     }
     else
     {
-        if (imageCom)
-        {
-            imageCom->SetColor(1.0f, 0.3f, 0.3f);
-        }
+        mHeader->mUIButtonComponent->SetSelected(false);
     }
 }
 
 void UITreeNode::UpdateLayout()
 {
 
-    SetSize(mItemWidth, mItemHeight * (1));
+    SetSize(mItemWidth, mHeader->GetHeight() * (1));
 }

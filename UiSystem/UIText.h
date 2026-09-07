@@ -30,6 +30,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIText : public UIElement
   protected:
     UITextComponent *mTextComponent;
 
+    // style 변화에서 호출
+    virtual void ApplyLayoutStyle(const UIControlStyle &style) override;
+
   private:
 };
 

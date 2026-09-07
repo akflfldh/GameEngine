@@ -45,6 +45,9 @@ class REFLECT_CLASS(EngineClass) UIReflectVector3Panel : public UI::UIImage, pub
     // X, Y, Z 중 하나라도 바뀌면 외부로 쏴줄 통합 콜백 시스템
     //  Core::MultiCallbackSystem<const CoreMath::Vector3 &> mOnValueChanged;
 
+  protected:
+    virtual void ApplyLayoutStyle(const UI::UIControlStyle &style) override;
+
   private:
     enum class EAxis : uint8_t
     {

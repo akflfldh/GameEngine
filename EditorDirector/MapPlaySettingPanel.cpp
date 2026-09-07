@@ -12,8 +12,8 @@ MapPlaySettingPanel::~MapPlaySettingPanel() {}
 void MapPlaySettingPanel::OnBegin()
 {
 
-   /* auto uiPopupManager = UI::UIPopupManager::GetInstance();
-    mPopupScopeID = uiPopupManager->CreatePopupScope(this);*/
+    /* auto uiPopupManager = UI::UIPopupManager::GetInstance();
+     mPopupScopeID = uiPopupManager->CreatePopupScope(this);*/
 
     SetColor(0.4f, 0.4f, 0.4f);
     SetWidth(600.0f);
@@ -163,14 +163,14 @@ void MapPlaySettingPanel::CreatePlayerObjectUI(float posY)
     float posX = 0;
 
     auto objectPlayerTag = CreateChildUIElement<UI::UIText>("ObjectPlayerTag");
-    objectPlayerTag->SetFontSize(20.0F);
+    // objectPlayerTag->SetFontSize(20.0F);
     objectPlayerTag->SetText("플레이어 오브젝트");
     posX = 10;
 
     objectPlayerTag->SetPositionLocal(posX, posY);
 
     mSearchObjectSelectBox = CreateChildUIElement<UISearchSelectBox>("searchBox");
-    mSearchObjectSelectBox->SetWidth(100.0f);
+    mSearchObjectSelectBox->SetWidth(200.0f);
     mSearchObjectSelectBox->mOnSelectedItemChangedCallbackSystem.Register([this](uint32_t itemID)
                                                                           { SetSelectedObjectSource(itemID); });
     mSearchObjectSelectBox->SetDepthValue(1);
@@ -186,14 +186,14 @@ void MapPlaySettingPanel::CreatePlayerControllerUI(float posY)
 
     float posX = 0;
     auto tag = CreateChildUIElement<UI::UIText>("PlayerControllerTag");
-    tag->SetFontSize(20.0F);
+    //  tag->SetFontSize(20.0F);
     tag->SetText("플레이어 컨트롤러");
     posX = 10;
 
     tag->SetPositionLocal(posX, posY);
 
     mSearchControllerSelectBox = CreateChildUIElement<UISearchSelectBox>("PlayerControllerSearchBox");
-    mSearchControllerSelectBox->SetWidth(100.0f);
+    mSearchControllerSelectBox->SetWidth(200.0f);
     mSearchControllerSelectBox->mOnSelectedItemChangedCallbackSystem.Register([this](uint32_t itemID)
                                                                               { SetSelectedControllerSource(itemID); });
 

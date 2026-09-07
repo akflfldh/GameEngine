@@ -18,6 +18,7 @@ class UIReflectVector3Panel;
 class UIReflectBoolPanel;
 class UIReflectVectorPanel;
 class StaticMeshComponentUIReflectPanel;
+class UIReflectFloatPanel;
 
 class UIReflectPanelFactory
 {
@@ -37,6 +38,7 @@ class UIReflectPanelFactory
 
   private:
     std::vector<UIReflectSinglePrimitivePanel *> mSinglePrimitivePanelPool;
+    std::vector<UIReflectFloatPanel *> mFloatPanelPool;
     std::vector<UIReflectVector3Panel *> mVector3PanelPool;
     std::vector<UIReflectBoolPanel *> mBoolPanelPool;
     std::vector<UIReflectVectorPanel *> mVectorPanelPool;

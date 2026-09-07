@@ -2,6 +2,7 @@
 #include <CoreAsset/StaticMesh.h>
 #include <CoreBase/Arch.h>
 
+#include <Core/Entity.h>
 #include <Core/IRenderProxyManager.h>
 #include <Core/Map.h>
 #include <Core/Object.h>
@@ -242,7 +243,9 @@ void StaticMeshComponent::OnOwnerObjectAddedToMap()
         if (Onwer->GetActive())
             Core::IRenderProxyManager::GetInstance()->RegisterRenderProxy(mRenderProxy.get());
 
-        PhysicsBridgeSystem::GetInstance()->RegisterPhysicsBodyComponent(this, this, this);
+        Entity *entity = static_cast<Entity *>(Onwer);
+
+        PhysicsBridgeSystem::GetInstance()->RegisterPhysicsBodyComponent(entity->GetRootComponent(), this, this, this);
     }
 }
 

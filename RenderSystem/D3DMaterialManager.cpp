@@ -758,6 +758,10 @@ void D3DRender::D3DMaterialManager::BuildIMainInputLayout(
                                            D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
         oInputElementDescVector.push_back({"COMMON", 2, DXGI_FORMAT_R32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
                                            D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
+        oInputElementDescVector.push_back({"COMMON", 3, DXGI_FORMAT_R32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+                                           D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
+        oInputElementDescVector.push_back({"COMMON", 4, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+                                           D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0});
     }
     else if (inputLayoutType == Render::EInputLayoutType::eBillboard)
     {

@@ -9,26 +9,36 @@
 UIReflectVector3Panel::UIReflectVector3Panel()
     : mTagText(nullptr), mEditBoxX(nullptr), mEditBoxY(nullptr), mEditBoxZ(nullptr)
 {
+    SetStyleRole(UI::EUIStyleRole::eListItem);
 }
 
 UIReflectVector3Panel::~UIReflectVector3Panel() {}
 
 void UIReflectVector3Panel::OnBegin()
 {
-    SetHeight(100);
+    //  SetHeight(100);
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");
-    mTagText->SetTextColor({0, 0, 0});
-    mTagText->SetHeight(30);
-    mTagText->SetPositionLocal(30, 40);
+
+    //  mTagText->SetTextColor({0, 0, 0});
+    mTagText->SetWidth(100.0f);
+    // mTagText->SetHeight(30);
+    // mTagText->SetPositionLocal(0, 0);
 
     mEditBoxX = CreateChildUIElement<UI::UIEditBox>("EditBoxX");
     mEditBoxY = CreateChildUIElement<UI::UIEditBox>("EditBoxY");
     mEditBoxZ = CreateChildUIElement<UI::UIEditBox>("EditBoxZ");
 
-    mEditBoxX->SetSize(100, 40);
-    mEditBoxY->SetSize(100, 40);
-    mEditBoxZ->SetSize(100, 40);
+    mEditBoxX->SetStyleRole(UI::EUIStyleRole::eInputBox);
+    mEditBoxY->SetStyleRole(UI::EUIStyleRole::eInputBox);
+    mEditBoxZ->SetStyleRole(UI::EUIStyleRole::eInputBox);
+
+    //  mEditBoxX->SetSize(100, 40);
+    mEditBoxX->SetWidth(100);
+    // mEditBoxY->SetSize(100, 40);
+    mEditBoxY->SetWidth(100);
+    // mEditBoxZ->SetSize(100, 40);
+    mEditBoxZ->SetWidth(100);
 
     mEditBoxX->SetBackgroundColor(1, 1, 1);
     mEditBoxY->SetBackgroundColor(1, 1, 1);
@@ -125,16 +135,19 @@ void UIReflectVector3Panel::SetTagText(const std::string &tag)
     if (mTagText == nullptr)
         return;
 
-    int tagTextWidth = tag.size() * 10.0f;
-    mTagText->SetWidth(tagTextWidth);
+    int tagTextWidth = mTagText->mTransform.GetSize().x;
+    // mTagText->SetWidth(tagTextWidth);
     mTagText->SetText(tag);
 
     int editBoxOffsetX = tagTextWidth + mTagText->mTransform.GetLocalPosition().x + 30;
-    mEditBoxX->SetPositionLocal(editBoxOffsetX, 40);
+
+    int editBoxPosY = mEditBoxX->mTransform.GetLocalPosition().y;
+
+    mEditBoxX->SetPositionLocal(editBoxOffsetX, editBoxPosY);
     editBoxOffsetX += mEditBoxX->mTransform.GetSize().x + 30;
-    mEditBoxY->SetPositionLocal(editBoxOffsetX, 40);
+    mEditBoxY->SetPositionLocal(editBoxOffsetX, editBoxPosY);
     editBoxOffsetX += mEditBoxX->mTransform.GetSize().x + 30;
-    mEditBoxZ->SetPositionLocal(editBoxOffsetX, 40);
+    mEditBoxZ->SetPositionLocal(editBoxOffsetX, editBoxPosY);
 }
 void UIReflectVector3Panel::SetVector3(const CoreMath::Vector3 &value)
 {
@@ -284,4 +297,10 @@ void UIReflectVector3Panel::ClearDisplay()
     }
 
     mCurrentValue = {};
+}
+
+void UIReflectVector3Panel::ApplyLayoutStyle(const UI::UIControlStyle &style)
+{
+
+    SetHeight(style.mHeight);
 }

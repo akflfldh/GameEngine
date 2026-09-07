@@ -63,7 +63,8 @@ void PrefabWorkSpaceManager::Initialize(UI::UICanvas *canvas, Core::LogicalWindo
     map->SetName("PlayMap");
     mWorld->Register(engineMode->GetEditorMap());
     mWorld->SetEngineMode(engineMode);
-
+    map->SetAmbientLightColor({1.0f, 1.0f, 1.0f});
+    map->SetAmbientLightIntensity(1.3f);
     mLogicalWindow->SetWorld(mWorld.get());
     Quad::EditorSceneManager::GetInstance()->RegisterWorld("PrefabWorld", mWorld.get());
     mWorld->SetActiveState(false);
@@ -102,6 +103,8 @@ void PrefabWorkSpaceManager::SetPrefab(Prefab *prefab)
 
         mPrefabComponentPanel.SetObject(prefabDestObject);
         mPrefabPropertyPanel.SetObject(prefabDestObject);
+
+        mComponentTable = BuildComponentKeyTable(prefabDestObject);
     }
 }
 
@@ -153,106 +156,179 @@ void PrefabWorkSpaceManager::SyncPrefabInstances()
     for (auto entity : map->GetEntityList())
     {
 
-        Quad::ClassInfo *csinfo = lastClassInfo;
-
         if (entity->GetPrefabID() != mDestPrefab->GetID())
         {
             continue;
         }
 
-        // 멤버변수들
-        while (1)
+        Quad::ClassInfo *csinfo = lastClassInfo;
+
+        ObjectComKeyTable instanceComTable = BuildComponentKeyTable(entity);
+
+        // 기존 동일하게 가지고있는 컴포넌트들을 동기화
+
+        for (const auto &entry : mComponentTable)
         {
-            if ((std::strcmp(csinfo->GetTypeName(), "Entity") == 0) ||
-                (std::strcmp(csinfo->GetTypeName(), "Object") == 0))
-                break;
+            const std::string &key = entry.first;
+            Component *com = entry.second;
 
-            for (auto propinfo : csinfo->GetDeclaredPropertyVector())
+            auto it = instanceComTable.find(key);
+
+            // djqtek.
+            if (it == instanceComTable.end())
+                continue;
+
+            Component *instanceCom = it->second;
+
+            if (std::strcmp(com->GetRunTimeClassName(), instanceCom->GetRunTimeClassName()) != 0)
             {
-                if (entity->IsOverridenProperty(propinfo->mPropertyName))
-                    continue;
-
-                if (propinfo->mIsPointerType)
-                {
-                    auto csinfo = reflectionSystem->FindClassInfo(propinfo->mOriginType);
-                    if (csinfo->IsAncestorClass("Component"))
-                    {
-                        // com pointer
-                        ReflectComponentToInstance(
-                            *reinterpret_cast<Component **>(propinfo->GetMemoryStart(prefabObject)),
-                            *reinterpret_cast<Component **>(propinfo->GetMemoryStart(entity)));
-                    }
-                    else if (csinfo->IsAncestorClass("Object"))
-                    {
-                        // object pointer
-                    }
-
-                    continue;
-                }
-
-                if (propinfo->mIsTemplateType)
-                {
-                    // 일단 무시
-                    continue;
-                }
-
-                if (propinfo->mIsBuiltinType)
-                {
-                    const std::string type = propinfo->mType;
-
-                    ITypeDescriptor_BuiltIn *builtInDescriptor =
-                        dynamic_cast<ITypeDescriptor_BuiltIn *>(propinfo->mTypeDescriptor);
-
-                    builtInDescriptor->Copy(propinfo->GetMemoryStart(prefabObject), propinfo->GetMemoryStart(entity));
-                }
+                continue;
             }
 
-            std::string parentClassName = csinfo->GetParentClassList()[0];
-            csinfo = reflectionSystem->FindClassInfo(parentClassName.c_str());
+            instanceCom->SyncPrefabComponentFrom(com);
         }
-        // 엔진에서 추가한 컴포넌트들
 
-        std::vector<Component *> mDestoryComponents;
-        for (auto com : entity->GetComponentList())
+        for (const auto &[key, prefabComponent] : mComponentTable)
         {
-            // 엔진에서 추가한것
-            if (com->GetComponentFlag() == Core::EComponentFlag::eEngineAdded)
+            if (instanceComTable.contains(key))
+                continue;
+
+            if (prefabComponent->GetComponentCreationMethod() == Core::EComponentCreationMethod::eNative)
             {
-                // 프리팹의 컴포넌트와 일치하는것
-                auto prefabComIt =
-                    std::find_if(prefabComList.begin(), prefabComList.end(),
-                                 [com](Component *prefabCom)
-                                 {
-                                     if (prefabCom->GetPrefabComponenetKey() == com->GetPrefabComponenetKey())
-                                         return true;
-                                     return false;
-                                 });
+                // Native 컴포넌트가 없다면 클래스 구조 불일치이므로 생성하지 않는다.
+                continue;
+            }
 
-                if (prefabComIt != prefabComList.end())
-                {
-                    ReflectEngineComponentToInstance(*prefabComIt, com,
-                                                     reflectionSystem->FindClassInfo(com->GetRunTimeClassName()));
-                }
-                else
-                {
+            Component *newComponent =
+                entity->CreateComponent(prefabComponent->GetRunTimeClassName(), prefabComponent->GetInstanceName());
 
-                    // prefab에없는 component라면 prefab이 해당 component를 제거했으니 인스턴스에서도 지워야하는것?
-                    // prefab에없는 component라면 프리팹이 제거한 컴포넌트이거나, 혹은 각인스턴스별로 추가한
-                    // 컴포넌트일수있다.
+            if (newComponent == nullptr)
+                continue;
 
-                    // 프리팹 컴포넌트였다면 제거
-                    if (com->IsPrefabInheritedComponent(mDestPrefab->GetID()))
-                    {
-                        mDestoryComponents.push_back(com);
-                    }
-                }
+            newComponent->SetComponentFlag(Core::EComponentFlag::eEngineAdded);
+
+            newComponent->SetPrefabInheritedComponent(mDestPrefab->GetID(), key);
+
+            newComponent->SyncPrefabComponentFrom(prefabComponent);
+        }
+
+        /*6. 제거된 컴포넌트 처리
+
+            인스턴스에는 있지만 프리팹에는 없는 key를 제거합니다.단,
+            Native 컴포넌트는 제거하지 않습니다.*/
+
+        for (const auto &[key, instanceComponent] : instanceComTable)
+        {
+            if (mComponentTable.contains(key))
+                continue;
+
+            if (instanceComponent->GetComponentCreationMethod() == Core::EComponentCreationMethod::eNative)
+            {
+                continue;
+            }
+
+            if (instanceComponent->IsPrefabInheritedComponent(mDestPrefab->GetID()))
+            {
+                instanceComponent->Destory();
             }
         }
 
-        for (auto com : mDestoryComponents)
-        {
-            com->Destory();
-        }
+        //// 멤버변수들
+        // while (1)
+        //{
+        //     if ((std::strcmp(csinfo->GetTypeName(), "Entity") == 0) ||
+        //         (std::strcmp(csinfo->GetTypeName(), "Object") == 0))
+        //         break;
+
+        //    for (auto propinfo : csinfo->GetDeclaredPropertyVector())
+        //    {
+        //        if (entity->IsOverridenProperty(propinfo->mPropertyName))
+        //            continue;
+
+        //        if (propinfo->mIsPointerType)
+        //        {
+        //            auto csinfo = reflectionSystem->FindClassInfo(propinfo->mOriginType);
+        //            if (csinfo->IsAncestorClass("Component"))
+        //            {
+        //                // com pointer
+        //                ReflectComponentToInstance(
+        //                    *reinterpret_cast<Component **>(propinfo->GetMemoryStart(prefabObject)),
+        //                    *reinterpret_cast<Component **>(propinfo->GetMemoryStart(entity)));
+        //            }
+        //            else if (csinfo->IsAncestorClass("Object"))
+        //            {
+        //                // object pointer
+        //            }
+
+        //            continue;
+        //        }
+
+        //        if (propinfo->mIsTemplateType)
+        //        {
+        //            // 일단 무시
+        //            continue;
+        //        }
+
+        //        if (propinfo->mIsBuiltinType)
+        //        {
+        //            const std::string type = propinfo->mType;
+
+        //            ITypeDescriptor_BuiltIn *builtInDescriptor =
+        //                dynamic_cast<ITypeDescriptor_BuiltIn *>(propinfo->mTypeDescriptor);
+
+        //            builtInDescriptor->Copy(propinfo->GetMemoryStart(prefabObject), propinfo->GetMemoryStart(entity));
+        //        }
+        //    }
+
+        //    std::string parentClassName = csinfo->GetParentClassList()[0];
+        //    csinfo = reflectionSystem->FindClassInfo(parentClassName.c_str());
+        //}
+
+        ////        SyncPrebObjectProperties(prefabObject, entity);
+
+        //// 엔진에서 추가한 컴포넌트들
+
+        // std::vector<Component *> mDestoryComponents;
+        // for (auto com : entity->GetComponentList())
+        //{
+        //     // 엔진에서 추가한것
+        //     if (com->GetComponentFlag() == Core::EComponentFlag::eEngineAdded)
+        //     {
+        //         // 프리팹의 컴포넌트와 일치하는것
+        //         auto prefabComIt =
+        //             std::find_if(prefabComList.begin(), prefabComList.end(),
+        //                          [com](Component *prefabCom)
+        //                          {
+        //                              if (prefabCom->GetPrefabComponenetKey() == com->GetPrefabComponenetKey())
+        //                                  return true;
+        //                              return false;
+        //                          });
+
+        //        if (prefabComIt != prefabComList.end())
+        //        {
+        //            ReflectEngineComponentToInstance(*prefabComIt, com,
+        //                                             reflectionSystem->FindClassInfo(com->GetRunTimeClassName()));
+        //        }
+        //        else
+        //        {
+
+        //            // prefab에없는 component라면 prefab이 해당 component를 제거했으니 인스턴스에서도 지워야하는것?
+        //            // prefab에없는 component라면 프리팹이 제거한 컴포넌트이거나, 혹은 각인스턴스별로 추가한
+        //            // 컴포넌트일수있다.
+
+        //            // 프리팹 컴포넌트였다면 제거
+        //            if (com->IsPrefabInheritedComponent(mDestPrefab->GetID()))
+        //            {
+        //                mDestoryComponents.push_back(com);
+        //            }
+        //        }
+        //    }
+        //}
+
+        // for (auto com : mDestoryComponents)
+        //{
+        //     com->Destory();
+        // }
 
         // 프리팹에서 새로 추가된 컴포넌트들 반영
         SyncPrefabAddedComponents(mDestPrefab->mDefaultObject, entity);
@@ -260,6 +336,58 @@ void PrefabWorkSpaceManager::SyncPrefabInstances()
         // 계층구조를 반영한다 .
         SyncPrefabComponentHierachy(mDestPrefab->mDefaultObject, entity);
     }
+}
+
+void PrefabWorkSpaceManager::SyncPrebObjectProperties(Object *prefabInstance, Object *instance)
+{
+
+    auto reflectionSystem = Quad::ReflectionSystem::GetInstance();
+    Quad::ClassInfo *lastClassInfo =
+        reflectionSystem->FindClassInfo(mDestPrefab->mDefaultObject->GetRunTimeClassName());
+
+    Quad::ClassInfo *csinfo = lastClassInfo;
+    // 멤버변수들
+    while (1)
+    {
+        if ((std::strcmp(csinfo->GetTypeName(), "Entity") == 0) || (std::strcmp(csinfo->GetTypeName(), "Object") == 0))
+            break;
+
+        for (auto propinfo : csinfo->GetDeclaredPropertyVector())
+        {
+
+            if (instance->IsOverridenProperty(propinfo->mPropertyName))
+                continue;
+
+            if (propinfo->mIsBuiltinType)
+            {
+                const std::string type = propinfo->mType;
+
+                ITypeDescriptor_BuiltIn *builtInDescriptor =
+                    dynamic_cast<ITypeDescriptor_BuiltIn *>(propinfo->mTypeDescriptor);
+
+                builtInDescriptor->Copy(propinfo->GetMemoryStart(prefabInstance), propinfo->GetMemoryStart(instance));
+            }
+        }
+    }
+}
+
+ObjectComKeyTable PrefabWorkSpaceManager::BuildComponentKeyTable(Object *prefabObject)
+{
+
+    if (prefabObject == nullptr)
+        return {};
+
+    const std::vector<Component *> &conList = prefabObject->GetComponentList();
+
+    std::unordered_map<std::string, Component *> table;
+
+    for (auto com : conList)
+    {
+
+        table[com->GetInstanceName()] = com;
+    }
+
+    return table;
 }
 
 void PrefabWorkSpaceManager::InitLogicalWindow(UI::UICanvas *canvas)

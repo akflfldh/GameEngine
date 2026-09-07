@@ -23,6 +23,7 @@ class UIBoolPanel;
 class UIDropdown;
 class UIReflectFloatPanel;
 struct DragPayload;
+class UIFoldoutPanel;
 
 class REFLECT_CLASS(EngineClass) StaticMeshComponentUIReflectPanel : public UI::UIImage, public IPropertyBindable
 {
@@ -50,13 +51,16 @@ class REFLECT_CLASS(EngineClass) StaticMeshComponentUIReflectPanel : public UI::
     void RefreshPhysicsProperties();
     size_t GetPhysicsBodyTypeIndex() const;
     void SetPhysicsBodyTypeByIndex(size_t index);
+    virtual void OnTransformChanged(UI::ETransformChangeType type) override;
 
   private:
     StaticMeshComponent *mDestMeshComponent = nullptr;
+
+    UIFoldoutPanel *mMeshFoldPanel = nullptr;
     UI::UIImage *mMeshPanel = nullptr;
     UI::UIText *mMeshText = nullptr;
     UI::UIImage *mMaterialPanel = nullptr;
-    UI::UIImage *mPhysicsPanel = nullptr;
+    UIFoldoutPanel *mPhysicsPanel = nullptr;
     UIBoolPanel *mPhysicsEnabledPanel = nullptr;
     UIDropdown *mPhysicsBodyTypeDropdown = nullptr;
     UIBoolPanel *mPhysicsGravityPanel = nullptr;

@@ -160,6 +160,8 @@ struct FBXImportContext
 
     bool mNeedToCalculateNormals = false;
     bool mNeedToCalculateTangents = false;
+
+    CoreMath::Matrix4X4 mBakeAxisTransformMatrix;
 };
 
 class FBXImporter : public CoreAsset::IAssetImporter
@@ -220,7 +222,7 @@ class FBXImporter : public CoreAsset::IAssetImporter
         FBXImportAssetContext &importAssetContext,
         const std::unordered_map<fbxsdk::FbxMesh *, std::vector<fbxsdk::FbxNode *>> &meshToNodes,
         const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
-        const std::string &totalMeshName, bool flipZ) const;
+        const std::string &totalMeshName, bool flipZ, const CoreMath::Matrix4X4 &bakeAxisTransformMatrix) const;
 
     void BakeVertex(std::vector<FBXImportVertex> &vertices, const fbxsdk::FbxAMatrix &matrix, bool bFlipZ) const;
 

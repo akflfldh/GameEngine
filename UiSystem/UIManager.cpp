@@ -75,6 +75,15 @@ void UI::UIManager::Update(float deltaTime)
     }
 }
 
+void UI::UIManager::EndUpdate(float deltaTime)
+{
+
+    for (UICanvas *canvas : mActiveCanvasList)
+    {
+        canvas->EndUpdate(deltaTime);
+    }
+}
+
 void UI::UIManager::CleanUp()
 {
 

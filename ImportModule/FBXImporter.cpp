@@ -189,18 +189,36 @@ CoreAsset::ImportPackage FBXImporter::Load(const std::filesystem::path &filePath
 
 void FBXImporter::ConvertAxisSystem(FBXImportContext &importContext, fbxsdk::FbxScene *scene) const
 {
-    fbxsdk::FbxAxisSystem engineAxis(fbxsdk::FbxAxisSystem::eYAxis, fbxsdk::FbxAxisSystem::eParityOdd,
-                                     fbxsdk::FbxAxisSystem::eRightHanded);
 
     // 이후에 에니메이션에서 Z up 에서 yup으로 변환을 AxisSystem의 convert에 맡기지않고 직접 해야할수도있다 (향후
     // 문제점이 생기면)
-    if (scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded)
+    int pUpSgin;
+    fbxsdk::FbxAxisSystem::EUpVector upVector = scene->GetGlobalSettings().GetAxisSystem().GetUpVector(pUpSgin);
+    if (scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded &&
+        upVector == FbxAxisSystem::EUpVector::eYAxis)
     {
-        importContext.mFlipZ = true;
-        importContext.mWindingFlipFlag = true;
+        // importContext.mFlipZ = true;
+
+        importContext.mBakeAxisTransformMatrix =
+            CoreMath::Matrix4X4({1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, -1, 0}, {0, 0, 0, 1});
     }
-    // fbxsdk::FbxAxisSystem::DirectX.ConvertScene(scene);
-    engineAxis.ConvertScene(scene);
+    else if (scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded &&
+             upVector == FbxAxisSystem::EUpVector::eZAxis)
+    {
+        importContext.mBakeAxisTransformMatrix =
+            CoreMath::Matrix4X4({1, 0, 0, 0}, {0, 0, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 1});
+    }
+
+    // if (scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() == fbxsdk::FbxAxisSystem::eRightHanded)
+    //{
+    //     importContext.mWindingFlipFlag = true;
+    // }
+
+    //  fbxsdk::FbxAxisSystem::DirectX.ConvertScene(scene);
+    // fbxsdk::FbxAxisSystem engineAxis(fbxsdk::FbxAxisSystem::eYAxis, fbxsdk::FbxAxisSystem::eParityOdd,
+    //                               fbxsdk::FbxAxisSystem::eLeftHanded);
+
+    /// engineAxis.ConvertScene(scene);
 }
 
 void FBXImporter::ConvertUnitSystem(fbxsdk::FbxScene *scene) const
@@ -323,7 +341,7 @@ void FBXImporter::ExtractData(FBXImportContext &importContext) const
     }
 
     MergeMeshData(importContext.mAssetContext, importContext.mMeshToNodes, fbxMaterialKeyTable,
-                  importContext.mFbxFileName, importContext.mFlipZ);
+                  importContext.mFbxFileName, importContext.mFlipZ, importContext.mBakeAxisTransformMatrix);
 
     importContext.mAssetContext.mMeshNodeInfoList = std::move(importContext.mMeshNodeInfoList);
     importContext.mMaterialKeyTable = std::move(fbxMaterialKeyTable);
@@ -559,7 +577,7 @@ void FBXImporter::MergeMeshData(
     FBXImportAssetContext &importAssetContext,
     const std::unordered_map<fbxsdk::FbxMesh *, std::vector<fbxsdk::FbxNode *>> &meshToNodes,
     const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
-    const std::string &totalMeshName, bool flipZ) const
+    const std::string &totalMeshName, bool flipZ, const CoreMath::Matrix4X4 &bakeAxisTransformMatrix) const
 {
 
     std::unordered_map<int, FBXImportTempMeshPerMat> tempMeshPerMatTable;
@@ -569,9 +587,17 @@ void FBXImporter::MergeMeshData(
 
     // mesh들의 vertex 병합
 
+    fbxsdk::FbxAMatrix bakeAxisTransformMatFbx;
+    for (int i = 0; i < 4; ++i)
+    {
+        bakeAxisTransformMatFbx.mData[i] = {bakeAxisTransformMatrix.mat[i].X, bakeAxisTransformMatrix.mat[i].Y,
+                                            bakeAxisTransformMatrix.mat[i].Z, bakeAxisTransformMatrix.mat[i].W};
+    }
+
     std::vector<FBXImportVertex> &totalVertices = importAssetContext.mTotalMesh.mVertices;
     std::vector<uint32_t> &totalIndices = importAssetContext.mTotalMesh.mIndices;
 
+    bool indexWindingFlip = false;
     for (auto &e : meshToNodes)
     {
         fbxsdk::FbxMesh *fbxMesh = e.first;
@@ -593,8 +619,12 @@ void FBXImporter::MergeMeshData(
             fbxsdk::FbxAMatrix geoMat;
             GetGeometrix(node, geoMat);
 
-            fbxsdk::FbxAMatrix globalMatrix = node->EvaluateGlobalTransform();
-            BakeVertex(importMesh->mVertices, node->EvaluateGlobalTransform() * geoMat, flipZ);
+            fbxsdk::FbxAMatrix Amatrix = bakeAxisTransformMatFbx * node->EvaluateGlobalTransform() * geoMat;
+            if (Amatrix.Determinant() < 0)
+            {
+                indexWindingFlip = true;
+            }
+            BakeVertex(importMesh->mVertices, Amatrix, flipZ);
             totalVertices.insert(totalVertices.end(), importMesh->mVertices.begin(), importMesh->mVertices.end());
 
             meshOffsetTable[node] = meshOffset;
@@ -660,12 +690,22 @@ void FBXImporter::MergeMeshData(
         totalIndices.insert(totalIndices.end(), tempMeshPerMat.mIndices.begin(), tempMeshPerMat.mIndices.end());
     }
 
+    if (indexWindingFlip)
+    {
+        for (size_t i = 0; i < totalIndices.size() / 3; ++i)
+        {
+            std::swap(totalIndices[i * 3 + 1], totalIndices[i * 3 + 2]);
+        }
+    }
+
     importAssetContext.mTotalMesh.mName = totalMeshName;
 }
 
 void FBXImporter::BakeVertex(std::vector<FBXImportVertex> &vertices, const fbxsdk::FbxAMatrix &Amatrix,
                              bool bFlipZ) const
 {
+
+    Amatrix.Determinant();
 
     fbxsdk::FbxAMatrix normalMatrix = Amatrix.Inverse().Transpose();
 
@@ -1067,11 +1107,12 @@ void FBXImporter::BuildIndexedVertices(const std::vector<FBXImportVertex> &tempV
     // mat별 index 들을 정렬 (subMesh별)
 
     int indexOrder[3] = {0, 1, 2};
-    if (bIndexFlip)
+
+    /* if (bIndexFlip)
     {
         indexOrder[1] = 2;
         indexOrder[2] = 1;
-    }
+    }*/
 
     for (const auto &e : matIndexListTable)
     {

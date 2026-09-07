@@ -37,6 +37,8 @@ void UI::UIElement::Serialize(Arch &arch) {}
 
 void UI::UIElement::Begin()
 {
+    RefreshStyle();
+
     mIsBegun = true;
     for (auto com : mComponentContainer)
     {
@@ -68,6 +70,30 @@ void UI::UIElement::Update(float deltaTime)
     for (auto &child : mChildVector)
     {
         child->Update(deltaTime);
+    }
+}
+
+void UI::UIElement::EndUpdate(float deltaTime)
+{
+
+    UpdateVisualStyleIfNeeded();
+}
+
+void UI::UIElement::UpdateVisualStyleIfNeeded()
+{
+
+    if (mVisualStyleDirty)
+    {
+
+        if (mDestCanvas == nullptr)
+            return;
+
+        const UIControlStyle style = mDestCanvas->GetTheme().GetStyle(mStyleRole);
+
+        EUIVisualState visualState = ResolveVisualState();
+        ApplyVisualStyle(style, visualState);
+
+        mVisualStyleDirty = false;
     }
 }
 const std::string &UI::UIElement::GetName() const
@@ -304,6 +330,81 @@ void UI::UIElement::SetKeyboardCaptureScope(UIElement *scope)
 {
 
     mKeyboardCaptureScope = scope;
+}
+
+void UI::UIElement::SetStyleRole(EUIStyleRole role)
+{
+    if (mStyleRole == role)
+        return;
+
+    mStyleRole = role;
+    RefreshStyle();
+}
+
+UI::EUIStyleRole UI::UIElement::GetStyleRole() const
+{
+    return mStyleRole;
+}
+
+void UI::UIElement::RefreshStyle()
+{
+
+    auto canvas = GetDestCanvas();
+
+    if (canvas == nullptr)
+        return;
+
+    if (mStyleRole == EUIStyleRole::eNone)
+        return;
+
+    UIControlStyle style = canvas->GetTheme().GetStyle(mStyleRole);
+    mControlStyleOverride.ApplyTo(style);
+
+    EUIVisualState visualState = ResolveVisualState();
+
+    ApplyLayoutStyle(style);
+    ApplyVisualStyle(style, visualState);
+}
+
+void UI::UIElement::DirtyVisualStyle()
+{
+
+    mVisualStyleDirty = true;
+}
+
+void UI::UIElement::DirtyLayoutStyle()
+{
+
+    mLayoutStyleDirty = true;
+}
+
+void UI::UIElement::SetStyleOverride(const UIControlStyleOverride &styleOverride)
+{
+
+    mControlStyleOverride = styleOverride;
+
+    UIControlStyle style = mDestCanvas->GetTheme().GetStyle(mStyleRole);
+    mControlStyleOverride.ApplyTo(style);
+
+    EUIVisualState visualState = ResolveVisualState();
+
+    ApplyLayoutStyle(style);
+    ApplyVisualStyle(style, visualState);
+}
+
+void UI::UIElement::ClearStyleOverride()
+{
+
+    mControlStyleOverride.mBackgroundColor.reset();
+    mControlStyleOverride.mHoverColor.reset();
+    mControlStyleOverride.mPressedColor.reset();
+    mControlStyleOverride.mDisabledColor.reset();
+    mControlStyleOverride.mSelectedColor.reset();
+
+    mControlStyleOverride.mFontSize.reset();
+    mControlStyleOverride.mHeight.reset();
+    mControlStyleOverride.mLeftPadding.reset();
+    mControlStyleOverride.mTopPadding.reset();
 }
 
 UI::UIElement *UI::UIElement::GetKeyboardCaptureScope() const
@@ -1001,6 +1102,18 @@ size_t UI::UIElement::GetComponentsNum(const char *className) const
     }
 
     return num;
+}
+
+void UI::UIElement::ApplyVisualStyle(const UI::UIControlStyle &style, EUIVisualState visualState) {}
+
+void UI::UIElement::ApplyLayoutStyle(const UIControlStyle &style)
+{
+    SetHeight(style.mHeight);
+}
+
+UI::EUIVisualState UI::UIElement::ResolveVisualState() const
+{
+    return EUIVisualState::eNormal;
 }
 
 size_t UI::UIElement::GetComponentsInner(IUIComponent **comArray, size_t maxCount, const char *className)

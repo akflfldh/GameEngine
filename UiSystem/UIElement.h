@@ -60,6 +60,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
 
     void Begin();
     virtual void Update(float deltaTime);
+    virtual void EndUpdate(float deltaTime);
+    void UpdateVisualStyleIfNeeded();
 
     const std::string &GetName() const;
     UIElementID GetID() const;
@@ -208,10 +210,29 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     UIElement *GetKeyboardCaptureScope() const;
     void SetKeyboardCaptureScope(UIElement *scope);
 
+    void SetStyleRole(EUIStyleRole role);
+    EUIStyleRole GetStyleRole() const;
+
+    void RefreshStyle();
+
+    void DirtyVisualStyle();
+    void DirtyLayoutStyle();
+
+    void SetStyleOverride(const UIControlStyleOverride &styleOverride);
+    void ClearStyleOverride();
+
   protected:
     bool mIsBegun;
     virtual void OnBegin() {};
     virtual bool IsPointInsideDefault(float x, float y) const;
+
+    // style 변화에서 호출
+    virtual void ApplyLayoutStyle(const UIControlStyle &style);
+
+    // style일변화 , hover,등 상태변화 에서 호출
+    virtual void ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState);
+
+    virtual EUIVisualState ResolveVisualState() const;
 
   private:
     size_t GetComponentsNum(const char *className) const;
@@ -280,6 +301,12 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     UIElement *mKeyboardCaptureScope = nullptr;
 
     EUIRenderLayer mRenderLayer = EUIRenderLayer::eNormal;
+
+    EUIStyleRole mStyleRole = EUIStyleRole::eNone;
+    UIControlStyleOverride mControlStyleOverride;
+
+    bool mVisualStyleDirty = false;
+    bool mLayoutStyleDirty = false;
 };
 
 template <typename T> inline T *UIElement::CreateChildUIElement(const char *instanceName)

@@ -11,6 +11,7 @@
 #include <GlobalAppHelper.h>
 #include <IEditorVisualizerObject.h>
 #include <InputSystem/InputSystem.h>
+#include <algorithm>
 
 Quad::EditorSceneController::EditorSceneController() : mMoveSpeed(30), mCurrentPitch(0.0f), mCurrentYaw(0.0f)
 {
@@ -66,10 +67,14 @@ bool Quad::EditorSceneController::HandleInput(const Quad::RawInputData &inputDat
 
     if (inputSystem->IsMouseCaptured(this))
     {
+
+        TryAdjustMoveSpeed(inputData);
+
         CameraObject *cameraObject = static_cast<CameraObject *>(GetPossessObject());
 
         if (cameraObject == nullptr)
             return false;
+
         CameraComponent *cameraCom = cameraObject->GetCameraComponent();
 
         if (inputData.mInputState & EInputState::eMouseMove)
@@ -100,6 +105,10 @@ bool Quad::EditorSceneController::HandleInput(const Quad::RawInputData &inputDat
 bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
 {
     auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
+
+    if (TryAdjustMoveSpeed(inputData.mRawInputData))
+        return true;
+
     if (inputData.mRawInputData.mInputState & EInputState::eMouseLButtonDown)
     {
 
@@ -385,6 +394,28 @@ void Quad::EditorSceneController::OnSelectedComponent(Component *com)
 
     auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
     transformGizmo.SetTargetComponent(com);
+}
+
+bool Quad::EditorSceneController::TryAdjustMoveSpeed(const Quad::RawInputData &inputData)
+{
+
+    // 마우스 휠 입력인지
+    if (!(inputData.mInputState & EInputState::eMouseWheel))
+        return false;
+
+    // ctrl키는 눌럿는지
+    const uint8_t controlVirtualKey = 0x11;
+    if (!InputSystem::GetInstance()->IsVKeyDown(controlVirtualKey))
+        return false;
+
+    const float wheelUnit = 120.0f;
+    const float wheelStep = inputData.mouseWheelData.mWheelDelta / wheelUnit;
+
+    mMoveSpeed *= std::pow(1.2f, wheelStep);
+    mMoveSpeed = std::clamp(mMoveSpeed, 1.0f, 1000.0f);
+
+    return true;
+    // 속도 조절
 }
 
 void Quad::EditorSceneController::SetEditorMap(Map *editorMap)

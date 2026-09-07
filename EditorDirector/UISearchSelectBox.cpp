@@ -128,7 +128,7 @@ void UISearchSelectBox::Initialize()
 {
 
     // editbox size
-    SetHeight(30.0f);
+    // SetHeight(30.0f);
 }
 
 void UISearchSelectBox::CreateEditBox()
@@ -137,12 +137,16 @@ void UISearchSelectBox::CreateEditBox()
     float width = mTransform.GetSize().x;
 
     mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
-    mEditBox->SetTextColor(0, 0, 0);
+    // mEditBox->SetTextColor(0, 0, 0);
     mEditBox->SetBackgroundColor(0.2f, 0.2F, 0.2F);
-    mEditBox->SetSize(width, 30.0f);
-    mEditBox->SetFontSize(20.0f);
+    // mEditBox->SetSize(width, 30.0f);
+    mEditBox->SetWidth(width);
+    // mEditBox->SetFontSize(20.0f);
     mEditBox->SetKeyboardCaptureScope(this);
     //  mEditBox->SetTextInputType(UI::EUITextInputType::eString);
+
+    mEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
+    mEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
 
     mEditBox->mOnEditBoxTextChangedCallbackSystem.Register([this](const std::string &str)
                                                            { OnSearchTextChanged(str); });
@@ -219,8 +223,9 @@ UI::UITextButton *UISearchSelectBox::GetItemButton(const SearchSelectItem &item,
         mItemButtonPool.pop_back();
     }
 
-    itemButton->SetSize(itemWidth, 30.0f);
-    itemButton->mTextComponent->SetFontSize(20.0f);
+    //   itemButton->SetSize(itemWidth, 30.0f);
+    itemButton->SetWidth(itemWidth);
+    // itemButton->mTextComponent->SetFontSize(20.0f);
     itemButton->mTextComponent->SetColor(1, 1, 1);
     itemButton->mTextComponent->SetText(item.mLabel);
     itemButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this, itemIndex](float, float)

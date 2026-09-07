@@ -38,6 +38,7 @@ class UISYSTEM_API UIManager
     void Begin();
     void BeginCanvas(UICanvasID canvasID);
     void Update(float deltaTime);
+    void EndUpdate(float deltaTime);
     void CleanUp();
     void EndFrame();
 

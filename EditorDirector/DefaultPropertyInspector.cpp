@@ -29,10 +29,12 @@ void DefaultPropertyInspector::BeginUI()
     auto editorSelectionManager = EditorSelectionManager::GetInstance();
 
     mPropertyPanel = mCanvas->CreateUIElement<PropertyPanel>("PropertyPanel");
+    mPropertyPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+
     mPropertyPanel->Initialize(editorSelectionManager);
-    mPropertyPanel->SetSize(700, 800);
-    mPropertyPanel->SetPositionLocal(0, 500);
-    mPropertyPanel->SetBackgrounColor(0.6f, 0.6f, 0.6f);
+    mPropertyPanel->SetSize(mPanelWidth, 800);
+    mPropertyPanel->SetPositionLocal(3.0f, 500);
+    // mPropertyPanel->SetBackgrounColor(0.6f, 0.6f, 0.6f);
     mPropertyPanel->SetLayout(EUIScrollLayout::eVertical);
 
     editorSelectionManager->mOnSelectedObjectCallbackSystem.Register(
@@ -74,3 +76,13 @@ void DefaultPropertyInspector::DeActivateInspector()
 }
 
 void DefaultPropertyInspector::SetInspectorContext(const InspectorContext &inspectorContext) {}
+
+void DefaultPropertyInspector::SetPanelWidth(float width)
+{
+
+    mPanelWidth = width;
+    if (mPropertyPanel)
+    {
+        mPropertyPanel->SetWidth(width);
+    }
+}

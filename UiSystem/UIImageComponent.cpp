@@ -83,6 +83,14 @@ uint32_t UI::UIImageComponent::GetVertices(UIVertex *oUIVertices) const
     UIElement *uiElement = GetOwnerUIElement();
     glm::vec2 vertices[4];
     uiElement->mTransform.GetQuadWorldPoints(vertices);
+    float width = uiElement->GetWidth();
+    float height = uiElement->GetHeight();
+
+    float borderU = mBorderThickness / width;
+    float borderV = mBorderThickness / height;
+
+    uint32_t borderColor = UIColorUtility::PackColor({mBorderColor.mR, mBorderColor.mG, mBorderColor.mB, 1.0f});
+    ;
 
     uint32_t color = 0;
     if (mUseTexture == true)
@@ -99,6 +107,11 @@ uint32_t UI::UIImageComponent::GetVertices(UIVertex *oUIVertices) const
         oUIVertices[i].mPos[0] = vertices[i].r;
         oUIVertices[i].mPos[1] = vertices[i].g;
         oUIVertices[i].mColor = color;
+        oUIVertices[i].mCommonOne = borderU;
+        oUIVertices[i].mCommonTwo = borderV;
+        oUIVertices[i].mCommonThree = mUseBorderFlag ? 1.0f : 0.0f;
+        oUIVertices[i].mCommonFive = borderColor;
+
         // oUIVertices[i].mColor = mMeshComponent.mColor;
     }
     oUIVertices[0].mTex[0] = 0;
@@ -155,6 +168,27 @@ void UI::UIImageComponent::SetColor(glm::vec3 color)
     mColorR = color.r;
     mColorG = color.g;
     mColorB = color.b;
+}
+
+void UI::UIImageComponent::SetUseBorderFlag(bool flag)
+{
+
+    mUseBorderFlag = flag;
+}
+
+bool UI::UIImageComponent::GetUseBorderFlag() const
+{
+    return mUseBorderFlag;
+}
+
+void UI::UIImageComponent::SetBorderThickness(float thickness)
+{
+    mBorderThickness = thickness;
+}
+
+void UI::UIImageComponent::SetBorderColor(const UI::UIColor &color)
+{
+    mBorderColor = color;
 }
 
 void UI::UIImageComponent::SetColor(const UI::UIColor &color)

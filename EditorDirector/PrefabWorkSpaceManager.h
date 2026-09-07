@@ -23,6 +23,9 @@ class Prefab;
 class World;
 class Component;
 class BaseSelectionManager;
+
+using ObjectComKeyTable = std::unordered_map<std::string, Component *>;
+
 class PrefabWorkSpaceManager
 {
   public:
@@ -46,6 +49,10 @@ class PrefabWorkSpaceManager
     void OnPrefabEditInActive();
 
     void SyncPrefabInstances();
+
+    void SyncPrebObjectProperties(Object *prefabInstance, Object *instance);
+
+    ObjectComKeyTable BuildComponentKeyTable(Object *prefabObject);
 
   private:
     void InitLogicalWindow(UI::UICanvas *canvas);
@@ -92,4 +99,6 @@ class PrefabWorkSpaceManager
     std::unique_ptr<World> mWorld;
 
     BaseSelectionManager *mSelectionManager = nullptr;
+
+    ObjectComKeyTable mComponentTable;
 };

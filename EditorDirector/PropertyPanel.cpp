@@ -8,8 +8,13 @@
 #include <EditorDirector/UIReflectPanel.h>
 #include <UiSystem/UIEditBox.h>
 #include <UiSystem/UIImage.h>
+#include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIText.h>
-PropertyPanel::PropertyPanel() : mSelectedEntity(nullptr), mReflectPanel(nullptr) {}
+PropertyPanel::PropertyPanel() : mSelectedEntity(nullptr), mReflectPanel(nullptr)
+{
+
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+}
 
 PropertyPanel::~PropertyPanel() {}
 
@@ -77,5 +82,16 @@ void PropertyPanel::OnTransformChanged(UI::ETransformChangeType type)
         {
             mReflectPanel->SetWidth(GetWidth());
         }
+    }
+}
+
+void PropertyPanel::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState)
+{
+
+    auto backgroundCom = GetBackgroundImageComponent();
+
+    if (backgroundCom)
+    {
+        backgroundCom->SetColor(style.mBackgroundColor);
     }
 }

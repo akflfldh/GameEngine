@@ -56,6 +56,7 @@ RAPIDJSON_DIAG_OFF(effc++)
 #endif
 
 #if RAPIDJSON_USE_MEMBERSMAP
+#include "ObjectHierarchyItem.h"
 #include "UIReflectFloatPanel.h"
 #include <map> // std::multimap
 #endif
@@ -1665,12 +1666,12 @@ template <typename Encoding, typename Allocator = RAPIDJSON_DEFAULT_ALLOCATOR> c
             __declspec(thread) static char buffer[sizeof(GenericValue)];
             return *new (buffer) GenericValue();
 #elif defined(__GNUC__) || defined(__clang__)
-                // This will generate -Wexit-time-destructors in clang, but that's
+                                         // This will generate -Wexit-time-destructors in clang, but that's
                 // better than having under-alignment.
                 __thread static GenericValue buffer;
                 return buffer;
 #else
-                // Don't know what compiler this is, so don't know how to ensure
+                                         // Don't know what compiler this is, so don't know how to ensure
                 // thread-locality.
                 static GenericValue buffer;
                 return buffer;
@@ -2146,6 +2147,7 @@ template <typename Encoding, typename Allocator = RAPIDJSON_DEFAULT_ALLOCATOR> c
         RAPIDJSON_ASSERT(IsObject());
         return ConstObject(*this);
     }
+
     ConstObject GetObj() const
     {
         RAPIDJSON_ASSERT(IsObject());

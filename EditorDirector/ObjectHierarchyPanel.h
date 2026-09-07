@@ -61,15 +61,25 @@ class REFLECT_CLASS(EngineClass) ObjectHierarchyPanel : public UI::UIElement
 
 #pragma endregion
 
+    void SetUseBorder(bool flag);
+    void SetBorderColor(const UI::UIColor &color);
+
   private:
     // Pool에없다면 생성
     ObjectHierarchyItem *GetObjectHierarchyItem();
     // Pool에 반납
     void ReleaseObjectHierarchyItem(ObjectHierarchyItem *newtem);
 
-    void UpdateItemVisual(ObjectHierarchyItem *newItem);
+    void UpdateItemSelectState(ObjectHierarchyItem *newItem);
 
     ObjectHierarchyItem *FindObjectItem(Object *object);
+
+  protected:
+    // style 변화에서 호출
+    virtual void ApplyLayoutStyle(const UI::UIControlStyle &style) override;
+
+    // style일변화 , hover,등 상태변화 에서 호출
+    virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state) override;
 
   private:
     UIScrollBox *mScrollPanel;

@@ -57,6 +57,9 @@ class REFLECT_CLASS(EngineClass) PropertyPanel : public UIScrollBox
     //  void OnFinishTransformInput();
     //   void OnStartTransformInput();
 
+  protected:
+    virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState) override;
+
   private:
     BaseSelectionManager *mSelectionManager = nullptr;
 

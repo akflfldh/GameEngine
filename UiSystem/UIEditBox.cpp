@@ -7,6 +7,8 @@
 UI::UIEditBox::UIEditBox() : mCursorElement(nullptr)
 {
 
+    SetStyleRole(UI::EUIStyleRole::eInputBox);
+
     mBackgroundImageCom = CreateUIComponent<UI::UIImageComponent>("BackgroundImageCom");
     mBackgroundImageCom->SetColor(0, 0, 0);
 
@@ -142,5 +144,20 @@ void UI::UIEditBox::SetCursorPosByWorldPos(float worldPosX, float worldPosY)
     {
         glm::vec2 localPos = mTransform.WorldToLocal(worldPosX, worldPosY);
         mTextInputCom->SetCursorPos(localPos.r, localPos.g);
+    }
+}
+
+void UI::UIEditBox::ApplyLayoutStyle(const UIControlStyle &style)
+{
+
+    SetHeight(style.mHeight);
+
+    auto pos = mTransform.GetLocalPosition();
+    pos.y += style.mTopPadding;
+    SetPositionLocal(pos);
+
+    if (mTextInputCom)
+    {
+        mTextCom->SetFontSize(style.mFontSize);
     }
 }

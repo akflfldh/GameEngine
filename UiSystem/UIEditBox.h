@@ -52,6 +52,11 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIEditBox : public UIElement
 
   protected:
     virtual void OnBegin() override;
+    // style 변화에서 호출
+    virtual void ApplyLayoutStyle(const UIControlStyle &style) override;
+
+    //// style일변화 , hover,등 상태변화 에서 호출
+    // virtual void ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState);
 
   private:
     UIImageComponent *mBackgroundImageCom;

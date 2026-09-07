@@ -147,8 +147,9 @@ void UIDirectoryTree::OnAddedFolder(QuadLF::LogicalFolder *newFolderNode, QuadLF
     auto childTreeNode = canvas->CreateUIElement<UITreeNode>(newFolderNode->GetName().c_str());
     childTreeNode->SetParent(parentFolderNode);
     childTreeNode->SetDestDirectoryTree(this);
-    childTreeNode->SetSize(600, 50);
-    childTreeNode->SetItemHeight(50.0f);
+    // childTreeNode->SetSize(600, 50);
+    childTreeNode->SetWidth(600);
+    //  childTreeNode->SetItemHeight(50.0f);
     childTreeNode->SetLogicalFolder(newFolderNode);
     (parentFolderNode)->AddChildNode(childTreeNode);
 
@@ -180,7 +181,7 @@ void UIDirectoryTree::RebuildTree()
 
         treeNode->SetParent(this);
         treeNode->SetDestDirectoryTree(this);
-        treeNode->SetItemHeight(50.0f);
+        // treeNode->SetItemHeight(50.0f);
         treeNode->SetLogicalFolder(folder);
 
         mRootNodes.push_back(treeNode);
@@ -199,7 +200,7 @@ void UIDirectoryTree::RebuildTree()
         for (auto childFolder : childFolderList)
         {
             auto childTreeNode = canvas->CreateUIElement<UITreeNode>(childFolder->GetName().c_str());
-            childTreeNode->SetItemHeight(50.0f);
+            //  childTreeNode->SetItemHeight(50.0f);
             childTreeNode->SetLogicalFolder(childFolder);
             childTreeNode->SetDestDirectoryTree(this);
 

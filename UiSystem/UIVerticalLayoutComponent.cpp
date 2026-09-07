@@ -124,7 +124,9 @@ void UI::UIVerticalLayoutComponent::CalculateLayout()
 
         float h = child->mTransform.GetSize().g;
 
-        child->SetPositionLocal(mPaddingX, currentY);
+        float x = child->mTransform.GetLocalPosition().x;
+
+        child->SetPositionLocal(x, currentY);
 
         currentY += h;
         currentY = glm::round(currentY);

@@ -5,7 +5,11 @@
 #include <UiSystem/UIText.h>
 #include <Utility/Utility.h>
 
-UIReflectFloatPanel::UIReflectFloatPanel() {}
+UIReflectFloatPanel::UIReflectFloatPanel()
+{
+
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+}
 
 UIReflectFloatPanel::~UIReflectFloatPanel() {}
 
@@ -17,6 +21,8 @@ void UIReflectFloatPanel::BindFloat(Getter getter, Setter setter)
     mPropertyInfo = nullptr;
     mCommitNotifier = nullptr;
     mIsEditing = false;
+    mHasValue = false;
+    mCurrentValue = 0.0f;
     RefreshFromSource();
 }
 
@@ -29,18 +35,18 @@ void UIReflectFloatPanel::SetCommitNotifier(CommitNotifier notifier)
 void UIReflectFloatPanel::OnBegin()
 {
     SetSize(500.0f, 100.0f);
-    SetColor(0.3f, 0.3f, 0.3f);
+    //  SetColor(0.3f, 0.3f, 0.3f);
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");
-    mTagText->SetFontSize(20.0f);
-    mTagText->SetHeight(30.0f);
-    mTagText->SetTextColor({0, 0, 0});
-    mTagText->SetPositionLocal(30, 40);
+    //   mTagText->SetFontSize(20.0f);
+    // mTagText->SetHeight(30.0f);
+    //  mTagText->SetTextColor({0, 0, 0});
+    //    mTagText->SetPositionLocal(0, 40);
 
     mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
-    mEditBox->SetSize(100, 40);
+    mEditBox->SetWidth(100);
     mEditBox->SetBackgroundColor(1, 1, 1);
-    mEditBox->SetTextColor(0, 0, 0);
+    //   mEditBox->SetTextColor(0, 0, 0);
     mEditBox->SetTextInputType(UI::EUITextInputType::eNumber);
     mEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
     mEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
@@ -76,7 +82,7 @@ void UIReflectFloatPanel::RefreshFromSource()
 
     float value = mGetter();
 
-    if (IsSameValue(mCurrentValue, value))
+    if (mHasValue && IsSameValue(mCurrentValue, value))
         return;
 
     SetFloat(value);
@@ -95,7 +101,8 @@ void UIReflectFloatPanel::SetTagText(const std::string &tag)
     mTagText->SetText(tag);
 
     int editBoxOffsetX = tagTextWidth + mTagText->mTransform.GetLocalPosition().x + 30;
-    mEditBox->SetPositionLocal(editBoxOffsetX, 40);
+
+    mEditBox->SetPositionLocal(editBoxOffsetX, mEditBox->mTransform.GetLocalPosition().y);
 }
 
 void UIReflectFloatPanel::BindProperty(void *targetMemory, Quad::PropertyInfo *property)
@@ -136,7 +143,7 @@ void UIReflectFloatPanel::Unbind()
     mPropertyInfo = nullptr;
     //  mIsBound = false;
     mIsEditing = false;
-
+    mHasValue = false;
     mCurrentValue = 0.0f;
 }
 
@@ -200,4 +207,5 @@ void UIReflectFloatPanel::SetFloat(float value)
     std::string v = std::to_string(value);
 
     mEditBox->SetText(v);
+    mHasValue = true;
 }

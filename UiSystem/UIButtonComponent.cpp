@@ -1,7 +1,7 @@
 ﻿
 #include <UISystem/UIButtonComponent.h>
 #include <UiSystem/UIElement.h>
-UI::UIButtonComponent::UIButtonComponent() : mHover(false), mPress(false) {}
+UI::UIButtonComponent::UIButtonComponent() : mHover(false), mPress(false), mSelected(false) {}
 
 UI::UIButtonComponent::~UIButtonComponent() {}
 
@@ -27,11 +27,23 @@ void UI::UIButtonComponent::OnHover(int x, int y)
 {
 
     mHover = true;
+    auto ownerUIElement = GetOwnerUIElement();
+
+    if (ownerUIElement)
+    {
+        ownerUIElement->DirtyVisualStyle();
+    }
 }
 void UI::UIButtonComponent::OnReleaseHover()
 {
 
     mHover = false;
+    auto ownerUIElement = GetOwnerUIElement();
+
+    if (ownerUIElement)
+    {
+        ownerUIElement->DirtyVisualStyle();
+    }
 }
 
 void UI::UIButtonComponent::OnMouseMove(const Quad::RawInputData &inputData, float worldPosX, float worldPosY) {}
@@ -64,3 +76,24 @@ bool UI::UIButtonComponent::IsHovered() const
 }
 
 void UI::UIButtonComponent::OnChangeHoverPart(int before, int after) {}
+
+bool UI::UIButtonComponent::IsSelected() const
+{
+    return mSelected;
+}
+
+void UI::UIButtonComponent::SetSelected(bool state)
+{
+
+    if (mSelected == state)
+        return;
+
+    mSelected = state;
+
+    auto owner = GetOwnerUIElement();
+
+    if (owner)
+    {
+        owner->DirtyVisualStyle();
+    }
+}

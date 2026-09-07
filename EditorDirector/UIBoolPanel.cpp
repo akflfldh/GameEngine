@@ -3,7 +3,10 @@
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIText.h>
-UIBoolPanel::UIBoolPanel() : mTagText(nullptr), mCheckButton(nullptr) {}
+UIBoolPanel::UIBoolPanel() : mTagText(nullptr), mCheckButton(nullptr)
+{
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+}
 
 UIBoolPanel::~UIBoolPanel() {}
 
@@ -15,12 +18,12 @@ void UIBoolPanel::OnBegin()
     SetHeight(40.0f);
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");
-    mTagText->SetHeight(30.0f);
-    mTagText->SetPositionLocal(20, 3);
-    mTagText->SetTextColor({0, 0, 0});
+    // mTagText->SetHeight(30.0f);
+    //    mTagText->SetPositionLocal(0, 0);
+    //  mTagText->SetTextColor({0, 0, 0});
     mCheckButton = CreateChildUIElement<UI::UIButton>("CheckButton");
 
-    mCheckButton->SetSize(20, 20);
+    //  mCheckButton->SetSize(20, 20);
     mCheckButton->mUIImageComponent->SetTexture("Engine/CheckBox");
     mCheckButton->mUIImageComponent->NotUseTexture();
     mCheckButton->mUIImageComponent->SetColor(1.0F, 1.0F, 1.0F);

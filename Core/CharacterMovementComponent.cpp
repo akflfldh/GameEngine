@@ -48,8 +48,15 @@ void CharacterMovementComponent::Tick(float deltaTime)
 
     if (hasGroundResult && groundResult.mIsGrounded)
     {
+
         if (newVelocity.Y < 0.0f)
             newVelocity.Y = 0.0f;
+
+        // 땅에 있을때만 , 공중에있을땐 점프 불가능 .
+        if (mInputWorldDir.Y > 0.1f)
+        { // 점프키를 눌렀다.
+            newVelocity.Y = mJumpVelocity;
+        }
     }
     else
     {
@@ -72,4 +79,25 @@ void CharacterMovementComponent::SetUpdatedPhysicsComponent(SceneComponent *comp
 {
 
     mUpdatedPhysicsComponent = component;
+}
+
+void CharacterMovementComponent::SyncPrefabComponentFrom(Component *prefabComponent)
+{
+
+    CharacterMovementComponent *prefabMovementCom = static_cast<CharacterMovementComponent *>(prefabComponent);
+
+    mMaxVelocity = prefabMovementCom->mMaxVelocity;
+    mGroundAcceleration = prefabMovementCom->mGroundAcceleration;
+    mGroundBrakingDeceleration = prefabMovementCom->mGroundBrakingDeceleration;
+    mJumpVelocity = prefabMovementCom->mJumpVelocity;
+}
+
+void CharacterMovementComponent::Serialize(Arch &arch)
+{
+    Component::Serialize(arch);
+
+    arch << mMaxVelocity;
+    arch << mGroundAcceleration;
+    arch << mGroundBrakingDeceleration;
+    arch << mJumpVelocity;
 }

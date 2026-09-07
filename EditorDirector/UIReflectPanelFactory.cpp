@@ -1,5 +1,6 @@
 ﻿#include "UIReflectPanelFactory.h"
 #include <Core/Component.h>
+#include <EditorDirector/UIReflectFloatPanel.h>
 #include <EditorDirector/UIReflectVectorPanel.h>
 #include <ReflectSystem/ReflectionClassInfo.h>
 #include <ReflectSystem/ReflectionPropertyInfo.h>
@@ -36,10 +37,11 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         {
             // Create
             boolPanel = parentElement->CreateChildUIElement<UIReflectBoolPanel>("BoolPanel");
-            boolPanel->SetColor({0.4f, 0.4f, 0.4f});
+            // boolPanel->SetColor({0.4f, 0.4f, 0.4f});
             boolPanel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mBoolPanelPool.push_back(static_cast<UIReflectBoolPanel *>(element)); };
         }
+
         else
         {
 
@@ -51,13 +53,36 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         boolPanel->SetParent(parentElement);
         panel = boolPanel;
     }
+    else if (std::strcmp(property->mType, "float") == 0)
+    {
+
+        UIReflectFloatPanel *floatPanel = nullptr;
+        if (mBoolPanelPool.empty())
+        {
+            // Create
+            floatPanel = parentElement->CreateChildUIElement<UIReflectFloatPanel>("FloatPanel");
+            // floatPanel->SetColor({0.4f, 0.4f, 0.4f});
+            floatPanel->mReturnToPoolCallback = [this](UI::UIElement *element)
+            { mFloatPanelPool.push_back(static_cast<UIReflectFloatPanel *>(element)); };
+        }
+        else
+        {
+
+            floatPanel = mFloatPanelPool.back();
+            mFloatPanelPool.pop_back();
+        }
+        floatPanel->SetTagText(tagName);
+        floatPanel->SetActiveFlag(true);
+        floatPanel->SetParent(parentElement);
+        panel = floatPanel;
+    }
     else if (property->mIsBuiltinType)
     {
         UIReflectSinglePrimitivePanel *primitivePanel = nullptr;
         if (mSinglePrimitivePanelPool.empty())
         {
             primitivePanel = parentElement->CreateChildUIElement<UIReflectSinglePrimitivePanel>("SinglePrimtivePanel");
-            primitivePanel->SetColor({0.4f, 0.4f, 0.4f});
+            // primitivePanel->SetColor({0.4f, 0.4f, 0.4f});
             primitivePanel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mSinglePrimitivePanelPool.push_back(static_cast<UIReflectSinglePrimitivePanel *>(element)); };
         }
@@ -79,7 +104,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         {
             // Create
             vector3Panel = parentElement->CreateChildUIElement<UIReflectVector3Panel>("ReflectVector3Panel");
-            vector3Panel->SetColor({0.4f, 0.4f, 0.4f});
+            // vector3Panel->SetColor({0.4f, 0.4f, 0.4f});
             vector3Panel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mVector3PanelPool.push_back(static_cast<UIReflectVector3Panel *>(element)); };
         }

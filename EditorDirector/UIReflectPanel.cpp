@@ -4,6 +4,7 @@
 #include <Core/Entity.h>
 #include <Core/Object.h>
 #include <Core/SceneComponent.h>
+#include <EditorDirector/UIFoldoutPanel.h>
 #include <EditorDirector/UIReflectBoolPanel.h>
 #include <EditorDirector/UIReflectSinglePrimitivePanel.h>
 #include <EditorInspectorUtility.h>
@@ -49,10 +50,15 @@ void TransformReflectPanel::Update(float deltaTime)
 void TransformReflectPanel::Initialize(UI::UICanvas *canvas, ETransformTargetType targetType)
 {
     mTargetType = targetType;
+    mTransformFoldPanel = canvas->CreateUIElement<UIFoldoutPanel>("TransformFoldPanel");
+    mTransformFoldPanel->SetHeaderText("Transform");
 
-    mBaseBackgroundPanel = canvas->CreateUIElement<UI::UIImage>("BaseBackgroundPanel");
-    mBaseBackgroundPanel->SetSize(600, 300);
-    mBaseBackgroundPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
+    mTransformFoldPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+
+    mTransformFoldPanel->SetWidth(600.0f);
+    mTransformFoldPanel->SetHeaderColor(UI::UIColor::DarkYellow);
+    mTransformFoldPanel->SetExpanded(true);
+    //  mTransformFoldPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
 
     BuildPanels(canvas);
     ClearBinding();
@@ -73,25 +79,25 @@ void TransformReflectPanel::SetTargetComponent(Component *component)
 
 void TransformReflectPanel::SetParent(UI::UIElement *parent)
 {
-    if (mBaseBackgroundPanel)
+    if (mTransformFoldPanel)
     {
-        mBaseBackgroundPanel->SetParent(parent);
+        mTransformFoldPanel->SetParent(parent);
     }
 }
 
 void TransformReflectPanel::SetActive(bool state)
 {
-    if (mBaseBackgroundPanel)
+    if (mTransformFoldPanel)
     {
-        mBaseBackgroundPanel->SetActiveFlag(state);
+        mTransformFoldPanel->SetActiveFlag(state);
     }
 }
 
 bool TransformReflectPanel::GetActive() const
 {
-    if (mBaseBackgroundPanel)
+    if (mTransformFoldPanel)
     {
-        return mBaseBackgroundPanel->GetActiveFlag();
+        return mTransformFoldPanel->GetActiveFlag();
     }
 
     return false;
@@ -107,14 +113,24 @@ void TransformReflectPanel::ClearBinding()
     ResetPanel(mPositionPanel);
 }
 
+void TransformReflectPanel::SetWidth(float width)
+{
+
+    if (mTransformFoldPanel)
+    {
+        mTransformFoldPanel->SetWidth(width);
+    }
+}
+
 void TransformReflectPanel::BuildPanels(UI::UICanvas *canvas)
 {
-    auto createPanel = [this](const char *name, const char *tagText) -> UIReflectVector3Panel *
+    auto createPanel = [this, canvas](const char *name, const char *tagText) -> UIReflectVector3Panel *
     {
-        UIReflectVector3Panel *panel = mBaseBackgroundPanel->CreateChildUIElement<UIReflectVector3Panel>(name);
-        panel->SetColor(0.4f, 0.4f, 0.4f);
-        panel->SetWidth(mBaseBackgroundPanel->mTransform.GetSize().r);
+        UIReflectVector3Panel *panel = canvas->CreateUIElement<UIReflectVector3Panel>(name);
+        // panel->SetColor(0.4f, 0.4f, 0.4f);
+        panel->SetWidth(mTransformFoldPanel->mTransform.GetSize().r);
         panel->SetTagText(tagText);
+        mTransformFoldPanel->AddItem(panel);
         return panel;
     };
 
@@ -185,6 +201,8 @@ void TransformReflectPanel::ResetPanel(UIReflectVector3Panel *panel)
 
 UIReflectPanel::UIReflectPanel()
 {
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+
     mBackgroundImageComponent = CreateUIComponent<UI::UIImageComponent>("BackgroundImageCom");
     mVerticalLayoutComponent = CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
 
@@ -305,7 +323,12 @@ void UIReflectPanel::Rebuild()
 
 void UIReflectPanel::OnTransformChanged(UI::ETransformChangeType type)
 {
-    int a = 2;
+
+    if (type == UI::ETransformChangeType::eAll || type == UI::ETransformChangeType::eSize)
+    {
+
+        mTransformReflectPanel.SetWidth(GetWidth());
+    }
 }
 
 UI::UIImage *UIReflectPanel::CreateBackgroundPanel()
@@ -313,6 +336,15 @@ UI::UIImage *UIReflectPanel::CreateBackgroundPanel()
     auto panel = CreateChildUIElement<UI::UIImage>("BasePanel");
     panel->SetSize(400, 120);
     return panel;
+}
+
+void UIReflectPanel::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState)
+{
+
+    if (mBackgroundImageComponent)
+    {
+        mBackgroundImageComponent->SetColor(style.mBackgroundColor);
+    }
 }
 
 void UIReflectPanel::BuildObjectProperties(Object *object)

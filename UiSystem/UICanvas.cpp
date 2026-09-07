@@ -39,6 +39,15 @@ void UI::UICanvas::Update(float deltaTime)
     }
 }
 
+void UI::UICanvas::EndUpdate(float deltaTime)
+{
+
+    for (auto childUIElement : mChildUIElement)
+    {
+        childUIElement->EndUpdate(deltaTime);
+    }
+}
+
 void UI::UICanvas::AddChild(UIElement *uiElement)
 {
     auto manager = UIManager::GetInstance();
@@ -208,6 +217,19 @@ UI::UIElement *UI::UICanvas::GetHittedElement(float x, float y) const
         }
     }
     return targetElement;
+}
+
+void UI::UICanvas::SetTheme(const UITheme &theme)
+{
+
+    mTheme = theme;
+}
+
+const UI::UITheme &UI::UICanvas::GetTheme() const
+{
+    return mTheme;
+
+    // TODO: 여기에 return 문을 삽입합니다.
 }
 
 void UI::UICanvas::AddChildInternal(UIElement *uiElement)
@@ -380,4 +402,31 @@ void UI::UICanvas::SetUIElementTopDepth(UIElement *uiElement)
         return;
     mTopUIElementDepthValue++;
     uiElement->SetDepthValue(mTopUIElementDepthValue);
+}
+
+const UI::UIControlStyle &UI::UITheme::GetStyle(EUIStyleRole role) const
+{
+
+    return mStyles[(uint8_t)role];
+
+    // TODO: 여기에 return 문을 삽입합니다.
+}
+
+const UI::UIPalette &UI::UITheme::GetPalette() const
+{
+    // TODO: 여기에 return 문을 삽입합니다.
+    return mPalette;
+}
+
+const UI::UIMetrics &UI::UITheme::GetMetrics() const
+{
+    // TODO: 여기에 return 문을 삽입합니다.
+
+    return mMetrics;
+}
+
+void UI::UITheme::SetStyle(EUIStyleRole role, const UIControlStyle &style)
+{
+
+    mStyles[(uint8_t)role] = style;
 }

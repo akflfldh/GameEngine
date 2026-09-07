@@ -25,6 +25,8 @@ struct PhysicsShapeBinding
 // Physics Body와 외부링크 context
 struct PhysicsSceneComponentBinding
 {
+    SceneComponent *mTransformSyncTarget = nullptr; // 사실상 루트 컴포넌트
+
     IPhysicsBodyComponent *mPhysicsBodyComponent = nullptr;
     SceneComponent *mSceneComponent = nullptr;
     IPhysicsShapeProvider *mShapeProvider = nullptr;
@@ -61,7 +63,8 @@ class CORE_API_LIB PhysicsBridgeSystem
     bool RegisterMap(Map *map);
     bool UnRegisterMap(Map *map);
 
-    PhysicsBodyHandle RegisterPhysicsBodyComponent(SceneComponent *rootSceneComponent,
+    PhysicsBodyHandle RegisterPhysicsBodyComponent(SceneComponent *transformSyncTarget,
+                                                   SceneComponent *rootSceneComponent,
                                                    IPhysicsBodyComponent *bodyComponent,
                                                    IPhysicsShapeProvider *shapeProvider);
 
@@ -86,6 +89,9 @@ class CORE_API_LIB PhysicsBridgeSystem
 
     void SyncTransformToComponent(const PhysicsFrameResult &physicsFrameResult,
                                   std::unordered_map<Map *, PhysicsBridgeMapContext>::iterator it);
+
+    void ApplyBodyTransformToSyncTarget(const PhysicsSceneComponentBinding &binding,
+                                        const PhysicsTransformResult &result);
 
     void SyncGroundResultToComponent(const PhysicsFrameResult &physicsFrameResult,
                                      std::unordered_map<Map *, PhysicsBridgeMapContext>::iterator it);

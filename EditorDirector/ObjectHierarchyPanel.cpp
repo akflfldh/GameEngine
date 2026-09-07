@@ -17,9 +17,12 @@
 ObjectHierarchyPanel::ObjectHierarchyPanel()
     : mScrollPanel(nullptr), mSelectedObject(nullptr), mSelectedItem(nullptr), bSelectedItemDirty(false)
 {
+
+    SetStyleRole(UI::EUIStyleRole::ePanel);
+
     mImageCom = CreateUIComponent<UI::UIImageComponent>("ImageCom");
     mImageCom->NotUseTexture();
-    mImageCom->SetColor(0.2, 0.7, 0.2);
+    // mImageCom->SetColor(1.0, 1.0, 1.0);
 
     mVerticalLayoutCom = CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
 
@@ -71,6 +74,9 @@ void ObjectHierarchyPanel::OnBegin()
 {
     UI::UIElement::OnBegin();
 
+    // mImageCom->SetUseBorderFlag(true);
+    // mImageCom->SetBorderColor(UI::UIColor::White);
+
     const glm::vec2 size = mTransform.GetSize();
 
     auto titleElement = GetDestCanvas()->CreateUIElement<UI::UIElement>("Title");
@@ -78,19 +84,22 @@ void ObjectHierarchyPanel::OnBegin()
     auto titleImageCom = titleElement->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     titleImageCom->NotUseTexture();
-    titleImageCom->SetColor(1, 0, 0);
+    titleImageCom->SetColor(UI::UIColor::DarkYellow);
 
     titleElement->SetSize(size.r, 60);
 
     titleElement->SetParent(this);
 
     mScrollPanel = GetDestCanvas()->CreateUIElement<UIScrollBox>("ScrollBox");
+    mScrollPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mScrollPanel->SetUseBorder(true);
+    mScrollPanel->SetBorderColor(UI::UIColor::LightGray);
     int a = 2;
 
     mScrollPanel->SetParent(this);
 
     SetScrollPanelSize(size.r, 400);
-    SetScrollPanelColor(1, 1, 0);
+    // SetScrollPanelColor(1, 0, 0);
 
     mVerticalLayoutCom->CalculateLayout();
 
@@ -316,7 +325,7 @@ void ObjectHierarchyPanel::OnSelectedObject(Object *object)
 
         if (bSelectedItemDirty && item)
         {
-            UpdateItemVisual(item);
+            UpdateItemSelectState(item);
         }
 
         bSelectedItemDirty = true;
@@ -324,14 +333,14 @@ void ObjectHierarchyPanel::OnSelectedObject(Object *object)
     else
     {
         // mSelectedObject = object;
-        UpdateItemVisual(nullptr);
+        UpdateItemSelectState(nullptr);
     }
 }
 
 void ObjectHierarchyPanel::OnSelectedItem(ObjectHierarchyItem *item, bool bNotify)
 {
 
-    UpdateItemVisual(item);
+    UpdateItemSelectState(item);
 
     if (item)
     {
@@ -388,7 +397,7 @@ ObjectHierarchyItem *ObjectHierarchyPanel::GetObjectHierarchyItem()
 
     ObjectHierarchyItem *item = GetDestCanvas()->CreateUIElement<ObjectHierarchyItem>("item");
     item->mOnClickedHeaderPanelCallbackSystem.Register([this, item]() { OnSelectedItem(item); });
-    item->SetHeaderColor(0.3f, 0.2f, 0.7f);
+    // item->SetHeaderColor(0.3f, 0.2f, 0.7f);
     item->mOnDroppedObjectItemCallbackSystem.Register(
         [this, item](ObjectHierarchyItem *otherItem)
         {
@@ -397,11 +406,11 @@ ObjectHierarchyItem *ObjectHierarchyPanel::GetObjectHierarchyItem()
             // 오직 부모가 아닌 조상, or 다른 object의경우에만 부모변경
             ChangeObjectParent(otherItem, item);
         });
-    item->SetHeaderFontSize(21);
+    //  item->SetHeaderFontSize(21);
 
-    float h = item->GetHeaderLineHeight() + 20.0f;
+    //  float h = item->GetHeaderLineHeight() + 20.0f;
     //   item->SetSize(1.0f, h);
-    item->SetHeaderHeight(h);
+    //  item->SetHeaderHeight(h);
     // setup size
 
     return item;
@@ -418,18 +427,18 @@ void ObjectHierarchyPanel::ReleaseObjectHierarchyItem(ObjectHierarchyItem *item)
     mItemPool.push_back(item);
 }
 
-void ObjectHierarchyPanel::UpdateItemVisual(ObjectHierarchyItem *newItem)
+void ObjectHierarchyPanel::UpdateItemSelectState(ObjectHierarchyItem *newItem)
 {
 
     if (mSelectedItem)
     {
-        mSelectedItem->SetHeaderColor(0.3f, 0.2f, 0.7f);
+        mSelectedItem->OnSelectedState(false);
     }
 
     mSelectedItem = newItem;
     if (mSelectedItem)
     {
-        mSelectedItem->SetHeaderColor(0.2f, 0.2f, 0.2f);
+        mSelectedItem->OnSelectedState(true);
     }
 }
 
@@ -538,4 +547,34 @@ ObjectHierarchyItem *ObjectHierarchyPanel::FindObjectItem(Object *object)
     }
 
     return parentObjItem;
+}
+
+void ObjectHierarchyPanel::ApplyLayoutStyle(const UI::UIControlStyle &style) {}
+
+// style일변화 , hover,등 상태변화 에서 호출
+void ObjectHierarchyPanel::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state)
+{
+
+    if (mImageCom)
+    {
+        mImageCom->SetColor(style.mBackgroundColor);
+    }
+}
+
+void ObjectHierarchyPanel::SetUseBorder(bool flag)
+{
+
+    if (mImageCom)
+    {
+        mImageCom->SetUseBorderFlag(flag);
+    }
+}
+
+void ObjectHierarchyPanel::SetBorderColor(const UI::UIColor &color)
+{
+
+    if (mImageCom)
+    {
+        mImageCom->SetBorderColor(color);
+    }
 }

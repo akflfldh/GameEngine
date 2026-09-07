@@ -30,6 +30,7 @@ class ReflectionSystem;
 class UIReflectSinglePrimitivePanel;
 class UIReflectVector3Panel;
 class UIReflectBoolPanel;
+class UIFoldoutPanel;
 
 enum class ETransformTargetType
 {
@@ -56,6 +57,8 @@ class TransformReflectPanel
 
     void ClearBinding();
 
+    void SetWidth(float width);
+
   private:
     void BuildPanels(UI::UICanvas *canvas);
     void Rebind();
@@ -65,7 +68,7 @@ class TransformReflectPanel
   private:
     ETransformTargetType mTargetType = ETransformTargetType::eComponent;
 
-    UI::UIImage *mBaseBackgroundPanel = nullptr;
+    UIFoldoutPanel *mTransformFoldPanel = nullptr;
     UIReflectVector3Panel *mScalePanel = nullptr;
     UIReflectVector3Panel *mRotationPanel = nullptr;
     UIReflectVector3Panel *mPositionPanel = nullptr;
@@ -99,6 +102,10 @@ class REFLECT_CLASS(EngineClass) UIReflectPanel : public UI::UIElement
 
     UIReflectBoolPanel *CreateBoolPanel(const std::string &tagName, Quad::PropertyInfo *property);
     virtual void OnTransformChanged(UI::ETransformChangeType type) override;
+
+  protected:
+    // style일변화 , hover,등 상태변화 에서 호출
+    virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState) override;
 
   private:
     UI::UIImage *CreateBackgroundPanel();

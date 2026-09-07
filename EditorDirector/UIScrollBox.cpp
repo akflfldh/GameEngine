@@ -30,12 +30,15 @@ void UIScrollBox::OnBegin()
     if (mImageComponent)
     {
         mImageComponent->NotUseTexture();
+        mImageComponent->SetBorderThickness(mBorderThickness);
     }
 
-    mContentPanel = GetDestCanvas()->CreateUIElement<UI::UIElement>("ContentPanel");
-    // UI::UIImageComponent *contentPanelImageCom = mContentPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
+    auto canvas = GetDestCanvas();
 
-    mContentPanel->SetParent(this);
+    mViewportPanel = CreateChildUIElement<UI::UIElement>("ViewportPanel");
+
+    mContentPanel = mViewportPanel->CreateChildUIElement<UI::UIElement>("ContentPanel");
+    // UI::UIImageComponent *contentPanelImageCom = mContentPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     auto contentPanelButtonCom = mContentPanel->CreateUIComponent<UI::UIButtonComponent>("ButtonCom");
     contentPanelButtonCom->mButtonClickCallbackSystem.Register(
@@ -53,7 +56,11 @@ void UIScrollBox::OnBegin()
 
     glm::vec2 scrollBoxSize = mTransform.GetSize();
 
-    mContentPanel->SetSize(scrollBoxSize.r, scrollBoxSize.g);
+    mViewportPanel->SetSize(scrollBoxSize.r - 2.0f * mBorderThickness, scrollBoxSize.g - 2.0f * mBorderThickness);
+
+    mViewportPanel->SetPositionLocal(mBorderThickness, mBorderThickness);
+
+    mContentPanel->SetWidth(mViewportPanel->GetWidth());
     mContentPanel->SetPositionLocal(0, 0);
 
     // contentPanelImageCom->NotUseTexture();
@@ -65,20 +72,24 @@ void UIScrollBox::OnBegin()
         mScrollControlPanel->CreateUIComponent<UIScrollControlComponent>("ControlCom");
     scrollControlCom->SetDestElement(mContentPanel);
 
-    mScrollControlPanel->SetParent(this);
+    mScrollControlPanel->SetParent(mViewportPanel);
 
-    glm::vec2 scrollControlPanelSize = {50, scrollBoxSize.g / 6};
+    float viewportPanelHeight = mViewportPanel->GetHeight();
+    float viewportPanelWidth = mViewportPanel->GetWidth();
+
+    glm::vec2 scrollControlPanelSize = {12.0f, viewportPanelHeight / 6};
     mScrollControlPanel->SetSize(scrollControlPanelSize);
 
-    float scrollLocalPosX = scrollBoxSize.r - scrollControlPanelSize.r / 2;
+    float scrollLocalPosX = viewportPanelWidth - mScrollControlPanel->GetWidth();
     mScrollControlPanel->SetPositionLocal(scrollLocalPosX, 0);
     scrollboxImageCom->NotUseTexture();
-    scrollboxImageCom->SetColor(0.0F, 1.0F, 0.0F);
+    scrollboxImageCom->SetColor(UI::UIColor::Gray);
 
     mItemStartYOffsetLocal = 0;
     //    mTransform.GetSize().g / 2;
 
-    SetUseScissorRect(true);
+    // SetUseScissorRect(true);
+    mViewportPanel->SetUseScissorRect(true);
     mContentPanel->SetUseScissorRect(true);
     mScrollControlPanel->SetUseScissorRect(true);
 
@@ -104,7 +115,7 @@ void UIScrollBox::AddItem(UI::UIElement *itemElement)
 
     itemElement->SetParent(mContentPanel);
     itemElement->SetUseScissorRect(true);
-    itemElement->SetWidth(mTransform.GetSize().r);
+    itemElement->SetWidth(mContentPanel->GetWidth());
     // itemElement->SetPositionLocal(0, GetNextItemY());
 
     // content 내부적으로 레이아웃 업데이트
@@ -126,7 +137,7 @@ void UIScrollBox::AddItemList(const std::vector<UI::UIElement *> &itemElementLis
         item->SetParent(mContentPanel);
         item->SetUseScissorRect(true);
 
-        item->SetWidth(mTransform.GetSize().r);
+        item->SetWidth(mContentPanel->GetWidth());
         //  item->SetPositionLocal(0, nextY);
         //   nextY += item->mTransform.GetSize().g;
 
@@ -189,6 +200,9 @@ void UIScrollBox::RemoveItem(UI::UIElement *item)
 {
 
     item->SetParent(nullptr);
+
+    UpdateContentLayout();
+    UpdateLayout();
 }
 
 std::vector<UI::UIElement *> UIScrollBox::RemoveItemAll(bool bDestory)
@@ -229,15 +243,15 @@ void UIScrollBox::UpdateLayout()
         return;
 
     // mTransform.SetSize(w, h);
-    glm::vec2 scrollBoxSize = mTransform.GetSize();
+    glm::vec2 scrollBoxSize = mViewportPanel->mTransform.GetSize();
 
     float currentContentHeight = mContentPanel->mTransform.GetSize().g;
     /* for (auto item : mItemVec)
      {
          totalHeight += item->mTransform.GetSize().y;
      }*/
-
-    if (currentContentHeight > mTransform.GetSize().y)
+    const float scrollBarX = mViewportPanel->GetWidth() - mScrollControlPanel->GetWidth();
+    if (currentContentHeight > scrollBoxSize.y)
     {
         //  mContentPanel->SetSize(mContentPanel->mTransform.GetSize().x, totalHeight);
 
@@ -259,13 +273,23 @@ void UIScrollBox::UpdateLayout()
         //     mItemVec[i]->SetPositionLocal(0, nextY);
         //     nextY += mItemVec[i]->mTransform.GetSize().y;
         // }
+        // 기존 스크롤바 Y 위치는 유지합니다.
+        const float scrollBarY = mScrollControlPanel->mTransform.GetLocalPosition().y;
+
+        mScrollControlPanel->SetPositionLocal(scrollBarX, scrollBarY);
+    }
+    else
+    {
+        mScrollControlPanel->SetPositionLocal(scrollBarX, 0);
+        mContentPanel->SetPositionLocal(0.0f, 0.0f);
     }
 
-    glm::vec2 scrollControlPanelSize = {25, scrollBoxSize.g / 6};
-    mScrollControlPanel->SetSize(scrollControlPanelSize);
+    // glm::vec2 scrollControlPanelSize = {mScrollControlPanel, scrollBoxSize.g / 6};
+    //    mScrollControlPanel->SetSize(scrollControlPanelSize);
+    mScrollControlPanel->SetHeight(scrollBoxSize.g / 6);
 
-    float scrollLocalPosX = scrollBoxSize.r - scrollControlPanelSize.r;
-    mScrollControlPanel->SetPositionLocal(scrollLocalPosX, 0);
+    /*   float scrollLocalPosX = scrollBoxSize.r - mScrollControlPanel->GetWidth();
+       mScrollControlPanel->SetPositionLocal(scrollLocalPosX, 0);*/
 }
 
 void UIScrollBox::UpdateContentLayout()
@@ -289,10 +313,18 @@ void UIScrollBox::OnTransformChanged(UI::ETransformChangeType type)
 
     if (type == UI::ETransformChangeType::eSize || type == UI::ETransformChangeType::eAll)
     {
+        if (mViewportPanel)
+        {
+            mViewportPanel->SetWidth(GetWidth() - 2.0f * mBorderThickness);
+            mViewportPanel->SetHeight(GetHeight() - 2.0f * mBorderThickness);
+
+            mViewportPanel->SetPositionLocal(mBorderThickness, mBorderThickness);
+        }
+
         if (mContentPanel)
         {
-            float h = mContentPanel->mTransform.GetSize().g;
-            mContentPanel->SetSize(mTransform.GetSize().r, h);
+            // float h = mContentPanel->mTransform.GetSize().g;
+            mContentPanel->SetWidth(mViewportPanel->GetWidth());
         }
 
         UpdateContentLayout();
@@ -357,4 +389,27 @@ float UIScrollBox::GetNextItemY() const
 {
 
     return 0.0f;
+}
+
+UI::UIImageComponent *UIScrollBox::GetBackgroundImageComponent()
+{
+
+    return mImageComponent;
+}
+
+void UIScrollBox::SetUseBorder(bool flag)
+{
+    if (mImageComponent)
+    {
+        mImageComponent->SetUseBorderFlag(flag);
+    }
+}
+
+void UIScrollBox::SetBorderColor(const UI::UIColor &color)
+{
+
+    if (mImageComponent)
+    {
+        mImageComponent->SetBorderColor(color);
+    }
 }

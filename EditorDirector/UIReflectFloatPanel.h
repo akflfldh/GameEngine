@@ -63,6 +63,7 @@ class REFLECT_CLASS(EngineClass) UIReflectFloatPanel : public UI::UIImage, publi
     void *mTargetMemory = nullptr;
     Quad::PropertyInfo *mPropertyInfo = nullptr;
     bool mIsEditing = false;
+    bool mHasValue = false;
 
     std::string mTagTextStr;
 };
