@@ -79,7 +79,8 @@ class GameDirector : public Quad::IProgramDirector
     /*
     렌더와 관련된 시스템들 초기화
     */
-    void InitRenderSystems();
+
+    void LoadBootstrapAssets();
 
   private:
     std::unique_ptr<GameWindowController> mGameWindowController;

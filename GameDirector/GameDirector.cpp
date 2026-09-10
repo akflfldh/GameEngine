@@ -95,7 +95,7 @@ void Quad::GameDirector::Initialize()
     if (!LoadUserDLL())
         return;
     LoadAssets();
-    InitRenderSystems();
+    //  InitRenderSystems();
 
     // asset load ( not raw data serialize)
     // LoadAssets();
@@ -317,48 +317,6 @@ bool Quad::GameDirector::LoadGameBuildManifest()
 
 void Quad::GameDirector::LoadAssets()
 {
-    auto assetManager = CoreAsset::AssetManager::GetInstance();
-
-    auto pakSource = std::make_unique<CoreAsset::PakAssetDataSource>();
-
-    if (!pakSource->Initialize(mGameRuntimeConfig->GetGameRootDirectory() / "Asset.pak"))
-        return;
-
-    std::vector<CoreAsset::AssetDataRecord> records;
-    pakSource->GetAssetRecordList(records);
-
-    assetManager->SetAssetDataSource(std::move(pakSource));
-    CoreAsset::AssetLoadExecutionContext executionContext;
-
-    for (const auto &record : records)
-    {
-        assetManager->LoadAsset(record.mAssetID, record.mRegistryPath, executionContext);
-    }
-
-    // const auto &assetRootPath = mGameRuntimeConfig->GetAssetDirectory();
-
-    // auto pfSystem = QuadPF::PhysicalFileSystem::GetInstance();
-
-    // std::vector<std::string> fileList;
-
-    //// 일단 계충구조까지 안봄
-    // pfSystem->GetFileListByExtension(assetRootPath, "asset", fileList);
-
-    // for (const auto &fileName : fileList)
-    //{
-    //     std::filesystem::path assetPath = assetRootPath / fileName;
-
-    //    CoreAsset::AssetLoadExecutionContext loadExecutionContext;
-    //    CoreAsset::AssetLoadResult result = assetManager->LoadAsset(assetPath, "", loadExecutionContext);
-
-    //    // 결과처리 어떻게 할것인가.
-
-    //    // if (result.mResultFlag == CoreAsset::EAssetLoadResultFlag::eSuccess
-    //}
-}
-
-void Quad::GameDirector::InitRenderSystems()
-{
 
     // Gpu Sampler System. - >실제로 Editor에서 사용되는가?
     mGpuSamplerSystem = std::make_unique<GRM::GpuSamplerSystem>(GRM::IGpuResourceManager::GetInstance());
@@ -379,10 +337,51 @@ void Quad::GameDirector::InitRenderSystems()
     //  AssetResolver, ObjectRenderItemBuilder, UIRenderItemBuilder, IRenderProxyManager
 
     // Asset Resolver
+    // Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
+
+    //// GpuResourceManager는 플랫폼에 맞추어서 (이미 App 모듈에서 적절히 생성 - 초기화함 )
+    // assetResolver->Initialize(CoreAsset::AssetManager::GetInstance(), GRM::IGpuResourceManager::GetInstance());
+
+    auto assetManager = CoreAsset::AssetManager::GetInstance();
+
+    auto pakSource = std::make_unique<CoreAsset::PakAssetDataSource>();
+
+    if (!pakSource->Initialize(mGameRuntimeConfig->GetGameRootDirectory() / "Asset.pak"))
+        return;
+
+    std::vector<CoreAsset::AssetDataRecord> records;
+    pakSource->GetAssetRecordList(records);
+
+    assetManager->SetAssetDataSource(std::move(pakSource));
+    CoreAsset::AssetLoadExecutionContext executionContext;
+
+    // 1번 asset id (font-texture)
+    auto it = std::find_if(records.begin(), records.end(),
+                           [](const CoreAsset::AssetDataRecord &record)
+                           {
+                               if (record.mAssetID == 1)
+                                   return true;
+
+                               return false;
+                           });
+    // bootstrap asset
+    if (it != records.end())
+    {
+        assetManager->LoadAsset(it->mAssetID, it->mRegistryPath, executionContext);
+    }
+    // builtin  asset
+
     Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
 
     // GpuResourceManager는 플랫폼에 맞추어서 (이미 App 모듈에서 적절히 생성 - 초기화함 )
     assetResolver->Initialize(CoreAsset::AssetManager::GetInstance(), GRM::IGpuResourceManager::GetInstance());
+
+    // 나머지 pak 에셋
+
+    for (const auto &record : records)
+    {
+        assetManager->LoadAsset(record.mAssetID, record.mRegistryPath, executionContext);
+    }
 
     mObjectRenderItemBuilder = std::make_unique<Render::ObjectRenderItemBuilder>(
         Render::IRenderSystem::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
@@ -391,5 +390,7 @@ void Quad::GameDirector::InitRenderSystems()
 
     mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(
         Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
-        assetResolver);
+        Render::AssetResolver::GetInstance());
 }
+
+void Quad::GameDirector::LoadBootstrapAssets() {}

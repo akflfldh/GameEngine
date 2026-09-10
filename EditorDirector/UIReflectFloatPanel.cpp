@@ -46,7 +46,7 @@ void UIReflectFloatPanel::OnBegin()
     mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
     mEditBox->SetWidth(100);
     mEditBox->SetBackgroundColor(1, 1, 1);
-    //   mEditBox->SetTextColor(0, 0, 0);
+    mEditBox->SetTextColor(0, 0, 0);
     mEditBox->SetTextInputType(UI::EUITextInputType::eNumber);
     mEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
     mEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
