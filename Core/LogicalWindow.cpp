@@ -2,7 +2,7 @@
 #include <Core/Application.h>
 #include <Core/CameraComponent.h>
 #include <Core/ObjectController.h>
-#include <Core/SuperController.h>
+#include <Core/WindowedFrameController.h>
 #include <Core/World.h>
 #include <CoreMath/Geometry.h>
 #include <InputSystem/InputSystem.h>
@@ -34,9 +34,9 @@ Core::LogicalWindow::~LogicalWindow()
 
 void Core::LogicalWindow::Begin() {}
 
-void Core::LogicalWindow::SetOwnerController(SuperController *superController)
+void Core::LogicalWindow::SetOwnerController(WindowedFrameController *superController)
 {
-    mSuperController = superController;
+    mWindowedFrameController = superController;
 
     auto windowSize = superController->GetWindowSize();
     OnResizeWindow(windowSize.first, windowSize.second);
@@ -45,7 +45,7 @@ void Core::LogicalWindow::SetOwnerController(SuperController *superController)
 void *Core::LogicalWindow::GetWindowHandle() const
 {
 
-    return mSuperController->GetWindow()->GetWindowHandle();
+    return mWindowedFrameController->GetWindow()->GetWindowHandle();
 }
 
 void Core::LogicalWindow::SetWorld(World *world)
@@ -397,9 +397,9 @@ glm::vec2 Core::LogicalWindow::ConverToWorldPos(int clientPosX, int clientPosY) 
     return {worldPosX, worldPosY};
 }
 
-Core::SuperController *Core::LogicalWindow::GetOwnerController()
+Core::WindowedFrameController *Core::LogicalWindow::GetOwnerController()
 {
-    return mSuperController;
+    return mWindowedFrameController;
 }
 
 bool Core::LogicalWindow::HitTestUI(int clientPosX, int clientPosY)

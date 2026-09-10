@@ -5,7 +5,8 @@
 namespace CoreAsset
 {
 class Asset;
-}
+struct AssetImportContext;
+} // namespace CoreAsset
 
 /*
 
@@ -38,6 +39,8 @@ class EditorAssetImporterModule
     ImportTaskHandle RequestImport(const std::string &file, bool bEngine = false);
 
     ImportResult RequestImportSync(const std::filesystem::path &file, bool bEngine = false);
+    ImportResult RequestImportSync(const std::filesystem::path &file,
+                                   const CoreAsset::AssetImportContext &assetImportContext);
 
     // importer내에서 중첩하여 asset을 임포트하기위해 사용하는 메서드
     ImportResult ImportDendencySync(const char *file, bool bEngine = false);
@@ -67,6 +70,7 @@ class EditorAssetImporterModule
 
   private:
     ImportResult Import(const std::filesystem::path &file, bool bEngine, ImportJobContext *jobContext);
+    ImportResult Import(const std::filesystem::path &file, const CoreAsset::AssetImportContext &assetImportContext);
 };
 
 } // namespace Quad

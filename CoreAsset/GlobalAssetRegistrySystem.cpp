@@ -58,6 +58,14 @@ bool CoreAsset::GlobalAssetRegistrySystem::RegisterAsset(Asset *asset, const std
             asset->mID = GetNextAssetID(false);
         }
     }
+    else
+    {
+        if (bEngine && mEngineAssetIDGenerator.PeekNextAssetID() <= asset->GetID())
+        {
+
+            mEngineAssetIDGenerator.SetNextAssetID(asset->GetID() + 1);
+        }
+    }
 
     return mAssetTable.SetAsset(name, asset->GetID(), asset);
 }
@@ -85,10 +93,18 @@ const std::vector<CoreAsset::AssetPtr> &CoreAsset::GlobalAssetRegistrySystem::Ge
     return mDirtyAssetList;
 }
 
-void CoreAsset::GlobalAssetRegistrySystem::SetNextAssetID(AssetID id)
+void CoreAsset::GlobalAssetRegistrySystem::SetNextAssetID(AssetID id, bool bEngine)
 {
+
     // 엔진의 경우는 필요없다
-    mAssetIDGenerator.SetNextAssetID(id);
+    if (bEngine)
+    {
+        mEngineAssetIDGenerator.SetNextAssetID(id);
+    }
+    else
+    {
+        mAssetIDGenerator.SetNextAssetID(id);
+    }
 }
 
 CoreAsset::AssetID CoreAsset::GlobalAssetRegistrySystem::PeekNextAssetID() const

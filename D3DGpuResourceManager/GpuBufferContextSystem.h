@@ -99,6 +99,9 @@ class GPURESOURCE_MANAGER_API GpuBufferContextSystem
     // 이 메서드는 renderItem Builder들이 호출할것이다.
     virtual GpuBufferContext *GetGpuBufferContext(uint32_t id) const = 0;
 
+    virtual bool CreateBuffer(uint32_t bufferID, GRM::EBufferUsage mBufferUsage, uint32_t uploadType,
+                              uint32_t size) = 0;
+
   protected:
     GpuBufferContextSystem();
 

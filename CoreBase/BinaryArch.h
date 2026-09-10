@@ -21,7 +21,7 @@ class COREBASE_API BinaryArch : public Arch
     void Start() override;
 
     // load flag 에서 유효 , 복사수행
-    void Start(uint8_t *buffer, size_t size);
+    void StartRead(const uint8_t *buffer, size_t size);
 
     void End() override;
     void SetFile(const std::filesystem::path &filepath);

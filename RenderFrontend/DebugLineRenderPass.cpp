@@ -68,8 +68,8 @@ void Render::DebugLineRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     auto gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
     auto gpuResourceManager = GRM::IGpuResourceManager::GetInstance();
 
-    GRM::GpuConstantBufferContext *gpuBufferContext =
-        static_cast<GRM::GpuConstantBufferContext *>(gpuBufferContextSystem->GetGpuBufferContext(GetBufferID()));
+    GRM::GpuConstantBufferContext *gpuBufferContext = static_cast<GRM::GpuConstantBufferContext *>(
+        gpuBufferContextSystem->GetGpuBufferContext(static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256)));
 
     uint32_t bufferIndexOffset = gpuBufferContext->mAllocateRange.UseRange(1);
     uint32_t bufferSizeOffset = bufferIndexOffset * gpuBufferContext->mBufferDesc.mElementDataSize;

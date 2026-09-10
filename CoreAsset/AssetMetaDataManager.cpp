@@ -82,10 +82,12 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
     return true;
 }
 
-bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
+bool CoreAsset::AssetMetaDataManager::Register(Asset *asset, bool bEngine)
 {
     if (asset == nullptr)
         return false;
+
+    const EAssetDomain assetDomain = bEngine ? EAssetDomain::eEngine : EAssetDomain::eProject;
 
     switch (asset->GetType())
     {
@@ -95,7 +97,9 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         textureMetaData.mAssetID = asset->GetID();
         textureMetaData.mAssetName = asset->GetName().c_str();
         textureMetaData.mAssetType = asset->GetType();
-        textureMetaData.mKeepRawDataFlag = true;
+        textureMetaData.mHasRawData = true;
+        textureMetaData.mDomain = assetDomain;
+
         SetRawFileName(&textureMetaData);
 
         bool ret = Register(textureMetaData);
@@ -109,6 +113,7 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         metaData.mAssetID = asset->GetID();
         metaData.mAssetName = asset->GetName().c_str();
         metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
         SetRawFileName(&metaData);
 
         bool ret = Register(metaData);
@@ -123,6 +128,8 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         metaData.mAssetID = asset->GetID();
         metaData.mAssetName = asset->GetName().c_str();
         metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
+        metaData.mHasRawData = true;
         SetRawFileName(&metaData);
         bool ret = Register(metaData);
         return ret;
@@ -139,6 +146,7 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         metaData.mAssetID = asset->GetID();
         metaData.mAssetName = asset->GetName().c_str();
         metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
         SetRawFileName(&metaData);
 
         bool ret = Register(metaData);
@@ -151,6 +159,8 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         metaData.mAssetID = asset->GetID();
         metaData.mAssetName = asset->GetName().c_str();
         metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
+        metaData.mHasRawData = true;
         SetRawFileName(&metaData);
 
         bool ret = Register(metaData);
@@ -163,6 +173,8 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset)
         metaData.mAssetID = asset->GetID();
         metaData.mAssetName = asset->GetName().c_str();
         metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
+
         SetRawFileName(&metaData);
 
         bool ret = Register(metaData);

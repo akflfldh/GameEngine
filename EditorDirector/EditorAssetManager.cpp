@@ -52,8 +52,6 @@ CoreAsset::AssetPtr Quad::EditorAssetManager::CreateAsset(CoreAsset::EAssetType 
     CoreAsset::AssetMetaDataManager *assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
     CoreAsset::AssetMetaData *assetMetaData = assetMetaDataManager->GetMetaData(asset->GetID());
     assetMetaData->mFilePath = currFile->GetFullPath(); // 논리적 파일상대경로(물리적 파일경로이기도 하다)
-    assetMetaData->mKeepRawDataFlag = true;
-
     asset->SetEmptyAssetFlag(false);
 
     return pAsset;

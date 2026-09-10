@@ -23,7 +23,10 @@ Map::~Map()
 {
     DestoryEntitesProgrammatically();
 }
-
+CoreAsset::EAssetType Map::GetAssetType()
+{
+    return CoreAsset::EAssetType::eMap;
+}
 void Map::Start()
 {
     if (mStarted)
@@ -221,7 +224,7 @@ Object *Map::DuplicateEntity(Object *sourceObject)
     const size_t bufferSize = writerArch.GetBufferSize();
 
     BinaryArch readerArch(true);
-    readerArch.Start(buffer, bufferSize);
+    readerArch.StartRead(buffer, bufferSize);
 
     // 복사본 역직렬화 수행
     std::string duplicatedClassName;

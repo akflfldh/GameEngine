@@ -80,7 +80,8 @@ void Render::RenderPassUI::SetGlobalData(const Core::GlobalFrameData &globalFram
     passConstantData.mScreenWidth = globalFrameData.mSceneViewport.Width;
 
     // TODO buffer ID가 올바르지못한값이 생성자에서 설정해야함
-    uint32_t bufferID = GetBufferID();
+    uint32_t bufferID = static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256);
+    //    GetBufferID();
 
     GRM::IGpuResourceManager *gpuResourceManager = GRM::IGpuResourceManager::GetInstance();
 

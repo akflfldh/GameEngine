@@ -905,7 +905,7 @@ void Render::RenderPipelineManager::BuildSkysphereSnapshot(World *world, RenderP
 
 void Render::RenderPipelineManager::Execute(const std::vector<Core::LogicalWindow *> &logicalWindowList,
                                             WindowHandle windowHandle, int frameIndex, uint32_t frameFenceValue,
-                                            bool lastExecute, int backBufferIndex, uint64_t frameTotalCount)
+                                            bool lastExecute, uint64_t frameTotalCount)
 {
 
     IRenderSystem *renderSystem = IRenderSystem::GetInstance();
@@ -916,7 +916,8 @@ void Render::RenderPipelineManager::Execute(const std::vector<Core::LogicalWindo
     renderContextSet->mFenceValue = frameFenceValue;
     renderContextSet->mFrameIndex = frameIndex;
     renderContextSet->mLastFrameContextSet = lastExecute;
-    renderContextSet->mBackbufferIndex = backBufferIndex;
+    renderContextSet->mBackbufferIndex = windowRenderManager->GetNextSwapchainBackBufferIndex(windowHandle);
+    windowRenderManager->IncrementNextSwapchainBackBufferIndex(windowHandle);
 
     for (int i = 0; i < logicalWindowList.size(); ++i)
     {

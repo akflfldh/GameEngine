@@ -239,3 +239,59 @@ void ImportTaskUIController::OnClickedExitButton()
 
     mOnClickedExitButtonCallbackSystem.ExecuteCallbacks();
 }
+
+ProjectBuildTaskUIController *ProjectBuildTaskUIController::GetInstance()
+{
+    static ProjectBuildTaskUIController instance;
+
+    return &instance;
+}
+
+ProjectBuildTaskUIController::ProjectBuildTaskUIController() {}
+
+ProjectBuildTaskUIController::~ProjectBuildTaskUIController() {}
+
+void ProjectBuildTaskUIController::Initialize(UI::UICanvas *canvas)
+{
+    if (canvas == nullptr)
+        return;
+
+    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("Background");
+    mProgressText = mBackgroundUI->CreateChildUIElement<UI::UIText>("ProgressText");
+
+    mBackgroundUI->SetSize(400, 250);
+    mBackgroundUI->SetColor(0.4f, 0.4f, 0.4f);
+
+    mBackgroundUI->SetActiveFlag(false);
+}
+
+void ProjectBuildTaskUIController::Update() {}
+
+void ProjectBuildTaskUIController::SetActive(bool flag) {}
+
+void ProjectBuildTaskUIController::SetPosition(float x, float y) {}
+
+void ProjectBuildTaskUIController::RequestKeyboardCapture() {}
+
+void ProjectBuildTaskUIController::RequestMouseCapture() {}
+
+void ProjectBuildTaskUIController::ReleaseKeyboardCapture() {}
+
+void ProjectBuildTaskUIController::ReleaseMouseCapture() {}
+
+void ProjectBuildTaskUIController::SetMessage(const std::string &message)
+{
+
+    if (mProgressText == nullptr)
+        return;
+
+    mProgressText->SetText(message);
+}
+void ProjectBuildTaskUIController::SetProgress(float progress)
+{
+
+    // progress image
+}
+
+void ProjectBuildTaskUIController::CreateExitButton(UI::UIElement *parent) {}
+void ProjectBuildTaskUIController::OnClickedExitButton() {}

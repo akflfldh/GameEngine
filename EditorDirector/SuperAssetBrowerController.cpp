@@ -7,25 +7,14 @@
 Quad::SuperAssetBrowerController *Quad::SuperAssetBrowerController::GetInstance()
 {
 
-    static SuperAssetBrowerController controller;
-    return &controller;
+    // static SuperAssetBrowerController controller;
+    // return &controller;
+    return nullptr;
 }
 
 Quad::SuperAssetBrowerController::SuperAssetBrowerController() {}
 
 Quad::SuperAssetBrowerController::~SuperAssetBrowerController() {}
-
-void Quad::SuperAssetBrowerController::Initialize(Render::RenderPipelineManager &renderPipelineManager)
-{
-    mWindow = new BaseWindow(Core::GlobalAppHelper::GetHinstance());
-
-    mWindow->Initialize();
-    mWindow->CreateWindowClass(L"AssetBrower", L"AssetBrower");
-
-    auto inputSystem = InputSystem::GetInstance();
-    /*   inputSystem->RegisterMouseAction(EMouseInput::eRButtonDown, "Asset", this,
-                                        &SuperAssetBrowerController::TestRButtonDown, 0);*/
-}
 
 void Quad::SuperAssetBrowerController::Begin() {}
 
@@ -35,14 +24,7 @@ void Quad::SuperAssetBrowerController::Update(float deltaTime) {}
 
 void Quad::SuperAssetBrowerController::EndUpdate() {}
 
-void Quad::SuperAssetBrowerController::Draw(Render::RenderPipelineManager &renderPipelineManager) {}
-
 void Quad::SuperAssetBrowerController::ShutDownWindow() {}
-
-Quad::BaseWindow *Quad::SuperAssetBrowerController::GetWindow() const
-{
-    return mWindow;
-}
 
 void Quad::SuperAssetBrowerController::TestRButtonDown()
 {
@@ -73,9 +55,4 @@ void Quad::SuperAssetBrowerController::ReleaseKeyboardCapture()
 {
 
     mWindow->SetKeyboardCapture(false);
-}
-
-std::pair<uint32_t, uint32_t> Quad::SuperAssetBrowerController::GetWindowSize() const
-{
-    return std::pair<int, int>();
 }

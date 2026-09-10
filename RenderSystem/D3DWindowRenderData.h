@@ -45,6 +45,10 @@ class RENDER_SYSTEM_API D3DWindowRenderData
 
     int GetCurrentBackBufferIndex() const;
     void IncrementBackBufferIndex();
+
+    int GetNextBackBufferIndex() const;
+    void IncrementNextBackBufferIndex();
+
     Microsoft::WRL::ComPtr<IDXGISwapChain> GetSwapChain() const;
 
     // 펜스
@@ -85,6 +89,7 @@ class RENDER_SYSTEM_API D3DWindowRenderData
     GRM::TextureDesc mDepthStencilDesc;
 
     int mCurrentBackBufferIndex;
+    int mNextBackBufferIndex;
     HANDLE mFenceEventHandle;
 };
 

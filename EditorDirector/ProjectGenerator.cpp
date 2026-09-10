@@ -1,7 +1,9 @@
 ﻿#include "ProjectGenerator.h"
+#include <EditorDirector/CMakeProjectBuilder.h>
 #include <ProjectConfig.h>
 #include <filesystem>
 #include <fstream>
+
 ProjectGenerator *ProjectGenerator::GetInstance()
 {
     static ProjectGenerator instance;
@@ -223,20 +225,33 @@ bool ProjectGenerator::GenerateCmakeLists(const std::string &projectName, const 
     fout << str;
     fout.close();
 
-    std::string buildCmd = "cd /d \"" + targetPath + "\" && cmake -S . -B build -G \"Visual Studio 17 2022\" -A x64";
+    Quad::CMakeConfigureDesc cmakeConfigDesc;
+    cmakeConfigDesc.mTargetPath = targetPath;
+    cmakeConfigDesc.mSubDirectory = "build";
+    int result = Quad::CMakeProjectBuilder::Configure(cmakeConfigDesc);
 
-    // std::cout << "[ProjectGenerator] MSVC 솔루션 생성 중..." << std::endl;
-    int result = std::system(buildCmd.c_str());
+    // std::string buildCmd = "cd /d \"" + targetPath + "\" && cmake -S . -B build -G \"Visual Studio 17 2022\" -A x64";
 
-    if (result == 0)
+    //// std::cout << "[ProjectGenerator] MSVC 솔루션 생성 중..." << std::endl;
+    // int result = std::system(buildCmd.c_str());
+
+    if (result)
     {
-        // 생성된 빌드파일 빌드수행
+        Quad::CMakeBuildDesc cmakeBuildDesc;
+        cmakeBuildDesc.mTargetPath = targetPath;
+        cmakeBuildDesc.mSubDirectory = "build";
+        cmakeBuildDesc.mConfig = Quad::EBuildConfig::eDebug;
 
-        buildCmd = "cd /d \"" + targetPath + "\"  && cmake --build build --config Debug";
-        result = std::system(buildCmd.c_str());
+        result = Quad::CMakeProjectBuilder::Build(cmakeBuildDesc);
 
-        result = std::filesystem::exists(targetPath + "/build/Debug/" + projectName + ".dll");
         return result;
+        //// 생성된 빌드파일 빌드수행
+
+        // buildCmd = "cd /d \"" + targetPath + "\"  && cmake --build build --config Debug";
+        // result = std::system(buildCmd.c_str());
+
+        // result = std::filesystem::exists(targetPath + "/build/Debug/" + projectName + ".dll");
+        // return result;
     }
 
     return false;

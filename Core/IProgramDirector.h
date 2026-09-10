@@ -29,7 +29,13 @@ class CORE_API_LIB IProgramDirector
     // 종료버튼 클릭후 수행작업
     virtual void EndSystem() = 0;
 
-  private:
+    bool GetIsInitialized() const
+    {
+        return mInitialized;
+    }
+
+  protected:
+    bool mInitialized = false;
 };
 
 } // namespace Quad

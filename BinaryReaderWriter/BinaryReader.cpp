@@ -11,7 +11,15 @@ bool QuadRW::BinaryReader::StartRead(const std::filesystem::path &filePath)
     mReadPointer = 0;
     return mPhysicalFileSystem->ReadFileToBuffer(filePath, mBuffer);
 }
-bool QuadRW::BinaryReader::StartRead(uint8_t *buffer, size_t size)
+bool QuadRW::BinaryReader::StartRead(const std::filesystem::path &filePath, uint64_t offset, uint64_t size)
+{
+
+    FlushBuffer();
+    mReadPointer = 0;
+    return mPhysicalFileSystem->ReadFileToBuffer(filePath, offset, size, mBuffer);
+}
+
+bool QuadRW::BinaryReader::StartRead(const uint8_t *buffer, size_t size)
 {
 
     FlushBuffer();

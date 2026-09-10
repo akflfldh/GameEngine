@@ -1,42 +1,104 @@
 ﻿#pragma once
 
-#include"header.h"
-#include"IProgramDirector.h"
+#include <Core/GameBuildManifest.h>
+#include <Core/IProgramDirector.h>
+#include <filesystem>
+#include <memory>
 
-#include"Utility/Singleton.h"
+namespace Render
+{
+class RenderPipelineManager;
+class ObjectRenderItemBuilder;
+class UIRenderItemBuilder;
+} // namespace Render
+
+class World;
+
+namespace Core
+{
+class WorkSpace;
+
+class LogicalWindow;
+
+} // namespace Core
+namespace CoreAsset
+{
+class UIMaterialManager;
+}
+
+namespace GRM
+{
+class GpuSamplerSystem;
+}
 
 namespace Quad
 {
-	class GameWindow;
-	class GameWindowController;
-	class MapMetaData;
-	class Project;
-	class GameDirector :public Quad::IProgramDirector,Quad::Singleton<GameDirector>
-	{
-	public:
-		GameDirector();
+class GameWindow;
+class GameWindowController;
+class MapMetaData;
+class Project;
+class Application;
+class GameRuntimeMode;
+class GameRuntimeConfig;
 
-		virtual void Initialize()override;
-		virtual void PreUpdate(float deltaTime)override;
-		virtual void Update(float deltaTime)override;
-		virtual void EndUpdate(float deltaTime)override;
-		virtual void Draw()override;
+class GameDirector : public Quad::IProgramDirector
+{
+  public:
+    static GameDirector *GetInstance();
+    GameDirector();
+    virtual ~GameDirector();
 
+    // Initialize 호출전에 호출하자
+    void InitRuntimeConfig(const std::filesystem::path &gameRootPath);
 
-	private:
+    virtual void Initialize() override;
 
-		void ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<MapMetaData*>& o3DMapMetaDataVector);
+    virtual void Begin() override;
+    virtual void PreUpdate(float deltaTime) override;
+    virtual void Update(float deltaTime) override;
+    virtual void EndUpdate(float deltaTime) override;
+    virtual void Draw() override;
+    virtual void CleanUp() override;
+    virtual void EndFrame() override;
+    virtual void EndSystem() override;
 
+    GameRuntimeConfig *GetGameRuntimeConfig() const;
 
+  private:
+    void CreateWorkSpace();
+    void CreateMainLogicalWindow();
 
-	private:
-		GameWindow* mGameWindow;
-		GameWindowController* mGameWindowController;
+    void RegisterAssetFactory();
+    void RegisterAssetLoader();
+    void RegisterAssetStorer();
 
-		Project* mProject;
-		std::string mEditorPathA;
-		std::wstring mEditorPathW;
-	};
+    bool LoadUserDLL();
+    bool LoadGameBuildManifest();
+    void LoadAssets();
 
+    /*
+    렌더와 관련된 시스템들 초기화
+    */
+    void InitRenderSystems();
 
-}
+  private:
+    std::unique_ptr<GameWindowController> mGameWindowController;
+    std::unique_ptr<Core::WorkSpace> mWorkSpace;
+    std::unique_ptr<Core::LogicalWindow> mMainLogicalWindow;
+    std::unique_ptr<World> mWorld;
+    std::unique_ptr<GameRuntimeConfig> mGameRuntimeConfig;
+
+    Core::GameBuildManifest mGameBuildManifest;
+
+    Application *mApp = nullptr;
+    std::unique_ptr<GameRuntimeMode> mGameRuntimeMode;
+    Render::RenderPipelineManager *mRenderPipelineManager = nullptr;
+    std::unique_ptr<CoreAsset::UIMaterialManager> mUIMaterialManager;
+    std::unique_ptr<Render::ObjectRenderItemBuilder> mObjectRenderItemBuilder;
+    std::unique_ptr<GRM::GpuSamplerSystem> mGpuSamplerSystem;
+    std::unique_ptr<Render::UIRenderItemBuilder> mUIRenderItemBuilder;
+
+    void *mUserDLLHandle = nullptr;
+};
+
+} // namespace Quad

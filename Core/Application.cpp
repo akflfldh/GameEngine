@@ -75,6 +75,11 @@ bool Application::Initialize(AppInitData &appInitData)
 
     InitSystems();
 
+    if (mProgramDirector == nullptr || !mProgramDirector->GetIsInitialized())
+    {
+        return false;
+    }
+
     return true;
 }
 

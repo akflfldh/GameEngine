@@ -1,112 +1,46 @@
 ﻿#include "GameWindowController.h"
-#include"GameWindow.h"
-#include"Game3DSystem.h"
-#include"GameUiSystem.h"
-#include"RenderSystem.h"
-#include"Application.h"
-#include"HeapManager/DescriptorHeapManagerMaster.h"
-#include"GameMapInstanceGenerator.h"
-#include<vector>
-#include"Core/KeyInputHandlerComponent.h"
-#include"Core/MouseHandlerComponent.h"
-#include"DefaultBaseMsgHandlerComponet.h"
+#include "Application.h"
+#include <RenderFrontend/RenderPipelineManager.h>
+#include <Window/BaseWindow.h>
+#include <vector>
 
-Quad::GameWindowController::GameWindowController(GameWindow* gameWindow)
-	:BaseWindowController(new RenderSystem),mWindow(gameWindow)
+Quad::GameWindowController::GameWindowController() {}
+
+void Quad::GameWindowController::Initialize(Render::RenderPipelineManager &renderPipelineManager)
 {
-	mGame3DSystem = new Game3DSystem;
-	//mGameUiSystem = new GameUiSystem;
 
+    mRenderPipelineManager = &renderPipelineManager;
 
+    Core::WindowCreateDesc desc{};
+    desc.mWindowClassName = "GameWindow";
+    desc.mWindowName = "Game";
+    desc.mWindowStyle = WS_OVERLAPPEDWINDOW;
+    desc.mWindowClassStyle = CS_HREDRAW | CS_VREDRAW;
+    desc.mClientWidth = 1280;
+    desc.mClientHeight = 720;
+    desc.mMaxClientWidth = 3840;
+    desc.mMaxClientHeight = 2160;
 
-	UINT clientWidth = mWindow->GetClientWidth();
-	UINT clientHeight = mWindow->GetClientHeight();
+    InitializeWindow(desc);
 
-
-	//의미없는 Map이다. 곧바로 PlayMode로 전환되고 , 유저프로젝트의 맵이 설정될것이기에
-	//다만 정해진틀을 위해서 생성 (즉 dummy 같은 존재이다.)
-	//Map* dummy3DMap = GameMapInstanceGenerator::CreateMap(mGame3DSystem,"dummy3D");
-	//Map* dummyUiMap = GameMapInstanceGenerator::CreateMap(mGameUiSystem, "dummyUi");
-	
-	//dummy3DMap->CreateDefaultMapLayer();
-	//dummyUiMap->CreateDefaultMapLayer();
-
-
-	//dummy3DMap->CreateMapLayer(0, 0, nullptr, nullptr, { 0,0,0,0,0,0 });
-	//->CreateMapLayer(0, 0, nullptr, nullptr, { 0,0,0,0,0,0 });
-
-
-
-
-	mGame3DSystem->Initialize(clientWidth, clientHeight, nullptr);
-	//mGameUiSystem->Initialize(clientWidth, clientHeight, nullptr);
-
-
-
-	auto app = Application::GetInstance();
-
-	auto renderSystem =GetRenderSystem();
-	renderSystem->Initialize(app->GetD3D12Device(), app->GetD3DFactory(), &app->GetGraphicCommand(), mWindow->GetWindowHandle(),
-		clientWidth, clientHeight, app->GetDescriptorHeapManagerMaster(), GAMEWINDOW);
-
-
-	AddMsgHanlderComponent(new KeyInputHandlerComponent(this));
-	AddMsgHanlderComponent(new MouseHandlerComponent(this));
-	AddMsgHanlderComponent(new DefaultBaseMsgHandlerComponet);
-
-
+    ShowWindow();
 }
 
-Quad::BaseWindow* Quad::GameWindowController::GetWindow() const
+void Quad::GameWindowController::DrawWindow()
 {
-	return mWindow;
+
+    auto *app = Quad::Application::GetInstance();
+
+    mRenderPipelineManager->Execute(GetWorkSpace()->mWindowList, GetWindow()->GetWindowHandle(),
+                                    app->GetCurrentFrameIndex(), app->GetCurrentFrameFenceValue(), true,
+                                    app->GetTotalFrameCount());
 }
 
-void Quad::GameWindowController::Update(float deltaTime)
+void Quad::GameWindowController::OnRenderSurfaceResize(uint32_t width, uint32_t height)
 {
 
-
-//	mGameUiSystem->Update(deltaTime);
-	mGame3DSystem->Update(deltaTime);
-
-}
-
-void Quad::GameWindowController::UploadObjectToRenderSystem()
-{
-	auto renderSystem = GetRenderSystem();
-
-	//RenderSystem* renderSystem = GetRenderSystem();
-
-
-	renderSystem->PreUpdate();
-
-	//const std::vector<MapLayer>& mapLayerVectorUi =	mGameUiSystem->GetEntity();
-	//renderSystem->SetMapLayerVector(mapLayerVectorUi, Quad::ESystemType::eUiSystem);
-
-
-	const std::vector<MapLayer>& mapLayerVector3D = mGame3DSystem->GetEntity();
-	renderSystem->SetMapLayerVector(mapLayerVector3D, Quad::ESystemType::eMainSystem);
-
-	renderSystem->UploadEntityData();
-}
-
-
-void Quad::GameWindowController::EndUpdate(float deltaTime)
-{
-	//mGameUiSystem->EndUpdate(deltaTime);
-	mGame3DSystem->EndUpdate(deltaTime);
-
-}
-
-void Quad::GameWindowController::Draw()
-{
-	auto renderSystem = GetRenderSystem();
-	renderSystem->Draw();
-}
-
-void Quad::GameWindowController::OnResize(int clientWidth, int clientHeight, int direction)
-{
-	//mGameUiSystem->OnResize(clientWidth, clientHeight);
-	mGame3DSystem->OnResize(clientWidth, clientHeight);
-
+    if (mRenderPipelineManager)
+    {
+        mRenderPipelineManager->WindowResize(GetWindow()->GetWindowHandle());
+    }
 }

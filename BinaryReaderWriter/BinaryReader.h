@@ -18,9 +18,10 @@ class BinaryReader
 
     // 내부버퍼를 비우고 ,새로운파일을 읽는다.
     bool StartRead(const std::filesystem::path &filePath);
+    bool StartRead(const std::filesystem::path &filePath, uint64_t offset, uint64_t size);
 
     // 메모리로부퍼 읽는다.(복사수행)
-    bool StartRead(uint8_t *buffer, size_t size);
+    bool StartRead(const uint8_t *buffer, size_t size);
 
     template <typename T> bool Read(T &oData);
     bool Read(std::string &oStr);

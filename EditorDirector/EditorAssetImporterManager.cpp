@@ -1,9 +1,9 @@
 ﻿#include "EditorAssetImporterManager.h"
 #include "EditorDirector/EditorAssetImportFinalizer.h"
 #include "EditorDirector/EditorAssetImporterModule.h"
+#include <CoreAsset/IntermediateAsset.h>
 #include <EditorDirector/TaskUIController.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
-
 Quad::EditorAssetImporterManager *Quad::EditorAssetImporterManager::GetInstance()
 {
     static EditorAssetImporterManager instance;
@@ -23,6 +23,7 @@ void Quad::EditorAssetImporterManager::Initialize(UI::UICanvas *canvas)
     mUIController->Initialize(canvas);
 
     mUIController->mOnClickedExitButtonCallbackSystem.Register([this]() { OnClickedExitButton(); });
+    mFinalizer = EditorAssetImportFinalizer::GetInstance();
 }
 
 void Quad::EditorAssetImporterManager::Update()
@@ -75,6 +76,27 @@ ImportResult Quad::EditorAssetImporterManager::RequestImportSync(const std::file
     return result;
 }
 
+ImportResult Quad::EditorAssetImporterManager::RequestImportSync(const EngineAssetImportRequest &importRequest)
+{
+
+    PreProcess(true);
+
+    CoreAsset::AssetImportContext importContext;
+    importContext.mEngineAsset = true;
+    importContext.mRegistryPrefix = importRequest.mTargetRegistryPath;
+    CoreAsset::AssetCreationContext creationContext;
+    creationContext.mRequestedAssetID = importRequest.mRequestedAssetID;
+    creationContext.mRequestedAssetName = importRequest.mRequestedAssetName;
+
+    importContext.mCreationContextTable[importRequest.mTargetImportAssetKey] = creationContext;
+
+    ImportResult result = mImporterModule->RequestImportSync(importRequest.mSourcePath, importContext);
+
+    // post
+    PostProcess(result);
+    return result;
+}
+
 ImportResult Quad::EditorAssetImporterManager::ImportDedencySync(const char *file, bool bEngine)
 {
     return mImporterModule->ImportDendencySync(file, bEngine);
@@ -99,7 +121,7 @@ void Quad::EditorAssetImporterManager::PreProcess(bool bEngine)
     mPreLogicalFolder = logicalFileSystem->GetCurrentLogicalFolder();
     if (bEngine)
     {
-        auto engineFolder = logicalFileSystem->GetFolder("/Engine");
+        auto engineFolder = logicalFileSystem->GetFolder("Engine");
         logicalFileSystem->SetCurrentLogicalFolder(engineFolder);
     }
 }

@@ -13,6 +13,7 @@
         "inherits":"debug-ninja",
         "cacheVariables":{
             "FBXSDK_ROOT":"C:/Program Files/Autodesk/FBX/FBX SDK/2020.3.9/"
+             "GAME_DEBUG_PROJECT_PATH" : "C:/Users/dongd/Downloads/gameBuild/"
         }
     }
   ],

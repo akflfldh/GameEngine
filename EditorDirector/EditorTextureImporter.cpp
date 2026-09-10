@@ -68,7 +68,7 @@ bool Quad::EditorTextureImporter::ReigsterTextureMetaData(CoreAsset::Texture *te
     metaData.mAssetType = texture->GetType();
     metaData.mFilePath = logicalPath + "/" + metaData.mAssetName;
 
-    metaData.mKeepRawDataFlag = true;
+    metaData.mHasRawData = true;
 
     return mAssetMetaDataManager->Register(metaData);
 }

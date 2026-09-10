@@ -41,7 +41,6 @@ class CORE_API_LIB SuperController
   public:
     SuperController();
     virtual ~SuperController() = 0;
-    virtual void Initialize(Render::RenderPipelineManager &renderPipelineManager) = 0;
 
     virtual void Begin() = 0;
 
@@ -51,38 +50,35 @@ class CORE_API_LIB SuperController
 
     // 여기서는 렌더링 위한 사전작업등을한다(렌더아이템구축,제출)
     virtual void EndUpdate() = 0;
-    virtual void Draw(Render::RenderPipelineManager &renderPipelineManager) = 0;
+    //  virtual void Draw(Render::RenderPipelineManager &renderPipelineManager) = 0;
 
-    virtual void ShutDownWindow() = 0;
+    //  virtual void ShutDownWindow() = 0;
 
     // virtual void UpdateMouseInput(Quad::MouseContext &mouseContext) = 0;
 
-    virtual Quad::BaseWindow *GetWindow() const = 0;
+    // virtual Quad::BaseWindow *GetWindow() const = 0;
 
-    World *GetWorld() const;
+   // World *GetWorld() const;
 
-    virtual void InitWorld();
+  //  virtual void InitWorld();
 
-    virtual void SetMouseCapture(Core::LogicalWindow *window) = 0;
-    virtual void ReleaseMouseCapture() = 0;
+    // virtual void SetMouseCapture(Core::LogicalWindow *window) = 0;
+    // virtual void ReleaseMouseCapture() = 0;
 
-    virtual void SetKeyboardCapture(Core::LogicalWindow *window) = 0;
-    virtual void ReleaseKeyboardCapture() = 0;
+    // virtual void SetKeyboardCapture(Core::LogicalWindow *window) = 0;
+    //  virtual void ReleaseKeyboardCapture() = 0;
 
-    virtual std::pair<uint32_t, uint32_t> GetWindowSize() const = 0;
+    //  virtual std::pair<uint32_t, uint32_t> GetWindowSize() const = 0;
 
-    virtual Core::WorkSpace *GetWorkSpace() const;
-    virtual void SetWorkSpace(Core::WorkSpace *workspace);
+    // virtual Core::WorkSpace *GetWorkSpace() const;
+    // virtual void SetWorkSpace(Core::WorkSpace *workspace);
 
   protected:
-    int mBackBufferIndex;
-
   protected:
     SuperControllerInputContext mControllerInputContext;
     // std::vector<Core::LogicalWindow *> mLogicalWindowList;
-    WorkSpace *mWorkSpace = nullptr;
 
-    std::unique_ptr<World> mWorld;
+  //  std::unique_ptr<World> mWorld;
 };
 
 } // namespace Core

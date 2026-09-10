@@ -38,7 +38,8 @@ class GPURESOURCE_MANAGER_API GpuBufferContextSystemImpl : public GpuBufferConte
     // 이 메서드는 renderItem Builder들이 호출할것이다.
     virtual GpuBufferContext *GetGpuBufferContext(uint32_t id) const override;
 
-    bool CreateBuffer(uint32_t bufferID, GRM::EBufferUsage mBufferUsage, uint32_t uploadType, uint32_t size);
+    virtual bool CreateBuffer(uint32_t bufferID, GRM::EBufferUsage mBufferUsage, uint32_t uploadType,
+                              uint32_t size) override;
     bool CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame);
 
   private:

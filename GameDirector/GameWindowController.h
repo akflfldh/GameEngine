@@ -1,39 +1,28 @@
 ﻿#pragma once
 
-
-#include"BaseWindowController.h"
+#include <Core/WindowedFrameController.h>
 
 namespace Quad
 {
-	class GameWindow;
-	class Game3DSystem;
-	class GameUiSystem;
-	class RenderSystem;
-	
+class GameWindow;
+class Game3DSystem;
+class GameUiSystem;
+class RenderSystem;
 
-	class GameWindowController:public BaseWindowController
-	{
-	public:
-		GameWindowController(GameWindow * gameWindow);
-		~GameWindowController() = default;
+class GameWindowController : public Core::WindowedFrameController
+{
+  public:
+    GameWindowController();
+    ~GameWindowController() = default;
 
-		virtual BaseWindow* GetWindow() const;
+    void Initialize(Render::RenderPipelineManager &renderPipelineManager);
 
-		void Update(float deltaTime);
-		void UploadObjectToRenderSystem();
-		void EndUpdate(float deltaTime);
-		void Draw();
+  protected:
+    void DrawWindow() override;
+    void OnRenderSurfaceResize(uint32_t width, uint32_t height) override;
 
-		void OnResize(int clientWidth, int clientHeigh, int direction);
+  private:
+    Render::RenderPipelineManager *mRenderPipelineManager = nullptr;
+};
 
-
-	private:
-		GameWindow* mWindow;
-
-		Game3DSystem* mGame3DSystem;
-	//	GameUiSystem* mGameUiSystem;
-	
-	};
-
-
-}
+} // namespace Quad

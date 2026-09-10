@@ -435,18 +435,6 @@ std::pair<uint32_t, uint32_t> Core::ViewportController::GetWindowSize() const
     return {mViewport.Width, mViewport.Height};
 }
 
-Core::WorkSpace *Core::SuperController::GetWorkSpace() const
-{
-
-    return mWorkSpace;
-}
-
-void Core::SuperController::SetWorkSpace(Core::WorkSpace *workspace)
-{
-
-    mWorkSpace = workspace;
-}
-
 int Core::ViewportController::GetFixedLeft() const
 {
     return mFixedContext.mLeft;

@@ -144,7 +144,7 @@ void Quad::EditorSceneManager::PlayUserWorld()
 
     // Load
     BinaryArch archLoad(true);
-    archLoad.Start(pData, bufferSize);
+    archLoad.StartRead(pData, bufferSize);
     // 생성한 world에서 역직렬화
 
     Map *playMap = new Map;

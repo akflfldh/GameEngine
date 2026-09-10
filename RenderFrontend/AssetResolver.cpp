@@ -2,6 +2,8 @@
 #include <Core/MaterialSystem.h>
 #include <CoreAsset/Asset.h>
 #include <CoreAsset/AssetManager.h>
+
+#include <CoreAsset/AssetMetaDataManager.h>
 #include <CoreAsset/Material.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
@@ -232,6 +234,10 @@ bool Render::AssetResolver::ResolveTexture(CoreAsset::Texture *texture) const
 
     if (texture == nullptr)
         return true;
+
+  // auto assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
+
+    bool bEngine = false;
 
     CoreAsset::AssetID assetID = texture->GetID();
 
@@ -625,6 +631,13 @@ void Render::AssetResolver::BuildGpuBuffers()
 
     GRM::GpuBufferContextSystemImpl *gpuBufferContextSystem =
         static_cast<GRM::GpuBufferContextSystemImpl *>(GRM::GpuBufferContextSystem::GetInstance());
+
+    gpuBufferContextSystem->CreateBuffer(static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256),
+                                         GRM::EBufferUsage::eConstantBuffer, 0, 256);
+    gpuBufferContextSystem->CreateBuffer(static_cast<uint8_t>(EDefaultGpuBufferType::eConstantObject128),
+                                         GRM::EBufferUsage::eConstantBuffer, 1, 128);
+    gpuBufferContextSystem->CreateBuffer(static_cast<uint8_t>(EDefaultGpuBufferType::eConstantObject256),
+                                         GRM::EBufferUsage::eConstantBuffer, 1, 256);
 
     // light structured buffer
     gpuBufferContextSystem->CreateStructuredBuffer(mLightGpuBufferContextID, sizeof(DefaultLightData), true);

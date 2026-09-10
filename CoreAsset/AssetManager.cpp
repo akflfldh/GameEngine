@@ -11,6 +11,7 @@
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
 // #include <CoreAsset/g_DefaultFontTexture.h>
+#include <CoreAsset/IAssetDataSource.h>
 #include <CoreBase/CoreAssert.h>
 #include <CoreBase/FVector.h>
 #include <CoreDevice/ImageLoader.h>
@@ -49,6 +50,56 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType a
                                                          const char *prefixAssetName, bool bEngine)
 {
 
+    return CreateAsset(assetType, intermediateAssetData, prefixAssetName, bEngine, AssetCreationContext{});
+    //// factory create
+    // Asset *asset = nullptr;
+
+    // asset = mAssetFactoryManager->CreateAssetFromData(*intermediateAssetData);
+
+    // if (asset == nullptr)
+    //     return nullptr;
+
+    //// asset들의 unique한 name을 최종 설정 & 전역테이블에 등록 & 메타데이터 등록
+
+    // std::string displayName = asset->GetName().c_str();
+
+    // std::string uniqueName = std::string(prefixAssetName) + "/" + displayName;
+
+    //// uniqueName의 중복을 검사해야한다. , 전역테이블시스템으로부터
+    // size_t nameCount = 0;
+    // std::string displayNameTemp = displayName;
+    // while (mGlobalAssetRegistrySystem->GetAsset(uniqueName) != nullptr)
+    //{
+    //     displayNameTemp = displayName + std::to_string(nameCount++);
+    //     uniqueName = std::string(prefixAssetName) + "/" + displayNameTemp;
+    // }
+    // asset->SetName(displayNameTemp.c_str());
+    // mGlobalAssetRegistrySystem->RegisterAsset(asset, uniqueName, bEngine);
+
+    // if (bEngine == false)
+    //{
+    //     asset->SetRawDataDirty(true);
+    // }
+
+    // mAssetMetaDataManager->Register(asset);
+
+    // return asset;
+}
+
+CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType assetType,
+                                                         const IntermediateAsset &intermediateAssetData,
+                                                         const char *prefixAssetName, bool bEngine)
+{
+    // 레퍼런스 버전
+    return CreateAsset(assetType, &intermediateAssetData, prefixAssetName, bEngine);
+}
+
+CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(EAssetType assetType,
+                                                         const IntermediateAsset *intermediateAssetData,
+                                                         const char *registryPrefix, bool bEngine,
+                                                         const AssetCreationContext &creationContext)
+{
+
     // factory create
     Asset *asset = nullptr;
 
@@ -59,9 +110,13 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType a
 
     // asset들의 unique한 name을 최종 설정 & 전역테이블에 등록 & 메타데이터 등록
 
-    std::string displayName = asset->GetName().c_str();
+    if (!creationContext.mRequestedAssetName.empty())
+    {
+        asset->SetName(creationContext.mRequestedAssetName.c_str());
+    }
 
-    std::string uniqueName = std::string(prefixAssetName) + "/" + displayName;
+    std::string displayName = asset->GetName().c_str();
+    std::string uniqueName = std::string(registryPrefix) + "/" + displayName;
 
     // uniqueName의 중복을 검사해야한다. , 전역테이블시스템으로부터
     size_t nameCount = 0;
@@ -69,9 +124,16 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType a
     while (mGlobalAssetRegistrySystem->GetAsset(uniqueName) != nullptr)
     {
         displayNameTemp = displayName + std::to_string(nameCount++);
-        uniqueName = std::string(prefixAssetName) + "/" + displayNameTemp;
+        uniqueName = std::string(registryPrefix) + "/" + displayNameTemp;
     }
+
     asset->SetName(displayNameTemp.c_str());
+
+    if (creationContext.mRequestedAssetID != NoneAssetID)
+    {
+        asset->SetAssetID(creationContext.mRequestedAssetID);
+    }
+
     mGlobalAssetRegistrySystem->RegisterAsset(asset, uniqueName, bEngine);
 
     if (bEngine == false)
@@ -79,17 +141,15 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType a
         asset->SetRawDataDirty(true);
     }
 
-    mAssetMetaDataManager->Register(asset);
+    mAssetMetaDataManager->Register(asset, bEngine);
 
     return asset;
 }
 
-CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(CoreAsset::EAssetType assetType,
-                                                         const IntermediateAsset &intermediateAssetData,
-                                                         const char *prefixAssetName, bool bEngine)
+void CoreAsset::AssetManager::SetAssetDataSource(std::unique_ptr<CoreAsset::IAssetDataSource> assetRawDataSource)
 {
-    // 레퍼런스 버전
-    return CreateAsset(assetType, &intermediateAssetData, prefixAssetName, bEngine);
+
+    mAssetRawDataSource = std::move(assetRawDataSource);
 }
 
 CoreAsset::AssetLoadResult CoreAsset::AssetManager::LoadAsset(const std::filesystem::path &assetPath,
@@ -120,13 +180,22 @@ CoreAsset::AssetLoadResult CoreAsset::AssetManager::LoadAsset(const std::filesys
         return result;
     }
 
+    std::vector<uint8_t> buffer;
+    CoreAsset::AssetSerializedDataRequest request;
+    request.mPath = assetPath;
+    mAssetRawDataSource->ReadSerializedAssetData(request, buffer);
+    ///  mAssetRawDataSource->ReadSerailizedData(request)
+
     Asset *asset = nullptr;
     std::unique_ptr<AssetMetaData> assetMetaDataPtr = nullptr;
 
     if (extension == ".asset" || extension == ".map")
     {
-        result = mAssetIOManager->LoadAssetFromMetaData(assetPath, mAssetFactoryManager, asset, assetMetaDataPtr,
-                                                        executionContext);
+        /*result = mAssetIOManager->LoadAssetFromMetaData(assetPath, mAssetFactoryManager, asset, assetMetaDataPtr,
+                                                        executionContext);*/
+
+        result = mAssetIOManager->LoadAssetFromMetaDataFromBuffer(buffer.data(), buffer.size(), mAssetFactoryManager,
+                                                                  asset, assetMetaDataPtr, executionContext);
     }
     else
     {
@@ -144,7 +213,62 @@ CoreAsset::AssetLoadResult CoreAsset::AssetManager::LoadAsset(const std::filesys
         mAssetMetaDataManager->Register(*assetMetaDataPtr.get());
         // 전역테이블에 등록하는 메서드 호출
         std::string assetUniqueName = logicalFolderPath + "/" + asset->GetName().c_str();
-        RegisterAsset(asset, assetUniqueName);
+        const bool bEngine = assetMetaDataPtr->mDomain == CoreAsset::EAssetDomain::eEngine;
+        RegisterAsset(asset, assetUniqueName, bEngine);
+    }
+
+    return result;
+}
+
+CoreAsset::AssetLoadResult CoreAsset::AssetManager::LoadAsset(CoreAsset::AssetID assetID,
+                                                              const std::string &registryName,
+                                                              const AssetLoadExecutionContext &executionContext)
+{
+    AssetLoadResult result;
+
+    /*
+
+    asset id 를 얻어와야함.
+
+
+    */
+
+    AssetPtr assetPtr = GetAssetCommon(assetID);
+    if (assetPtr.Get() != nullptr)
+    {
+        result.pAsset = assetPtr.Get();
+        result.mAssetType = assetPtr.Get()->GetAssetType();
+        result.mResultFlag = EAssetLoadResultFlag::eAlready;
+
+        return result;
+    }
+
+    //
+    Asset *asset = nullptr;
+    std::unique_ptr<AssetMetaData> assetMetaDataPtr = nullptr;
+
+    std::vector<uint8_t> buffer;
+    CoreAsset::AssetSerializedDataRequest request;
+    request.mAssetID = assetID;
+    mAssetRawDataSource->ReadSerializedAssetData(request, buffer);
+    ///  mAssetRawDataSource->ReadSerailizedData(request)
+
+    result = mAssetIOManager->LoadAssetFromMetaDataFromBuffer(buffer.data(), buffer.size(), mAssetFactoryManager, asset,
+                                                              assetMetaDataPtr, executionContext);
+
+    // pakreader로부터 그 asset
+    if (result.mResultFlag == EAssetLoadResultFlag::eSuccess && result.pAsset->GetID() == assetID)
+    {
+        // 메타데이터 등록
+        mAssetMetaDataManager->Register(*assetMetaDataPtr.get());
+        // 전역테이블에 등록하는 메서드 호출
+        std::string assetUniqueName = registryName;
+        const bool bEngine = assetMetaDataPtr->mDomain == CoreAsset::EAssetDomain::eEngine;
+        RegisterAsset(asset, assetUniqueName, bEngine);
+    }
+    else
+    {
+        result.mResultFlag = EAssetLoadResultFlag::eFail;
     }
 
     return result;
@@ -161,9 +285,23 @@ bool CoreAsset::AssetManager::LoadAssetRawData(CoreAsset::Asset *asset)
     if (assetMetaData == nullptr)
         return false;
 
-    std::filesystem::path path = mRawDataPath / assetMetaData->mRawFileName;
+    //    std::filesystem::path path = mRawDataPath / assetMetaData->mRawFileName;
 
-    bool ret = mAssetIOManager->LoadAssetRawData(asset, path);
+    CoreAsset::AssetRawDataRequest request;
+
+    request.mRawDataRelativePath = assetMetaData->mRawFileName;
+    request.mAssetID = asset->GetID();
+    request.mDomain = assetMetaData->mDomain;
+    std::vector<uint8_t> buffer;
+
+    bool ret = mAssetRawDataSource->ReadRawData(request, buffer);
+    if (!ret)
+    {
+        asset->SetLoadState(Asset::LoadState::Failed);
+        return ret;
+    }
+
+    ret = mAssetIOManager->LoadAssetRawDataFromBuffer(asset, buffer.data(), buffer.size());
 
     if (ret)
     {
@@ -183,16 +321,16 @@ void CoreAsset::AssetManager::SetAssetRawDataPath(const std::filesystem::path &p
 }
 
 std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(const std::filesystem::path &filePath,
-                                                                     const char *prefixAssetName, bool bEngine)
+                                                                     const AssetImportContext &importContext)
 {
     // 임포팅이라면 절대경로
     if (mAssetImporterManager == nullptr)
         return {};
 
     // import
-    ImportExecutionContext importContext;
-    importContext.bEngineAsset = bEngine;
-    ImportPackage importPackage = mAssetImporterManager->Import(filePath, importContext);
+    ImportExecutionContext importExecutionContext;
+    importExecutionContext.bEngineAsset = importContext.mEngineAsset;
+    ImportPackage importPackage = mAssetImporterManager->Import(filePath, importExecutionContext);
     if (importPackage.mInteremdiateAssets.empty())
     {
         return {};
@@ -205,7 +343,8 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(const std::
         for (const ImportRequestTextureContext &e : importPackage.mImportRequestTextureContexts)
         {
 
-            ImportPackage textureImportPackage = mAssetImporterManager->Import(e.mFilePath.c_str(), importContext);
+            ImportPackage textureImportPackage =
+                mAssetImporterManager->Import(e.mFilePath.c_str(), importExecutionContext);
 
             for (auto &e : textureImportPackage.mInteremdiateAssets)
             {
@@ -225,10 +364,20 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(const std::
         if (importedIntermediateAsset.mValid == false)
             continue;
 
+        AssetCreationContext creationContext;
+
+        auto it = importContext.mCreationContextTable.find(importedIntermediateAsset.mKey);
+
+        if (it != importContext.mCreationContextTable.end())
+        {
+            creationContext = it->second;
+        }
+
         const auto &intermediateAssetPtr = importedIntermediateAsset.mIntermediateAsset;
 
-        Asset *asset =
-            CreateAsset(intermediateAssetPtr->mAssetType, intermediateAssetPtr.get(), prefixAssetName, bEngine).Get();
+        Asset *asset = CreateAsset(intermediateAssetPtr->mAssetType, intermediateAssetPtr.get(),
+                                   importContext.mRegistryPrefix.c_str(), importContext.mEngineAsset, creationContext)
+                           .Get();
 
         assetPtrVector.push_back(asset);
 
@@ -333,13 +482,13 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAssetInner()
 //     return assetPtr;
 // }
 
-void CoreAsset::AssetManager::RegisterAsset(Asset *asset, const std::string &assetUniqueName)
+void CoreAsset::AssetManager::RegisterAsset(Asset *asset, const std::string &assetUniqueName, bool bEngine)
 {
 
     if (asset == nullptr)
         return;
 
-    mGlobalAssetRegistrySystem->RegisterAsset(asset, assetUniqueName.c_str());
+    mGlobalAssetRegistrySystem->RegisterAsset(asset, assetUniqueName.c_str(), bEngine);
 }
 
 void CoreAsset::AssetManager::InitAssetSetting(Asset *asset)
@@ -956,23 +1105,25 @@ CoreAsset::AssetManager::AssetManager()
 std::vector<CoreAsset::AssetPtr> CoreAsset::AssetManager::CreateBuiltInFont()
 {
 
-    IntermediateTexture intermediateTex;
+    // IntermediateTexture intermediateTex;
 
-    intermediateTex.mAssetName = "DefaultFontGlyph";
-    intermediateTex.mTextureRawData;
+    // intermediateTex.mAssetName = "DefaultFontGlyph";
+    // intermediateTex.mTextureRawData;
 
-    GRM::TextureDesc &textureDesc = intermediateTex.mTextureRawData;
+    // GRM::TextureDesc &textureDesc = intermediateTex.mTextureRawData;
 
-    textureDesc.mTextureUsage = GRM::ETextureUsage::eShaderResource;
+    // textureDesc.mTextureUsage = GRM::ETextureUsage::eShaderResource;
 
-    std::filesystem::path atlasPath = mEditorAssetPath / "Fonts" / "font_atlas.png";
+    // std::filesystem::path atlasPath = mEditorAssetPath / "Fonts" / "font_atlas.png";
 
-    //  GRM::ScratchImage scratchImage = Core::ImageLoader::LoadFromMemory(g_DefaultFontTexture, 2690973);
-    GRM::ScratchImage scratchImage = Core::ImageLoader::LoadFromFile(atlasPath);
+    ////  GRM::ScratchImage scratchImage = Core::ImageLoader::LoadFromMemory(g_DefaultFontTexture, 2690973);
+    // GRM::ScratchImage scratchImage = Core::ImageLoader::LoadFromFile(atlasPath);
 
-    textureDesc.mScratchImage = std::move(scratchImage);
+    // textureDesc.mScratchImage = std::move(scratchImage);
 
-    AssetPtr pTex = CreateAsset(EAssetType::eTexture, intermediateTex, "Engine", true);
+    // AssetPtr pTex = CreateAsset(EAssetType::eTexture, intermediateTex, "Engine", true);
+
+    AssetPtr pTex = GetAsset<Texture>(1);
 
     //
 

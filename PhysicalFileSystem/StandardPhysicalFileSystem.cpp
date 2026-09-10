@@ -178,16 +178,7 @@ bool QuadPF::StandardPhysicalFileSystem::ReadFileToBuffer(const std::filesystem:
 
     fin.seekg(0, std::ios_base::beg);
 
-    std::vector<uint8_t> tempBuffer(fileSize);
-
-    fin.read((char *)tempBuffer.data(), fileSize);
-
-    if (!fin || fin.gcount() != fileSize)
-        return false;
-
-    oBuffer = std::move(tempBuffer);
-
-    return true;
+    return ReadFileToBuffer(fin, 0, fileSize, oBuffer);
 
     //// file handle을 먼저 가져오고
     // WindowHandleRef handleRef = OpenFile(path);
@@ -217,6 +208,27 @@ bool QuadPF::StandardPhysicalFileSystem::ReadFileToBuffer(const std::filesystem:
     // }
 
     // return true;
+}
+
+bool QuadPF::StandardPhysicalFileSystem::ReadFileToBuffer(const std::filesystem::path &path, uint64_t offset,
+                                                          uint64_t size, std::vector<uint8_t> &oBuffer)
+{
+
+    if (size == 0)
+        return true;
+
+    if (!std::filesystem::is_regular_file(path))
+    {
+        return false;
+    }
+    std::ifstream fin(path.c_str(), std::ios_base::binary);
+
+    if (!fin.is_open())
+    {
+        return false;
+    }
+
+    return ReadFileToBuffer(fin, offset, size, oBuffer);
 }
 
 bool QuadPF::StandardPhysicalFileSystem::WriteBufferToValidFile(const std::filesystem::path &path, const void *data,
@@ -484,6 +496,33 @@ bool QuadPF::StandardPhysicalFileSystem::WriteDataToFile(const std::filesystem::
 
     if (!fout)
         return false;
+
+    return true;
+}
+
+bool QuadPF::StandardPhysicalFileSystem::ReadFileToBuffer(std::ifstream &fin, uint64_t offset, uint64_t size,
+                                                          std::vector<uint8_t> &oBuffer)
+{
+    fin.seekg(0, std::ios_base::end);
+    uint64_t totalFileSize = static_cast<uint64_t>(fin.tellg());
+
+    if (offset > totalFileSize || size > totalFileSize - offset)
+        return false;
+
+    fin.seekg(offset, std::ios_base::beg);
+    if (!fin)
+    {
+        return false;
+    }
+
+    std::vector<uint8_t> tempBuffer(size);
+
+    fin.read((char *)tempBuffer.data(), size);
+
+    if (!fin || fin.gcount() != size)
+        return false;
+
+    oBuffer = std::move(tempBuffer);
 
     return true;
 }

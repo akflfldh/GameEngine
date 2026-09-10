@@ -36,6 +36,10 @@ class PHYSICAL_FILESYSTEM_API PhysicalFileSystem
     virtual bool DeletePhysicalFolder(const std::filesystem::path &path) = 0;
 
     virtual bool ReadFileToBuffer(const std::filesystem::path &path, std::vector<uint8_t> &oBuffer) = 0;
+
+    virtual bool ReadFileToBuffer(const std::filesystem::path &path, uint64_t offset, uint64_t size,
+                                  std::vector<uint8_t> &oBuffer) = 0;
+
     // 기존에있는 존재하는 파일에 쓰기
     virtual bool WriteBufferToValidFile(const std::filesystem::path &path, const void *data, size_t size) = 0;
     // 파일이 없다면 생성하여 쓰기수행.

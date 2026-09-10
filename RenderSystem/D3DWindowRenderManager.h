@@ -39,6 +39,9 @@ class RENDER_SYSTEM_API D3DWindowRenderManager : public Render::IWindowRenderMan
     virtual GRM::GRMPtr GetSwapchainBackBuffer(void *windowHandle, int index) override;
     virtual GRM::GRMPtr GetDepthStencilBuffer(void *windowHandle) override;
 
+    virtual int GetNextSwapchainBackBufferIndex(void *windowHandle) override;
+    virtual void IncrementNextSwapchainBackBufferIndex(void *windowHandle) override;
+
   private:
     static D3DWindowRenderManager *mInstance;
 

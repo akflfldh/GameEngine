@@ -47,6 +47,8 @@ class CORE_API_LIB Map : public CoreAsset::Asset
     Map();
     virtual ~Map();
 
+    static CoreAsset::EAssetType GetAssetType();
+
     virtual void Start();
 
     virtual void BeginPlay();

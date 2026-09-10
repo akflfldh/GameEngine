@@ -84,3 +84,19 @@ GRM::GRMPtr D3DRender::D3DWindowRenderManager::GetDepthStencilBuffer(void *windo
     auto windowRenderData = GetWindowRenderData(hwnd);
     return windowRenderData->GetDepthStencilBuffer();
 }
+
+int D3DRender::D3DWindowRenderManager::GetNextSwapchainBackBufferIndex(void *windowHandle)
+{
+    HWND hwnd = (HWND)windowHandle;
+    auto windowRenderData = GetWindowRenderData(hwnd);
+
+    return windowRenderData->GetNextBackBufferIndex();
+}
+
+void D3DRender::D3DWindowRenderManager::IncrementNextSwapchainBackBufferIndex(void *windowHandle)
+{
+    HWND hwnd = (HWND)windowHandle;
+    auto windowRenderData = GetWindowRenderData(hwnd);
+
+    windowRenderData->IncrementNextBackBufferIndex();
+}

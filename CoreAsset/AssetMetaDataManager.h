@@ -17,7 +17,7 @@ class CORE_ASSET_API AssetMetaDataManager
     ~AssetMetaDataManager();
 
     bool Register(const AssetMetaData &assetMetaData);
-    bool Register(Asset *asset);
+    bool Register(Asset *asset, bool bEngine = false);
     void UnRegister(AssetID id);
 
     AssetMetaData *GetMetaData(AssetID id) const;

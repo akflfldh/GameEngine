@@ -28,6 +28,13 @@ class Texture;
 namespace Render
 {
 
+enum class EDefaultGpuBufferType : uint8_t
+{
+    eConstantPass256 = 1,
+    eConstantObject128,
+    eConstantObject256
+};
+
 enum class ERenderPassType : uint8_t
 {
     eMain = 0,

@@ -6,7 +6,11 @@
 #include <CoreAsset/CoreAssetDLLMacro.h>
 #include <filesystem>
 #include <memory>
+#include <stdint.h>
 #include <unordered_map>
+
+class Arch;
+
 namespace CoreAsset
 {
 class AssetLoader;
@@ -33,8 +37,14 @@ class CORE_ASSET_API AssetIOManager
                                           std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr,
                                           const AssetLoadExecutionContext &executionContext);
 
+    AssetLoadResult LoadAssetFromMetaDataFromBuffer(const uint8_t *data, size_t size,
+                                                    AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+                                                    std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr,
+                                                    const AssetLoadExecutionContext &executionContext);
+
     // 실제 빈asset의 내부데이터를 로드하고,직렬화하여 채운다.
     bool LoadAssetRawData(Asset *asset, const std::filesystem::path &path);
+    bool LoadAssetRawDataFromBuffer(Asset *asset, const uint8_t *data, size_t size);
 
     // std::unique_ptr<SerializedAssetRawData> LoadAssetRawData(const std::string &filePath, EAssetType assetType);
     // store
@@ -44,6 +54,13 @@ class CORE_ASSET_API AssetIOManager
 
     AssetStorer *GetStorer(EAssetType type) const;
     AssetLoader *GetLoader(EAssetType type) const;
+
+  private:
+    AssetLoadResult LoadAssetFromMetaDataCommon(Arch &arch, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+                                                std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr,
+                                                const AssetLoadExecutionContext &executionContext);
+
+    bool LoadAssetRawDataCommon(Asset *asset, Arch &binaryArch);
 
   private:
     // asset loader table

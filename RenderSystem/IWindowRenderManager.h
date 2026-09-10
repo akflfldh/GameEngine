@@ -16,6 +16,9 @@ class RENDER_SYSTEM_API IWindowRenderManager
 
     virtual GRM::GRMPtr GetDepthStencilBuffer(void *windowHandle) = 0;
 
+    virtual int GetNextSwapchainBackBufferIndex(void *windowHandle) = 0;
+    virtual void IncrementNextSwapchainBackBufferIndex(void *windowHandle) = 0;
+
   protected:
     IWindowRenderManager();
     virtual ~IWindowRenderManager() = 0;

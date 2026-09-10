@@ -1,199 +1,395 @@
 ﻿#include "GameDirector.h"
 
-#include"Application.h"
-#include"GameWindow.h"
-#include"GameWindowController.h"
-#include"MapMetaData.h"
-#include"Map/Map.h"
-#include"GameMapInstanceGenerator.h"
+#include "Application.h"
+#include "GameDirector/GameWindowController.h"
+#include <Core/LogicalWindow.h>
+#include <Core/MapFactory.h>
+#include <Core/MapLoader.h>
+#include <Core/MapStorer.h>
+#include <Core/PrefabFactory.h>
+#include <Core/PrefabLoader.h>
+#include <Core/PrefabStorer.h>
+#include <Core/World.h>
+#include <CoreAsset/AssetFactoryManager.h>
+#include <CoreAsset/AssetIOManager.h>
+#include <CoreAsset/AssetManager.h>
+#include <CoreAsset/FontFactory.h>
+#include <CoreAsset/MaterialFactory.h>
+#include <CoreAsset/MaterialLoader.h>
+#include <CoreAsset/MaterialStorer.h>
+#include <CoreAsset/MeshFactory.h>
+#include <CoreAsset/MeshLoader.h>
+#include <CoreAsset/MeshStorer.h>
+#include <CoreAsset/TextureFactory.h>
+#include <CoreAsset/TextureLoader.h>
+#include <CoreAsset/TextureStorer.h>
+#include <CoreBase/BinaryArch.h>
+#include <GameDirector/GameRuntimeConfig.h>
+#include <GameDirector/GameRuntimeMode.h>
+#include <RenderFrontend/AssetResolver.h>
+#include <RenderFrontend/ObjectRenderItemBuilder.h>
+#include <RenderFrontend/RenderPipelineManager.h>
+#include <Utility/Utility.h>
 
-#include"Project.h"
-#include"Game3DSystem.h"
-#include"GameUiSystem.h"
-#include"Core/DefaultCollisionWorldFactoryImpl.h"
-#include"Core/DefaultSpacePartitioningStructureFactoryImpl.h"
+#include <Core/Map.h>
+#include <CoreAsset/PakAssetDataSource.h>
+#include <CoreAsset/UIMaterialManager.h>
+#include <D3DGpuResourceManager/GpuBufferContextSystem.h>
+#include <D3DGpuResourceManager/GpuSamplerSystem.h>
+#include <D3DGpuResourceManager/IGpuResourceManager.h>
+#include <PhysicalFileSystem/PhysicalFileSystem.h>
+#include <RenderFrontend/UIRenderItemBuilder.h>
+#include <RenderSystem/IMaterialManager.h>
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+Quad::GameDirector *Quad::GameDirector::GetInstance()
 {
 
-    Quad::Application app;
-    Quad::GameDirector gameDirector;
-    Quad::AppInitData appInitData;
-
-    appInitData.hInstance = hInstance;
-    appInitData.nShowCmd = nCmdShow;
-    appInitData.programDirector = &gameDirector;
-
-    std::unique_ptr< Quad::DefaultCollisionWorldFactoryImpl> collisionFactoryImpl(new Quad::DefaultCollisionWorldFactoryImpl);
-    appInitData.collisionWorldFactoryImpl = collisionFactoryImpl.get();
-    std::unique_ptr< Quad::DefaultSpacePartitioningStructureFactoryImpl>sapcePartitioningStructureFactoryImpl(new Quad::DefaultSpacePartitioningStructureFactoryImpl);
-    appInitData.spacePartitoingStructureFactoryImpl = sapcePartitioningStructureFactoryImpl.get();
-
-    if (!app.Initialize(appInitData))
-        return 0;
-
-    return app.Run();
+    static GameDirector instance;
+    return &instance;
 }
 
 Quad::GameDirector::GameDirector()
-    :mGameWindow(nullptr), mGameWindowController(nullptr),mProject(nullptr)
+    : mGameWindowController(std::make_unique<GameWindowController>()),
+      mGameRuntimeMode(std::make_unique<GameRuntimeMode>()), mWorld(std::make_unique<World>())
+
+{
+}
+
+Quad::GameDirector::~GameDirector() {}
+
+void Quad::GameDirector::InitRuntimeConfig(const std::filesystem::path &gameRootPath)
 {
 
-    wchar_t path[MAX_PATH];
-    GetCurrentDirectory(MAX_PATH, path);
-
-    mEditorPathW = path;
-    mEditorPathA = Utility::ConvertToString(mEditorPathW, true);
-
+    mGameRuntimeConfig = std::make_unique<GameRuntimeConfig>(gameRootPath);
 }
 
 void Quad::GameDirector::Initialize()
 {
 
-   // Utility::SetNewCurrentDirectory("C:\\Users\\dongd\\gitproject\\GameEngine\\x64\\Debug");
-    //실행파일이있는 디렉터리가 현재 디렉터리라고 가정한다.
-
-    //game window create, init
-    //window not visible
-     auto app= Quad::Application::GetInstance();
-     
-     //window
-
-     mGameWindow = new GameWindow(app->GetHinstance());
-     mGameWindow->CreateWindowClass();
-
-     mGameWindowController = new GameWindowController(mGameWindow);
-     mGameWindow->Initialize(mGameWindowController);
-  
-     ////controller(system)
-
-
-  
-     mGameWindowController->Initialize();
-
-
-
-
-
-
-
-
-     //project resource load 
-     mProject = new Project;
-
-    auto resourceController =  ResourceController::GetInstance();
-
-
-    resourceController->LoadEffect(".\\Asset\\Effect", mGameWindowController);
-
-    //resourceController->LoadUserAsset(".\\Asset");
-    resourceController->LoadAssetPackage(mEditorPathA);
-
-
-    //resourceController->LoadUserTexture("Asset\\Texture");
-    //resourceController->LoadUserMaterial("Asset\\Material");
-    //resourceController->LoadUserMaterial("Asset\\Material");
-
-
-
-
-
-    LoadLibrary(L".\\UserCode.dll");
-
-    //project map load
-
-    std::vector<MapMetaData*> map3DMetaDataVector;
-
-
-    ReadMapMetaDataFile(".\\MapMetaDataFile.json", map3DMetaDataVector);
-
-   // JsonParser::ReadFile(".\\MapMetaDataFile.json");
-    
-
-    std::string beforeDirectoryPath =    Utility::SetNewCurrentDirectory(".\\Map");
-
-    auto gameSystem = Game3DSystem::GetInstance();
-   // auto gameUiSystem = GameUiSystem::GetInstance();
-
-
-    for (auto mapMetaData : map3DMetaDataVector)
+    if (!LoadGameBuildManifest())
     {
-        Map * map =  GameMapInstanceGenerator::CreateMap(gameSystem, mapMetaData->GetMapName());
-        if (map != nullptr)
-        {
-
-            JsonParser::ReadFile(map->GetName() + ".json");
-            map->DeSerialize();
-            mProject->AddMap(map->GetName(), map);
-        }
+        return;
     }
-    //game3DSystem->SetMap(mProject->GetMap(map3DMetaDataVector[0]->GetMapName()));
 
-    gameSystem->SetMap(mProject->GetMap(map3DMetaDataVector[0]->GetMapName()));
- 
+    // game window create, init
+    // window not visible
+    mApp = Quad::Application::GetInstance();
+    mRenderPipelineManager = Render::RenderPipelineManager::GetInstance();
+    mGameWindowController->Initialize(*mRenderPipelineManager);
 
+    // asset system
 
-    Utility::SetNewCurrentDirectory(beforeDirectoryPath);
+    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
+    // CoreAsset::AssetImporterManager *assetImporterManager = CoreAsset::AssetImporterManager::GetInstance();
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
 
+    RegisterAssetFactory();
+    RegisterAssetLoader();
+    RegisterAssetStorer();
 
+    auto assetManager = CoreAsset::AssetManager::GetInstance();
+    assetManager->Initialize(assetFactoryManager, assetIOManager, nullptr,
+                             mGameRuntimeConfig->GetEngineAssetDirectory());
+    assetManager->SetAssetRawDataPath(mGameRuntimeConfig->GetRawAssetDirectory());
 
-    //window visible
+    if (!LoadUserDLL())
+        return;
+    LoadAssets();
+    InitRenderSystems();
 
+    // asset load ( not raw data serialize)
+    // LoadAssets();
 
-    //초기화 마지막, 맵전환시에 start호출
+    CreateWorkSpace();
+    mWorld->SetEngineMode(mGameRuntimeMode.get());
 
-    Map * currMap =gameSystem->GetMap();
-    currMap->Start();
+    CoreAsset ::AssetPtr pFirstMap = assetManager->GetAsset<Map>(mGameBuildManifest.mStartupMapAssetID);
+    Map *firstMap = pFirstMap.As<Map>();
+    if (firstMap == nullptr)
+    {
+        return;
+    }
 
+    mWorld->Register(firstMap);
+    mWorld->SetCurrentMap(firstMap);
+
+    // map asset들 world에 모두 등록
+
+    // 특정 map만 직렬화처리(일단 여기서 map 직렬화  )
+    assetManager->LoadAssetRawData(firstMap);
+
+    mInitialized = true;
+}
+
+void Quad::GameDirector::Begin()
+{
+
+    // world StartMap
+    mWorld->StartMap();
 }
 
 void Quad::GameDirector::PreUpdate(float deltaTime)
 {
+
+    mGameWindowController->PreUpdate();
 }
 
 void Quad::GameDirector::Update(float deltaTime)
 {
+    mGameWindowController->Update(deltaTime);
 
-    mGameWindow->Update(deltaTime);
-    mGameWindow->UploadObjectToRenderSystem();
+    mWorld->Update(deltaTime);
 
+    mRenderPipelineManager->Update(mApp->GetTotalFrameCount(), mApp->GetLastCompletedFenceValue());
 
-  //  mGameWindowController->Update(deltaTime);
-
+    // world -> update(deltaTime);
 }
 
 void Quad::GameDirector::EndUpdate(float deltaTime)
 {
+    mWorld->EndUpdate(deltaTime);
 
-    mGameWindow->EndUpdate(deltaTime);
+    mGameWindowController->EndUpdate();
+    // worlrd->endupdate(deltaTime);
 }
 
 void Quad::GameDirector::Draw()
 {
-    mGameWindow->Draw();
 
-
-    //mGameWindowController->Draw();
+    mGameWindowController->Draw();
 }
 
-void Quad::GameDirector::ReadMapMetaDataFile(const std::string& mapMetaDatFilePath, std::vector<Quad::MapMetaData*>& o3DMapMetaDataVector)
+void Quad::GameDirector::CleanUp()
+{
+    mWorld->CleanUp();
+    // world->cleanUp();
+}
+
+void Quad::GameDirector::EndFrame() {}
+
+void Quad::GameDirector::EndSystem()
 {
 
-    unsigned int currentReadObjectIndext = 0;
-    JsonParser::ReadFile(mapMetaDatFilePath);
-    JsonParser::ReadStart();
+    Render::RenderPipelineManager::GetInstance()->EndRenderThread();
+    Render::AssetResolver::GetInstance()->EndResourceResolveThread();
+}
 
-    unsigned int map3DNum = 0;
-   // unsigned int mapUiNum = 0;
-    JsonParser::Read("Project_SystemMapMetaDataNum", map3DNum);
+Quad::GameRuntimeConfig *Quad::GameDirector::GetGameRuntimeConfig() const
+{
+    return mGameRuntimeConfig.get();
+}
 
-    o3DMapMetaDataVector.resize(map3DNum,new MapMetaData);
+void Quad::GameDirector::CreateWorkSpace()
+{
+    mWorkSpace = std::make_unique<Core::WorkSpace>();
 
-    for (auto mapElement : o3DMapMetaDataVector)
+    CreateMainLogicalWindow();
+    mWorkSpace->AddLogicalWindow(mMainLogicalWindow.get());
+
+    mGameWindowController->SetWorkSpace(mWorkSpace.get());
+}
+
+void Quad::GameDirector::CreateMainLogicalWindow()
+{
+
+    mMainLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    mMainLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+
+    mMainLogicalWindow->mViewportController.SetAnchorLeftState(true);
+    mMainLogicalWindow->mViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->mViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mMainLogicalWindow->mViewportController.SetAnchorRightState(true);
+    mMainLogicalWindow->mViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->mViewportController.SetAnchorRightRelValue(0.0);
+
+    mMainLogicalWindow->mViewportController.SetAnchorTopState(true);
+    mMainLogicalWindow->mViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->mViewportController.SetAnchorTopRelValue(0.0f);
+    // mMainSceneLogicalWindow->mViewportController.SetAnchorTopPixelValue(100.0f);
+
+    mMainLogicalWindow->mViewportController.SetAnchorBottomState(true);
+    mMainLogicalWindow->mViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->mViewportController.SetAnchorBottomRelValue(0.0f);
+
+    mMainLogicalWindow->m3DWorldViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorLeftState(true);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorLeftMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorLeftRelValue(0.0f);
+
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorRightState(true);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorRightMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorRightRelValue(0.0f);
+
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorTopState(true);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorTopMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorTopRelValue(0.0f);
+    // mMainSceneLogicalWindow->mViewportController.SetAnchorTopPixelValue(0.0f);
+
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorBottomState(true);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorBottomMode(Core::EViewportAnchoredMode::eRelative);
+    mMainLogicalWindow->m3DWorldViewportController.SetAnchorBottomRelValue(0.0f);
+
+    mMainLogicalWindow->SetWorld(mWorld.get());
+    mMainLogicalWindow->SetBackBufferClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+
+    // mDefaultEditWorkSpace->AddLogicalWindow(mMainSceneLogicalWindow.get());
+
+    mMainLogicalWindow->SetDebugGridRender(false);
+
+    /*   EditorSceneManager::GetInstance()->GetUserWorld()->mOnMapObjectRemovedCallbackSystem.Register(
+           [](Object *object) { EditorSelectionManager::GetInstance()->OnMapObjectRemoved(object); });*/
+}
+
+void Quad::GameDirector::RegisterAssetFactory()
+{
+    CoreAsset::AssetFactoryManager *assetFactoryManager = CoreAsset::AssetFactoryManager::GetInstance();
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eTexture,
+                                              CoreAsset::TextureFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMaterial,
+                                              CoreAsset::MaterialFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eStaticMesh,
+                                              CoreAsset::MeshFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkinningMesh,
+                                              CoreAsset::MeshFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eFont, CoreAsset::FontFactory::GetInstance());
+
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::ePrefab, PrefabFactory::GetInstance());
+}
+
+void Quad::GameDirector::RegisterAssetLoader()
+{ // asset loader  register
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eTexture, CoreAsset::TextureLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
+}
+
+void Quad::GameDirector::RegisterAssetStorer()
+{
+
+    CoreAsset::AssetIOManager *assetIOManager = CoreAsset::AssetIOManager::GetInstance();
+
+    // asset  storer register
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eTexture, CoreAsset::TextureStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());
+}
+
+bool Quad::GameDirector::LoadUserDLL()
+{
+
+    const std::filesystem::path &path =
+        mGameRuntimeConfig->GetGameRootDirectory() / mGameBuildManifest.mGameModuleRelativePath;
+
+    mUserDLLHandle = CoreUtility::LibraryUtility::Load(path);
+
+    if (mUserDLLHandle == nullptr)
+        return false;
+
+    return true;
+}
+
+bool Quad::GameDirector::LoadGameBuildManifest()
+{
+
+    Core::GameBuildManifest manifest;
+
+    if (!ReadGameBuildManifest(mGameRuntimeConfig->GetManifestPath(), manifest))
+        return false;
+
+    mGameBuildManifest = std::move(manifest);
+
+    return true;
+}
+
+void Quad::GameDirector::LoadAssets()
+{
+    auto assetManager = CoreAsset::AssetManager::GetInstance();
+
+    auto pakSource = std::make_unique<CoreAsset::PakAssetDataSource>();
+
+    if (!pakSource->Initialize(mGameRuntimeConfig->GetGameRootDirectory() / "Asset.pak"))
+        return;
+
+    std::vector<CoreAsset::AssetDataRecord> records;
+    pakSource->GetAssetRecordList(records);
+
+    assetManager->SetAssetDataSource(std::move(pakSource));
+    CoreAsset::AssetLoadExecutionContext executionContext;
+
+    for (const auto &record : records)
     {
-        currentReadObjectIndext++;
-        JsonParser::SetCurrentIndex(currentReadObjectIndext);
-        mapElement->DeSerialize();
+        assetManager->LoadAsset(record.mAssetID, record.mRegistryPath, executionContext);
     }
 
+    // const auto &assetRootPath = mGameRuntimeConfig->GetAssetDirectory();
+
+    // auto pfSystem = QuadPF::PhysicalFileSystem::GetInstance();
+
+    // std::vector<std::string> fileList;
+
+    //// 일단 계충구조까지 안봄
+    // pfSystem->GetFileListByExtension(assetRootPath, "asset", fileList);
+
+    // for (const auto &fileName : fileList)
+    //{
+    //     std::filesystem::path assetPath = assetRootPath / fileName;
+
+    //    CoreAsset::AssetLoadExecutionContext loadExecutionContext;
+    //    CoreAsset::AssetLoadResult result = assetManager->LoadAsset(assetPath, "", loadExecutionContext);
+
+    //    // 결과처리 어떻게 할것인가.
+
+    //    // if (result.mResultFlag == CoreAsset::EAssetLoadResultFlag::eSuccess
+    //}
+}
+
+void Quad::GameDirector::InitRenderSystems()
+{
+
+    // Gpu Sampler System. - >실제로 Editor에서 사용되는가?
+    mGpuSamplerSystem = std::make_unique<GRM::GpuSamplerSystem>(GRM::IGpuResourceManager::GetInstance());
+
+    // gpuSamplerSystem->LoadShaderSamplerFile()
+
+    // shader buffer load
+    //.shader.buffer 파일을 읽어서 gpuBuffer를 gpuBufferContextSystem에 등록한다.
+    GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
+
+    // gpuBufferContextSystem->LoadShaderBufferFile(mGameRuntimeConfig->GetGameRootDirectory() /
+    //                                              "Shader/shaderbuffer.shader.buffer");
+
+    auto gpuMaterialManager = Render::IMaterialManager::GetInstance();
+
+    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>(gpuMaterialManager);
+
+    //  AssetResolver, ObjectRenderItemBuilder, UIRenderItemBuilder, IRenderProxyManager
+
+    // Asset Resolver
+    Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
+
+    // GpuResourceManager는 플랫폼에 맞추어서 (이미 App 모듈에서 적절히 생성 - 초기화함 )
+    assetResolver->Initialize(CoreAsset::AssetManager::GetInstance(), GRM::IGpuResourceManager::GetInstance());
+
+    mObjectRenderItemBuilder = std::make_unique<Render::ObjectRenderItemBuilder>(
+        Render::IRenderSystem::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
+        Render::AssetResolver::GetInstance());
+    Core::IRenderProxyManager::SetRenderProxyManager(mObjectRenderItemBuilder.get());
+
+    mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(
+        Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
+        assetResolver);
 }

@@ -63,8 +63,13 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
     // 현재 논리적파일시스템의 현재 폴더경로도 같이 넘긴다.
     const std::string currLogicalFolderPath = logicalFileSystem->GetCurrentLogicalFolderPath();
 
-    std::vector<CoreAsset::Asset *> importedAssets =
-        assetManager->ImportAsset(file, currLogicalFolderPath.c_str(), bEngine);
+    CoreAsset::AssetImportContext importContext;
+    importContext.mCreationContextTable;
+    importContext.mEngineAsset = bEngine;
+    importContext.mRegistryPrefix = currLogicalFolderPath;
+    //   , currLogicalFolderPath.c_str()
+
+    std::vector<CoreAsset::Asset *> importedAssets = assetManager->ImportAsset(file, importContext);
 
     if (importedAssets.size() == 0)
     {
@@ -120,6 +125,45 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
     return importResult;
 }
 
+ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path &file,
+                                                     const CoreAsset::AssetImportContext &assetImportContext)
+{
+    ImportResult importResult;
+
+    // 1. assetManager에게 import요청
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+
+    QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF ::LogicalFileSystem::GetInstance();
+
+    // auto preLogicalFolder = logicalFileSystem->GetCurrentLogicalFolder();
+    // if (bEngine)
+    //{
+    //     auto engineFolder = logicalFileSystem->GetFolder("/Engine");
+    //     logicalFileSystem->SetCurrentLogicalFolder(engineFolder);
+    // }
+
+    // 현재 논리적파일시스템의 현재 폴더경로도 같이 넘긴다.
+    const std::string currLogicalFolderPath = logicalFileSystem->GetCurrentLogicalFolderPath();
+
+    //   , currLogicalFolderPath.c_str()
+
+    std::vector<CoreAsset::Asset *> importedAssets = assetManager->ImportAsset(file, assetImportContext);
+
+    Render::AssetResolver *assetResovler = Render::AssetResolver::GetInstance();
+    for (auto asset : importedAssets)
+    {
+        if (asset->GetType() == CoreAsset::EAssetType::eStaticMesh)
+        {
+            // mesh import 단계에서 gpu upload까지 수행해야한다.
+            assetResovler->ResolveAsset(asset);
+        }
+    }
+    importResult.mSuccess = true;
+    importResult.mAssets = std::move(importedAssets);
+
+    return importResult;
+}
+
 ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::string &file, bool bEngine)
 {
 
@@ -142,6 +186,12 @@ ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::strin
 ImportResult Quad::EditorAssetImporterModule::RequestImportSync(const std::filesystem::path &file, bool bEngine)
 {
     return Import(file, bEngine, nullptr);
+}
+
+ImportResult Quad::EditorAssetImporterModule::RequestImportSync(const std::filesystem::path &file,
+                                                                const CoreAsset::AssetImportContext &assetImportContext)
+{
+    return Import(file, assetImportContext);
 }
 
 ImportResult Quad::EditorAssetImporterModule::ImportDendencySync(const char *file, bool bEngine)

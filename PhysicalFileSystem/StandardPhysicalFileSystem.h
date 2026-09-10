@@ -4,6 +4,7 @@
 #include "PhysicalFileSystem/PhysicalFileSystemDLLMacro.h"
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,9 @@ class PHYSICAL_FILESYSTEM_API StandardPhysicalFileSystem : public PhysicalFileSy
 
     bool ReadFileToBuffer(const std::filesystem::path &path, std::vector<uint8_t> &oBuffer) override;
 
+    bool ReadFileToBuffer(const std::filesystem::path &path, uint64_t offset, uint64_t size,
+                          std::vector<uint8_t> &oBuffer) override;
+
     // 기존에있는 존재하는 파일에 쓰기
     bool WriteBufferToValidFile(const std::filesystem::path &path, const void *data, size_t size) override;
 
@@ -50,6 +54,8 @@ class PHYSICAL_FILESYSTEM_API StandardPhysicalFileSystem : public PhysicalFileSy
     void LogError() const;
 
     bool WriteDataToFile(const std::filesystem::path &path, const void *data, size_t size);
+
+    bool ReadFileToBuffer(std::ifstream &fin, uint64_t offset, uint64_t size, std::vector<uint8_t> &oBuffer);
 
   private:
 };

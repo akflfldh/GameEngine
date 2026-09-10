@@ -46,7 +46,7 @@ MaterialManager.cpp
 MaterialLoader.cpp
 AssetLoader.cpp 
 "AssetStorer.cpp"
- "AssetManager.h" "AssetManager.cpp" "AssetIOManager.h" "AssetIOManager.cpp" "AssetFactoryManager.h" "AssetFactoryManager.cpp" "IAssetFactory.h" "IAssetFactory.cpp" "TextureFactory.h" "TextureFactory.cpp" "MaterialFactory.h" "MaterialFactory.cpp" "AssetImporterManager.h" "AssetImporterManager.cpp" "IAssetImporter.h" "IAssetImporter.cpp" "IntermediateAsset.h" "IntermediateAsset.cpp" "AssetType.cpp" "Mesh.h" "Mesh.cpp" "StaticMesh.h" "StaticMesh.cpp" "MeshLoader.h" "MeshLoader.cpp" "MeshStorer.h" "MeshStorer.cpp" "MeshFactory.h" "MeshFactory.cpp"   "Font.h" "Font.cpp" "FontFactory.h" "FontFactory.cpp" "GeometryGenerator.h" "GeometryGenerator.cpp" "AssetPtrDescriptor.h" "AssetPtrDescriptor.cpp")
+ "AssetManager.h" "AssetManager.cpp" "AssetIOManager.h" "AssetIOManager.cpp" "AssetFactoryManager.h" "AssetFactoryManager.cpp" "IAssetFactory.h" "IAssetFactory.cpp" "TextureFactory.h" "TextureFactory.cpp" "MaterialFactory.h" "MaterialFactory.cpp" "AssetImporterManager.h" "AssetImporterManager.cpp" "IAssetImporter.h" "IAssetImporter.cpp" "IntermediateAsset.h" "IntermediateAsset.cpp" "AssetType.cpp" "Mesh.h" "Mesh.cpp" "StaticMesh.h" "StaticMesh.cpp" "MeshLoader.h" "MeshLoader.cpp" "MeshStorer.h" "MeshStorer.cpp" "MeshFactory.h" "MeshFactory.cpp"   "Font.h" "Font.cpp" "FontFactory.h" "FontFactory.cpp" "GeometryGenerator.h" "GeometryGenerator.cpp" "AssetPtrDescriptor.h" "AssetPtrDescriptor.cpp" "PakType.h" "PakReader.h" "PakReader.cpp" "IAssetDataSource.h" "LooseFileAssetRawDataSource.h" "LooseFileAssetRawDataSource.cpp" "PakAssetDataSource.h" "PakAssetDataSource.cpp" "PakWriter.h" "PakWriter.cpp")
 
 
 

@@ -12,6 +12,13 @@ void CoreAsset::AssetCommonHeader::Serialize(Arch &arch)
     arch << mAssetType;
     arch << mAssetName;
     arch << mAssetRawName;
+
+    if (!arch.GetLoadingFlag() || mVersion >= 2)
+    {
+        arch << mDomain;
+    }
+
+    arch << mHasRawData;
 }
 
 void CoreAsset::TextureCommonHeader::Serialize(Arch &arch)

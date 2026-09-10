@@ -58,7 +58,8 @@ void Render::RenderEditOverlayPass::SetGlobalData(const Core::GlobalFrameData &g
     // 필요한 pass 데이터
     mainConstantData.mViewProj = globalFrameData.mViewProj;
 
-    uint32_t bufferID = GetBufferID();
+    uint32_t bufferID = static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256);
+    //    GetBufferID();
 
     // 여기는 공통으로 올리수있음
 
@@ -259,8 +260,8 @@ void Render::RenderEditOverlayPass::BuildRenderItemBufferGpuResources(
 
     // object buffer
     Render::BindingGpuResource bindingGpuResource;
-    GRM::GpuConstantBufferContext *gpuBufferContext =
-        static_cast<GRM::GpuConstantBufferContext *>(mGpuBufferContextSystem->GetGpuBufferContext(mObjectBufferID));
+    GRM::GpuConstantBufferContext *gpuBufferContext = static_cast<GRM::GpuConstantBufferContext *>(
+        mGpuBufferContextSystem->GetGpuBufferContext(static_cast<uint8_t>(EDefaultGpuBufferType::eConstantObject128)));
 
     // 일단 버퍼 하나
     uint32_t bufferIndexOffset = gpuBufferContext->mAllocateRange.UseRange(1);

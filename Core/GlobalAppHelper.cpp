@@ -1,6 +1,6 @@
 ﻿#include "Core/GlobalAppHelper.h"
 #include <Core/LogicalWindow.h>
-#include <Core/SuperController.h>
+#include <Core/WindowedFrameController.h>
 HINSTANCE Core::GlobalAppHelper::mHinstance;
 
 void Core::GlobalAppHelper::Initialize(HINSTANCE hInstance)
@@ -42,9 +42,9 @@ void Core::GlobalAppHelper::NotifyMouseCapture()
 {
     if (mCurrMouseActiveLogicalWindow)
     {
-        Core::SuperController *superController = mCurrMouseActiveLogicalWindow->GetOwnerController();
+        Core::WindowedFrameController *windowedFrameController = mCurrMouseActiveLogicalWindow->GetOwnerController();
 
-        superController->SetMouseCapture(mCurrMouseActiveLogicalWindow);
+        windowedFrameController->SetMouseCapture(mCurrMouseActiveLogicalWindow);
     }
 }
 
@@ -53,9 +53,9 @@ void Core::GlobalAppHelper::NotifyMouseReleaseCapture()
 
     if (mCurrMouseActiveLogicalWindow)
     {
-        Core::SuperController *superController = mCurrMouseActiveLogicalWindow->GetOwnerController();
+        Core::WindowedFrameController *windowedFrameController = mCurrMouseActiveLogicalWindow->GetOwnerController();
 
-        superController->ReleaseMouseCapture();
+        windowedFrameController->ReleaseMouseCapture();
     }
 }
 
@@ -64,8 +64,8 @@ void Core::GlobalAppHelper::NotifyKeyboardCapture()
 
     if (mCurrKeyboardActiveLogicalWindow)
     {
-        Core::SuperController *superController = mCurrKeyboardActiveLogicalWindow->GetOwnerController();
-        superController->SetKeyboardCapture(mCurrKeyboardActiveLogicalWindow);
+        Core::WindowedFrameController *windowedFrameController = mCurrKeyboardActiveLogicalWindow->GetOwnerController();
+        windowedFrameController->SetKeyboardCapture(mCurrKeyboardActiveLogicalWindow);
     }
 }
 
@@ -74,8 +74,8 @@ void Core::GlobalAppHelper::NotifyKeyboardReleaseCapture()
 
     if (mCurrKeyboardActiveLogicalWindow)
     {
-        Core::SuperController *superController = mCurrKeyboardActiveLogicalWindow->GetOwnerController();
-        superController->ReleaseKeyboardCapture();
+        Core::WindowedFrameController *windowedFrameController = mCurrKeyboardActiveLogicalWindow->GetOwnerController();
+        windowedFrameController->ReleaseKeyboardCapture();
     }
 }
 

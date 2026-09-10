@@ -33,6 +33,8 @@
 #include <CoreAsset/AssetMetaDataManager.h>
 #include <CoreAsset/AssetType.h>
 #include <CoreAsset/FontFactory.h>
+#include <CoreAsset/GlobalAssetRegistrySystem.h>
+#include <CoreAsset/LooseFileAssetRawDataSource.h>
 #include <CoreAsset/Material.h>
 #include <CoreAsset/MaterialFactory.h>
 #include <CoreAsset/MaterialLoader.h>
@@ -58,8 +60,10 @@
 #include <DefaultEditorInspectorManager.h>
 #include <DefaultPropertyInspector.h>
 #include <EditorAssetImporterManager.h>
+#include <EditorDirector/EditorAssetImportPipeline.h>
 #include <EditorDirector/EditorAssetImporterManager.h>
 #include <EditorDirector/EditorAssetManager.h>
+#include <EditorDirector/EditorBuildManager.h>
 #include <EditorDirector/EditorConfig.h>
 #include <EditorDirector/EditorProjectBrowserManager.h>
 #include <EditorDirector/EditorSceneManager.h>
@@ -154,6 +158,8 @@ void Quad::EditorDirector::Initialize()
     }
 
     FNameTable *nameTable = FNameTable::GetInstance();
+
+    mInitialized = true;
 }
 
 void Quad::EditorDirector::Initialize(const RuntimeServices &services)
@@ -235,7 +241,7 @@ void Quad::EditorDirector::Draw()
     // 렌더시스템이 렌더 혹은
 
     // 각 컨트롤러들이 draw  (이미 렌더아이템들은 다 제출된상황)
-    mSuperFrameController->Draw(*mRenderPipelineManager);
+    mSuperFrameController->Draw();
     // mSuperAssetBrowerController->Draw();
 }
 
@@ -320,6 +326,7 @@ void Quad::EditorDirector::LoadEditorAssets()
     bool engineImport = true;
     if (engineImport)
     {
+
         std::filesystem::path engineAssetPath = EditorConfig::GetInstance()->GetEditorAssetPath();
 
         std::vector<std::filesystem::path> assetFileList;
@@ -786,6 +793,10 @@ void Quad::EditorDirector::InitEditorTaskManagerList()
     EditorAssetImporterManager *editorAssetImporterManager = EditorAssetImporterManager::GetInstance();
     editorAssetImporterManager->Initialize(mGlobalOverlayLogicalWindow->GetActiveCanvas());
     mEditorTaskManagerList.push_back(editorAssetImporterManager);
+
+    EditorBuildManager *editorBuildManager = EditorBuildManager::GetInstance();
+    editorBuildManager->Initialize(mGlobalOverlayLogicalWindow->GetActiveCanvas());
+    mEditorTaskManagerList.push_back(editorBuildManager);
 }
 
 Core::LogicalWindow *Quad::EditorDirector::GetMainWindow() const
@@ -867,6 +878,10 @@ void Quad::EditorDirector::InitSystems()
     mAssetManager->Initialize(assetFactoryManager, assetIOManager, assetImporterManager,
                               EditorConfig::GetInstance()->GetEditorAssetPath());
 
+    mAssetManager->SetAssetDataSource(std::make_unique<CoreAsset::LooseFileAssetRawDataSource>(
+        ProjectConfig::GetInstance()->GetProjectRawAssetPath(),
+        EditorConfig::GetInstance()->GetEditorAssetPath() / "Raw"));
+
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
     mAssetManager->SetAssetRawDataPath(projectConfig->GetProjectRawAssetPath());
 
@@ -901,7 +916,7 @@ void Quad::EditorDirector::InitSystems()
     //.shader.buffer 파일을 읽어서 gpuBuffer를 gpuBufferContextSystem에 등록한다.
     GRM::GpuBufferContextSystem *gpuBufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
 
-    gpuBufferContextSystem->LoadShaderBufferFile(editorRootPath / "Shader/shaderbuffer.shader.buffer");
+    //  gpuBufferContextSystem->LoadShaderBufferFile(editorRootPath / "Shader/shaderbuffer.shader.buffer");
 
     mGpuSamplerSystem = std::make_unique<GRM::GpuSamplerSystem>(mGpuResourceManager);
     //   mGpuSamplerSystem->LoadShaderSamplerFile(editorRootPath + "/Shader/Sampler.sampler");
@@ -910,6 +925,22 @@ void Quad::EditorDirector::InitSystems()
     // 현재 필요없는 상황
     mEditorShaderImporter = std::make_unique<EditorShaderImporter>(Render::IMaterialManager::GetInstance());
     EditorShaderImporter *editorShaderImporter = EditorShaderImporter::GetInstance();
+
+    // seralized raw - load
+    // CoreAsset::AssetManager:
+    mAssetManager->LoadAsset(EditorConfig::GetInstance()->GetEditorAssetPath() / "Seri" / "font_atlas.png.asset",
+                             "Engine", {});
+
+    /*  AssetImportStoreRequest fontglyphRequest;
+      fontglyphRequest.mSourcePath = EditorConfig::GetInstance()->GetEditorAssetPath() / "Fonts/font_atlas.png";
+      fontglyphRequest.mRequestedAssetID = 1;
+      fontglyphRequest.mRequestedAssetName = "font_atlas.png";
+      fontglyphRequest.mSerializedOutputPath = EditorConfig::GetInstance()->GetEditorAssetPath() / "Seri";
+      fontglyphRequest.mRawOutputPath = EditorConfig::GetInstance()->GetEditorAssetPath() / "Raw";
+      auto editorAssetImportPipeline = EditorAssetImportPipeline::GetInstance();
+      editorAssetImportPipeline->ImportAndStore(fontglyphRequest);
+      auto instance = CoreAsset::GlobalAssetRegistrySystem ::GetInstance();*/
+    // instance->SetNextAssetID(2, true);
 
     // Asset Resolver
     Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();

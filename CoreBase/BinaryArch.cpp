@@ -29,7 +29,7 @@ void BinaryArch::Start()
     }
 }
 
-void BinaryArch::Start(uint8_t *buffer, size_t size)
+void BinaryArch::StartRead(const uint8_t *buffer, size_t size)
 {
     if (GetLoadingFlag())
     {

@@ -2,7 +2,11 @@
 
 Arch::Arch(bool loadingFlag) : mIsLoading(loadingFlag), mState((uint8_t)EArchState::eGood) {}
 
-Arch::~Arch() {}
+Arch::~Arch()
+{
+
+    End();
+}
 
 bool Arch::GetLoadingFlag() const
 {

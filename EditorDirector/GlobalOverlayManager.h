@@ -143,6 +143,7 @@ class GlobalOverlayManager
 
     void CreateSaveMapPanel();
     void CreateDragDropImage();
+    void CreateProjectBuildPanel();
 
     void CreateGenerationObjectClassPanel();
     void CreateGenerationPrefabPanel();
@@ -165,6 +166,8 @@ class GlobalOverlayManager
 
     void OpenGameModeSettingPanel();
     void OpenMapRenderInspector();
+    void OpenProjectBuildPanel();
+
     std::vector<Core::ObjectSourceCandidate> BuildObjectSourceCandiateList();
     void AppendObjectClassCandidate(std::vector<Core::ObjectSourceCandidate> &oList);
     void AppendPrefabCandidate(std::vector<Core::ObjectSourceCandidate> &oList);
@@ -204,6 +207,7 @@ class GlobalOverlayManager
     UI::UIImage *mDragDropImage;
     UI::UIImage *mGenerationObjectClassPanel;
     UI::UIImage *mGenerationPrefabPanel;
+    UI::UIImage *mProjectBuildPanel;
 
     bool mIsMouseOnMainWindow = false;
     bool mIsDragDrop;

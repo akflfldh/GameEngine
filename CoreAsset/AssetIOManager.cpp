@@ -9,7 +9,7 @@
 #include <CoreBase/BinaryArch.h>
 #include <Logger/Logger.h>
 
-uint32_t CoreAsset::AssetIOManager::mCurrentEngineVerison = 1;
+uint32_t CoreAsset::AssetIOManager::mCurrentEngineVerison = 2;
 
 CoreAsset::AssetIOManager *CoreAsset::AssetIOManager::GetInstance()
 {
@@ -47,78 +47,22 @@ CoreAsset::AssetLoadResult CoreAsset::AssetIOManager::LoadAssetFromMetaData(
 
     // 타입을 구분해서 적절한 AssertLoader를 의 LoadAssetFile을 호출
 
-    AssetLoadResult result;
-    result.mResultFlag = EAssetLoadResultFlag::eFail;
-
     BinaryArch binaryArch(true);
     binaryArch.SetFile(filePath.string().data());
     binaryArch.Start();
 
-    AssetCommonHeader assetCommonHeader;
-    assetCommonHeader.Serialize(binaryArch);
+    return LoadAssetFromMetaDataCommon(binaryArch, assetFactoryManager, oAsset, oAssetMetaDataPtr, executionContext);
+}
 
-    if (assetCommonHeader.mMagic != AssetCommonHeader::Magic)
-    {
-        binaryArch.End();
-        return result;
-    }
+CoreAsset::AssetLoadResult CoreAsset::AssetIOManager::LoadAssetFromMetaDataFromBuffer(
+    const uint8_t *data, size_t size, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+    std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr, const AssetLoadExecutionContext &executionContext)
+{
 
-    if (assetCommonHeader.mVersion > mCurrentEngineVerison)
-    {
-        binaryArch.End();
-        return result;
-    }
+    BinaryArch binaryArch(true);
+    binaryArch.StartRead(data, size);
 
-    result.mAssetType = assetCommonHeader.mAssetType;
-
-    if (executionContext.mIgnoredAssetType == assetCommonHeader.mAssetType)
-    {
-        result.mResultFlag = EAssetLoadResultFlag::eIgnore;
-        return result;
-    }
-
-    AssetLoader *loader = GetLoader(assetCommonHeader.mAssetType);
-
-    if (loader == nullptr)
-    {
-        binaryArch.End();
-        return result;
-    }
-
-    bool ret =
-        loader->LoadAssetFile(assetCommonHeader.mAssetType, binaryArch, assetFactoryManager, oAsset, oAssetMetaDataPtr);
-
-    if (ret == false || oAsset == nullptr || oAssetMetaDataPtr == nullptr)
-    {
-        binaryArch.End();
-        result.pAsset = oAsset;
-        return result;
-    }
-
-    oAssetMetaDataPtr->mAssetID = assetCommonHeader.mAssetID;
-    // oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName.GetStr();
-    oAssetMetaDataPtr->mAssetType = assetCommonHeader.mAssetType;
-    oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName;
-    oAssetMetaDataPtr->mRawFileName = assetCommonHeader.mAssetRawName;
-
-    if (oAsset)
-    {
-        oAsset->SetAssetID(assetCommonHeader.mAssetID);
-        oAsset->SetName(assetCommonHeader.mAssetName.c_str());
-
-        result.pAsset = oAsset;
-        result.mResultFlag = EAssetLoadResultFlag::eSuccess;
-    }
-
-    // 리턴받는것을 출력매개변수로받는게 좋을듯.
-
-    // 여기서 asset이 nullptr이 아니라면 전역공간에 등록? 혹은, 더 상위계층인 assetManager에서 등록
-    // AssetIO는 에셋파일을 읽고 빈에셋을 만드는 공장역할, 에셋의 라이프사이클이 시작하는 주정부(테이블)에 등록은
-    // 상위계층의 에셋매니저에서 수행 (임포터과정도 결국 에셋을 반환할것이기에 공통의 상위계층인 에셋매니저에서
-    // 등록하도록하는것이 좋다)
-
-    binaryArch.End();
-    return result;
+    return LoadAssetFromMetaDataCommon(binaryArch, assetFactoryManager, oAsset, oAssetMetaDataPtr, executionContext);
 }
 
 bool CoreAsset::AssetIOManager::LoadAssetRawData(Asset *asset, const std::filesystem::path &path)
@@ -133,18 +77,32 @@ bool CoreAsset::AssetIOManager::LoadAssetRawData(Asset *asset, const std::filesy
 
     binaryArch.Start();
 
-    AssetLoader *loader = GetLoader(asset->GetType());
-    if (loader == nullptr)
-    {
-        binaryArch.End();
+    return LoadAssetRawDataCommon(asset, binaryArch);
+
+    // AssetLoader *loader = GetLoader(asset->GetType());
+    // if (loader == nullptr)
+    //{
+    //     binaryArch.End();
+    //     return false;
+    // }
+
+    // bool ret = loader->LoadAssetRawFile(binaryArch, asset);
+
+    // binaryArch.End();
+
+    // return ret;
+}
+
+bool CoreAsset::AssetIOManager::LoadAssetRawDataFromBuffer(Asset *asset, const uint8_t *data, size_t size)
+{
+
+    if (asset == nullptr || (data == nullptr && size > 0))
         return false;
-    }
 
-    bool ret = loader->LoadAssetRawFile(binaryArch, asset);
+    BinaryArch binaryArch(true);
+    binaryArch.StartRead(data, size);
 
-    binaryArch.End();
-
-    return ret;
+    return LoadAssetRawDataCommon(asset, binaryArch);
 }
 
 // std::unique_ptr<CoreAsset::SerializedAssetRawData> CoreAsset::AssetIOManager::LoadAssetRawData(
@@ -181,7 +139,10 @@ bool CoreAsset::AssetIOManager::StoreAsset(CoreAsset::Asset *asset, const std::f
         assetCommonHeader.mAssetType = asset->GetType();
         assetCommonHeader.mAssetName = asset->GetName().c_str();
         assetCommonHeader.mAssetRawName = assetMetaData->mRawFileName;
+        assetCommonHeader.mDomain = assetMetaData->mDomain;
         assetCommonHeader.mVersion = mCurrentEngineVerison;
+
+        assetCommonHeader.mHasRawData = assetMetaData->mHasRawData;
         assetCommonHeader.Serialize(binaryArch);
 
         AssetStorer *storer = GetStorer(assetCommonHeader.mAssetType);
@@ -241,4 +202,96 @@ CoreAsset::AssetLoader *CoreAsset::AssetIOManager::GetLoader(EAssetType type) co
         return nullptr;
 
     return iter->second;
+}
+
+CoreAsset::AssetLoadResult CoreAsset::AssetIOManager::LoadAssetFromMetaDataCommon(
+    Arch &arch, AssetFactoryManager *assetFactoryManager, Asset *&oAsset,
+    std::unique_ptr<AssetMetaData> &oAssetMetaDataPtr, const AssetLoadExecutionContext &executionContext)
+{
+    AssetLoadResult result;
+    result.mResultFlag = EAssetLoadResultFlag::eFail;
+
+    AssetCommonHeader assetCommonHeader;
+    assetCommonHeader.Serialize(arch);
+
+    if (assetCommonHeader.mMagic != AssetCommonHeader::Magic)
+    {
+        arch.End();
+        return result;
+    }
+
+    if (assetCommonHeader.mVersion > mCurrentEngineVerison)
+    {
+        arch.End();
+        return result;
+    }
+
+    result.mAssetType = assetCommonHeader.mAssetType;
+
+    if (executionContext.mIgnoredAssetType == assetCommonHeader.mAssetType)
+    {
+        result.mResultFlag = EAssetLoadResultFlag::eIgnore;
+        return result;
+    }
+
+    AssetLoader *loader = GetLoader(assetCommonHeader.mAssetType);
+
+    if (loader == nullptr)
+    {
+        arch.End();
+        return result;
+    }
+
+    bool ret =
+        loader->LoadAssetFile(assetCommonHeader.mAssetType, arch, assetFactoryManager, oAsset, oAssetMetaDataPtr);
+
+    if (ret == false || oAsset == nullptr || oAssetMetaDataPtr == nullptr)
+    {
+        arch.End();
+        result.pAsset = oAsset;
+        return result;
+    }
+
+    oAssetMetaDataPtr->mAssetID = assetCommonHeader.mAssetID;
+    // oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName.GetStr();
+    oAssetMetaDataPtr->mAssetType = assetCommonHeader.mAssetType;
+    oAssetMetaDataPtr->mAssetName = assetCommonHeader.mAssetName;
+    oAssetMetaDataPtr->mRawFileName = assetCommonHeader.mAssetRawName;
+    oAssetMetaDataPtr->mDomain = assetCommonHeader.mDomain;
+    oAssetMetaDataPtr->mHasRawData = assetCommonHeader.mHasRawData;
+
+    if (oAsset)
+    {
+        oAsset->SetAssetID(assetCommonHeader.mAssetID);
+        oAsset->SetName(assetCommonHeader.mAssetName.c_str());
+
+        result.pAsset = oAsset;
+        result.mResultFlag = EAssetLoadResultFlag::eSuccess;
+    }
+
+    // 리턴받는것을 출력매개변수로받는게 좋을듯.
+
+    // 여기서 asset이 nullptr이 아니라면 전역공간에 등록? 혹은, 더 상위계층인 assetManager에서 등록
+    // AssetIO는 에셋파일을 읽고 빈에셋을 만드는 공장역할, 에셋의 라이프사이클이 시작하는 주정부(테이블)에 등록은
+    // 상위계층의 에셋매니저에서 수행 (임포터과정도 결국 에셋을 반환할것이기에 공통의 상위계층인 에셋매니저에서
+    // 등록하도록하는것이 좋다)
+
+    return result;
+}
+
+bool CoreAsset::AssetIOManager::LoadAssetRawDataCommon(Asset *asset, Arch &binaryArch)
+{
+    // 공통으로 뺴자
+    AssetLoader *loader = GetLoader(asset->GetType());
+    if (loader == nullptr)
+    {
+        binaryArch.End();
+        return false;
+    }
+
+    bool ret = loader->LoadAssetRawFile(binaryArch, asset);
+
+    binaryArch.End();
+
+    return ret;
 }

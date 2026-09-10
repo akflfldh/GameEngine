@@ -52,7 +52,7 @@ Object *Prefab::Instantiate(Map *map, const char *instanceName)
     arch.GetBufferFromMemory();
 
     BinaryArch readerArch(true);
-    readerArch.Start(arch.GetBufferFromMemory(), size);
+    readerArch.StartRead(arch.GetBufferFromMemory(), size);
 
     Object *instance = nullptr;
 

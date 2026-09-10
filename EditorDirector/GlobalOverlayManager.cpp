@@ -24,7 +24,9 @@
 #include <EditorDirector/MapPlaySettingPanel.h>
 #include <EditorDirector/PrefabGenerationManager.h>
 
+#include <Core/WindowedFrameController.h>
 #include <DefaultEditorInspectorManager.h>
+#include <EditorDirector/EditorBuildManager.h>
 #include <EditorDirector/TaskUIController.h>
 #include <EditorDirector/UIDropTargetComponent.h>
 #include <EditorDirector/UIEditorDebugHUD.h>
@@ -60,7 +62,8 @@ GlobalOverlayManager *GlobalOverlayManager::GetInstance()
 GlobalOverlayManager::GlobalOverlayManager()
     : mMessageBox(nullptr), mMessageBoxTextCom(nullptr), mIsOpeningMenuPanel(false), mCurrentMenuContextPanel(nullptr),
       mSaveMapPanel(nullptr), mToSaveMap(nullptr), mDragDropImage(nullptr), mGenerationObjectClassPanel(nullptr),
-      mIsDragDrop(false), mScenePlayState(EScenePlayState::eNone), mWorkingTaskContext(std::make_shared<TaskContext>())
+      mProjectBuildPanel(nullptr), mIsDragDrop(false), mScenePlayState(EScenePlayState::eNone),
+      mWorkingTaskContext(std::make_shared<TaskContext>())
 {
 }
 
@@ -90,6 +93,7 @@ void GlobalOverlayManager::Initialize(UI::UICanvas *overlayCanvas, Core::Logical
     CreateSaveMapPanel();
     CreateGenerationObjectClassPanel();
     CreateGenerationPrefabPanel();
+    CreateProjectBuildPanel();
     // Debug Panel
 
     mDebugHUD = overlayCanvas->CreateUIElement<UIEditorDebugHUD>("DebugHUD");
@@ -482,7 +486,8 @@ void GlobalOverlayManager::CreateFileContextPanel(UI::UITextButton *fileButton)
                                    {"SaveMapAs...", "다른이름으로 맵 저장", 300.0f},
                                    {"OpenProjct", "새 프로젝트 열기", 300.0f},
                                    {"SaveProject", "프로젝트 저장", 300.0f},
-                                   {"Exit", "에디터 종료", 300.0f}};
+                                   {"Exit", "에디터 종료", 300.0f},
+                                   {"Build", "프로젝트 빌드", 300.0f}};
 
     std::unordered_map<std::string, UI::UITextButton *> menuMap;
 
@@ -501,6 +506,15 @@ void GlobalOverlayManager::CreateFileContextPanel(UI::UITextButton *fileButton)
 
             // 프로젝트 저장 호출
             Quad::EditorProjectManager::GetInstance()->SaveProject();
+        });
+
+    menuMap["Build"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseCurrentContextMenuAll();
+
+            // UI창 띄워주어야함.
+            OpenProjectBuildPanel();
         });
 }
 
@@ -921,6 +935,95 @@ void GlobalOverlayManager::CreateDragDropImage()
     //    mDragDropImage->CreateUIComponent<UI::UIMovableComponent>("MovableCom");
 }
 
+void GlobalOverlayManager::CreateProjectBuildPanel()
+{
+
+    UI::UIControlStyleOverride buttonControlStyleOverride;
+    buttonControlStyleOverride.mHeight = 40.0f;
+
+    mProjectBuildPanel = mOverlayCanvas->CreateUIElement<UI::UIImage>("ProjectBuildPanel");
+
+    UI::UIControlStyleOverride styleOverride;
+    styleOverride.mHeight = 250.0f;
+    mProjectBuildPanel->SetStyleOverride(styleOverride);
+
+    mProjectBuildPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mProjectBuildPanel->SetWidth(1000);
+    mProjectBuildPanel->SetActiveFlag(false);
+    mProjectBuildPanel->SetDepthValue(0);
+
+    auto pathTag = mProjectBuildPanel->CreateChildUIElement<UI::UIText>("PathNameTag");
+    pathTag->SetWidth(200);
+    pathTag->SetPositionLocal(20, 100);
+    pathTag->SetText("경로");
+
+    auto pathEditBox = mProjectBuildPanel->CreateChildUIElement<UI::UIEditBox>("PathEditBox");
+
+    pathEditBox->SetWidth(500.0f);
+    pathEditBox->SetBackgroundColor(1, 1, 1);
+    pathEditBox->SetTextColor(0, 0, 0);
+    pathEditBox->SetPositionLocal(pathTag->mTransform.GetLocalPosition().x + pathTag->mTransform.GetSize().x + 40.0f,
+                                  pathTag->mTransform.GetLocalPosition().y);
+
+    // 경로 탐색 버튼
+
+    auto pathSearchButton = mProjectBuildPanel->CreateChildUIElement<UI::UIButton>("PathSearchButton");
+    pathSearchButton->SetStyleOverride(buttonControlStyleOverride);
+
+    pathSearchButton->SetPositionLocal(pathEditBox->mTransform.GetLocalPosition().x + pathEditBox->GetWidth() + 10.0f,
+                                       pathEditBox->mTransform.GetLocalPosition().y);
+    pathSearchButton->mUIImageComponent->SetUseBorderFlag(true);
+    pathSearchButton->mUIImageComponent->SetBorderColor(UI::UIColor::White);
+
+    // pathSearchButton->mUIImageComponent->UseTexture();
+    // pathSearchButton->mUIImageComponent->SetTexture("Engine/Exit");
+    pathSearchButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this, pathEditBox](float, float)
+        {
+            std::string path = EditorUtility::OpenFolderDialog(nullptr);
+
+            pathEditBox->SetText(path);
+        });
+
+    // 빌드 수행 버튼
+
+    auto buildButton = mProjectBuildPanel->CreateChildUIElement<UI::UITextButton>("BuildButton");
+    buildButton->SetWidth(100.0f);
+    buildButton->mTextComponent->SetText("빌드");
+    buildButton->mTextComponent->SetPaddingLeft(30.0f);
+    buildButton->mUIImageComponent->SetUseBorderFlag(true);
+
+    buildButton->SetPositionLocal(pathTag->mTransform.GetLocalPosition().x + pathTag->mTransform.GetSize().x + 40.0f,
+                                  pathTag->mTransform.GetLocalPosition().y + 50.0f);
+
+    buildButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [pathEditBox](float, float)
+        {
+            std::filesystem::path buildPath = pathEditBox->GetText();
+
+            auto buildManager = Quad::EditorBuildManager::GetInstance();
+
+            buildManager->RequestBuildProject(buildPath);
+            //
+            //     EditorBuildManager 에게 buildPath 전달하면 빌드 매니저가 수행하도록 한다.
+        });
+
+    auto exitButton = mProjectBuildPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
+    exitButton->SetStyleOverride(buttonControlStyleOverride);
+    // exitButton->SetSize(40, 40);
+    exitButton->SetPositionLocal(mProjectBuildPanel->mTransform.GetSize().x - exitButton->mTransform.GetSize().x, 0);
+    exitButton->mUIImageComponent->UseTexture();
+    exitButton->mUIImageComponent->SetTexture("Engine/Exit");
+    exitButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this, pathEditBox](float, float)
+        {
+            pathEditBox->SetText("");
+
+            mProjectBuildPanel->SetActiveFlag(false);
+            mProjectBuildPanel->ReleaseMouseCaptureInput();
+        });
+}
+
 void GlobalOverlayManager::CreateGenerationObjectClassPanel()
 {
 
@@ -1257,6 +1360,16 @@ void GlobalOverlayManager::OpenMapRenderInspector()
     context.mTargetMap = map;
 
     defaultEditorInspectorManager->ActivateInsepctor(EDefaultEditorInspectorType::eMapSetting, context);
+}
+
+void GlobalOverlayManager::OpenProjectBuildPanel()
+{
+
+    if (mProjectBuildPanel)
+    {
+        mProjectBuildPanel->SetActiveFlag(true);
+        mProjectBuildPanel->RequestMouseCaptureInput(nullptr);
+    }
 }
 
 std::vector<Core::ObjectSourceCandidate> GlobalOverlayManager::BuildObjectSourceCandiateList()

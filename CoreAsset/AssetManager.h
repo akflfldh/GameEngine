@@ -4,6 +4,7 @@
 #include <CoreAsset/AssetType.h>
 #include <CoreAsset/CoreAssetDLLMacro.h>
 #include <filesystem>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 namespace CoreAsset
@@ -18,7 +19,9 @@ class AssetMetaData;
 class GlobalAssetRegistrySystem;
 struct IntermediateAsset;
 struct ImportPackage;
-
+class IAssetDataSource;
+struct AssetImportContext;
+struct AssetCreationContext;
 class CORE_ASSET_API AssetManager
 {
   public:
@@ -37,18 +40,27 @@ class CORE_ASSET_API AssetManager
     AssetPtr CreateAsset(CoreAsset::EAssetType assetType, const IntermediateAsset &intermediateAssetData,
                          const char *prefixAssetName, bool bEngine = false);
 
+    AssetPtr CreateAsset(EAssetType assetType, const IntermediateAsset *intermediateAssetData,
+                         const char *registryPrefix, bool bEngine, const AssetCreationContext &creationContext);
+
+    void SetAssetDataSource(std::unique_ptr<IAssetDataSource> assetRawDataSource);
+
     // filePath는 논리적경로와 일치하는 상대경로
     AssetLoadResult LoadAsset(
         const std::filesystem::path &assetPath, const std::string &logicalFolderPath,
         const AssetLoadExecutionContext &loadExecutionContext); // 메타데이터파일만 로드, 빈 asset생성
+
+    AssetLoadResult LoadAsset(AssetID expectedAssetID, const std::string &registryName,
+                              const AssetLoadExecutionContext &context);
+
     bool LoadAssetRawData(CoreAsset::Asset *asset);
 
     // rawData 파일들이있는 경로를 설정한다.
     void SetAssetRawDataPath(const std::filesystem::path &path);
 
     // 절대경로                                         //prefixAssetName (editor에서는 논리적 asset폴더경로가 지정됨)
-    std::vector<CoreAsset::Asset *> ImportAsset(const std::filesystem::path &filePath, const char *prefixAssetName,
-                                                bool bEngine = false);
+    std::vector<CoreAsset::Asset *> ImportAsset(const std::filesystem::path &filePath,
+                                                const CoreAsset::AssetImportContext &importContext);
 
     // 에셋 메타데이터 저장
     bool StoreAsset(Asset *asset, const std::filesystem::path &filePath, AssetMetaData *assetMetaData);
@@ -98,9 +110,8 @@ class CORE_ASSET_API AssetManager
 
   private:
     AssetPtr CreateAssetInner(/*AssetCreationInfo*/);
-
     // 전역테이블에 에셋을 등록한다(보통 런타임생성,로드,임포터 작업후에 수행)
-    void RegisterAsset(Asset *asset, const std::string &assetUniqueName);
+    void RegisterAsset(Asset *asset, const std::string &assetUniqueName, bool bEngine = false);
     void InitAssetSetting(Asset *asset);
 
     void SetAssetRawFileName(AssetMetaData *assetMetaData);
@@ -130,6 +141,7 @@ class CORE_ASSET_API AssetManager
     AssetPtr mDefaultCubeMesh;
 
     std::filesystem::path mEditorAssetPath;
+    std::unique_ptr<IAssetDataSource> mAssetRawDataSource;
 };
 
 template <typename T> inline AssetPtr AssetManager::GetAsset(const char *assetName) const

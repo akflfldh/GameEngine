@@ -33,7 +33,7 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
 
     const std::vector<AssetPtr> &GetDirtyAssetList() const;
 
-    void SetNextAssetID(AssetID id);
+    void SetNextAssetID(AssetID id, bool bEngine = false);
     AssetID PeekNextAssetID() const;
 
     void ClearDirtyAssetList();

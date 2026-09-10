@@ -117,7 +117,7 @@ class RENDER_FRONTEND_API RenderPipelineManager
     void Update(uint64_t currentFrame, uint64_t completedFenceValue);
 
     void Execute(const std::vector<Core::LogicalWindow *> &logicalWindowList, WindowHandle windowHandle, int FrameIndex,
-                 uint32_t mFrameFenceValue, bool lastExecute, int backBufferIndex, uint64_t frameTotalCount);
+                 uint32_t mFrameFenceValue, bool lastExecute, uint64_t frameTotalCount);
 
     void EndFrame();
 

@@ -31,7 +31,7 @@ namespace Core
 {
 // class CameraComponent;
 
-class SuperController;
+class WindowedFrameController;
 
 // 논리적 윈도우 ( 실제 윈도우(controller)에 포함되는)
 // viewport, renderchannel을 가진다.
@@ -64,7 +64,7 @@ class CORE_API_LIB LogicalWindow : public UI::IViewContextInterface
 
     void Begin();
 
-    void SetOwnerController(SuperController *superController);
+    void SetOwnerController(WindowedFrameController *superController);
     void *GetWindowHandle() const;
 
     void SetWorld(World *world);
@@ -111,7 +111,7 @@ class CORE_API_LIB LogicalWindow : public UI::IViewContextInterface
 
 #pragma endregion
 
-    SuperController *GetOwnerController();
+    WindowedFrameController *GetOwnerController();
 
     // 해당 윈도우의 Canvas의 UI들과 충돌하는지 여부
     // 전역 오버레이 LogicalWindow가 사용
@@ -138,7 +138,7 @@ class CORE_API_LIB LogicalWindow : public UI::IViewContextInterface
     CoreMath::Ray CaculateWorldRay(int clientPosX, int clientPosY) const;
 
   private:
-    SuperController *mSuperController;
+    WindowedFrameController *mWindowedFrameController;
 
     // CurrActiveCanvas
     // 캔버스는 논리적윈도우마다 그냥 하나만 참조하면될듯 , 필요하면 참조를 바꾸면되고

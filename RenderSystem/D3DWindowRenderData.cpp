@@ -15,7 +15,7 @@ D3DWindowRenderData::D3DWindowRenderData(D3DWindowRenderManager *windowRenderMan
                                          const Render::CreationRenderChannelInfo &creationInfo)
     : mWindowRenderManager(windowRenderManager), mDevice(device), mFactory(factory), mCommandQueue(commandQueue),
       mWindowHandle((HWND)creationInfo.mWindowHandle), mBackBufferForamt(DXGI_FORMAT_R8G8B8A8_UNORM),
-      mCurrentBackBufferIndex(0), mCurrentFenceValue(0)
+      mCurrentBackBufferIndex(0), mCurrentFenceValue(0), mNextBackBufferIndex(0)
 {
     mGpuResourceManager = static_cast<D3DGRM::D3DGpuResourceManager *>(GRM::IGpuResourceManager::GetInstance());
     HRESULT result = mDevice->CreateFence(mCurrentFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -38,6 +38,8 @@ int D3DWindowRenderData::ResizeWindow()
     coreDevice->FlushCommandQueue();
     mCurrentBackBufferIndex = ResizeBackBuffer(clientSize.right, clientSize.bottom);
     ResizeDepthStencilBuffer(clientSize.right, clientSize.bottom);
+
+    mNextBackBufferIndex = mCurrentBackBufferIndex;
 
     return mCurrentBackBufferIndex;
 }
@@ -66,6 +68,17 @@ int D3DWindowRenderData::GetCurrentBackBufferIndex() const
 void D3DWindowRenderData::IncrementBackBufferIndex()
 {
     mCurrentBackBufferIndex = (mCurrentBackBufferIndex + 1) % 2;
+}
+
+int D3DWindowRenderData::GetNextBackBufferIndex() const
+{
+    return mNextBackBufferIndex;
+}
+
+void D3DWindowRenderData::IncrementNextBackBufferIndex()
+{
+
+    mNextBackBufferIndex = (mNextBackBufferIndex + 1) % 2;
 }
 
 Microsoft::WRL::ComPtr<IDXGISwapChain> D3DWindowRenderData::GetSwapChain() const

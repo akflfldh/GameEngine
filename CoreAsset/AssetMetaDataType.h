@@ -16,6 +16,11 @@ class BinaryReader;
 
 namespace CoreAsset
 {
+enum class EAssetDomain : uint8_t
+{
+    eEngine,
+    eProject
+};
 
 // 정확히 이친구는 어떻게 어디에쓸지 고민해야한다.
 struct CORE_ASSET_API AssetMetaData
@@ -32,8 +37,11 @@ struct CORE_ASSET_API AssetMetaData
     std::string mAssetName = "";
     std::string mFilePath = ""; // 논리적 에셋파일경로
     EAssetType mAssetType = EAssetType::eUnknown;
-    bool mKeepRawDataFlag = false;
+    bool mHasRawData = false; // rawData를 가지는 에셋인가여부
+    // bool mKeepRawDataFlag = false;
     std::string mRawFileName = "";
+
+    EAssetDomain mDomain = EAssetDomain::eProject;
 };
 
 struct CORE_ASSET_API TextureMetaData : public AssetMetaData
@@ -74,12 +82,13 @@ struct CORE_ASSET_API AssetCommonHeader
     static const uint32_t Magic = 0x04232152;
 
     uint32_t mMagic = 0x04232152;
-    uint32_t mVersion = 1;
+    uint32_t mVersion = 2;
     AssetID mAssetID = NoneAssetID;
     EAssetType mAssetType = EAssetType::eUnknown;
     std::string mAssetName = "";
     std::string mAssetRawName = "";
-
+    EAssetDomain mDomain = EAssetDomain::eProject;
+    bool mHasRawData = false;
     void Serialize(Arch &arch);
 };
 

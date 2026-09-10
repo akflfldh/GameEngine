@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <CoreAsset/AssetType.h>
 #include <EditorDirector/IEditorTaskManager.h>
 #include <EditorDirector/ImportCommonHeader.h>
 #include <filesystem>
@@ -22,6 +23,19 @@ namespace Quad
 class EditorAssetImporterModule;
 class EditorAssetImportFinalizer;
 
+struct EngineAssetImportRequest
+{
+    std::filesystem::path mSourcePath;
+
+    CoreAsset::AssetID mRequestedAssetID = NoneAssetID;
+    std::string mRequestedAssetName;
+    std::string mTargetImportAssetKey;
+    std::string mTargetRegistryPath;
+
+    std::filesystem::path mSerializedOutputDirectory;
+    std::filesystem::path mRawOutputDirectory;
+};
+
 class EditorAssetImporterManager : public IEditorTaskManager
 {
   public:
@@ -38,6 +52,7 @@ class EditorAssetImporterManager : public IEditorTaskManager
 
     // 동기 버전 (ui처리가없는) (호출스레드가 직접수행 )
     ImportResult RequestImportSync(const std::filesystem::path &file, bool bEngine = false);
+    ImportResult RequestImportSync(const EngineAssetImportRequest &importRequest);
 
     // import내에서 중첩호출버전 (ui처리 x)(호출 스레드가 직접수행)
     ImportResult ImportDedencySync(const char *file, bool bEngine = false);

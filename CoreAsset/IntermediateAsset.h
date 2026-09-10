@@ -102,6 +102,20 @@ struct CORE_ASSET_API ImportedIntermediateAsset
     bool mValid = true;
 };
 
+struct AssetCreationContext
+{
+    AssetID mRequestedAssetID = NoneAssetID;
+    std::string mRequestedAssetName;
+};
+
+struct AssetImportContext
+{
+    std::string mRegistryPrefix;
+    bool mEngineAsset = false;
+
+    std::unordered_map<ImportAssetKey, AssetCreationContext> mCreationContextTable;
+};
+
 enum class EImportDependencyType
 {
     eSubMeshDefaultMaterial = 0, // subMesh별 DefaultMaterial
