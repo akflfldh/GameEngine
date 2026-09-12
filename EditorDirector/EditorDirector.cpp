@@ -432,6 +432,7 @@ void Quad::EditorDirector::CreateCommonUITheme()
     float commonLeftPadding = 10.0f;
     float commonTopPadding = 5.0f;
     float commonSectionHeight = commonHeight + 3.0f;
+    float propertyRowHeight = commonHeight + 10.0f;
 
     UI::UIControlStyle iconStyle;
     iconStyle.mBackgroundColor = UI::UIColor::White;
@@ -496,6 +497,14 @@ void Quad::EditorDirector::CreateCommonUITheme()
     inputStyle.mTopPadding = commonTopPadding;
 
     theme.SetStyle(UI::EUIStyleRole::eInputBox, inputStyle);
+
+    UI::UIControlStyle propertyRpwStyle;
+    propertyRpwStyle.mHeight = propertyRowHeight;
+    propertyRpwStyle.mFontSize = commonFontSize;
+    propertyRpwStyle.mTopPadding = commonTopPadding;
+    propertyRpwStyle.mBackgroundColor = UI::UIColor::DarkGray;
+
+    theme.SetStyle(UI::EUIStyleRole::ePropertyRow, propertyRpwStyle);
 }
 
 void Quad::EditorDirector::CreateEditWorkSpace()
@@ -541,7 +550,7 @@ void Quad::EditorDirector::CreateMaterialEditWorkSpace()
     auto materialEditWorkSpaceManager = MaterialWorkSpaceManager::GetInstance();
 
     materialEditWorkSpaceManager->Initialize(mGlobalOverlayLogicalWindow.get(),
-                                             EditorMaterialSelectionManager::GetInstance());
+                                             EditorMaterialSelectionManager::GetInstance(), *mCommonUITheme);
 }
 
 void Quad::EditorDirector::InitEditorWindows()

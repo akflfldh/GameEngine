@@ -13,8 +13,8 @@ class StaticMeshObject;
 namespace UI
 {
 class UICanvas;
-
-}
+class UITheme;
+} // namespace UI
 
 namespace CoreAsset
 {
@@ -30,7 +30,8 @@ class MaterialWorkSpaceManager
     MaterialWorkSpaceManager();
     ~MaterialWorkSpaceManager();
 
-    void Initialize(Core::LogicalWindow *globalLogicalWindow, BaseSelectionManager *selectionManager);
+    void Initialize(Core::LogicalWindow *globalLogicalWindow, BaseSelectionManager *selectionManager,
+                    const UI::UITheme &uiTheme);
     void Update(float DeltaTime);
 
     void SetMaterial(CoreAsset::Material *material);

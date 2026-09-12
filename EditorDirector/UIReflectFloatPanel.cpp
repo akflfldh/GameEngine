@@ -8,7 +8,7 @@
 UIReflectFloatPanel::UIReflectFloatPanel()
 {
 
-    SetStyleRole(UI::EUIStyleRole::ePanel);
+    SetStyleRole(UI::EUIStyleRole::ePropertyRow);
 }
 
 UIReflectFloatPanel::~UIReflectFloatPanel() {}
@@ -34,7 +34,8 @@ void UIReflectFloatPanel::SetCommitNotifier(CommitNotifier notifier)
 
 void UIReflectFloatPanel::OnBegin()
 {
-    SetSize(500.0f, 100.0f);
+    SetWidth(500.0f);
+    // SetSize(500.0f, 100.0f);
     //  SetColor(0.3f, 0.3f, 0.3f);
 
     mTagText = CreateChildUIElement<UI::UIText>("TagText");

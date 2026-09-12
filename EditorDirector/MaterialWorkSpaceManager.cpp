@@ -36,14 +36,14 @@ MaterialWorkSpaceManager::MaterialWorkSpaceManager() {}
 MaterialWorkSpaceManager::~MaterialWorkSpaceManager() {}
 
 void MaterialWorkSpaceManager::Initialize(Core::LogicalWindow *globalLogicalWindow,
-                                          BaseSelectionManager *selectionManager)
+                                          BaseSelectionManager *selectionManager, const UI::UITheme &uiTheme)
 {
 
     // InitUICavnas
     auto uiManager = UI::UIManager::GetInstance();
     UI::UICanvasID canvasID = uiManager->CreateCanvas("MaterialCanvas", UI::ECanvasSizeMode::eFixSize);
     UI::UICanvas *canvas = uiManager->GetCanvas(canvasID);
-
+    canvas->SetTheme(uiTheme);
     mWorkSpace = std::make_unique<Core::WorkSpace>();
     InitLogicalWindow(canvas);
     mWorkSpace->AddLogicalWindow(globalLogicalWindow);
@@ -190,7 +190,7 @@ void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
 
     auto toolbar = canvas->CreateUIElement<UI::UIImage>("Toolbar");
     toolbar->SetSize(3000, mToolbarHeight);
-    toolbar->SetColor(0.4f, 0.4f, 0.4f);
+    toolbar->SetColor(UI::UIColor::DarkGray);
     toolbar->SetPositionLocal(0, 0);
 
     float marginX = 5.0f;
@@ -200,6 +200,7 @@ void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
     float posY = 0.0f;
 
     // ToDefaultEditButton
+
     auto toDefaultEditButton = toolbar->CreateChildUIElement<UI::UIButton>("toDefaultEditButton");
     toDefaultEditButton->SetSize(80, 40);
     posX += marginX;
@@ -211,13 +212,19 @@ void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
         [](float, float) { Quad::EditorDirector::GetInstance()->ChangeToDefaultEditWorkSpace(); });
 
     posX = UI::UIUtility::ShiftPosX(posX, toDefaultEditButton, marginX);
-
+    UI::UIControlStyleOverride buttonStyleOverride;
+    buttonStyleOverride.mHeight = 40.0f;
     auto ApplyButton = toolbar->CreateChildUIElement<UI::UITextButton>("ApplyButton");
-    ApplyButton->SetSize(60, 40);
+    ApplyButton->SetStyleOverride(buttonStyleOverride);
+    ApplyButton->mUIImageComponent->SetUseBorderFlag(true);
+
+    ApplyButton->SetSize(80, 40);
     ApplyButton->SetPositionLocal(posX, posY);
     ApplyButton->mUIImageComponent->NotUseTexture();
     ApplyButton->mTextComponent->SetText("적용");
     ApplyButton->mTextComponent->SetFontSize(30.0f);
+    ApplyButton->mTextComponent->SetPaddingLeft(10.0f);
+    ApplyButton->mTextComponent->SetPaddingTop(5.0f);
     ApplyButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)
                                                                          { ApplyPreviewMaterialToTargetMaterial(); });
 

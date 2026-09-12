@@ -259,7 +259,7 @@ UIReflectVector3Panel *MaterialEditUIController::CreateVector3ReflectPanel(
     UIReflectVector3Panel *vectorReflectPanel = mCanvas->CreateUIElement<UIReflectVector3Panel>("Vector3ReflectPanel");
     vectorReflectPanel->SetTagText(tagText);
     vectorReflectPanel->SetWidth(600.0f);
-    vectorReflectPanel->SetColor(0.3f, 0.3f, 0.3f);
+    // vectorReflectPanel->SetColor(0.3f, 0.3f, 0.3f);
     vectorReflectPanel->BindVector3(getter, setter);
 
     return vectorReflectPanel;
@@ -273,7 +273,7 @@ UIReflectFloatPanel *MaterialEditUIController::CreateFloatReflectPanel(const std
     UIReflectFloatPanel *floatReflectPanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("FloatReflectPanel");
     floatReflectPanel->SetTagText(tagText);
     floatReflectPanel->SetWidth(600.0f);
-    floatReflectPanel->SetColor(0.3f, 0.3f, 0.3f);
+    //  floatReflectPanel->SetColor(0.3f, 0.3f, 0.3f);
     floatReflectPanel->BindFloat(getter, setter);
     return floatReflectPanel;
 }
