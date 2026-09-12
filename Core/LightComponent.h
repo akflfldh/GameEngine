@@ -32,6 +32,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) LightComponent : public SceneCompo
 
     virtual void OnTransformChanged() override;
     virtual void OnOwnerObjectAddedToMap() override;
+    virtual void OnOwnerObjectRemovedFromMap() override;
 
     virtual void OnActiveStateChanged(bool state) override;
 

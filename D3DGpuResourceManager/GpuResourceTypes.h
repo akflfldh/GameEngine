@@ -9,5 +9,7 @@ enum class EResourceState
     eCopySource,
     eCopyDest,
     eWriteDepthStencil,
-    eReadDepthStencil
+    eReadDepthStencil,
+    ePixelShaderResource,
+    eNonPixelShaderResource
 };

@@ -5,6 +5,7 @@
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <RenderFrontend/RenderMaterialResolver.h>
 #include <RenderFrontend/RenderPassGraph.h>
+
 #include <RenderSystem/IRenderSystem.h>
 #include <coreasset/Texture.h>
 #include <unordered_map>
@@ -30,20 +31,31 @@ void Render::BillboardRenderPass::AddToGraph(RenderPassGraph &renderPassGraph, c
         GetName(),
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
-            RenderResourceDesc outputTargetDesc = {passSetUpData.mWindowWidth, passSetUpData.mWindowHeight,
-                                                   GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                                                   GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
-            RenderResourceDesc outputDepthStencilDesc = {passSetUpData.mWindowWidth, passSetUpData.mWindowHeight,
-                                                         GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                                                         GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget,
                                     passSetUpData.mBackBufferClearColor);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(), false, 1.0f, true);
+            builder.SetDepthStencil(
+                pPass->mOutputDepthStencilName, pPass->GetName(),
+                DepthStencilClearDesc{.mClearDepth = false, .mClearStencil = false, .mDepth = 1.0f, .mStencil = 0},
+                true);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
     SetViewport({0, (float)passSetUpData.mWindowWidth, 0, (float)passSetUpData.mWindowHeight});

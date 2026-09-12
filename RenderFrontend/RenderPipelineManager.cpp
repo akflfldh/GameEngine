@@ -20,6 +20,7 @@
 #include <RenderFrontend/RenderPipeline.h>
 #include <RenderFrontend/RenderPipelineOpaque.h>
 #include <RenderFrontend/RenderPipelineUI.h>
+#include <RenderFrontend/ShadowRenderPass.h>
 #include <RenderFrontend/SkySphereRenderPass.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IRenderSystem.h>
@@ -33,13 +34,19 @@
 bool Render::PooledRenderResource::isMatch(const RenderResourceDesc &rhs) const
 {
 
-    if (mDesc.mFormat != rhs.mFormat)
+    if (mDesc.mResourceFormat != rhs.mResourceFormat)
         return false;
     if (mDesc.mWidth != rhs.mWidth)
         return false;
     if (mDesc.mHeight != rhs.mHeight)
         return false;
     if (mDesc.mUsage != rhs.mUsage)
+        return false;
+    if (mDesc.mRtvFormat != rhs.mRtvFormat)
+        return false;
+    if (mDesc.mDsvFormat != rhs.mDsvFormat)
+        return false;
+    if (mDesc.mSrvFormat != rhs.mSrvFormat)
         return false;
 
     return true;
@@ -150,16 +157,19 @@ Render::PooledRenderResource *Render::RenderResourcePool::Create(const RenderRes
     GRM::TextureDesc textureDesc;
     textureDesc.mTextureUsage = desc.mUsage;
     textureDesc.mScratchImage.mimagesNum = 1;
+    textureDesc.mRtvFormat = desc.mRtvFormat;
+    textureDesc.mDsvFormat = desc.mDsvFormat;
+    textureDesc.mSrvFormat = desc.mSrvFormat;
 
     GRM::Image image;
-    image.mFormat = desc.mFormat;
+    image.mFormat = desc.mResourceFormat;
     image.mWidth = desc.mWidth;
     image.mHeight = desc.mHeight;
     textureDesc.mScratchImage.mImages.push_back(std::move(image));
 
     textureDesc.mScratchImage.mMetadata.mWidth = desc.mWidth;
     textureDesc.mScratchImage.mMetadata.mHeight = desc.mHeight;
-    textureDesc.mScratchImage.mMetadata.mFormat = desc.mFormat;
+    textureDesc.mScratchImage.mMetadata.mFormat = desc.mResourceFormat;
     textureDesc.mScratchImage.mMetadata.mDepth = 1;
     textureDesc.mScratchImage.mMetadata.mArraySize = 1;
     textureDesc.mScratchImage.mMetadata.mDimension = GRM::ETextureType::eTexture2D;
@@ -192,6 +202,11 @@ void Render::RenderContext::Reset()
     mRenderPassExecuteContext.mDebugLineRenderCommandList.clear();
     mRenderPassExecuteContext.mMaterialRenderSnapshotTable.clear();
     mRenderPassExecuteContext.mUIMaterialRenderSnapshotTable.clear();
+
+    mRenderPassExecuteContext.mDirectonalShadowRenderData.mEnabled = false;
+    mRenderPassExecuteContext.mDirectonalShadowRenderData.mLightIndex = -1;
+    mRenderPassExecuteContext.mDirectonalShadowRenderData.mViewProj = CoreMath::Matrix4X4::Identity;
+    mRenderPassExecuteContext.mDirectonalShadowRenderData.mShadowMapSize = 2048.0f;
 }
 
 Render::RenderContextPool::RenderContextPool() {}
@@ -333,6 +348,7 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
     RenderPassGraph *renderPassGraph = renderContext->mRenderPassGraph.get();
     std::string renderTargetBackBuffer = "BackBuffer";
     std::string depthStencilBuffer = "DepthStencilBuffer";
+
     if (windowRenderConfig.bIsOverlay)
     {
 
@@ -355,6 +371,7 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
 
         std::string renderTargetTempBufferName = "TempBackBuffer";
         std::string depthStencilTempBuffer = "TempDepthStencilBuffer";
+        std::string shadowMapBuffer = "DirectionalShadowMap";
 
         bool bClearRenderTarget = true;
         // debug grid
@@ -370,6 +387,13 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
                                                 renderPassSetUpData);
             bClearRenderTarget = false;
         }
+
+        // shadow pass
+
+        std::unique_ptr<IRenderPass> shadowPass = std::make_unique<ShadowRenderPass>();
+        shadowPass->SetOutputDepthStencil(shadowMapBuffer);
+        shadowPass->SetClearRenderTarget(false);
+        renderPassGraph->RegisterRenderPass(std::move(shadowPass), shadowPass->GetName(), renderPassSetUpData);
 
         // Main Opaque
         std::unique_ptr<IRenderPass> mainOpaquePass = std::make_unique<RenderPassMain>();
@@ -641,6 +665,8 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
     {
         LightRenderCommand cmd;
         cmd.mDirection = proxy->mDirection;
+        cmd.mRight = proxy->mRight;
+        cmd.mUp = proxy->mUp;
         cmd.mFalloffEnd = proxy->mFalloffEnd;
         cmd.mFalloffStart = proxy->mFalloffStart;
         cmd.mLightType = proxy->mLightType;
@@ -650,6 +676,40 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
         cmd.mSpotPower = proxy->mSpotPower;
 
         executeContext.mLightRenderCommandList.push_back(cmd);
+    }
+
+    // directonal shadow light data 생성
+    /*
+        평행광의 위치는 카메라의 위치로부터 계산하다.
+
+        그림자 구현시 현재 평행광의 위치를 항상 원점을 봐라보는게아니라 그 카메라를 따라가야할듯
+        에디터에서 개발시에는 에디터의 카메라를 따라가고
+        플레이시에는 플레이카메라를 따라가야하는거지
+
+    */
+    for (size_t i = 0; i < executeContext.mLightRenderCommandList.size(); ++i)
+    {
+        if (executeContext.mLightRenderCommandList[i].mLightType == Core::ELightType::eDirectional)
+        {
+
+            executeContext.mDirectonalShadowRenderData.mEnabled = true;
+            executeContext.mDirectonalShadowRenderData.mLightIndex = i;
+            const CoreMath::Vector3 shadowCenter = executeContext.mGlobalFrameData.mCameraPositionWorld;
+            const float shadowDistance = 300.0f;
+            CoreMath::Vector3 lightPosition =
+                shadowCenter - executeContext.mLightRenderCommandList[i].mDirection * shadowDistance;
+
+            CoreMath::Matrix4X4 view = CoreMath::Matrix4X4::MakeLookAtLH(lightPosition, shadowCenter,
+                                                                         executeContext.mLightRenderCommandList[i].mUp);
+
+            CoreMath::Matrix4X4 proj = CoreMath::Matrix4X4::MakeOrthographicLH(-100, 100, -100, 100, 1.0, 1000);
+
+            CoreMath::Matrix4X4 viewProj = proj * view;
+
+            executeContext.mDirectonalShadowRenderData.mViewProj = viewProj.GetTransposed();
+
+            break;
+        }
     }
 
     // outline

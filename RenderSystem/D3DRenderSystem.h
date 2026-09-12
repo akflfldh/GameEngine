@@ -81,7 +81,8 @@ class RENDER_SYSTEM_API D3DRenderSystem : public Render::IRenderSystem
                                    float color[4], Render::RECT rect) override;
 
     // TODO depth value, Stencil Value 두개를 처리해야한다.
-    virtual void ClearDepthStencil(Core::CommandContext *commandContext, GRM::IGpuResource *renderTarget, float value,
+    virtual void ClearDepthStencil(Core::CommandContext *commandContext, GRM::IGpuResource *renderTarget,
+                                   bool bDepthClear, bool bStencilClear, float depthValue, uint8_t stencilValue,
                                    Render::RECT rect) override;
     virtual void SetRenderTarget(Core::CommandContext *commandContext, GRM::IGpuResource *rendertarget,
                                  GRM::IGpuResource *depthStenci) override;

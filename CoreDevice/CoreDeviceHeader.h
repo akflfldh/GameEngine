@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <optional>
 #include <stdint.h>
 #include <vector>
 namespace GRM
@@ -71,13 +72,11 @@ enum class ETextureFormat : uint8_t
     eBC3_UNORM_SRGB,
     eBC7_UNORM_SRGB,
 
-    // --- Typeless Formats (주로 Depth buffer에서 SRV와 DSV 동시 사용 시) ---
-    // 리소스 자체는 Typeless로 만들고, View 생성 시 구체적인 Format 지정
-    // 이 포맷 자체를 TextureFormat에 넣기보다는, TextureDesc 플래그나 별도 필드로
-    // View용 포맷을 지정하는 방식이 일반적
-    // R32_TYPELESS,
-    // R24G8_TYPELESS,
-    // R16_TYPELESS,
+    // --- Typeless Formats (Depth buffer를 DSV와 SRV로 함께 사용할 때) ---
+    eR16_TYPELESS,
+    eR24G8_TYPELESS,
+    eR24_UNORM_X8_TYPELESS,
+    eR32_TYPELESS,
 
     eMax_TextureFormats
 };
@@ -92,7 +91,9 @@ enum class ETextureUsage : uint16_t
     // 깊이/스텐실 버퍼로 사용 가능
     eDepthStencil = 1 << 2,
 
-    eRenderTargetShaderResource = 1 << 3 // 렌더타켓 + 셰이더리소스로 사용
+    eRenderTargetShaderResource = 1 << 3, // 렌더타켓 + 셰이더리소스로 사용
+
+    eDepthStencilShaderResource = 1 << 4 // 깊이버퍼 + 세이더리소스
 };
 
 // 원본해상도(밉맵레벨0)정보
@@ -182,6 +183,13 @@ struct TextureDesc
 {
     ETextureUsage mTextureUsage;
     ScratchImage mScratchImage;
+
+    /*
+     //필요한것만 값을 설정한다.
+    */
+    std::optional<ETextureFormat> mRtvFormat;
+    std::optional<ETextureFormat> mDsvFormat;
+    std::optional<ETextureFormat> mSrvFormat;
 
     union OptimizedClearValue
     {

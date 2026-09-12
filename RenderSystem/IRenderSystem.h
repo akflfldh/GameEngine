@@ -56,7 +56,8 @@ class RENDER_SYSTEM_API IRenderSystem
 
     virtual void ClearRenderTarget(Core::CommandContext *commandContext, GRM::IGpuResource *renderTarget,
                                    float color[4], RECT rect) = 0;
-    virtual void ClearDepthStencil(Core::CommandContext *commandContext, GRM::IGpuResource *renderTarget, float value,
+    virtual void ClearDepthStencil(Core::CommandContext *commandContext, GRM::IGpuResource *renderTarget,
+                                   bool bDepthClear, bool bStencilClear, float depthValue, uint8_t stencilValue,
                                    RECT rect) = 0;
     virtual void SetRenderTarget(Core::CommandContext *commandContext, GRM::IGpuResource *rendertarget,
                                  GRM::IGpuResource *depthStenci) = 0;

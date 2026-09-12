@@ -30,6 +30,8 @@ struct LightProxy
     Core::ELightType mLightType;
     CoreMath::Vector3 mStrength;
     CoreMath::Vector3 mDirection;
+    CoreMath::Vector3 mRight;
+    CoreMath::Vector3 mUp;
     CoreMath::Vector3 mPosition;
     float mFalloffStart;
     float mFalloffEnd;

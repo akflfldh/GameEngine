@@ -480,7 +480,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> D3DGRM::D3DGpuResourceManager::CreateText
 
     std::unique_ptr<D3D12_CLEAR_VALUE> clearValue = nullptr;
 
-    if (resourceFlags != D3D12_RESOURCE_FLAG_NONE)
+    if (textureDesc.hasOptimizedClearValue)
     {
 
         clearValue = std::make_unique<D3D12_CLEAR_VALUE>();
@@ -490,6 +490,9 @@ Microsoft::WRL::ComPtr<ID3D12Resource> D3DGRM::D3DGpuResourceManager::CreateText
                 textureDesc.mOptimizedClearValue.mOptimizedDepthStencilValue.mOptimizedClearDepth;
             clearValue->DepthStencil.Stencil =
                 textureDesc.mOptimizedClearValue.mOptimizedDepthStencilValue.mOptimizedClearStencil;
+
+            const GRM::ETextureFormat clearFormat = textureDesc.mDsvFormat.value_or(texMetaData.mFormat);
+            clearValue->Format = ConvertToDxgiFormat(clearFormat);
         }
         else
         {
@@ -497,8 +500,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> D3DGRM::D3DGpuResourceManager::CreateText
             clearValue->Color[1] = textureDesc.mOptimizedClearValue.mOptimizedColor[1];
             clearValue->Color[2] = textureDesc.mOptimizedClearValue.mOptimizedColor[2];
             clearValue->Color[3] = textureDesc.mOptimizedClearValue.mOptimizedColor[3];
+            clearValue->Format = resourceDesc.Format;
         }
-        clearValue->Format = resourceDesc.Format;
     }
 
     D3D12_RESOURCE_STATES initResourceState;
@@ -799,14 +802,21 @@ void D3DGRM::D3DGpuResourceManager::CreateTextureDescriptor(D3DGRM::D3DGpuTextur
         CreateSrvHandle(texture, textureDesc);
     }
     break;
+    case GRM::ETextureUsage::eDepthStencilShaderResource:
+    {
+        CreateDsvHandle(texture, textureDesc);
+        CreateSrvHandle(texture, textureDesc);
+    }
+    break;
     }
 }
 
 void D3DGRM::D3DGpuResourceManager::CreateRtvHandle(D3DGRM::D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc)
 {
+    GRM::ETextureFormat format = textureDesc.mRtvFormat.value_or(textureDesc.mScratchImage.mMetadata.mFormat);
 
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-    rtvDesc.Format = ConvertToDxgiFormat(textureDesc.mScratchImage.mMetadata.mFormat);
+    rtvDesc.Format = ConvertToDxgiFormat(format);
     rtvDesc.ViewDimension = ConvertToRTVDimension(textureDesc.mScratchImage.mMetadata.mDimension);
 
     switch (rtvDesc.ViewDimension)
@@ -863,9 +873,10 @@ void D3DGRM::D3DGpuResourceManager::CreateRtvHandle(D3DGRM::D3DGpuTexture *textu
 
 void D3DGRM::D3DGpuResourceManager::CreateSrvHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc)
 {
+    GRM::ETextureFormat format = textureDesc.mSrvFormat.value_or(textureDesc.mScratchImage.mMetadata.mFormat);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    srvDesc.Format = ConvertToDxgiFormat(textureDesc.mScratchImage.mMetadata.mFormat);
+    srvDesc.Format = ConvertToDxgiFormat(format);
     srvDesc.ViewDimension = ConvertToSRVDimension(textureDesc.mScratchImage.mMetadata.mDimension);
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
@@ -957,8 +968,9 @@ void D3DGRM::D3DGpuResourceManager::CreateSrvHandle(D3DGpuTexture *texture, cons
 void D3DGRM::D3DGpuResourceManager::CreateDsvHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc)
 {
 
+    GRM::ETextureFormat format = textureDesc.mDsvFormat.value_or(textureDesc.mScratchImage.mMetadata.mFormat);
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-    dsvDesc.Format = ConvertToDxgiFormat(textureDesc.mScratchImage.mMetadata.mFormat);
+    dsvDesc.Format = ConvertToDxgiFormat(format);
     dsvDesc.ViewDimension = ConvertToDSVDimension(textureDesc.mScratchImage.mMetadata.mDimension);
     dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 

@@ -125,7 +125,7 @@ struct BindingGpuResource
 // 채널별로 전역적으로 매프레임시 제공되어야하는 정보
 struct FrameContext
 {
-    GRM::IGpuResource *mGlobalPassBuffer;
+    GRM::IGpuResource *mGlobalPassBuffer = nullptr;
     Viewport mViewport;
     ScissorRect mScissorRect;
     float mBackGroundColor[4];
@@ -138,7 +138,7 @@ struct FrameContext
 
     // 렌더타켓은  일단 단일, 향후에 렌더타켓이 여러개여서, vector로 표현될수있을듯.
     // nullptr이면 후면버퍼
-    GRM::IGpuResource *mRenderTarget;
+    GRM::IGpuResource *mRenderTarget = nullptr;
 };
 
 // 동일한 Gpu머터리얼을 사용하는 Asset머터리얼들 각각에대해서

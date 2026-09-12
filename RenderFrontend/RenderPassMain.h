@@ -13,6 +13,11 @@ struct MainConstnatData
     CoreMath::Vector3 mCameraPosWorld;
     int mLightNums = 0;
     CoreMath::Vector4 mAmbientLight;
+
+    CoreMath::Matrix4X4 mLightViewProj;
+    CoreMath::Vector2 mShadowMapInvSize;
+    uint32_t mShadowEnabled;
+    float mPadding;
 };
 // 불투명 렌더파이프라인의 렌더메인패스
 class RenderPassMain : public IRenderPass

@@ -108,8 +108,11 @@ void LightComponent::OnTransformChanged()
         // 아쉬운점은 OnTransformChange 될때마다 position을설정하기위해서
         // positionWorld를 가져오니 트랜스폼의 지연계산이 효과가 없어져버린다.
         // 만약 set만있다면 마지막에 딱한번 get에서 proxy를 업데이트하면되는데
-        mLightProxy->mPosition = GetPositionWorld();
-        mLightProxy->mDirection = GetForwardWorld();
+        /*  mLightProxy->mPosition = GetPositionWorld();
+          mLightProxy->mDirection = GetForwardWorld();
+          mLightProxy->mRight = GetRightWorld();*/
+
+        UpdateProxy();
     }
 }
 
@@ -177,6 +180,8 @@ void LightComponent::UpdateProxy()
     {
         mLightProxy->mPosition = GetPositionWorld();
         mLightProxy->mDirection = GetForwardWorld();
+        mLightProxy->mRight = GetRightWorld();
+        mLightProxy->mUp = GetUpWorld();
         mLightProxy->mFalloffEnd = mFalloffEnd;
         mLightProxy->mFalloffStart = mFalloffStart;
         mLightProxy->mSpotPower = mSpotPower;
@@ -185,4 +190,15 @@ void LightComponent::UpdateProxy()
 
         ClearPropertyDirty();
     }
+}
+
+void LightComponent::OnOwnerObjectRemovedFromMap()
+{
+
+    if (Map *map = GetMap())
+    {
+        map->UnRegisterLightComponent(this);
+    }
+
+    SceneComponent::OnOwnerObjectRemovedFromMap();
 }

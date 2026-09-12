@@ -429,7 +429,9 @@ void D3DRender::D3DRenderSystem::ClearRenderTarget(Core::CommandContext *command
 }
 
 void D3DRender::D3DRenderSystem::ClearDepthStencil(Core::CommandContext *commandContext,
-                                                   GRM::IGpuResource *depthStencil, float value, Render::RECT rect)
+                                                   GRM::IGpuResource *depthStencil, bool bDepthClear,
+                                                   bool bStencilClear, float depthValue, uint8_t stencilValue,
+                                                   Render::RECT rect)
 {
     Core::D3DCommandContext *d3dCommandContext = static_cast<Core::D3DCommandContext *>(commandContext);
     ID3D12GraphicsCommandList *commandList = d3dCommandContext->GetCommandList();
@@ -441,8 +443,20 @@ void D3DRender::D3DRenderSystem::ClearDepthStencil(Core::CommandContext *command
         D3D12_RECT d3dRect = ConvertToD3DRect(rect);
         // 일단 두개모두 설정...
 
-        D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL;
-        commandList->ClearDepthStencilView(cpuHandle.mCpuDescriptorHandle, clearFlags, value, 0, 1, &d3dRect);
+        // dsv format에따라 clear flags를 다르게 설정하자 .
+        D3D12_CLEAR_FLAGS clearFlags{};
+        if (bDepthClear)
+        {
+            clearFlags |= D3D12_CLEAR_FLAG_DEPTH;
+        }
+
+        if (bStencilClear)
+        {
+            clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
+        }
+
+        commandList->ClearDepthStencilView(cpuHandle.mCpuDescriptorHandle, clearFlags, depthValue, stencilValue, 1,
+                                           &d3dRect);
     }
 }
 
@@ -473,7 +487,9 @@ void D3DRender::D3DRenderSystem::SetRenderTarget(Core::CommandContext *commandCo
         depthStencilCpuHandlePtr = &detphStencilHandle.mCpuDescriptorHandle;
     }
 
-    commandList->OMSetRenderTargets(1, renderTargetCpuHandlePtr, true, depthStencilCpuHandlePtr);
+    uint8_t renderTargetNums = renderTargetCpuHandlePtr ? 1 : 0;
+
+    commandList->OMSetRenderTargets(renderTargetNums, renderTargetCpuHandlePtr, true, depthStencilCpuHandlePtr);
 }
 
 void D3DRender::D3DRenderSystem::BindPSOIfNeeded(ID3D12GraphicsCommandList *commandList,

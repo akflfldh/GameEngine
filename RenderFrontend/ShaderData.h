@@ -8,6 +8,11 @@ cbuffer PassBuffer:register(b0)
     float3 gEye;
     int gLightNums;
     float4 gAmbientLight; 
+
+    float4x4 mLightViewProj;
+    float2 mShadowMapInvSize;
+    uint mShadowEnabled;
+    float mPadding;
 };
 
 
@@ -44,8 +49,10 @@ StructuredBuffer<LightData> gLights :register(t0);
 
 Texture2D _TexMap :register(t1);
 Texture2D NormalMap :register(t2);
+Texture2D gShadowMap :register(t3);
 
 SamplerState _LinearSampler :register(s0);
+SamplerComparisonState _ShadowSampler : register(s2);
 
 
 struct VertexIn
@@ -64,10 +71,97 @@ struct VertexOut
     float2 mTex : TEX;
     float3 mNormal : NORMAL;
     float4 mTangent :TANGENT;
+    float4 mShadowPosH : SAHDOW;
 };
 
 
-float3 ComputeLighting(LightData light,float3 albedo ,  float3 posW, float3 normal,float3 toEye)
+
+float CalcShadowFactor(float4 shadowPosH )
+{
+
+    if (mShadowEnabled == 0)
+      return 1.0f;
+
+
+    shadowPosH.xyz/=shadowPosH.w;
+    
+    float depth = shadowPosH.z;
+
+    uint width, height, numMips;
+    gShadowMap.GetDimensions(0, width, height, numMips);
+
+    float dx= 1.0f/(float)width;
+ 
+
+
+   float2 shadowUV =  shadowPosH.xy * float2(0.5, -0.5f) + 0.5f;
+
+
+
+
+    const float2 offset[9]= {
+        float2(-dx,-dx) ,float2(0,dx),float2(dx,dx),
+        float2(-dx,0), float2(0,0),float2(dx,0),
+        float2(-dx,-dx),float2(0,-dx), float2(dx,-dx)
+    };
+
+
+    if (any(shadowUV < 0.0f) || any(shadowUV > 1.0f) ||
+      shadowPosH.z < 0.0f || shadowPosH.z > 1.0f)
+  {
+      return 1.0f;
+  }
+
+  float factor =0.0f;
+  for(int i=0; i<9; ++i)
+  {
+    float2 uv = shadowUV+offset[i];
+    factor +=  gShadowMap.SampleCmpLevelZero(_ShadowSampler,uv,depth);
+  }
+    return factor/9.0f;
+
+}
+
+
+
+
+
+
+
+float3 ComputeDirectonalLight(LightData light,float3 albedo ,  float3 posW, float3 normal,float3 toEye)
+{
+
+
+    float3 toLight  =-light.mDirection;
+
+    float lambertCos =  max(dot(normal,toLight) , 0);
+
+    float3 halfwayVector = normalize((toEye+toLight));
+
+    float3 RF0 = lerp(float3(0.04,0.04,0.04),albedo,gMetallic);
+    float3 RF = RF0 + (1-RF0)* pow( 1.0f- dot(halfwayVector,toEye),5);
+
+    float m  =max( (1.0f- gRoughness) *255.0f, 1.0f) ;
+
+    //표면거칠기
+    
+    float3 sr =  ((m+8)/8) *  pow( max(dot(normal , halfwayVector),0.0f),m);
+
+
+    float3 kd = (1.0f-RF) *(1.0f -gMetallic);
+
+    float3 diffuse = kd *  albedo;
+    float3 specular =sr * RF;
+
+    float3  ret =  lambertCos * light.mStrength * (diffuse + specular);
+
+    return ret;
+
+
+}
+
+
+float3 ComputeLighting(LightData light,float3 albedo ,  float3 posW, float3 normal,float3 toEye,float shadowFactor)
 {
 //평행광이라고만 가정
 
@@ -78,7 +172,9 @@ float3 ComputeLighting(LightData light,float3 albedo ,  float3 posW, float3 norm
 
     if(light.mLightType == 0)
     {
-       toLight  =-light.mDirection;
+     
+       return     shadowFactor *  ComputeDirectonalLight(light,albedo,posW,normal,toEye);
+
     }else if(light.mLightType ==1)
     {
         float3 d = light.mPosition - posW; 
@@ -140,7 +236,7 @@ VertexOut VS(VertexIn vin)
     vout.mNormal = mul(gWorldInvTrans, float4(vin.mNormal,0.0f));
     vout.mTangent = mul(gWorldInvTrans,float4(vin.mTangent.xyz,0.0f));
     vout.mTangent.w = vin.mTangent.w;
-
+    vout.mShadowPosH = mul(posW,mLightViewProj);
     
     return vout;
 
@@ -167,10 +263,13 @@ float4 PS(VertexOut pin):SV_Target
     
     color *=float4(gDiffuseFactor,1.0f);
 
+
+    float shadowFactor= CalcShadowFactor(pin.mShadowPosH);
+
     for(int i = 0; i < gLightNums; ++i)
     {
         // 라이트의 Position과 Direction은 이미 월드 공간이므로 변환 없이 쾌적하게 계산!
-        finalColor += ComputeLighting(gLights[i], color.xyz, pin.mPosW, normalWorld, toEye); 
+        finalColor += ComputeLighting(gLights[i], color.xyz, pin.mPosW, normalWorld, toEye,shadowFactor); 
     }
 
     float3 ambient= gAmbientLight.xyz * gAmbient * color;
@@ -181,6 +280,7 @@ float4 PS(VertexOut pin):SV_Target
 
 
 }
+
 
 
     )";
@@ -793,3 +893,36 @@ float4 PS(VertexOut pin) :SV_Target
 
 
 })";
+
+static const char ShadowHLSL[] = R"(
+cbuffer PassBuffer:register(b0)
+{
+    float4x4 gLightViewProj;
+};
+
+cbuffer ObjectBuffer : register(b1)
+{
+    float4x4 gWorld;
+    float4x4 gWorldInvTrans;
+};
+
+struct VertexIn
+{
+    float3 mPosL : POSITION;
+};
+
+struct VertexOut
+{
+    float4 mPosH : SV_POSITION;
+};
+
+VertexOut VS(VertexIn vin)
+{
+    VertexOut vout;
+
+    float4 posW = mul(gWorld, float4(vin.mPosL, 1.0f));
+    vout.mPosH = mul(posW,gLightViewProj);
+
+    return vout;
+}
+)";

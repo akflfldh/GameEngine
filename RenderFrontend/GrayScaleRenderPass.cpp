@@ -35,22 +35,35 @@ void Render::GrayScaleRenderPass::AddToGraph(RenderPassGraph &renderPassGraph, c
         GetName(),
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
-            RenderResourceDesc outputTargetDesc = {passSetUpData.mWindowWidth, passSetUpData.mWindowHeight,
-                                                   GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                                                   GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
             builder.Read(pPass->mInputSource, pPass->GetName(), EResourceState::eGenericRead);
 
-            RenderResourceDesc outputDepthStencilDesc = {passSetUpData.mWindowWidth, passSetUpData.mWindowHeight,
-                                                         GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                                                         GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget,
                                     passSetUpData.mBackBufferClearColor);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(), true, 1.0f, true);
+            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(),
+                                    DepthStencilClearDesc{.mClearDepth = true,
+                                                          .mClearStencil = true,
+                                                          .mDepth = 1.0f,
+                                                          .mStencil = 0},
+                                    true);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
 }
@@ -129,15 +142,6 @@ void Render::GrayScaleRenderPass::Execute(const RenderPassExecuteContext &execut
         bindingGpuResource.mType = EShaderResourceType::eTexture;
         renderItem.mBindingGpuTexResourceVector.push_back(std::move(bindingGpuResource));
     }
-
-    //// sampler
-    //{
-    //    Render::BindingGpuResource bindingGpuResource;
-    //    bindingGpuResource.gpuResource = mGpuSamplerSystem->GetGpuSampler(1).getResource();
-    //    bindingGpuResource.mType = EShaderResourceType::eSampler;
-    //    bindingGpuResource.mName = bindingShaderResourceInfoSet.mObjectSamplerShaderResourceInfoVector[0].mName;
-    //    renderItem.mBindingGpuResourceVector.push_back(std::move(bindingGpuResource));
-    //}
 
     executeContext.renderSystem->DrawFullScreen(executeContext.mCommandContext, renderItem);
 }

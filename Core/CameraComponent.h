@@ -41,6 +41,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) CameraComponent : public SceneComp
 
   protected:
     void OnOwnerObjectAddedToMap() override;
+    void OnOwnerObjectRemovedFromMap() override;
 
   private:
     void UpdateIfViewDirtyFlag() const;

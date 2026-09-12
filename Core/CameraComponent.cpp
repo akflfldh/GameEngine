@@ -155,6 +155,16 @@ void CameraComponent::OnOwnerObjectAddedToMap()
     }
 }
 
+void CameraComponent::OnOwnerObjectRemovedFromMap()
+{
+    SceneComponent::OnOwnerObjectRemovedFromMap();
+
+    if (!GetOwnerObject()->HasObjectFlag(Core::EObjectFlag::eEngineEntity))
+    {
+        GetOwnerObject()->GetMap()->UnRegisterCameraComponent(this);
+    }
+}
+
 void CameraComponent::UpdateIfViewDirtyFlag() const
 {
 

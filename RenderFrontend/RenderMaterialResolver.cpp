@@ -33,6 +33,8 @@ void Render::RenderMaterialResolver::Initialize()
         BuildDebugGridGpuMaterial();
         BuildUIGpuMaterial();
         BuildSkySphereGpuMaterial();
+
+        BuildShadowGpuMaterial();
     }
 
     mInitialized = true;
@@ -390,4 +392,42 @@ void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
     rmc.mShadingModel = CoreAsset::EShadingModel::eNone;
 
     RegisterGpuMaterial(rmc, ERenderPassType::eSkySphere, gpuMaterialID);
+}
+
+void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
+{
+
+    MaterialID gpuMaterialID;
+    {
+        MaterialGenerationInfo mgInfo;
+
+        MaterialRenderSettingInfo &matRenderSettingInfo = mgInfo.mRenderSettingInfo;
+        // matRenderSettingInfo.mCullMode = ECullMode::eNone;
+        matRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
+        matRenderSettingInfo.mCCW = false;
+        matRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
+        matRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eEnabled;
+        matRenderSettingInfo.mDepthWriteMask = true;
+        // color render target 없음으로 설정합니다.
+        matRenderSettingInfo.mRenderTargetCount = 0;
+        matRenderSettingInfo.mDepthStencilFormat = GRM::ETextureFormat::eD32_FLOAT;
+
+        matRenderSettingInfo.mDepthBias = 10000;
+        matRenderSettingInfo.mSlopeScaledDepthBias = 2.0f;
+
+        uint8_t *pShader = (uint8_t *)ShadowHLSL;
+        size_t shaderSize = sizeof(ShadowHLSL) - 1;
+        mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex}};
+
+        mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
+
+        gpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
+    }
+    // Register
+    RenderMaterialContext rmc;
+    rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
+    rmc.mTransparent = false;
+    rmc.mShadingModel = CoreAsset::EShadingModel::eNone;
+
+    RegisterGpuMaterial(rmc, ERenderPassType::eShadow, gpuMaterialID);
 }

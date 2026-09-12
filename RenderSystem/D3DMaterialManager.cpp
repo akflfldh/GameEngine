@@ -6,6 +6,7 @@
 #include "RenderSystem/D3DShaderReflectSystem.h"
 #include "RenderSystem/IMaterialManager.h"
 #include "RenderSystem/MaterialType.h"
+#include <D3DGpuResourceManager/D3DGpuType.h>
 #include <Logger.h>
 #include <assert.h>
 #include <d3dcompiler.h>
@@ -1121,7 +1122,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
 
     // TODO 함수로 분리하기 정적샘플러 생성
     //  정적 샘플러 사용
-    D3D12_STATIC_SAMPLER_DESC staticSampler[2];
+    D3D12_STATIC_SAMPLER_DESC staticSampler[3];
     staticSampler[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
     staticSampler[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     staticSampler[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -1148,12 +1149,27 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
     staticSampler[1].RegisterSpace = 0;
     staticSampler[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+    // shaodw comparison sampler
+    staticSampler[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+    staticSampler[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    staticSampler[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    staticSampler[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    staticSampler[2].MipLODBias = 0;
+    staticSampler[2].MaxAnisotropy = 1;
+    staticSampler[2].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+    staticSampler[2].MinLOD = 0;
+    staticSampler[2].MaxLOD = D3D12_FLOAT32_MAX;
+    staticSampler[2].ShaderRegister = 2;
+    staticSampler[2].RegisterSpace = 0;
+    staticSampler[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    staticSampler[2].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
     // D3D12RootSignature 생성
     D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
     rootSignatureDesc.NumParameters = rootParameterVector.size();
     rootSignatureDesc.pParameters = rootParameterVector.data();
     rootSignatureDesc.pStaticSamplers = staticSampler;
-    rootSignatureDesc.NumStaticSamplers = 2;
+    rootSignatureDesc.NumStaticSamplers = sizeof(staticSampler) / sizeof(D3D12_STATIC_SAMPLER_DESC);
     rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     ID3DBlob *serializedRootSignatureBlob;
@@ -1247,7 +1263,18 @@ ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
     pipelineStateDesc.RasterizerState.CullMode = ConvertToD3DCullMode(renderSettingInfo.mCullMode);
     pipelineStateDesc.RasterizerState.FillMode = ConvertToD3DFillMode(renderSettingInfo.mFillMode);
     pipelineStateDesc.RasterizerState.FrontCounterClockwise = renderSettingInfo.mCCW;
+    pipelineStateDesc.RasterizerState.DepthBias = renderSettingInfo.mDepthBias;
+    pipelineStateDesc.RasterizerState.DepthBiasClamp = renderSettingInfo.mDepthBiasClamp;
+    pipelineStateDesc.RasterizerState.SlopeScaledDepthBias = renderSettingInfo.mSlopeScaledDepthBias;
     pipelineStateDesc.SampleMask = 0xFFFFFFFF;
+
+    pipelineStateDesc.NumRenderTargets = info.mRenderSettingInfo.mRenderTargetCount;
+
+    for (size_t renderTargetIndex = 0; renderTargetIndex < pipelineStateDesc.NumRenderTargets; ++renderTargetIndex)
+    {
+        pipelineStateDesc.RTVFormats[renderTargetIndex] =
+            D3DGRM::ConvertToDxgiFormat(info.mRenderSettingInfo.mRenderTargetFormat[renderTargetIndex]);
+    }
     pipelineStateDesc.BlendState.RenderTarget[0].BlendEnable = ConvertToBlendEnableFlag(renderSettingInfo.mBlendMode);
     pipelineStateDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
@@ -1285,9 +1312,10 @@ ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
     pipelineStateDesc.PrimitiveTopologyType = GetPrimitiveTopologyType(info.mInputLayoutType);
     pipelineStateDesc.SampleDesc.Count = 1;
     pipelineStateDesc.SampleDesc.Quality = 0;
-    pipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    pipelineStateDesc.NumRenderTargets = 1;
-    pipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT; // 일단 기본설정
+    // pipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    // pipelineStateDesc.NumRenderTargets = 1;
+    pipelineStateDesc.DSVFormat =
+        D3DGRM::ConvertToDxgiFormat(info.mRenderSettingInfo.mDepthStencilFormat); // 일단 기본설정
 
     // VS
     std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator vsIt =

@@ -74,8 +74,9 @@ struct RenderTargetResourceInfo
 struct DepthStencilResourceInfo
 {
     FrameGraphResourceVersion *mFrameGraphResourceVersion = nullptr; // nullptr이라면 사용하지않음
-    bool bClear = false;
-    float mClearValue = 1.0f;
+                                                                     // bool bClear = false;
+                                                                     // float mClearValue = 1.0f;
+    DepthStencilClearDesc mDepthStencilClearDesc;
 };
 
 struct RenderPassNode
@@ -156,8 +157,8 @@ class RenderPassGraph
     // write의 한종류이지만 특별(렌더타켓은 반드시 이 메서드를 사용)
     // color : float[4] 배열
     void SetRenderTarget(const std::string &texName, const std::string &passName, bool bClear, const float *color);
-    void SetDepthStencil(const std::string &texName, const std::string &passName, bool bClear, float clearValue,
-                         bool bDepthWrite);
+    void SetDepthStencil(const std::string &texName, const std::string &passName,
+                         const DepthStencilClearDesc &depthStencilClearDesc, bool bDepthWrite);
 
     // resourceState : 어떤상태로 write할지
     void Write(const std::string &texName, const std::string &passName, EResourceState resourceState);
@@ -206,8 +207,8 @@ class RenderPassGraphBuilder
     // rendertarget set , 렌더타켓은 write 메서드말고 이 메서드를 호출
     void SetRenderTarget(const std::string &texName, const std::string &passName, bool bClear, const float *color);
 
-    void SetDepthStencil(const std::string &texName, const std::string &passName, bool bClear, float clearValue,
-                         bool bDepthWrite);
+    void SetDepthStencil(const std::string &texName, const std::string &passName,
+                         const DepthStencilClearDesc &depthStencilClearDesc, bool bDepthWrite);
 
     // resourceState : 어떤상태로 write할지
     void Write(const std::string &texName, const std::string &passName, EResourceState resourceState);

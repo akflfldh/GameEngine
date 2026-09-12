@@ -113,10 +113,22 @@ struct LightRenderCommand
     Core::ELightType mLightType;
     CoreMath::Vector3 mStrength;
     CoreMath::Vector3 mDirection;
+    CoreMath::Vector3 mRight;
+    CoreMath::Vector3 mUp;
     CoreMath::Vector3 mPosition;
     float mFalloffStart;
     float mFalloffEnd;
     float mSpotPower;
+};
+
+struct DirectonalShadowRenderData
+{
+
+    bool mEnabled = false;
+    int32_t mLightIndex = -1;
+    CoreMath::Matrix4X4 mViewProj;
+
+    float mShadowMapSize = 2048.0f;
 };
 
 struct DebugLineRednerCommand
@@ -204,6 +216,8 @@ struct RenderPassExecuteContext
     std::vector<uint32_t> *mUIIndexBuffer = nullptr;
 
     Core::CommandContext *mCommandContext;
+
+    DirectonalShadowRenderData mDirectonalShadowRenderData;
 };
 
 struct RenderResourceDesc
@@ -211,7 +225,10 @@ struct RenderResourceDesc
 
     uint32_t mWidth;
     uint32_t mHeight;
-    GRM::ETextureFormat mFormat;
+    GRM::ETextureFormat mResourceFormat = GRM::ETextureFormat::eUnknown;
+    std::optional<GRM::ETextureFormat> mRtvFormat;
+    std::optional<GRM::ETextureFormat> mDsvFormat;
+    std::optional<GRM::ETextureFormat> mSrvFormat;
     GRM::ETextureUsage mUsage;
 };
 
@@ -224,6 +241,15 @@ struct PooledRenderResource
     RenderResourceDesc mDesc;
     std::string mName;
     bool isMatch(const RenderResourceDesc &rhs) const;
+};
+
+struct DepthStencilClearDesc
+{
+    bool mClearDepth = true;
+    bool mClearStencil = false;
+
+    float mDepth = 1.0f;
+    uint8_t mStencil = 0;
 };
 
 } // namespace Render

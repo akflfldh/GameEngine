@@ -62,6 +62,7 @@ class RenderMaterialResolver
     void BuildDebugLineGpuMaterial();
     void BuildUIGpuMaterial();
     void BuildSkySphereGpuMaterial();
+    void BuildShadowGpuMaterial();
     // std::unordered_map<std::string, MaterialID> mGpuMaterialIDTable;
     std::unordered_map<RenderMaterialVariantKey, MaterialID, RenderMaterialVariantKeyHash> mGpuMaterialIDTable;
     // pass -

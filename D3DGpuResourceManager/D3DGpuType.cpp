@@ -46,12 +46,16 @@ DXGI_FORMAT D3DGRM::ConvertToDxgiFormat(GRM::ETextureFormat format)
         return DXGI_FORMAT_R32_FLOAT;
     case GRM::ETextureFormat::eR32G32_FLOAT:
         return DXGI_FORMAT_R32G32_FLOAT;
+    case GRM::ETextureFormat::eR32G32B32_FLOAT:
+        return DXGI_FORMAT_R32G32B32_FLOAT;
     case GRM::ETextureFormat::eR32G32B32A32_FLOAT:
         return DXGI_FORMAT_R32G32B32A32_FLOAT;
     case GRM::ETextureFormat::eR32_UINT:
         return DXGI_FORMAT_R32_UINT;
     case GRM::ETextureFormat::eR32G32_UINT:
         return DXGI_FORMAT_R32G32_UINT;
+    case GRM::ETextureFormat::eR32G32B32_UINT:
+        return DXGI_FORMAT_R32G32B32_UINT;
     case GRM::ETextureFormat::eR32G32B32A32_UINT:
         return DXGI_FORMAT_R32G32B32A32_UINT;
 
@@ -61,6 +65,15 @@ DXGI_FORMAT D3DGRM::ConvertToDxgiFormat(GRM::ETextureFormat format)
         return DXGI_FORMAT_D24_UNORM_S8_UINT;
     case GRM::ETextureFormat::eD16_UNORM:
         return DXGI_FORMAT_D16_UNORM;
+
+    case GRM::ETextureFormat::eR16_TYPELESS:
+        return DXGI_FORMAT_R16_TYPELESS;
+    case GRM::ETextureFormat::eR24G8_TYPELESS:
+        return DXGI_FORMAT_R24G8_TYPELESS;
+    case GRM::ETextureFormat::eR24_UNORM_X8_TYPELESS:
+        return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+    case GRM::ETextureFormat::eR32_TYPELESS:
+        return DXGI_FORMAT_R32_TYPELESS;
 
     case GRM::ETextureFormat::eBC1_UNORM:
         return DXGI_FORMAT_BC1_UNORM;
@@ -111,6 +124,7 @@ D3D12_RESOURCE_FLAGS D3DGRM::ConvertToResourceFlags(GRM::ETextureUsage usage)
     case GRM::ETextureUsage::eRenderTarget:
         return D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     case GRM::ETextureUsage::eDepthStencil:
+    case GRM::ETextureUsage::eDepthStencilShaderResource:
         return D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
     case GRM::ETextureUsage::eRenderTargetShaderResource:
         return D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -205,6 +219,11 @@ GPURESOURCE_MANAGER_API D3D12_RESOURCE_STATES D3DGRM::ConvertToD3DResourceState(
             return D3D12_RESOURCE_STATE_COPY_SOURCE;
         case EResourceState::eCopyDest:
             return D3D12_RESOURCE_STATE_COPY_DEST;
+        case EResourceState::ePixelShaderResource:
+            return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+        case EResourceState::eNonPixelShaderResource:
+            return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
         default:
             return D3D12_RESOURCE_STATE_COMMON;
         }
@@ -240,6 +259,11 @@ GPURESOURCE_MANAGER_API EResourceState D3DGRM::ConvertFromD3D12ResourceState(D3D
     case D3D12_RESOURCE_STATE_COPY_DEST:
         return EResourceState::eCopyDest;
 
+    case D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE:
+        return EResourceState::ePixelShaderResource;
+
+    case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
+        return EResourceState::eNonPixelShaderResource;
     default:
         // 매칭되는 상태가 없거나 복합 상태일 경우 기본값 반환
         return EResourceState::eNone;

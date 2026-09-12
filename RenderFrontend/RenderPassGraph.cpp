@@ -333,10 +333,18 @@ void Render::RenderPassGraph::Execute(const RenderPassExecuteContext &renderPass
                                .first.getResource();
         }
 
-        if (depthStencil && renderPassNode->mDepthStencilInfo.bClear)
+        const DepthStencilClearDesc &clearDesc = renderPassNode->mDepthStencilInfo.mDepthStencilClearDesc;
+        bool bDepthClear = clearDesc.mClearDepth;
+        bool bStencilClear = clearDesc.mClearStencil;
+        float depthClearValue = clearDesc.mDepth;
+        uint8_t stencilClearValue = clearDesc.mStencil;
+
+        bool bClearDepthStencil = bDepthClear || bStencilClear;
+
+        if (depthStencil && bClearDepthStencil)
         {
-            renderSystem->ClearDepthStencil(renderPassExecuteContext.mCommandContext, depthStencil,
-                                            renderPassNode->mDepthStencilInfo.mClearValue, viewportRect);
+            renderSystem->ClearDepthStencil(renderPassExecuteContext.mCommandContext, depthStencil, bDepthClear,
+                                            bStencilClear, depthClearValue, stencilClearValue, viewportRect);
         }
 
         // set
@@ -506,8 +514,8 @@ void Render::RenderPassGraph::SetRenderTarget(const std::string &texName, const 
 
     mResourceNodeTable[texName]->mResourceVersionList.push_back(std::move(ResourceNewVersion));
 }
-void Render::RenderPassGraph::SetDepthStencil(const std::string &texName, const std::string &passName, bool bClear,
-                                              float clearValue, bool bDepthWrite)
+void Render::RenderPassGraph::SetDepthStencil(const std::string &texName, const std::string &passName,
+                                              const DepthStencilClearDesc &depthStencilClearDesc, bool bDepthWrite)
 {
     std::unique_ptr<FrameGraphResourceVersion> ResourceNewVersion = std::make_unique<FrameGraphResourceVersion>();
     ResourceNewVersion->pProducer = mRenderPassNodeTable[passName];
@@ -522,11 +530,12 @@ void Render::RenderPassGraph::SetDepthStencil(const std::string &texName, const 
     mRenderPassNodeTable[passName]->mOutputLists.push_back({ResourceNewVersion.get(), ResourceNewVersion->mState});
 
     mRenderPassNodeTable[passName]->mDepthStencilInfo.mFrameGraphResourceVersion = ResourceNewVersion.get();
-    mRenderPassNodeTable[passName]->mDepthStencilInfo.bClear = bClear;
-    if (bClear)
-    {
-        mRenderPassNodeTable[passName]->mDepthStencilInfo.mClearValue = clearValue;
-    }
+    //  mRenderPassNodeTable[passName]->mDepthStencilInfo.bClear = bClear;
+    mRenderPassNodeTable[passName]->mDepthStencilInfo.mDepthStencilClearDesc = depthStencilClearDesc;
+    /*  if (bClear)
+      {
+          mRenderPassNodeTable[passName]->mDepthStencilInfo.mClearValue = clearValue;
+      }*/
     mResourceNodeTable[texName]->mResourceVersionList.push_back(std::move(ResourceNewVersion));
 }
 void Render::RenderPassGraph::Write(const std::string &texName, const std::string &passName,
@@ -554,7 +563,25 @@ void Render::RenderPassGraph::Read(const std::string &texName, const std::string
         // OR Creat
     }
 
-    mTexResourceTable[texName].second.mUsage = GRM::ETextureUsage::eRenderTargetShaderResource;
+    auto &usage = mTexResourceTable[texName].second.mUsage;
+    switch (usage)
+    {
+    case GRM::ETextureUsage::eRenderTarget:
+        usage =
+            GRM::ETextureUsage::eRenderTargetShaderResource; // 읽기까지한다는것임으로 렌더타킷이라는 용도가 추가된 설정
+
+        break;
+    case GRM::ETextureUsage::eDepthStencil:
+        usage = GRM::ETextureUsage::eDepthStencilShaderResource;
+        break;
+
+    case GRM::ETextureUsage::eRenderTargetShaderResource:
+    case GRM::ETextureUsage::eDepthStencilShaderResource:
+    case GRM::ETextureUsage::eShaderResource:
+        break;
+    }
+
+    mTexResourceTable[texName].second.mUsage = usage;
 
     FrameGraphResourceVersion *resourceVersion = mResourceNodeTable[texName]->mResourceVersionList.back().get();
     resourceVersion->Consumers.push_back(mRenderPassNodeTable[passName]);
@@ -666,9 +693,10 @@ void Render::RenderPassGraphBuilder::SetRenderTarget(const std::string &texName,
 }
 
 void Render::RenderPassGraphBuilder::SetDepthStencil(const std::string &texName, const std::string &passName,
-                                                     bool bClear, float clearValue, bool bDepthWrite)
+                                                     const DepthStencilClearDesc &depthStencilClearDesc,
+                                                     bool bDepthWrite)
 {
-    mRenderPassGraph->SetDepthStencil(texName, passName, bClear, clearValue, bDepthWrite);
+    mRenderPassGraph->SetDepthStencil(texName, passName, depthStencilClearDesc, bDepthWrite);
 }
 
 void Render::RenderPassGraphBuilder::Write(const std::string &texName, const std::string &passName,

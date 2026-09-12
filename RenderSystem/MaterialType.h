@@ -259,6 +259,17 @@ struct MaterialRenderSettingInfo
     EBlend mBlendSrc;
     EBlend mBlendDest;
     EBlendOp mBlendOp;
+
+    uint8_t mRenderTargetCount = 1;
+
+    GRM::ETextureFormat mRenderTargetFormat[8] = {
+        GRM::ETextureFormat::eR8G8B8A8_UNORM,
+    };
+
+    GRM::ETextureFormat mDepthStencilFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT;
+    int mDepthBias = 0.0f;
+    float mDepthBiasClamp = 0.0f;
+    float mSlopeScaledDepthBias = 0.0f;
 };
 
 struct MaterialShaderResourceInfoSet

@@ -24,6 +24,12 @@
 ### Scene Editor 
 ![Scene editor preview](Docs/Images/Preview.gif)
 
+
+### Game Scene Example
+![Game Scene Example](Docs/Images/GamePlayScene.gif)
+
+
+
 <details>
 <summary>더 많은 프리뷰 보기</summary>
 
