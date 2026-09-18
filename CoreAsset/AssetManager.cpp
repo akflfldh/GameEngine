@@ -320,16 +320,15 @@ void CoreAsset::AssetManager::SetAssetRawDataPath(const std::filesystem::path &p
     mRawDataPath = path;
 }
 
-std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(const std::filesystem::path &filePath,
-                                                                     const AssetImportContext &importContext)
+std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
+    const std::filesystem::path &filePath, const AssetImportContext &importContext,
+    const ImportExecutionContext &importExecutionContext)
 {
     // 임포팅이라면 절대경로
     if (mAssetImporterManager == nullptr)
         return {};
 
     // import
-    ImportExecutionContext importExecutionContext;
-    importExecutionContext.bEngineAsset = importContext.mEngineAsset;
     ImportPackage importPackage = mAssetImporterManager->Import(filePath, importExecutionContext);
     if (importPackage.mInteremdiateAssets.empty())
     {

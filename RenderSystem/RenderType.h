@@ -202,4 +202,16 @@ struct ResourceBarrier
     EResourceState mAfterState;
 };
 
+struct ComputeDispatchItem
+{
+    MaterialID mMaterialID;
+
+    BindingGpuResource mConstantBuffer;
+    GRM::IGpuResource *mInputTexture = nullptr;
+    GRM::IGpuResource *mOutputTexture = nullptr;
+
+    uint32_t mGroupCountX = 1;
+    uint32_t mGroupCountY = 1;
+    uint32_t mGroupCountZ = 1;
+};
 } // namespace Render

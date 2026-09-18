@@ -32,46 +32,41 @@ void Render::RenderEditOverlayPass::AddToGraph(RenderPassGraph &renderPassGraph,
         GetName(),
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
-            RenderResourceDesc outputTargetDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mDsvFormat = std::nullopt,
-                .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mUsage = GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
-            RenderResourceDesc outputDepthStencilDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mRtvFormat = std::nullopt,
-                .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mSrvFormat = std::nullopt,
-                .mUsage = GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget,
                                     passSetUpData.mBackBufferClearColor);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(),
-                                    DepthStencilClearDesc{.mClearDepth = true,
-                                                          .mClearStencil = true,
-                                                          .mDepth = 1.0f,
-                                                          .mStencil = 0},
-                                    true);
+            builder.SetDepthStencil(
+                pPass->mOutputDepthStencilName, pPass->GetName(),
+                DepthStencilClearDesc{.mClearDepth = true, .mClearStencil = true, .mDepth = 1.0f, .mStencil = 0}, true);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
     SetViewport({0, (float)passSetUpData.mWindowWidth, 0, (float)passSetUpData.mWindowHeight});
 }
 
 void Render::RenderEditOverlayPass::SetPassConstantBufferResource(Render::BindingGpuResource bindingConstnatBuffer) {}
-void Render::RenderEditOverlayPass::SetGlobalData(const Core::GlobalFrameData &globalFrameData)
+void Render::RenderEditOverlayPass::SetGlobalData(const RenderPassExecuteContext &renderPassExecuteContext)
 {
     EditorOverlayPassData mainConstantData;
     // 필요한 pass 데이터
-    mainConstantData.mViewProj = globalFrameData.mViewProj;
+    mainConstantData.mViewProj = renderPassExecuteContext.mGlobalFrameData.mViewProj;
 
     uint32_t bufferID = static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256);
     //    GetBufferID();
@@ -99,16 +94,16 @@ void Render::RenderEditOverlayPass::SetGlobalData(const Core::GlobalFrameData &g
     // 일반적인 MainPass들은 전체화면이라고생각
     //  최종
 
-    mPassData.mViewport = globalFrameData.mSceneViewport;
-    mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    mPassData.mViewport = renderPassExecuteContext.mGlobalSceneViewport;
+    // mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
+    // mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
 
     mPassData.mGlobalPassBufferResouce = mPassConstantBufferResource;
     mPassData.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
-    mPassData.mScissorRect.mLeft = globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    mPassData.mScissorRect.mTop = globalFrameData.mSceneViewport.TopLeftY;
-    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
+    mPassData.mScissorRect.mLeft = mPassData.mViewport.TopLeftX;
+    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + mPassData.mViewport.Width;
+    mPassData.mScissorRect.mTop = mPassData.mViewport.TopLeftY;
+    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + mPassData.mViewport.Height;
 }
 
 std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
@@ -177,7 +172,8 @@ std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
         //    }
 
         //    bindingGpuResource.mType = EShaderResourceType::eTexture;
-        //    bindingGpuResource.mName = bindingShaderResourceInfoSet.mObjectTextureShaderResourceInfoVector[i].mName;
+        //    bindingGpuResource.mName =
+        //    bindingShaderResourceInfoSet.mObjectTextureShaderResourceInfoVector[i].mName;
         //    renderItem.mBindingGpuResourceVector.push_back(std::move(bindingGpuResource));
         //}
 
@@ -187,7 +183,8 @@ std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
         //     uint32_t bufferID = bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mBufferID;
         //     Render::BindingGpuResource bindingGpuResource;
 
-        //    bindingGpuResource.mType = bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mType;
+        //    bindingGpuResource.mType =
+        //    bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mType;
 
         //    GRM::GpuBufferContext *gpuBufferContext = mGpuBufferContextSystem->GetGpuBufferContext(bufferID);
 
@@ -200,17 +197,19 @@ std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
 
         //    // bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mCreateBufferData(&command,
         //    // nullptr,
-        //    //                                                                                         pData.data());
+        //    // pData.data());
 
         //    Render::StaticMeshGizmoData objectData;
 
         //    mRenderUploadManager->UploadStaticMeshGizmoData(command, objectData);
         //    // upload
         //    mGpuResourceManager->UploadBufferData(gpuBufferContext->mGpuBuffer, &objectData,
-        //                                          gpuBufferContext->mBufferDesc.mElementDataSize, 1, bufferOffset);
+        //                                          gpuBufferContext->mBufferDesc.mElementDataSize, 1,
+        //                                          bufferOffset);
 
         //    bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
-        //    bindingGpuResource.mName = bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mName;
+        //    bindingGpuResource.mName =
+        //    bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mName;
         //    bindingGpuResource.mOffset = bufferIndexOffset;
 
         //    renderItem.mBindingGpuResourceVector.push_back(std::move(bindingGpuResource));
@@ -229,7 +228,7 @@ void Render::RenderEditOverlayPass::Execute(const RenderPassExecuteContext &rend
 
     IRenderSystem *renderSystem = renderPassExecuteContext.renderSystem;
 
-    SetGlobalData(renderPassExecuteContext.mGlobalFrameData);
+    SetGlobalData(renderPassExecuteContext);
     renderSystem->SetUpPassData(renderPassExecuteContext.mCommandContext,
                                 mPassData); // target binding , 전역 pass buffer binding 등등이
 

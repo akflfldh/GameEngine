@@ -86,6 +86,7 @@ void D3DRender::D3DRenderSystem::StartWindow(Core::CommandContext *commandContex
 
     auto materialManager = static_cast<D3DMaterialManager *>(D3DMaterialManager::GetInstance());
     commandList->SetGraphicsRootSignature(materialManager->GetMasterRootSignature());
+    commandList->SetComputeRootSignature(materialManager->GetMasterComputeRootSignature());
 
     // window curr back buffer를 렌더타켓상태로 전환
     std::shared_ptr<D3DWindowRenderData> windowRenderData =
@@ -492,6 +493,26 @@ void D3DRender::D3DRenderSystem::SetRenderTarget(Core::CommandContext *commandCo
     commandList->OMSetRenderTargets(renderTargetNums, renderTargetCpuHandlePtr, true, depthStencilCpuHandlePtr);
 }
 
+void D3DRender::D3DRenderSystem::Dispatch(Core::CommandContext *commandContext,
+                                          const Render::ComputeDispatchItem &dispatchItem)
+{
+    Core::D3DCommandContext *d3dCommandContext = static_cast<Core::D3DCommandContext *>(commandContext);
+    ID3D12GraphicsCommandList *commandList = d3dCommandContext->GetCommandList();
+
+    MaterialItem *currMaterialItem = mMaterialManager->GetMaterialItem(dispatchItem.mMaterialID);
+
+    if (currMaterialItem == nullptr)
+        return;
+
+    // ROOTSignature어떻게 바인딩할거냐
+
+    commandList->SetPipelineState(currMaterialItem->mPso);
+
+    BindComputeShaderResources(commandList, dispatchItem);
+
+    commandList->Dispatch(dispatchItem.mGroupCountX, dispatchItem.mGroupCountY, dispatchItem.mGroupCountZ);
+}
+
 void D3DRender::D3DRenderSystem::BindPSOIfNeeded(ID3D12GraphicsCommandList *commandList,
                                                  const Render::RenderItem *beforeRenderItem,
                                                  const Render::RenderItem *currRenderItem,
@@ -731,14 +752,17 @@ void D3DRender::D3DRenderSystem::BindGlobalShaderResource(ID3D12GraphicsCommandL
 {
 
     // 전역버퍼 바인딩 . 무조건 0번 슬롯 (루트파라미터)
+    if (mCurrPassFrameContext.mGlobalPassBufferResouce.gpuResource != nullptr)
+    {
 
-    D3DGRM::D3DGpuConstantBuffer *passBuffer =
-        static_cast<D3DGRM::D3DGpuConstantBuffer *>(mCurrPassFrameContext.mGlobalPassBufferResouce.gpuResource);
+        D3DGRM::D3DGpuConstantBuffer *passBuffer =
+            static_cast<D3DGRM::D3DGpuConstantBuffer *>(mCurrPassFrameContext.mGlobalPassBufferResouce.gpuResource);
 
-    D3D12_GPU_VIRTUAL_ADDRESS passBufferGpuAddr =
-        passBuffer->GetResource()->GetGPUVirtualAddress() + mCurrPassFrameContext.mGlobalPassBufferResouce.mOffset;
+        D3D12_GPU_VIRTUAL_ADDRESS passBufferGpuAddr =
+            passBuffer->GetResource()->GetGPUVirtualAddress() + mCurrPassFrameContext.mGlobalPassBufferResouce.mOffset;
 
-    commandList->SetGraphicsRootConstantBufferView(0, passBufferGpuAddr);
+        commandList->SetGraphicsRootConstantBufferView(0, passBufferGpuAddr);
+    }
 
     if (mCurrPassFrameContext.mGlobalStructuredBufferResource.gpuResource)
     {
@@ -829,6 +853,33 @@ D3D12_RECT D3DRender::D3DRenderSystem::ConvertToD3DRect(const Render::RECT &rect
     d3dRect.top = rect.mTop;
     d3dRect.bottom = rect.mBottom;
     return d3dRect;
+}
+
+void D3DRender::D3DRenderSystem::BindComputeShaderResources(ID3D12GraphicsCommandList *commandList,
+                                                            const Render::ComputeDispatchItem &dispatchItem)
+{
+
+    // buffer - 0
+    D3DGRM::D3DGpuConstantBuffer *d3dConstantBuffer =
+        (D3DGRM::D3DGpuConstantBuffer *)(dispatchItem.mConstantBuffer.gpuResource);
+
+    const size_t stride = d3dConstantBuffer->GetConstnatBufferSize();
+    const uint32_t index = static_cast<uint32_t>(dispatchItem.mConstantBuffer.mOffset / stride);
+
+    D3DGRM::D3DDescriptorHandle handle = d3dConstantBuffer->GetConstantDescriptorHandle(index);
+    commandList->SetComputeRootDescriptorTable(0, handle.mGpuDescriptorHandle);
+
+    // input tex - 1
+    D3DGRM::D3DGpuTexture *inputTexture = (D3DGRM::D3DGpuTexture *)(dispatchItem.mInputTexture);
+    D3DGRM::D3DDescriptorHandle inputTexHandle;
+    inputTexture->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, inputTexHandle);
+    commandList->SetComputeRootDescriptorTable(1, inputTexHandle.mGpuDescriptorHandle);
+
+    // output tex - 2
+    D3DGRM::D3DGpuTexture *outputTexture = (D3DGRM::D3DGpuTexture *)(dispatchItem.mOutputTexture);
+    D3DGRM::D3DDescriptorHandle outputTexHandle;
+    outputTexture->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eUAV, outputTexHandle);
+    commandList->SetComputeRootDescriptorTable(2, outputTexHandle.mGpuDescriptorHandle);
 }
 
 #pragma endregion

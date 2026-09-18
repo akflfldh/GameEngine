@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <Core/CoreType.h>
 #include <CoreAsset/AssetType.h>
 #include <CoreMath/CoreMath.h>
 #include <EditorDirector/IInspector.h>
@@ -52,6 +53,11 @@ class MapSettingUIController : public IInspector
     CoreAsset::AssetID GetSkySphereTexture() const;
     void SetSkySphereTexture(CoreAsset::AssetID id);
 
+    float GetExposure() const;
+    void SetExposure(float v);
+
+    Core::PostProcessingSettings GetPostProcessingSettings() const;
+
   private:
     UI::UICanvas *mCanvas = nullptr;
     Map *mTargetMap = nullptr;
@@ -63,5 +69,6 @@ class MapSettingUIController : public IInspector
 
     UIReflectVector3Panel *mAmbientColorPanel = nullptr;
     UIReflectFloatPanel *mAmbientIntensityPanel = nullptr;
+    UIReflectFloatPanel *mExposurePanel = nullptr;
     UIReflectTextureSlotPanel *mSkySphereTextureSlotPanel = nullptr;
 };

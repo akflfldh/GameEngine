@@ -16,6 +16,7 @@ class UIScrollBox;
 class UIAssetSlotListPanel;
 class UIReflectFloatPanel;
 class UIReflectVector3Panel;
+class UIAssetSlotPanel;
 
 struct MaterialEditData
 {
@@ -27,6 +28,9 @@ struct MaterialEditData
 
     float mMetallic = 0.0f;
     float mRoughness = 0.4f;
+
+    CoreMath::Vector3 mEmissiveColor = {0, 0, 0};
+    float mEmissiveIntensity = 1.0f;
 
     bool mUseExplicitGpuMaterial = false;
 
@@ -54,6 +58,7 @@ class MaterialEditUIController
 
     void OnClickedDiffuseMapAddButtotn();
     void OnDiffuseMapDropped(CoreAsset::AssetID id, int index);
+    void OnNormalMapDropped(CoreAsset::AssetID id);
 
     //    void CopyTargetMaterial();
 
@@ -66,10 +71,16 @@ class MaterialEditUIController
     CoreMath::Vector3 GetDiffuseColor() const;
     float GetDiffuseFactor() const;
     float GetRoughness() const;
+    float GetMetalic() const;
+    CoreMath::Vector3 GetEmissiveColor() const;
+    float GetEmissiveIntensity() const;
 
     void SetDiffuseColor(const CoreMath::Vector3 &value);
     void SetDiffuseFactor(float value);
     void SetRoughness(float value);
+    void SetMetalic(float value);
+    void SetEmissiveColor(const CoreMath::Vector3 &value);
+    void SetEmissiveIntensity(float value);
 
     UIReflectVector3Panel *CreateVector3ReflectPanel(const std::string &tagText,
                                                      std::function<CoreMath::Vector3()> getter,
@@ -85,10 +96,13 @@ class MaterialEditUIController
     CoreAsset::Material *mPreviewMaterial = nullptr;
     UIScrollBox *mScrollBox = nullptr;
     UIAssetSlotListPanel *mDiffuseMapListSlotPanel = nullptr;
-
+    UIAssetSlotPanel *mNormalMapSlotPanel = nullptr;
     MaterialEditData mMaterialEditData;
 
     UIReflectVector3Panel *mDiffuseColorReflectPanel = nullptr;
     UIReflectFloatPanel *mDiffuseFactorReflectPanel = nullptr;
     UIReflectFloatPanel *mRoughnessReflectPanel = nullptr;
+    UIReflectFloatPanel *mMetalicReflectPanel = nullptr;
+    UIReflectVector3Panel *mEmissiveColorReflectPanel = nullptr;
+    UIReflectFloatPanel *mEmissiveIntensityReflectPanel = nullptr;
 };

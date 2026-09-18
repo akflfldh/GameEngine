@@ -37,46 +37,41 @@ void Render::RenderOutlinePass::AddToGraph(RenderPassGraph &renderPassGraph, con
         GetName(),
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
-            RenderResourceDesc outputTargetDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mDsvFormat = std::nullopt,
-                .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mUsage = GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
-            RenderResourceDesc outputDepthStencilDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mRtvFormat = std::nullopt,
-                .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mSrvFormat = std::nullopt,
-                .mUsage = GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget,
                                     passSetUpData.mBackBufferClearColor);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(),
-                                    DepthStencilClearDesc{.mClearDepth = true,
-                                                          .mClearStencil = true,
-                                                          .mDepth = 1.0f,
-                                                          .mStencil = 0},
-                                    true);
+            builder.SetDepthStencil(
+                pPass->mOutputDepthStencilName, pPass->GetName(),
+                DepthStencilClearDesc{.mClearDepth = true, .mClearStencil = true, .mDepth = 1.0f, .mStencil = 0}, true);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
     SetViewport({0, (float)passSetUpData.mWindowWidth, 0, (float)passSetUpData.mWindowHeight});
 }
 void Render::RenderOutlinePass::SetPassConstantBufferResource(Render::BindingGpuResource bindingConstnatBuffer) {}
-void Render::RenderOutlinePass::SetGlobalData(const Core::GlobalFrameData &globalFrameData)
+void Render::RenderOutlinePass::SetGlobalData(const RenderPassExecuteContext &executeContext)
 {
 
     OutlineConstantData constantData;
     // 필요한 pass 데이터
-    constantData.mViewProj = globalFrameData.mViewProj;
+    constantData.mViewProj = executeContext.mGlobalFrameData.mViewProj;
 
     uint32_t bufferID = static_cast<uint8_t>(EDefaultGpuBufferType::eConstantPass256);
     // GetBufferID();
@@ -104,16 +99,17 @@ void Render::RenderOutlinePass::SetGlobalData(const Core::GlobalFrameData &globa
     // 일반적인 MainPass들은 전체화면이라고생각
     //  최종
 
-    mPassData.mViewport = globalFrameData.mSceneViewport;
-    mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    mPassData.mViewport = executeContext.mGlobalSceneViewport;
+    // mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
+    //   mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
 
     mPassData.mGlobalPassBufferResouce = mPassConstantBufferResource;
     mPassData.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
-    mPassData.mScissorRect.mLeft = globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    mPassData.mScissorRect.mTop = globalFrameData.mSceneViewport.TopLeftY;
-    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
+    mPassData.mScissorRect.mLeft = mPassData.mViewport.TopLeftX;
+    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + mPassData.mViewport.Width;
+
+    mPassData.mScissorRect.mTop = mPassData.mViewport.TopLeftY;
+    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + mPassData.mViewport.Height;
 }
 std::vector<Render::RenderItem> Render::RenderOutlinePass::BuildRenderItem(
     const Render::RenderPassExecuteContext &executeContext)
@@ -231,7 +227,7 @@ void Render::RenderOutlinePass::Execute(const RenderPassExecuteContext &renderPa
 
     IRenderSystem *renderSystem = renderPassExecuteContext.renderSystem;
 
-    SetGlobalData(renderPassExecuteContext.mGlobalFrameData);
+    SetGlobalData(renderPassExecuteContext);
     renderSystem->SetUpPassData(renderPassExecuteContext.mCommandContext,
                                 mPassData); // target binding , 전역 pass buffer binding 등등이
 

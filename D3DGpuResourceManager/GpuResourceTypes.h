@@ -11,5 +11,6 @@ enum class EResourceState
     eWriteDepthStencil,
     eReadDepthStencil,
     ePixelShaderResource,
-    eNonPixelShaderResource
+    eNonPixelShaderResource,
+    eUnorderedAccess
 };

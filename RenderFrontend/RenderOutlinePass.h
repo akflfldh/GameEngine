@@ -21,7 +21,7 @@ class RenderOutlinePass : public IRenderPass
 
     virtual void Execute(const RenderPassExecuteContext &) override;
     void SetPassConstantBufferResource(Render::BindingGpuResource bindingConstnatBuffer);
-    void SetGlobalData(const Core::GlobalFrameData &globalFrameData);
+    void SetGlobalData(const RenderPassExecuteContext &renderPassExecuteContext);
 
   private:
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &executeContext);

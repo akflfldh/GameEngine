@@ -42,6 +42,8 @@ class IRenderPass
     void SetOutputTarget(const std::string &name);
     void SetOutputDepthStencil(const std::string &name);
 
+    const std::string &GetOutputTargetName() const;
+
     virtual void AddToGraph(RenderPassGraph &renderPassGraph, const RenderPassSetUpData &passSetUpData) = 0;
 
     virtual void Execute(const RenderPassExecuteContext &) = 0;

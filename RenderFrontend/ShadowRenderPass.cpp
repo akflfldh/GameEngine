@@ -46,7 +46,8 @@ void Render::ShadowRenderPass::AddToGraph(RenderPassGraph &renderPassGraph, cons
                                                          .mRtvFormat = std::nullopt,
                                                          .mDsvFormat = GRM::ETextureFormat::eD32_FLOAT,
                                                          .mSrvFormat = GRM::ETextureFormat::eR32_FLOAT,
-                                                         .mUsage = GRM::ETextureUsage::eDepthStencilShaderResource};
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil |
+                                                                   GRM::ETextureUsage::eShaderResource};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 

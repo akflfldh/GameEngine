@@ -27,35 +27,31 @@ void Render::DebugLineRenderPass::AddToGraph(RenderPassGraph &renderPassGraph, c
         GetName(),
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
-            RenderResourceDesc outputTargetDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mDsvFormat = std::nullopt,
-                .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mUsage = GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
-            RenderResourceDesc outputDepthStencilDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mRtvFormat = std::nullopt,
-                .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mSrvFormat = std::nullopt,
-                .mUsage = GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
 
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget,
                                     passSetUpData.mBackBufferClearColor);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(),
-                                    DepthStencilClearDesc{.mClearDepth = false,
-                                                          .mClearStencil = false,
-                                                          .mDepth = 1.0f,
-                                                          .mStencil = 0},
-                                    false);
+            builder.SetDepthStencil(
+                pPass->mOutputDepthStencilName, pPass->GetName(),
+                DepthStencilClearDesc{.mClearDepth = false, .mClearStencil = false, .mDepth = 1.0f, .mStencil = 0},
+                false);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
     SetViewport({0, (float)passSetUpData.mWindowWidth, 0, (float)passSetUpData.mWindowHeight});
@@ -101,15 +97,17 @@ void Render::DebugLineRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
 
     oFrameContext.mGlobalPassBufferResouce = mPassConstantBufferResouce;
     oFrameContext.mViewport = globalFrameData.mSceneViewport;
-    oFrameContext.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    oFrameContext.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    oFrameContext.mViewport.TopLeftX = executeContext.mGlobalSceneViewport.TopLeftX;
+   
+    oFrameContext.mViewport.TopLeftY = executeContext.mGlobalSceneViewport.TopLeftY;
+
+    globalFrameData.mSceneViewport.TopLeftY;
 
     oFrameContext.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
-    oFrameContext.mScissorRect.mLeft =
-        globalFrameData.mSceneViewport.TopLeftX; //  globalFrameData.mSceneViewport.TopLeftX;
+    oFrameContext.mScissorRect.mLeft = oFrameContext.mViewport.TopLeftX;
+    ; //  globalFrameData.mSceneViewport.TopLeftX;
     oFrameContext.mScissorRect.mRight = oFrameContext.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    oFrameContext.mScissorRect.mTop =
-        globalFrameData.mSceneViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
+    oFrameContext.mScissorRect.mTop = oFrameContext.mViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
     oFrameContext.mScissorRect.mBottom = oFrameContext.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
 }
 

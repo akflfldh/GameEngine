@@ -40,6 +40,7 @@ class ClassListUIScrollPanel;
 class Prefab;
 class UIEditorDebugHUD;
 class MapPlaySettingPanel;
+class MaterialCreationManager;
 
 class DefaultEditUIContext
 {
@@ -175,6 +176,7 @@ class GlobalOverlayManager
     std::vector<Core::ObjectSourceCandidate> BuildObjectControllerSourceCandidateList();
 
     void StartImport();
+    void StartCreatingMaterial();
 
     void UpdateDragDropMainWindowState(Core::LogicalWindow *hitWindow);
 
@@ -232,4 +234,6 @@ class GlobalOverlayManager
     MapPlaySettingPanel *mMapPlaySettingPanel = nullptr;
 
     PrefabEditUIContext mPrefabEditUIContext;
+
+    MaterialCreationManager *mMaterialCreationManager = nullptr;
 };

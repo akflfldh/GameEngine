@@ -23,6 +23,12 @@ void Quad::EditorAssetImporterManager::Initialize(UI::UICanvas *canvas)
     mUIController->Initialize(canvas);
 
     mUIController->mOnClickedExitButtonCallbackSystem.Register([this]() { OnClickedExitButton(); });
+
+    mSettingUIController = ImportTaskSettingUIController::GetInstance();
+    mSettingUIController->Initialize(canvas);
+    mSettingUIController->mOnClickedImportRequestButtonCallbackSystem.Register(
+        [this](const EditorImportRequest &importRequest) { StartImport(importRequest); });
+
     mFinalizer = EditorAssetImportFinalizer::GetInstance();
 }
 
@@ -54,14 +60,18 @@ void Quad::EditorAssetImporterManager::Update()
     }
 }
 
-void Quad::EditorAssetImporterManager::RequestImport(const char *file, bool bEngine)
+void Quad::EditorAssetImporterManager::RequestImport(const std::filesystem::path file, bool bEngine)
 {
-    SetActiveState(true);
+    // SetActiveState(true);
 
-    // pre
-    PreProcess(bEngine);
+    // 파일확장자로 asset 타입 확인
 
-    mImportTaskHandle = mImporterModule->RequestImport(file, bEngine);
+    // Importer setthing 창 활성화
+    mSettingUIController->OpenSettingPanel(file, bEngine);
+    // 또는 임포트 요청버튼에 콜백등록
+    //  사용자가 설정
+
+    // 설정값을 rquest로 복사(snapshot)
 }
 
 ImportResult Quad::EditorAssetImporterManager::RequestImportSync(const std::filesystem::path &file, bool bEngine)
@@ -153,4 +163,17 @@ void Quad::EditorAssetImporterManager::OnClickedExitButton()
 {
     SetActiveState(false);
     // 마우스캡처 풀기 등등
+}
+
+void Quad::EditorAssetImporterManager::StartImport(const EditorImportRequest &importRequest)
+{
+
+    // 비동기 임포트
+    SetActiveState(true);
+
+    // pre
+    PreProcess(importRequest.bEngine);
+
+    // request정보를 넘긴다.
+    mImportTaskHandle = mImporterModule->RequestImport(importRequest);
 }

@@ -4,6 +4,7 @@
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
 #include <CoreAsset/StaticMesh.h>
+#include <EditorDirector/UIAssetSlotPanel.h>
 #include <EditorDirector/UIDropdown.h>
 #include <EditorDirector/UIFoldoutPanel.h>
 #include <EditorInspectorUtility.h>
@@ -191,52 +192,69 @@ void StaticMeshComponentUIReflectPanel::BindProperty(void *targetMemory, Quad::P
 
 void StaticMeshComponentUIReflectPanel::Release() {}
 
-UI::UIImage *StaticMeshComponentUIReflectPanel::CreateSubMaterialPanel()
+UI::UIImage *StaticMeshComponentUIReflectPanel::CreateSubMaterialPanel(const std::string &matName)
 {
 
-    auto subMatPanel = mMaterialPanel->CreateChildUIElement<UI::UIImage>("SubMatPanel");
+    auto subMatPanel = mMaterialPanel->CreateChildUIElement<UIAssetSlotPanel>("SubMatPanel");
+    subMatPanel->SetDragPayloadType(EDragDropType::eAssetMaterial);
     subMatPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
-    subMatPanel->SetWidth(600);
+    subMatPanel->SetWidth(mMaterialPanel->GetWidth());
     subMatPanel->SetHeight(150.0f);
+    subMatPanel->SetTagText("머터리얼  : " + matName);
     // subMatPanel->SetColor(0.4f, 0.4f, 0.4f);
 
-    auto imagePanel = subMatPanel->CreateChildUIElement<UI::UIImage>("SubMatImagePanel");
-    imagePanel->SetSize(100, 100);
-    imagePanel->SetPositionLocal({10, 30});
+    //  auto imagePanel = subMatPanel->CreateChildUIElement<UI::UIImage>("SubMatImagePanel");
+    //   imagePanel->SetSize(100, 100);
+    //   imagePanel->SetPositionLocal({10, 30});
 
-    UIDropTargetComponent *dropTargetCom = imagePanel->CreateUIComponent<UIDropTargetComponent>("DropTargetComponent");
+    //  UIDropTargetComponent *dropTargetCom =
+    //  imagePanel->CreateUIComponent<UIDropTargetComponent>("DropTargetComponent");
 
     int index = mSubMaterialPanelList.size();
+    // auto namePanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatNamePanel");
+    //// namePanel->SetFontSize(20.0f);
+    // namePanel->SetPositionLocal(100, 0);
 
-    dropTargetCom->mOnDroppedPayloadCallbackSystem.Register([this, index](const DragPayload &payload)
-                                                            { DropMaterialPayload(payload, index); });
+    subMatPanel->mOnDroppedAssetCallbackSystem.Register([this, index](CoreAsset::AssetID id)
+                                                        { OnDropMaterialPayload(id, index); });
 
     // imagePanel. dragTargetCom .   callback
 
     mSubMaterialPanelList.push_back(subMatPanel);
 
-    auto tagPanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatTagPanel");
-    tagPanel->SetText("머터리얼");
-    tagPanel->SetPositionLocal(10, 0);
-    //  tagPanel->SetFontSize(20.0f);
-    auto namePanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatNamePanel");
-    // namePanel->SetFontSize(20.0f);
-    namePanel->SetPositionLocal(100, 0);
+    // auto tagPanel = subMatPanel->CreateChildUIElement<UI::UIText>("SubMatTagPanel");
+    // tagPanel->SetText("머터리얼");
+    // tagPanel->SetPositionLocal(10, 0);
+    //   tagPanel->SetFontSize(20.0f);
+
     // namePanel->SetTextColor({1, 1, 1});
     return nullptr;
 }
 
-void StaticMeshComponentUIReflectPanel::DropMaterialPayload(const DragPayload &payload, int index)
+void StaticMeshComponentUIReflectPanel::OnDropMaterialPayload(CoreAsset::AssetID id, int index)
 {
 
-    if (payload.mType != EDragDropType::eAssetMaterial)
-    {
-        return;
-    }
+    /*   if (payload.mType != EDragDropType::eAssetMaterial)
+       {
+           return;
+       }*/
 
-    //  auto assetManager = CoreAsset::AssetManager::GetInstance();
-    mDestMeshComponent->SetSubMeshMaterial(index, payload.mAssetID);
+    auto assetManager = CoreAsset::AssetManager::GetInstance();
+    auto material = static_cast<CoreAsset::Material *>(assetManager->GetAsset<CoreAsset::Material>(id).Get());
+
+    if (material == nullptr)
+        return;
+
+    mDestMeshComponent->SetSubMeshMaterial(index, id);
     Quad::CommitInspectorEdit(mDestMeshComponent);
+
+    std::string tag = "머터리얼 : ";
+    tag += material->GetName().c_str();
+
+    mSubMaterialPanelList[index]->SetTagText(tag.c_str());
+
+    //    mSubMaterialPanelList[index]->SetSlotImage()
+    // mSubMaterialPanelList[index]
 
     return;
 }
@@ -286,7 +304,8 @@ void StaticMeshComponentUIReflectPanel::BuildComponentMesh()
 
         for (int i = 0; i < m; ++i)
         {
-            CreateSubMaterialPanel();
+            // subMatVec[i].Get()->GetName();
+            CreateSubMaterialPanel(subMatVec[i].Get()->GetName().c_str());
         }
 
         for (int i = 0; i < subMatVec.size(); ++i)
@@ -301,7 +320,7 @@ void StaticMeshComponentUIReflectPanel::BuildComponentMesh()
         CoreAsset::Material *mat = static_cast<CoreAsset::Material *>(matPtr.Get());
     }
 }
-void StaticMeshComponentUIReflectPanel::SetSubMaterialPanelNameText(UI::UIImage *subMaterialPanel,
+void StaticMeshComponentUIReflectPanel::SetSubMaterialPanelNameText(UIAssetSlotPanel *subMaterialPanel,
                                                                     const std::string &name)
 {
     if (subMaterialPanel == nullptr)

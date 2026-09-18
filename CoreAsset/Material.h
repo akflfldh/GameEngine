@@ -84,11 +84,15 @@ class CORE_ASSET_API Material : public Asset
     void SetSpecular(const CoreMath::Vector3 &specular);
     void SetSpecularFactor(float factor);
     void SetAmbient(const CoreMath::Vector3 &ambient);
+    void SetEmissiveColor(const CoreMath::Vector3 &color);
+    void SetEmissiveIntensity(float intensity);
 
     float GetDiffuseFactor() const;
     CoreMath::Vector3 GetSpecular() const;
     float GetSpecularFactor() const;
     CoreMath::Vector3 GetAmbient() const;
+    CoreMath::Vector3 GetEmissiveColor() const;
+    float GetEmissiveIntensity() const;
 
     void SetUseExplicitGpuMaterial(bool flag);
     bool GetUseExplicitGpuMaterial() const;
@@ -127,6 +131,8 @@ class CORE_ASSET_API Material : public Asset
     CoreMath::Vector3 mSpecular;
     float mSpecularFactor = 1.0f;
     CoreMath::Vector3 mAmbient = {1, 1, 1};
+    CoreMath::Vector3 mEmissiveColor = {0, 0, 0};
+    float mEmissiveIntensity = 1.0f;
 
     bool mUseExplicitGpuMaterial = false;
 

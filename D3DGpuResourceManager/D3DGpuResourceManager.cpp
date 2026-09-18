@@ -133,16 +133,21 @@ void D3DGRM::D3DGpuResourceManager::ResizeSwapChainBackBuffer(const GRM::GRMPtr 
     D3DGpuTexture *texture = static_cast<D3DGpuTexture *>(resource.getResource());
 
     D3DGRM::D3DDescriptorHandle rtvHandle;
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+    rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    rtvDesc.Texture2D.MipSlice = 0;
+
     bool ret = texture->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eRTV, rtvHandle);
     if (ret == false)
     {
         rtvHandle = mRTVHeapManager->Allocate();
-        mDevice->CreateRenderTargetView(swapChainBuffer, nullptr, rtvHandle.mCpuDescriptorHandle);
+        mDevice->CreateRenderTargetView(swapChainBuffer, &rtvDesc, rtvHandle.mCpuDescriptorHandle);
         texture->SetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eRTV, rtvHandle);
     }
     else
     {
-        mDevice->CreateRenderTargetView(swapChainBuffer, nullptr, rtvHandle.mCpuDescriptorHandle);
+        mDevice->CreateRenderTargetView(swapChainBuffer, &rtvDesc, rtvHandle.mCpuDescriptorHandle);
     }
 
     D3DGpuResource *generalResource = static_cast<D3DGpuResource *>(resource.getResource());
@@ -156,8 +161,13 @@ GRM::GRMPtr D3DGRM::D3DGpuResourceManager::RegisterSwapChainBackBuffer(void *res
     ID3D12Resource *swapChainBuffer = reinterpret_cast<ID3D12Resource *>(resoure);
     D3DDescriptorHandle rtvHandle = mRTVHeapManager->Allocate();
 
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+    rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    rtvDesc.Texture2D.MipSlice = 0;
+
     // 리소스가 이미있으니 rtvDesc를 설정하지않아도 되니 개선할것  - 일반 텍스처생성시에도
-    mDevice->CreateRenderTargetView(swapChainBuffer, nullptr, rtvHandle.mCpuDescriptorHandle);
+    mDevice->CreateRenderTargetView(swapChainBuffer, &rtvDesc, rtvHandle.mCpuDescriptorHandle);
 
     D3DGpuTexture *texture = new D3DGpuTexture(swapChainBuffer);
 
@@ -232,6 +242,12 @@ void D3DGRM::D3DGpuResourceManager::ChangeTextureData(const GRM::GRMPtr &texture
     if (ret)
     {
         ReleaseDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eDSV, handle);
+    }
+
+    ret = textureResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eUAV, handle);
+    if (ret)
+    {
+        ReleaseDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eUAV, handle);
     }
 
     textureResource->RemoveDescriptorHandleAll();
@@ -773,7 +789,27 @@ void D3DGRM::D3DGpuResourceManager::CreateTextureDescriptor(D3DGRM::D3DGpuTextur
                                                             const GRM::TextureDesc &textureDesc)
 {
 
-    switch (textureDesc.mTextureUsage)
+    if (GRM::HasAnyTextureUsage(textureDesc.mTextureUsage, GRM::ETextureUsage::eShaderResource))
+    {
+        CreateSrvHandle(texture, textureDesc);
+    }
+
+    if (GRM::HasAnyTextureUsage(textureDesc.mTextureUsage, GRM::ETextureUsage::eRenderTarget))
+    {
+        CreateRtvHandle(texture, textureDesc);
+    }
+
+    if (GRM::HasAnyTextureUsage(textureDesc.mTextureUsage, GRM::ETextureUsage::eDepthStencil))
+    {
+        CreateDsvHandle(texture, textureDesc);
+    }
+
+    if (GRM::HasAnyTextureUsage(textureDesc.mTextureUsage, GRM::ETextureUsage::eUnorderedAccessResource))
+    {
+        CreateUavHandle(texture, textureDesc);
+    }
+
+    /*switch (textureDesc.mTextureUsage)
     {
 
     case GRM::ETextureUsage::eShaderResource:
@@ -808,7 +844,7 @@ void D3DGRM::D3DGpuResourceManager::CreateTextureDescriptor(D3DGRM::D3DGpuTextur
         CreateSrvHandle(texture, textureDesc);
     }
     break;
-    }
+    }*/
 }
 
 void D3DGRM::D3DGpuResourceManager::CreateRtvHandle(D3DGRM::D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc)
@@ -1004,17 +1040,6 @@ void D3DGRM::D3DGpuResourceManager::CreateDsvHandle(D3DGpuTexture *texture, cons
         dsvDesc.Texture2DArray.FirstArraySlice = 0;
         break;
 
-    case D3D12_DSV_DIMENSION_TEXTURE2DMS:
-        // 멀티샘플링 2D 텍스처에 대한 DSV
-        // 별도 설정 없음
-        break;
-
-    case D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY:
-        // 멀티샘플링 2D 텍스처 배열에 대한 DSV
-        dsvDesc.Texture2DMSArray.ArraySize = 1;
-        dsvDesc.Texture2DMSArray.FirstArraySlice = 0;
-        break;
-
     default:
         // 정의되지 않은 경우
         break;
@@ -1027,6 +1052,75 @@ void D3DGRM::D3DGpuResourceManager::CreateDsvHandle(D3DGpuTexture *texture, cons
 
     // 핸들설정
     texture->SetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eDSV, handle);
+}
+
+void D3DGRM::D3DGpuResourceManager::CreateUavHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc)
+{
+
+    GRM::ETextureFormat format = textureDesc.mUavFormat.value_or(textureDesc.mScratchImage.mMetadata.mFormat);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+
+    uavDesc.Format = ConvertToDxgiFormat(format);
+    uavDesc.ViewDimension = ConvertToUAVDimension(textureDesc.mScratchImage.mMetadata.mDimension);
+
+    switch (uavDesc.ViewDimension)
+    {
+    case D3D12_UAV_DIMENSION_UNKNOWN:
+        // 처리할 수 없는 뷰
+        return;
+
+    case D3D12_UAV_DIMENSION_TEXTURE1D:
+        // 1D 텍스처에 대한 DSV
+        uavDesc.Texture1D.MipSlice = 0;
+        break;
+
+    case D3D12_UAV_DIMENSION_TEXTURE1DARRAY:
+        // 1D 텍스처 배열에 대한 DSV
+        uavDesc.Texture1DArray.MipSlice = 0;
+        uavDesc.Texture1DArray.ArraySize = 1;
+        uavDesc.Texture1DArray.FirstArraySlice = 0;
+        break;
+
+    case D3D12_UAV_DIMENSION_TEXTURE2D:
+        // 2D 텍스처에 대한 DSV
+        uavDesc.Texture2D.MipSlice = 0;
+        break;
+
+    case D3D12_UAV_DIMENSION_TEXTURE2DARRAY:
+        // 2D 텍스처 배열에 대한 DSV
+        uavDesc.Texture2DArray.MipSlice = 0;
+        uavDesc.Texture2DArray.ArraySize = 1;
+        uavDesc.Texture2DArray.FirstArraySlice = 0;
+        break;
+
+    // case D3D12_UAV_DIMENSION_TEXTURE2DMS:
+    //     // 멀티샘플링 2D 텍스처에 대한 DSV
+    //     // 별도 설정 없음
+    //     break;
+
+    // case D3D12_UAV_DIMENSION_TEXTURE2DMSARRAY:
+    //     // 멀티샘플링 2D 텍스처 배열에 대한 DSV
+    //     uavDesc.Texture2DMSArray.ArraySize = 1;
+    //     uavDesc.Texture2DMSArray.FirstArraySlice = 0;
+    //     break;
+    case D3D12_UAV_DIMENSION_TEXTURE3D:
+        uavDesc.Texture3D.MipSlice = 0;
+        uavDesc.Texture3D.FirstWSlice = 0;
+        uavDesc.Texture3D.WSize = static_cast<UINT>(textureDesc.mScratchImage.mMetadata.mDepth);
+        break;
+    default:
+        // 정의되지 않은 경우
+        return;
+    }
+
+    D3DGpuResource *resource = static_cast<D3DGpuResource *>(texture);
+
+    D3DDescriptorHandle handle = mCSUHeapManager->Allocate();
+    // 파이클입자 개발부터는 counterResource 매개변수가 nullptr이 아닌 설정필요할듯.
+    mDevice->CreateUnorderedAccessView(resource->GetResource().Get(), nullptr, &uavDesc, handle.mCpuDescriptorHandle);
+
+    // 핸들설정
+    texture->SetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eUAV, handle);
 }
 
 D3DGRM::D3DGpuTexture *D3DGRM::D3DGpuResourceManager::GenerateTextureObject(

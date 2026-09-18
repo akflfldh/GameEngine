@@ -152,6 +152,9 @@ class RENDER_FRONTEND_API RenderPipelineManager
     void CreateRenderCommands(World *world, RenderPassExecuteContext &executeContext);
 
     void BuildSkysphereSnapshot(World *world, RenderPassExecuteContext &executeContext);
+    void BuildPostProcessingSnapshot(World *world, RenderPassExecuteContext &executeContext);
+
+    MaterialRenderSnapshot GetMaterialSnapshot(CoreAsset::Material *mat) const;
 
   private:
     RenderContextPool mRenderContextPool;

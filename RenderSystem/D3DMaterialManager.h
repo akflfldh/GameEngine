@@ -92,9 +92,12 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
                                                           &info /*, uint8_t *pShader,
                       size_t shaderSize*/) override;
 
+    virtual Render::MaterialID CreateComputeMaterial(const Render::ComputeMaterialGenerationInfo &info) override;
+
     MaterialItem *GetMaterialItem(Render::MaterialID materialID) const;
 
     ID3D12RootSignature *GetMasterRootSignature() const;
+    ID3D12RootSignature *GetMasterComputeRootSignature() const;
 
 #pragma endregion
   private:
@@ -140,7 +143,8 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
 
   private:
 #pragma region refactoring
-    Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateRootMasterSignature();
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateMasterRootSignature();
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateMasterComputeRootSignature();
 
     // HLSL생성 + 컴파일
 
@@ -155,9 +159,15 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
     bool CompileHLSL(const Render::MaterialGenerationInfo &info /*, uint8_t *pShader, size_t size,*/,
                      std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> &oShaderTable);
 
+    Microsoft::WRL::ComPtr<ID3DBlob> CompileHLSL(const Render::ShaderSourceInfo &);
+
     ID3D12PipelineState *CreatePSO(const Render::MaterialGenerationInfo &info,
                                    const std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>
                                        &shaderTable /*필요한 데이터 받는다*/);
+
+    ID3D12PipelineState *CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info,
+                                          Microsoft::WRL::ComPtr<ID3DBlob> &csBlob);
+    ;
 
     D3D12_PRIMITIVE_TOPOLOGY_TYPE GetPrimitiveTopologyType(Render::EInputLayoutType inputLayoutType);
 
@@ -188,6 +198,7 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
     mutable std::vector<Render::MaterialID> mFreeMaterialIDVector;
 
     Microsoft::WRL::ComPtr<ID3D12RootSignature> mMasterRootSignature = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12RootSignature> mMasterComputeRootSignature = nullptr;
 
     // GRM::GRMPtr mDefaultSampler;		//테이블로 확장가능
 };

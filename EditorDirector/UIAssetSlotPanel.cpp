@@ -27,7 +27,7 @@ void UIAssetSlotPanel::OnBegin()
     // mTagText->SetFontSize(25.0f);
     mTagText->SetPositionLocal(posX, posY);
     // mTagText->SetSize(150.0f, 30.0f);
-    mTagText->SetWidth(150.0f);
+    mTagText->SetWidth(400.0f);
     mTagText->SetClipingMode(UI::EUITextClipingMode::eEllipsis);
     mTagText->SetOverflowMode(UI::EUITextOverflowMode::eOverflow);
     // mTagText->SetTextColor({1, 1, 1, 1});
@@ -36,18 +36,17 @@ void UIAssetSlotPanel::OnBegin()
     posY = UI::UIUtility::ShiftPosY(posY, mTagText, 10.0f);
 
     mAssetSlotImagePanel = CreateChildUIElement<UI::UIImage>("AssetSlotImagePanel");
-    mAssetSlotImagePanel->SetSize(150.0f, 150.0f);
+    mAssetSlotImagePanel->SetSize(100.0f, 100.0f);
     mAssetSlotImagePanel->SetPositionLocal(posX, posY);
     mAssetSlotImagePanel->SetColor(0.4f, 0.4f, 0.4f);
     mAssetSlotImagePanel->UseTexture(true);
-    UIDropTargetComponent *dropTargetCom =
-        mAssetSlotImagePanel->CreateUIComponent<UIDropTargetComponent>("DropTargetCom");
+    mDropTargetCom = mAssetSlotImagePanel->CreateUIComponent<UIDropTargetComponent>("DropTargetCom");
 
-    if (dropTargetCom)
+    if (mDropTargetCom)
     {
-        dropTargetCom->SetDragDropPayloadType(EDragDropType::eAssetTexture);
-        dropTargetCom->mOnDroppedPayloadCallbackSystem.Register([this](const DragPayload &payload)
-                                                                { OnDroppedPayload(payload); });
+        mDropTargetCom->SetDragDropPayloadType(mPayloadType);
+        mDropTargetCom->mOnDroppedPayloadCallbackSystem.Register([this](const DragPayload &payload)
+                                                                 { OnDroppedPayload(payload); });
     }
 }
 
@@ -76,8 +75,11 @@ void UIAssetSlotPanel::SetDragPayloadType(EDragDropType payloadType)
 {
 
     mPayloadType = payloadType;
+    if (mDropTargetCom)
+    {
+        mDropTargetCom->SetDragDropPayloadType(payloadType);
+    }
 }
-
 void UIAssetSlotPanel::SetSlotImage(CoreAsset::Texture *texture)
 {
 
@@ -107,5 +109,14 @@ void UIAssetSlotPanel::SetBackgroundColor(float r, float g, float b)
     if (mBackgroundPanel)
     {
         mBackgroundPanel->SetColor(r, g, b);
+    }
+}
+
+void UIAssetSlotPanel::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState)
+{
+
+    if (mBackgroundPanel)
+    {
+        mBackgroundPanel->SetColor(style.mBackgroundColor);
     }
 }

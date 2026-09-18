@@ -2,6 +2,7 @@
 #include "RenderDebugGridPass.h"
 #include <Core/LogicalWindow.h>
 #include <Core/Map.h>
+#include <Core/WindowedFrameController.h>
 #include <Core/World.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
@@ -9,6 +10,7 @@
 #include <CoreBase/CoreAssert.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <RenderFrontend/BillboardRenderPass.h>
+#include <RenderFrontend/BloomRenderPass.h>
 #include <RenderFrontend/DebugLineRenderPass.h>
 #include <RenderFrontend/GrayScaleRenderPass.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
@@ -22,6 +24,7 @@
 #include <RenderFrontend/RenderPipelineUI.h>
 #include <RenderFrontend/ShadowRenderPass.h>
 #include <RenderFrontend/SkySphereRenderPass.h>
+#include <RenderFrontend/ToneMappingRenderPass.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IRenderSystem.h>
 #include <RenderSystem/IWindowRenderManager.h>
@@ -48,7 +51,8 @@ bool Render::PooledRenderResource::isMatch(const RenderResourceDesc &rhs) const
         return false;
     if (mDesc.mSrvFormat != rhs.mSrvFormat)
         return false;
-
+    if (mDesc.mUavFormat != rhs.mUavFormat)
+        return false;
     return true;
 }
 
@@ -160,6 +164,7 @@ Render::PooledRenderResource *Render::RenderResourcePool::Create(const RenderRes
     textureDesc.mRtvFormat = desc.mRtvFormat;
     textureDesc.mDsvFormat = desc.mDsvFormat;
     textureDesc.mSrvFormat = desc.mSrvFormat;
+    textureDesc.mUavFormat = desc.mUavFormat;
 
     GRM::Image image;
     image.mFormat = desc.mResourceFormat;
@@ -334,15 +339,21 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
     //  RenderChannelID channelID = window->GetRenderChannelID();
 
     RenderPassSetUpData renderPassSetUpData;
+    RenderPassSetUpData renderPhysicsWindowPassSetUpData;
     std::pair<int, int> windowSize = window->mViewportController.GetWindowSize();
+    std::pair<int, int> physicsWindowSize = window->GetOwnerController()->GetWindowSize();
 
+    // logical window size
     renderPassSetUpData.mWindowWidth = windowSize.first;
     renderPassSetUpData.mWindowHeight = windowSize.second;
+    renderPhysicsWindowPassSetUpData.mWindowWidth = physicsWindowSize.first;
+    renderPhysicsWindowPassSetUpData.mWindowHeight = physicsWindowSize.second;
 
     const float *backBufferClearColor = window->GetBackBufferClearColor();
     for (int i = 0; i < 4; ++i)
     {
         renderPassSetUpData.mBackBufferClearColor[i] = backBufferClearColor[i];
+        renderPhysicsWindowPassSetUpData.mBackBufferClearColor[i] = backBufferClearColor[i];
     }
 
     RenderPassGraph *renderPassGraph = renderContext->mRenderPassGraph.get();
@@ -413,6 +424,35 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
 
         renderPassGraph->RegisterRenderPass(std::move(skySpherePass), skySpherePass->GetName(), renderPassSetUpData);
 
+        // Bloom horizontal
+        std::string bloomHorizontalOutputBufferName = "BloomHoriOutput";
+        std::unique_ptr<BloomRenderPass> bloomBrightHoriPass = std::make_unique<BloomRenderPass>();
+        bloomBrightHoriPass->SetPassName("BloomHorizontal");
+        bloomBrightHoriPass->SetInputTexSource(renderTargetTempBufferName);
+        bloomBrightHoriPass->SetOutputTarget(bloomHorizontalOutputBufferName);
+        renderPassGraph->RegisterRenderPass(std::move(bloomBrightHoriPass), bloomBrightHoriPass->GetName(),
+                                            renderPassSetUpData);
+
+        // Bloom vertical
+        std::string bloomVerticalOutputBufferName = "BloomVerOutput";
+        std::unique_ptr<BloomRenderPass> bloomVerPass = std::make_unique<BloomRenderPass>();
+        bloomVerPass->SetBloomStage(Render::BloomRenderPass::EBloomStage::eVertical);
+        bloomVerPass->SetPassName("BloomVertical");
+        bloomVerPass->SetInputTexSource(bloomHorizontalOutputBufferName);
+        bloomVerPass->SetOutputTarget(bloomVerticalOutputBufferName);
+        renderPassGraph->RegisterRenderPass(std::move(bloomVerPass), bloomVerPass->GetName(), renderPassSetUpData);
+
+        // Tone Mapping
+        std::unique_ptr<ToneMappingRenderPass> toneMappingPass = std::make_unique<ToneMappingRenderPass>();
+        toneMappingPass->SetInputSource(renderTargetTempBufferName);
+        toneMappingPass->SetInputSourceTwo(bloomVerticalOutputBufferName); // 두개 바인딩가능하게해야수정할것
+        toneMappingPass->SetOutputTarget(renderTargetBackBuffer);
+        toneMappingPass->SetOutputDepthStencil(depthStencilBuffer);
+        toneMappingPass->SetClearRenderTarget(true);
+
+        renderPassGraph->RegisterRenderPass(std::move(toneMappingPass), toneMappingPass->GetName(),
+                                            renderPassSetUpData);
+
         if (window->GetMap())
         {
 
@@ -421,59 +461,63 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
                     .size() != 0)
             {
                 std::unique_ptr<IRenderPass> outlinePass = std::make_unique<RenderOutlinePass>();
-                outlinePass->SetOutputTarget(renderTargetTempBufferName);
-                outlinePass->SetOutputDepthStencil(depthStencilTempBuffer);
+                outlinePass->SetOutputTarget(renderTargetBackBuffer);
+                outlinePass->SetOutputDepthStencil(depthStencilBuffer);
                 outlinePass->SetClearRenderTarget(false);
                 renderPassGraph->RegisterRenderPass(std::move(outlinePass), outlinePass->GetName(),
-                                                    renderPassSetUpData);
+                                                    renderPhysicsWindowPassSetUpData);
             }
         }
 
-        // UI Opaque
+        // 이후로도 깊이판정은 일단 임시 백버퍼 사용
+        //  UI Opaque
         std::unique_ptr<IRenderPass> mainOpaqueUIPass = std::make_unique<RenderPassUI>();
-        mainOpaqueUIPass->SetOutputTarget(renderTargetTempBufferName);
-        mainOpaqueUIPass->SetOutputDepthStencil(depthStencilTempBuffer);
+        mainOpaqueUIPass->SetOutputTarget(renderTargetBackBuffer);
+        mainOpaqueUIPass->SetOutputDepthStencil(depthStencilBuffer);
         mainOpaqueUIPass->SetClearRenderTarget(false);
 
         renderPassGraph->RegisterRenderPass(std::move(mainOpaqueUIPass), mainOpaqueUIPass->GetName(),
-                                            renderPassSetUpData);
+                                            renderPhysicsWindowPassSetUpData);
 
         // billboardRenderPass
         std::unique_ptr<IRenderPass> billboardPass = std::make_unique<BillboardRenderPass>();
-        billboardPass->SetOutputTarget(renderTargetTempBufferName);
-        billboardPass->SetOutputDepthStencil(depthStencilTempBuffer);
+        billboardPass->SetOutputTarget(renderTargetBackBuffer);
+        billboardPass->SetOutputDepthStencil(depthStencilBuffer);
         billboardPass->SetClearRenderTarget(false);
 
-        renderPassGraph->RegisterRenderPass(std::move(billboardPass), billboardPass->GetName(), renderPassSetUpData);
+        renderPassGraph->RegisterRenderPass(std::move(billboardPass), billboardPass->GetName(),
+                                            renderPhysicsWindowPassSetUpData);
 
         // debug line render pass
         std::unique_ptr<DebugLineRenderPass> debugLinePass = std::make_unique<DebugLineRenderPass>();
-        debugLinePass->SetOutputTarget(renderTargetTempBufferName);
-        debugLinePass->SetOutputDepthStencil(depthStencilTempBuffer);
+        debugLinePass->SetOutputTarget(renderTargetBackBuffer);
+        debugLinePass->SetOutputDepthStencil(depthStencilBuffer);
         debugLinePass->SetClearRenderTarget(false);
 
-        renderPassGraph->RegisterRenderPass(std::move(debugLinePass), debugLinePass->GetName(), renderPassSetUpData);
+        renderPassGraph->RegisterRenderPass(std::move(debugLinePass), debugLinePass->GetName(),
+                                            renderPhysicsWindowPassSetUpData);
 
         // editor overlay pass
         std::unique_ptr<RenderEditOverlayPass> editorOverlayPass = std::make_unique<RenderEditOverlayPass>();
-        editorOverlayPass->SetOutputTarget(renderTargetTempBufferName);
-        editorOverlayPass->SetOutputDepthStencil(depthStencilTempBuffer);
+        editorOverlayPass->SetOutputTarget(renderTargetBackBuffer);
+        editorOverlayPass->SetOutputDepthStencil(depthStencilBuffer);
         editorOverlayPass->SetClearRenderTarget(false);
 
         std::string editorOverlayPassName = editorOverlayPass->GetName();
 
-        renderPassGraph->RegisterRenderPass(std::move(editorOverlayPass), editorOverlayPassName, renderPassSetUpData);
+        renderPassGraph->RegisterRenderPass(std::move(editorOverlayPass), editorOverlayPassName,
+                                            renderPhysicsWindowPassSetUpData);
 
-        // Gray sacle Pass
-        std::unique_ptr<GrayScaleRenderPass> graySaclePass = std::make_unique<GrayScaleRenderPass>();
-        graySaclePass->SetInputSource(renderTargetTempBufferName);
-        graySaclePass->SetOutputTarget(renderTargetBackBuffer);
-        graySaclePass->SetOutputDepthStencil(depthStencilBuffer);
-        graySaclePass->SetClearRenderTarget(true);
+        //// Gray sacle Pass
+        // std::unique_ptr<GrayScaleRenderPass> graySaclePass = std::make_unique<GrayScaleRenderPass>();
+        // graySaclePass->SetInputSource(renderTargetTempBufferName);
+        // graySaclePass->SetOutputTarget(renderTargetBackBuffer);
+        // graySaclePass->SetOutputDepthStencil(depthStencilBuffer);
+        // graySaclePass->SetClearRenderTarget(true);
 
-        std::string grayScalePassName = graySaclePass->GetName();
+        // std::string grayScalePassName = graySaclePass->GetName();
 
-        renderPassGraph->RegisterRenderPass(std::move(graySaclePass), grayScalePassName, renderPassSetUpData);
+        // renderPassGraph->RegisterRenderPass(std::move(graySaclePass), grayScalePassName, renderPassSetUpData);
     }
 
     renderPassGraph->Compile();
@@ -736,6 +780,7 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
     // SkySphere snapShot
     BuildSkysphereSnapshot(world, executeContext);
+    BuildPostProcessingSnapshot(world, executeContext);
     // 분류된 Command 생성
 
     //<material handle, material >
@@ -777,33 +822,33 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
                 if (materialSnapshotTable.find(materialHandle) == materialSnapshotTable.end())
                 {
-                    // 더티 머터리얼 수집
-                    MaterialRenderSnapshot materialRenderSnapshot;
-                    materialRenderSnapshot.mHandle = materialHandle;
-                    materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() * material->GetDiffuseFactor();
-                    materialRenderSnapshot.mMetallic = material->GetMetallic();
-                    materialRenderSnapshot.mRoughness = material->GetRoughness();
-                    materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-                    materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
-                    materialRenderSnapshot.mShadingModel = material->GetShadingMode();
-                    materialRenderSnapshot.mAmbient = material->GetAmbient();
+                    //// 더티 머터리얼 수집
+                    // MaterialRenderSnapshot materialRenderSnapshot;
+                    // materialRenderSnapshot.mHandle = materialHandle;
+                    // materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() *
+                    // material->GetDiffuseFactor(); materialRenderSnapshot.mMetallic = material->GetMetallic();
+                    // materialRenderSnapshot.mRoughness = material->GetRoughness();
+                    // materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
+                    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
+                    // materialRenderSnapshot.mShadingModel = material->GetShadingMode();
+                    // materialRenderSnapshot.mAmbient = material->GetAmbient();
 
-                    for (const auto &texContext : material->GetAlbedoTexResourceList())
-                    {
-                        materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
-                    }
+                    // for (const auto &texContext : material->GetAlbedoTexResourceList())
+                    //{
+                    //     materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
+                    // }
 
-                    if (material->HasNormalMap())
-                    {
-                        materialRenderSnapshot.mNormalMap =
-                            material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
-                    }
-                    if (material->GetUploadDirty())
-                    {
-                        materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
-                    }
+                    // if (material->HasNormalMap())
+                    //{
+                    //     materialRenderSnapshot.mNormalMap =
+                    //         material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
+                    // }
+                    // if (material->GetUploadDirty())
+                    //{
+                    //     materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
+                    // }
 
-                    materialSnapshotTable[materialHandle] = materialRenderSnapshot;
+                    materialSnapshotTable[materialHandle] = GetMaterialSnapshot(material);
 
                     material->ClearUploadDirty();
                 }
@@ -865,32 +910,35 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
                 if (materialSnapshotTable.find(renderCommand.mMaterialHandle) == materialSnapshotTable.end())
                 {
-                    // 더티 머터리얼 수집
-                    MaterialRenderSnapshot materialRenderSnapshot;
-                    materialRenderSnapshot.mHandle = renderCommand.mMaterialHandle;
-                    materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() * material->GetDiffuseFactor();
-                    materialRenderSnapshot.mMetallic = material->GetMetallic();
-                    materialRenderSnapshot.mRoughness = material->GetRoughness();
-                    materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-                    materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
-                    materialRenderSnapshot.mShadingModel = material->GetShadingMode();
-                    materialRenderSnapshot.mAmbient = material->GetAmbient();
+                    //// 더티 머터리얼 수집
+                    // MaterialRenderSnapshot materialRenderSnapshot;
+                    // materialRenderSnapshot.mHandle = renderCommand.mMaterialHandle;
+                    // materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() *
+                    // material->GetDiffuseFactor(); materialRenderSnapshot.mMetallic = material->GetMetallic();
+                    // materialRenderSnapshot.mRoughness = material->GetRoughness();
+                    // materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
+                    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
+                    // materialRenderSnapshot.mShadingModel = material->GetShadingMode();
+                    // materialRenderSnapshot.mAmbient = material->GetAmbient();
 
-                    for (const auto &texContext : material->GetAlbedoTexResourceList())
-                    {
-                        materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
-                    }
+                    // for (const auto &texContext : material->GetAlbedoTexResourceList())
+                    //{
+                    //     materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
+                    // }
 
-                    if (material->HasNormalMap())
-                    {
-                        materialRenderSnapshot.mNormalMap =
-                            material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
-                    }
-                    if (material->GetUploadDirty())
-                    {
-                        materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
-                    }
-                    materialSnapshotTable[renderCommand.mMaterialHandle] = materialRenderSnapshot;
+                    // if (material->HasNormalMap())
+                    //{
+                    //     materialRenderSnapshot.mNormalMap =
+                    //         material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
+                    // }
+                    // if (material->GetUploadDirty())
+                    //{
+                    //     materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
+                    // }
+                    // materialSnapshotTable[renderCommand.mMaterialHandle] = materialRenderSnapshot;
+
+                    materialSnapshotTable[renderCommand.mMaterialHandle] = GetMaterialSnapshot(material);
+
                     material->ClearUploadDirty();
                 }
 
@@ -961,6 +1009,52 @@ void Render::RenderPipelineManager::BuildSkysphereSnapshot(World *world, RenderP
         CoreMath::Matrix4X4::MakeScale(skySphereSettings.mRadius);
 
     executeContext.mSkySphereSnapshot.mActiveFlag = true;
+}
+
+void Render::RenderPipelineManager::BuildPostProcessingSnapshot(World *world, RenderPassExecuteContext &executeContext)
+{
+
+    if (world == nullptr)
+        return;
+
+    Map *map = world->GetCurrentMap();
+
+    if (map == nullptr)
+        return;
+
+    const Core::PostProcessingSettings &postProcessingSettings = map->GetPostProcessingSettings();
+    executeContext.mPostProcessingData.mExposure = postProcessingSettings.mExposure;
+}
+
+Render::MaterialRenderSnapshot Render::RenderPipelineManager::GetMaterialSnapshot(CoreAsset::Material *material) const
+{
+    MaterialRenderSnapshot materialRenderSnapshot;
+    materialRenderSnapshot.mHandle = material->GetMaterialHandle();
+    materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() * material->GetDiffuseFactor();
+    materialRenderSnapshot.mMetallic = material->GetMetallic();
+    materialRenderSnapshot.mRoughness = material->GetRoughness();
+    materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
+    materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
+    materialRenderSnapshot.mShadingModel = material->GetShadingMode();
+    materialRenderSnapshot.mAmbient = material->GetAmbient();
+    materialRenderSnapshot.mEmissiveColor = material->GetEmissiveColor();
+    materialRenderSnapshot.mEmissiveIntensity = material->GetEmissiveIntensity();
+
+    for (const auto &texContext : material->GetAlbedoTexResourceList())
+    {
+        materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
+    }
+
+    if (material->HasNormalMap())
+    {
+        materialRenderSnapshot.mNormalMap = material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
+    }
+    if (material->GetUploadDirty())
+    {
+        materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
+    }
+
+    return materialRenderSnapshot;
 }
 
 void Render::RenderPipelineManager::Execute(const std::vector<Core::LogicalWindow *> &logicalWindowList,

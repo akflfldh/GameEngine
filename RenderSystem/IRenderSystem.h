@@ -62,6 +62,7 @@ class RENDER_SYSTEM_API IRenderSystem
     virtual void SetRenderTarget(Core::CommandContext *commandContext, GRM::IGpuResource *rendertarget,
                                  GRM::IGpuResource *depthStenci) = 0;
 
+    virtual void Dispatch(Core::CommandContext *commandContext, const ComputeDispatchItem &dispatchItem) = 0;
 #pragma endregion
 
   protected:

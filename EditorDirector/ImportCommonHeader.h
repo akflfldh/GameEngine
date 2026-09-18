@@ -2,6 +2,7 @@
 #pragma once
 
 #include <CoreBase/ThreadSafeQueue.h>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,6 +18,28 @@ namespace Quad
 class EditorAssetImporterModule;
 
 }
+
+enum class EAssetImporterType
+{
+    eUnknown,
+    eTexture,
+    eFbx,
+    eFont
+};
+
+struct TextureImportSettings
+{
+    bool bSRGB = true;
+};
+
+struct EditorImportRequest
+{
+    EAssetImporterType mAssetImportType = EAssetImporterType::eUnknown;
+    std::filesystem::path mSourcePath;
+    std::string mRegistryPath;
+    bool bEngine = false;
+    TextureImportSettings mTextureSettings;
+};
 
 enum class EImportEventType
 {

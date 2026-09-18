@@ -12,6 +12,8 @@ class UIText;
 
 } // namespace UI
 
+class UIDropTargetComponent;
+
 using OnDroppedAssetCallbackSystem = Core::MultiCallbackSystem<CoreAsset::AssetID>;
 
 class REFLECT_CLASS(EngineClass) UIAssetSlotPanel : public UI::UIElement
@@ -36,10 +38,13 @@ class REFLECT_CLASS(EngineClass) UIAssetSlotPanel : public UI::UIElement
     virtual void OnBegin() override;
 
     void OnDroppedPayload(const DragPayload &payload);
+    // style일변화 , hover,등 상태변화 에서 호출
+    virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState visualState) override;
 
   private:
     UI::UIImage *mBackgroundPanel = nullptr;
     UI::UIText *mTagText = nullptr;
     UI::UIImage *mAssetSlotImagePanel = nullptr;
-    EDragDropType mPayloadType;
+    EDragDropType mPayloadType = EDragDropType::eNone;
+    UIDropTargetComponent *mDropTargetCom = nullptr;
 };

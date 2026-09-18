@@ -78,6 +78,70 @@ enum class ETextureFormat : uint8_t
     eR24_UNORM_X8_TYPELESS,
     eR32_TYPELESS,
 
+    // --- Additional DXGI-compatible formats ---
+    // 기존 enum 값은 직렬화된 asset과 호환되어야 하므로 새 값은 끝에 추가한다.
+    eR8_TYPELESS,
+    eR8_UINT,
+    eR8_SNORM,
+    eR8_SINT,
+    eR8G8_TYPELESS,
+    eR8G8_UINT,
+    eR8G8_SNORM,
+    eR8G8_SINT,
+    eR8G8B8A8_TYPELESS,
+    eB8G8R8A8_TYPELESS,
+    eB8G8R8X8_TYPELESS,
+
+    eR16_UINT,
+    eR16_SNORM,
+    eR16_SINT,
+    eR16G16_TYPELESS,
+    eR16G16_UINT,
+    eR16G16_SNORM,
+    eR16G16_SINT,
+    eR16G16B16A16_TYPELESS,
+    eR16G16B16A16_UINT,
+    eR16G16B16A16_SNORM,
+    eR16G16B16A16_SINT,
+
+    eR32_SINT,
+    eR32G32_TYPELESS,
+    eR32G32_SINT,
+    eR32G32B32_TYPELESS,
+    eR32G32B32_SINT,
+    eR32G32B32A32_TYPELESS,
+    eR32G32B32A32_SINT,
+
+    eR10G10B10A2_TYPELESS,
+    eR10G10B10A2_UNORM,
+    eR10G10B10A2_UINT,
+    eR11G11B10_FLOAT,
+
+    eR32G8X24_TYPELESS,
+    eD32_FLOAT_S8X24_UINT,
+    eR32_FLOAT_X8X24_TYPELESS,
+    eX32_TYPELESS_G8X24_UINT,
+    eX24_TYPELESS_G8_UINT,
+
+    eA8_UNORM,
+    eR1_UNORM,
+    eR9G9B9E5_SHAREDEXP,
+    eB5G6R5_UNORM,
+    eB5G5R5A1_UNORM,
+    eB4G4R4A4_UNORM,
+
+    eBC1_TYPELESS,
+    eBC2_TYPELESS,
+    eBC3_TYPELESS,
+    eBC4_TYPELESS,
+    eBC4_SNORM,
+    eBC5_TYPELESS,
+    eBC5_SNORM,
+    eBC6H_TYPELESS,
+    eBC6H_UF16,
+    eBC6H_SF16,
+    eBC7_TYPELESS,
+
     eMax_TextureFormats
 };
 
@@ -91,12 +155,48 @@ enum class ETextureUsage : uint16_t
     // 깊이/스텐실 버퍼로 사용 가능
     eDepthStencil = 1 << 2,
 
-    eRenderTargetShaderResource = 1 << 3, // 렌더타켓 + 셰이더리소스로 사용
+    //    eRenderTargetShaderResource = 1 << 3, // 렌더타켓 + 셰이더리소스로 사용
 
-    eDepthStencilShaderResource = 1 << 4 // 깊이버퍼 + 세이더리소스
+    //    eDepthStencilShaderResource = 1 << 4, // 깊이버퍼 + 세이더리소스
+
+    eUnorderedAccessResource = 1 << 3,
+
+    //   eUnorderedAcessShaderResource
 };
 
-// 원본해상도(밉맵레벨0)정보
+inline ETextureUsage operator&(ETextureUsage usage, ETextureUsage other)
+{
+    return static_cast<ETextureUsage>(static_cast<uint16_t>(usage) & static_cast<uint16_t>(other));
+}
+inline ETextureUsage &operator&=(ETextureUsage &usage, ETextureUsage other)
+{
+    usage = usage & other;
+    return usage;
+}
+
+inline ETextureUsage operator|(ETextureUsage usage, ETextureUsage other)
+{
+    return static_cast<ETextureUsage>(static_cast<uint16_t>(usage) | static_cast<uint16_t>(other));
+}
+
+inline ETextureUsage &operator|=(ETextureUsage &usage, ETextureUsage other)
+{
+    usage = usage | other;
+    return usage;
+}
+
+inline bool HasAnyTextureUsage(ETextureUsage value, ETextureUsage target)
+{
+    return (value & target) != ETextureUsage::eNone;
+}
+
+inline bool HasAllTextureUsage(ETextureUsage &value, ETextureUsage target)
+{
+
+    return (value & target) == target;
+}
+
+// 원본해상도(밉맵레벨0) 정보
 struct TexMetaData
 {
     size_t mWidth;
@@ -190,6 +290,7 @@ struct TextureDesc
     std::optional<ETextureFormat> mRtvFormat;
     std::optional<ETextureFormat> mDsvFormat;
     std::optional<ETextureFormat> mSrvFormat;
+    std::optional<ETextureFormat> mUavFormat;
 
     union OptimizedClearValue
     {
@@ -206,6 +307,7 @@ inline bool IsSRGBType(ETextureFormat format)
     {
     case ETextureFormat::eR8G8B8A8_UNORM_SRGB:
     case ETextureFormat::eB8G8R8A8_UNORM_SRGB:
+    case ETextureFormat::eB8G8R8X8_UNORM_SRGB:
     case ETextureFormat::eBC1_UNORM_SRGB:
     case ETextureFormat::eBC2_UNORM_SRGB:
     case ETextureFormat::eBC3_UNORM_SRGB:
@@ -214,6 +316,29 @@ inline bool IsSRGBType(ETextureFormat format)
 
     default:
         return false;
+    }
+}
+
+inline ETextureFormat ConvertToNonSRGBType(ETextureFormat format)
+{
+    switch (format)
+    {
+    case ETextureFormat::eR8G8B8A8_UNORM_SRGB:
+        return ETextureFormat::eR8G8B8A8_UNORM;
+    case ETextureFormat::eB8G8R8A8_UNORM_SRGB:
+        return ETextureFormat::eB8G8R8A8_UNORM;
+    case ETextureFormat::eB8G8R8X8_UNORM_SRGB:
+        return ETextureFormat::eB8G8R8X8_UNORM;
+    case ETextureFormat::eBC1_UNORM_SRGB:
+        return ETextureFormat::eBC1_UNORM;
+    case ETextureFormat::eBC2_UNORM_SRGB:
+        return ETextureFormat::eBC2_UNORM;
+    case ETextureFormat::eBC3_UNORM_SRGB:
+        return ETextureFormat::eBC3_UNORM;
+    case ETextureFormat::eBC7_UNORM_SRGB:
+        return ETextureFormat::eBC7_UNORM;
+    default:
+        return format;
     }
 }
 

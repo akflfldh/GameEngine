@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <CoreAsset/IAssetImporter.h>
 #include <EditorDirector/ImportCommonHeader.h>
 #include <filesystem>
 #include <vector>
@@ -36,7 +37,8 @@ class EditorAssetImporterModule
     void Initialize();
 
     // import 요청 , 수행 , 논리적파일시스템에 등록, asset 브라우저 활성화 등등 (비동기 )
-    ImportTaskHandle RequestImport(const std::string &file, bool bEngine = false);
+    ImportTaskHandle RequestImport(const std::filesystem::path &file, bool bEngine = false);
+    ImportTaskHandle RequestImport(const EditorImportRequest &importRequest);
 
     ImportResult RequestImportSync(const std::filesystem::path &file, bool bEngine = false);
     ImportResult RequestImportSync(const std::filesystem::path &file,
@@ -69,8 +71,10 @@ class EditorAssetImporterModule
     //
 
   private:
-    ImportResult Import(const std::filesystem::path &file, bool bEngine, ImportJobContext *jobContext);
+    ImportResult Import(const EditorImportRequest &importRequest, ImportJobContext *jobContext);
     ImportResult Import(const std::filesystem::path &file, const CoreAsset::AssetImportContext &assetImportContext);
+
+    CoreAsset::ImportExecutionContext Convert(const EditorImportRequest &importRequest) const;
 };
 
 } // namespace Quad

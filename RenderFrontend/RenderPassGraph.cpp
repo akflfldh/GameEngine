@@ -563,25 +563,7 @@ void Render::RenderPassGraph::Read(const std::string &texName, const std::string
         // OR Creat
     }
 
-    auto &usage = mTexResourceTable[texName].second.mUsage;
-    switch (usage)
-    {
-    case GRM::ETextureUsage::eRenderTarget:
-        usage =
-            GRM::ETextureUsage::eRenderTargetShaderResource; // 읽기까지한다는것임으로 렌더타킷이라는 용도가 추가된 설정
-
-        break;
-    case GRM::ETextureUsage::eDepthStencil:
-        usage = GRM::ETextureUsage::eDepthStencilShaderResource;
-        break;
-
-    case GRM::ETextureUsage::eRenderTargetShaderResource:
-    case GRM::ETextureUsage::eDepthStencilShaderResource:
-    case GRM::ETextureUsage::eShaderResource:
-        break;
-    }
-
-    mTexResourceTable[texName].second.mUsage = usage;
+    mTexResourceTable[texName].second.mUsage |= GRM::ETextureUsage::eShaderResource;
 
     FrameGraphResourceVersion *resourceVersion = mResourceNodeTable[texName]->mResourceVersionList.back().get();
     resourceVersion->Consumers.push_back(mRenderPassNodeTable[passName]);

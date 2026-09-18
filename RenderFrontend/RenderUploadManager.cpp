@@ -49,6 +49,8 @@ void Render::RenderUploadManager::UploadDefaultMaterialData(const MaterialRender
     data.gMetallic = snapshot.mMetallic;
     data.gRoughness = snapshot.mRoughness;
     data.gAmbient = snapshot.mAmbient;
+    data.gEmissiveColor = snapshot.mEmissiveColor;
+    data.gEmissiveIntensity = snapshot.mEmissiveIntensity;
 }
 
 void Render::RenderUploadManager::UploadDefaultLightData(const LightRenderCommand &cmd, DefaultLightData &data)

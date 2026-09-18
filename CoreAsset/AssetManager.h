@@ -22,6 +22,7 @@ struct ImportPackage;
 class IAssetDataSource;
 struct AssetImportContext;
 struct AssetCreationContext;
+struct ImportExecutionContext;
 class CORE_ASSET_API AssetManager
 {
   public:
@@ -60,7 +61,8 @@ class CORE_ASSET_API AssetManager
 
     // 절대경로                                         //prefixAssetName (editor에서는 논리적 asset폴더경로가 지정됨)
     std::vector<CoreAsset::Asset *> ImportAsset(const std::filesystem::path &filePath,
-                                                const CoreAsset::AssetImportContext &importContext);
+                                                const CoreAsset::AssetImportContext &importContext,
+                                                const ImportExecutionContext &importExecutionContext);
 
     // 에셋 메타데이터 저장
     bool StoreAsset(Asset *asset, const std::filesystem::path &filePath, AssetMetaData *assetMetaData);

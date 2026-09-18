@@ -251,7 +251,8 @@ void MaterialWorkSpaceManager::CopyMaterial(CoreAsset::Material *sourceMaterial,
     targetMaterial->SetMetallic(sourceMaterial->GetMetallic());
     targetMaterial->SetRoughness(sourceMaterial->GetRoughness());
     targetMaterial->SetUseExplicitGpuMaterial(sourceMaterial->GetUseExplicitGpuMaterial());
-
+    targetMaterial->SetEmissiveColor(sourceMaterial->GetEmissiveColor());
+    targetMaterial->SetEmissiveIntensity(sourceMaterial->GetEmissiveIntensity());
     std::vector<CoreAsset::AssetMaterialTexResourceContext> &targetAlbedoList =
         targetMaterial->GetAlbedoTexResourceList();
     targetAlbedoList.clear();

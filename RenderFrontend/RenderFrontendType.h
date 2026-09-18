@@ -48,7 +48,11 @@ enum class ERenderPassType : uint8_t
     eDebugGrid,
     eBillboard,
     eDebugLine,
-    eSkySphere
+    eSkySphere,
+    eToneMapping,
+    eBloom,
+    eBloomHorizontal,
+    eBloomVertical
 };
 
 enum class ERenderGeometryType
@@ -100,6 +104,8 @@ struct MaterialRenderSnapshot
 
     CoreMath::Vector3 mDiffuseFactor = {1, 1, 1};
     CoreMath::Vector3 mAmbient = {0, 0, 0};
+    CoreMath::Vector3 mEmissiveColor = {0, 0, 0};
+    float mEmissiveIntensity = 1.0f;
     float mMetallic;
     float mRoughness;
     std::vector<CoreAsset::Texture *> mAlbedoMapList;
@@ -119,6 +125,11 @@ struct LightRenderCommand
     float mFalloffStart;
     float mFalloffEnd;
     float mSpotPower;
+};
+
+struct PostProcessingData
+{
+    float mExposure = 1.0f;
 };
 
 struct DirectonalShadowRenderData
@@ -218,6 +229,7 @@ struct RenderPassExecuteContext
     Core::CommandContext *mCommandContext;
 
     DirectonalShadowRenderData mDirectonalShadowRenderData;
+    PostProcessingData mPostProcessingData;
 };
 
 struct RenderResourceDesc
@@ -229,6 +241,7 @@ struct RenderResourceDesc
     std::optional<GRM::ETextureFormat> mRtvFormat;
     std::optional<GRM::ETextureFormat> mDsvFormat;
     std::optional<GRM::ETextureFormat> mSrvFormat;
+    std::optional<GRM::ETextureFormat> mUavFormat;
     GRM::ETextureUsage mUsage;
 };
 

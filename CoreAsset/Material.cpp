@@ -94,6 +94,8 @@ void CoreAsset::Material::Serialize(Arch &arch)
     arch << mSpecular;
     arch << mSpecularFactor;
     arch << mAmbient;
+    arch << mEmissiveColor;
+    arch << mEmissiveIntensity;
     arch << mRoughness;
     arch << mMetallic;
     arch << mShadingModel;
@@ -262,6 +264,18 @@ void CoreAsset::Material::SetAmbient(const CoreMath::Vector3 &ambient)
         mAmbient.Z = 0.0f;
 }
 
+void CoreAsset::Material::SetEmissiveColor(const CoreMath::Vector3 &color)
+{
+
+    mEmissiveColor = color;
+}
+
+void CoreAsset::Material::SetEmissiveIntensity(float intensity)
+{
+
+    mEmissiveIntensity = intensity;
+}
+
 CoreMath::Vector3 CoreAsset::Material::GetSpecular() const
 {
 
@@ -277,6 +291,17 @@ CoreMath::Vector3 CoreAsset::Material::GetAmbient() const
 {
 
     return mAmbient;
+}
+
+CoreMath::Vector3 CoreAsset::Material::GetEmissiveColor() const
+{
+
+    return mEmissiveColor;
+}
+float CoreAsset::Material::GetEmissiveIntensity() const
+{
+
+    return mEmissiveIntensity;
 }
 
 void CoreAsset::Material::SetUseExplicitGpuMaterial(bool flag)

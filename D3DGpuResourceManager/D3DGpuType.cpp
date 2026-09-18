@@ -96,6 +96,123 @@ DXGI_FORMAT D3DGRM::ConvertToDxgiFormat(GRM::ETextureFormat format)
     case GRM::ETextureFormat::eBC7_UNORM_SRGB:
         return DXGI_FORMAT_BC7_UNORM_SRGB;
 
+    case GRM::ETextureFormat::eR8_TYPELESS:
+        return DXGI_FORMAT_R8_TYPELESS;
+    case GRM::ETextureFormat::eR8_UINT:
+        return DXGI_FORMAT_R8_UINT;
+    case GRM::ETextureFormat::eR8_SNORM:
+        return DXGI_FORMAT_R8_SNORM;
+    case GRM::ETextureFormat::eR8_SINT:
+        return DXGI_FORMAT_R8_SINT;
+    case GRM::ETextureFormat::eR8G8_TYPELESS:
+        return DXGI_FORMAT_R8G8_TYPELESS;
+    case GRM::ETextureFormat::eR8G8_UINT:
+        return DXGI_FORMAT_R8G8_UINT;
+    case GRM::ETextureFormat::eR8G8_SNORM:
+        return DXGI_FORMAT_R8G8_SNORM;
+    case GRM::ETextureFormat::eR8G8_SINT:
+        return DXGI_FORMAT_R8G8_SINT;
+    case GRM::ETextureFormat::eR8G8B8A8_TYPELESS:
+        return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+    case GRM::ETextureFormat::eB8G8R8A8_TYPELESS:
+        return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+    case GRM::ETextureFormat::eB8G8R8X8_TYPELESS:
+        return DXGI_FORMAT_B8G8R8X8_TYPELESS;
+
+    case GRM::ETextureFormat::eR16_UINT:
+        return DXGI_FORMAT_R16_UINT;
+    case GRM::ETextureFormat::eR16_SNORM:
+        return DXGI_FORMAT_R16_SNORM;
+    case GRM::ETextureFormat::eR16_SINT:
+        return DXGI_FORMAT_R16_SINT;
+    case GRM::ETextureFormat::eR16G16_TYPELESS:
+        return DXGI_FORMAT_R16G16_TYPELESS;
+    case GRM::ETextureFormat::eR16G16_UINT:
+        return DXGI_FORMAT_R16G16_UINT;
+    case GRM::ETextureFormat::eR16G16_SNORM:
+        return DXGI_FORMAT_R16G16_SNORM;
+    case GRM::ETextureFormat::eR16G16_SINT:
+        return DXGI_FORMAT_R16G16_SINT;
+    case GRM::ETextureFormat::eR16G16B16A16_TYPELESS:
+        return DXGI_FORMAT_R16G16B16A16_TYPELESS;
+    case GRM::ETextureFormat::eR16G16B16A16_UINT:
+        return DXGI_FORMAT_R16G16B16A16_UINT;
+    case GRM::ETextureFormat::eR16G16B16A16_SNORM:
+        return DXGI_FORMAT_R16G16B16A16_SNORM;
+    case GRM::ETextureFormat::eR16G16B16A16_SINT:
+        return DXGI_FORMAT_R16G16B16A16_SINT;
+
+    case GRM::ETextureFormat::eR32_SINT:
+        return DXGI_FORMAT_R32_SINT;
+    case GRM::ETextureFormat::eR32G32_TYPELESS:
+        return DXGI_FORMAT_R32G32_TYPELESS;
+    case GRM::ETextureFormat::eR32G32_SINT:
+        return DXGI_FORMAT_R32G32_SINT;
+    case GRM::ETextureFormat::eR32G32B32_TYPELESS:
+        return DXGI_FORMAT_R32G32B32_TYPELESS;
+    case GRM::ETextureFormat::eR32G32B32_SINT:
+        return DXGI_FORMAT_R32G32B32_SINT;
+    case GRM::ETextureFormat::eR32G32B32A32_TYPELESS:
+        return DXGI_FORMAT_R32G32B32A32_TYPELESS;
+    case GRM::ETextureFormat::eR32G32B32A32_SINT:
+        return DXGI_FORMAT_R32G32B32A32_SINT;
+
+    case GRM::ETextureFormat::eR10G10B10A2_TYPELESS:
+        return DXGI_FORMAT_R10G10B10A2_TYPELESS;
+    case GRM::ETextureFormat::eR10G10B10A2_UNORM:
+        return DXGI_FORMAT_R10G10B10A2_UNORM;
+    case GRM::ETextureFormat::eR10G10B10A2_UINT:
+        return DXGI_FORMAT_R10G10B10A2_UINT;
+    case GRM::ETextureFormat::eR11G11B10_FLOAT:
+        return DXGI_FORMAT_R11G11B10_FLOAT;
+
+    case GRM::ETextureFormat::eR32G8X24_TYPELESS:
+        return DXGI_FORMAT_R32G8X24_TYPELESS;
+    case GRM::ETextureFormat::eD32_FLOAT_S8X24_UINT:
+        return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+    case GRM::ETextureFormat::eR32_FLOAT_X8X24_TYPELESS:
+        return DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+    case GRM::ETextureFormat::eX32_TYPELESS_G8X24_UINT:
+        return DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+    case GRM::ETextureFormat::eX24_TYPELESS_G8_UINT:
+        return DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+
+    case GRM::ETextureFormat::eA8_UNORM:
+        return DXGI_FORMAT_A8_UNORM;
+    case GRM::ETextureFormat::eR1_UNORM:
+        return DXGI_FORMAT_R1_UNORM;
+    case GRM::ETextureFormat::eR9G9B9E5_SHAREDEXP:
+        return DXGI_FORMAT_R9G9B9E5_SHAREDEXP;
+    case GRM::ETextureFormat::eB5G6R5_UNORM:
+        return DXGI_FORMAT_B5G6R5_UNORM;
+    case GRM::ETextureFormat::eB5G5R5A1_UNORM:
+        return DXGI_FORMAT_B5G5R5A1_UNORM;
+    case GRM::ETextureFormat::eB4G4R4A4_UNORM:
+        return DXGI_FORMAT_B4G4R4A4_UNORM;
+
+    case GRM::ETextureFormat::eBC1_TYPELESS:
+        return DXGI_FORMAT_BC1_TYPELESS;
+    case GRM::ETextureFormat::eBC2_TYPELESS:
+        return DXGI_FORMAT_BC2_TYPELESS;
+    case GRM::ETextureFormat::eBC3_TYPELESS:
+        return DXGI_FORMAT_BC3_TYPELESS;
+    case GRM::ETextureFormat::eBC4_TYPELESS:
+        return DXGI_FORMAT_BC4_TYPELESS;
+    case GRM::ETextureFormat::eBC4_SNORM:
+        return DXGI_FORMAT_BC4_SNORM;
+    case GRM::ETextureFormat::eBC5_TYPELESS:
+        return DXGI_FORMAT_BC5_TYPELESS;
+    case GRM::ETextureFormat::eBC5_SNORM:
+        return DXGI_FORMAT_BC5_SNORM;
+    case GRM::ETextureFormat::eBC6H_TYPELESS:
+        return DXGI_FORMAT_BC6H_TYPELESS;
+    case GRM::ETextureFormat::eBC6H_UF16:
+        return DXGI_FORMAT_BC6H_UF16;
+    case GRM::ETextureFormat::eBC6H_SF16:
+        return DXGI_FORMAT_BC6H_SF16;
+    case GRM::ETextureFormat::eBC7_TYPELESS:
+        return DXGI_FORMAT_BC7_TYPELESS;
+
     default:
         return DXGI_FORMAT_UNKNOWN; // 알 수 없는 포맷은 DXGI_FORMAT_UNKNOWN으로 매핑
     }
@@ -117,21 +234,26 @@ D3D12_RESOURCE_DIMENSION D3DGRM::ConvertToResourceDimension(GRM::ETextureType ty
 
 D3D12_RESOURCE_FLAGS D3DGRM::ConvertToResourceFlags(GRM::ETextureUsage usage)
 {
-    switch (usage)
-    {
-    case GRM::ETextureUsage::eNone:
-        return D3D12_RESOURCE_FLAG_NONE;
-    case GRM::ETextureUsage::eRenderTarget:
-        return D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-    case GRM::ETextureUsage::eDepthStencil:
-    case GRM::ETextureUsage::eDepthStencilShaderResource:
-        return D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-    case GRM::ETextureUsage::eRenderTargetShaderResource:
-        return D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
-    default:
-        return D3D12_RESOURCE_FLAG_NONE;
+    uint16_t usageInt = static_cast<uint16_t>(usage);
+    D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_NONE;
+
+    if (static_cast<uint16_t>(GRM::ETextureUsage::eRenderTarget) & usageInt)
+    {
+        flag |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     }
+
+    if (static_cast<uint16_t>(GRM::ETextureUsage::eDepthStencil) & usageInt)
+    {
+        flag |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    }
+
+    if (static_cast<uint16_t>(GRM::ETextureUsage::eUnorderedAccessResource) & usageInt)
+    {
+        flag |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    }
+
+    return flag;
 }
 
 D3D12_RTV_DIMENSION D3DGRM::ConvertToRTVDimension(GRM::ETextureType type)
@@ -170,6 +292,21 @@ D3D12_DSV_DIMENSION D3DGRM::ConvertToDSVDimension(GRM::ETextureType type)
 
     default:
         return D3D12_DSV_DIMENSION_UNKNOWN;
+    }
+}
+
+GPURESOURCE_MANAGER_API D3D12_UAV_DIMENSION D3DGRM::ConvertToUAVDimension(GRM::ETextureType type)
+{
+    switch (type)
+    {
+    case GRM::ETextureType::eTexture1D:
+        return D3D12_UAV_DIMENSION_TEXTURE1D;
+    case GRM::ETextureType::eTexture2D:
+        return D3D12_UAV_DIMENSION_TEXTURE2D;
+    case GRM::ETextureType::eTexture3D:
+        return D3D12_UAV_DIMENSION_TEXTURE3D;
+    default:
+        return D3D12_UAV_DIMENSION_UNKNOWN;
     }
 }
 
@@ -224,6 +361,10 @@ GPURESOURCE_MANAGER_API D3D12_RESOURCE_STATES D3DGRM::ConvertToD3DResourceState(
 
         case EResourceState::eNonPixelShaderResource:
             return D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+
+        case EResourceState::eUnorderedAccess:
+            return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
         default:
             return D3D12_RESOURCE_STATE_COMMON;
         }
@@ -264,6 +405,9 @@ GPURESOURCE_MANAGER_API EResourceState D3DGRM::ConvertFromD3D12ResourceState(D3D
 
     case D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE:
         return EResourceState::eNonPixelShaderResource;
+    case D3D12_RESOURCE_STATE_UNORDERED_ACCESS:
+        return EResourceState::eUnorderedAccess;
+
     default:
         // 매칭되는 상태가 없거나 복합 상태일 경우 기본값 반환
         return EResourceState::eNone;

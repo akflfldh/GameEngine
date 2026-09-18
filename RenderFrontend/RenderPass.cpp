@@ -30,6 +30,11 @@ void Render::IRenderPass::SetOutputDepthStencil(const std::string &name)
 
     mOutputDepthStencilName = name;
 }
+const std::string &Render::IRenderPass::GetOutputTargetName() const
+{
+    return mOutputTargetName;
+    // TODO: 여기에 return 문을 삽입합니다.
+}
 uint32_t Render::IRenderPass::GetBufferID() const
 {
     return mBufferID;

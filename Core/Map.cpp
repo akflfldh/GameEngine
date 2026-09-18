@@ -1075,6 +1075,17 @@ const Core::AmbientLightSettings &Map::GetAmbientLightSettings() const
     // TODO: 여기에 return 문을 삽입합니다.
 }
 
+void Map::SetExposure(float exposure)
+{
+
+    mPostProcessingSettings.mExposure = exposure;
+}
+
+const Core::PostProcessingSettings &Map::GetPostProcessingSettings() const
+{
+    return mPostProcessingSettings;
+}
+
 void Map::SetSkySphereEnableFlag(bool flag)
 {
 
@@ -1371,4 +1382,6 @@ void Map::SerializeSceneSetting(Arch &arch)
     arch << mSkySphereSettings.mRadius;
     arch << mSkySphereSettings.mTintColor;
     arch << mSkySphereSettings.mTexID;
+
+    arch << mPostProcessingSettings.mExposure;
 }

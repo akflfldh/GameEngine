@@ -169,4 +169,9 @@ struct SkySphereSettings
     float mRadius = 10000.0f;
 };
 
+struct PostProcessingSettings
+{
+    float mExposure = 1.0f;
+};
+
 } // namespace Core

@@ -263,7 +263,7 @@ struct MaterialRenderSettingInfo
     uint8_t mRenderTargetCount = 1;
 
     GRM::ETextureFormat mRenderTargetFormat[8] = {
-        GRM::ETextureFormat::eR8G8B8A8_UNORM,
+        GRM::ETextureFormat::eR8G8B8A8_UNORM_SRGB,
     };
 
     GRM::ETextureFormat mDepthStencilFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT;
@@ -293,6 +293,12 @@ struct MaterialGenerationInfo
     std::string mName;
 
     EInputLayoutType mInputLayoutType = EInputLayoutType::eUI;
+};
+
+struct ComputeMaterialGenerationInfo
+{
+    std::string mName;
+    ShaderSourceInfo mComputeShaderInfo;
 };
 
 #pragma endregion

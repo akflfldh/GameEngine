@@ -8,6 +8,8 @@
 
 class ClassGenerationTaskUIController;
 class ImportTaskUIController;
+class ImportTaskSettingUIController;
+
 namespace UI
 {
 class UICanvas;
@@ -48,7 +50,7 @@ class EditorAssetImporterManager : public IEditorTaskManager
     virtual void Update() override;
 
     // 비동기버전
-    void RequestImport(const char *file, bool bEngine = false);
+    void RequestImport(const std::filesystem::path file, bool bEngine = false);
 
     // 동기 버전 (ui처리가없는) (호출스레드가 직접수행 )
     ImportResult RequestImportSync(const std::filesystem::path &file, bool bEngine = false);
@@ -67,10 +69,15 @@ class EditorAssetImporterManager : public IEditorTaskManager
 
     void OnClickedExitButton();
 
+    EAssetImporterType GetImporterType(const std::filesystem::path &file) const;
+
+    void StartImport(const EditorImportRequest &importRequest);
+
   private:
     EditorAssetImporterModule *mImporterModule = nullptr;
     EditorAssetImportFinalizer *mFinalizer = nullptr;
     ImportTaskUIController *mUIController = nullptr;
+    ImportTaskSettingUIController *mSettingUIController = nullptr;
     ImportTaskHandle mImportTaskHandle;
     ImportEvent mImportEvent;
 

@@ -1,6 +1,7 @@
 ﻿#include "MaterialEditUIController.h"
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
+#include <EditorDirector/UIAssetSlotPanel.h>
 #include <UIAssetSlotListPanel.h>
 #include <UIReflectFloatPanel.h>
 #include <UIReflectVector3Panel.h>
@@ -68,7 +69,21 @@ void MaterialEditUIController::BeginUI(float panelPosY)
     mRoughnessReflectPanel = CreateFloatReflectPanel(
         "거칠기", [this]() { return GetRoughness(); }, [this](float value) { SetRoughness(value); });
 
+    mMetalicReflectPanel = CreateFloatReflectPanel(
+        "금속성", [this]() { return GetMetalic(); }, [this](float value) { SetMetalic(value); });
+
+    mEmissiveColorReflectPanel = CreateVector3ReflectPanel(
+        "Emissive 색상", [this]() { return GetEmissiveColor(); },
+        [this](const CoreMath::Vector3 &value) { SetEmissiveColor(value); });
+
+    mEmissiveIntensityReflectPanel = CreateFloatReflectPanel(
+        "Emissive 강도", [this]() { return GetEmissiveIntensity(); },
+        [this](float value) { SetEmissiveIntensity(value); });
+
     mScrollBox->AddItem(mRoughnessReflectPanel);
+    mScrollBox->AddItem(mMetalicReflectPanel);
+    mScrollBox->AddItem(mEmissiveColorReflectPanel);
+    mScrollBox->AddItem(mEmissiveIntensityReflectPanel);
 
     mDiffuseMapListSlotPanel = mCanvas->CreateUIElement<UIAssetSlotListPanel>("DiffuseSlotListPanel");
     mDiffuseMapListSlotPanel->mOnClickedAddButtonCallbackSystem.Register([this]() { OnClickedDiffuseMapAddButtotn(); });
@@ -80,6 +95,15 @@ void MaterialEditUIController::BeginUI(float panelPosY)
     mDiffuseMapListSlotPanel->SetTagText("디퓨즈 텍스처");
 
     mScrollBox->AddItem(mDiffuseMapListSlotPanel);
+
+    mNormalMapSlotPanel = mCanvas->CreateUIElement<UIAssetSlotPanel>("NormalMapPanel");
+
+    mNormalMapSlotPanel->mOnDroppedAssetCallbackSystem.Register([this](CoreAsset::AssetID assetID)
+                                                                { OnNormalMapDropped(assetID); });
+    mNormalMapSlotPanel->SetDragPayloadType(EDragDropType::eAssetTexture);
+    mNormalMapSlotPanel->SetTagText("노멀 맵 ");
+
+    mScrollBox->AddItem(mNormalMapSlotPanel);
 }
 
 void MaterialEditUIController::SetTargetMaterial(CoreAsset::Material *material)
@@ -110,6 +134,8 @@ void MaterialEditUIController::Clear()
     {
         mDiffuseMapListSlotPanel->SetAssetSlotImage(tex, i);
     }
+
+    mNormalMapSlotPanel->SetSlotImage(tex);
 }
 
 void MaterialEditUIController::ReBuild()
@@ -128,6 +154,8 @@ void MaterialEditUIController::ReBuild()
     {
         mDiffuseMapListSlotPanel->SetAssetSlotImage(mMaterialEditData.mAlbedoTextures[i].As<CoreAsset::Texture>(), i);
     }
+
+    mNormalMapSlotPanel->SetSlotImage(mMaterialEditData.mNormalTexture.As<CoreAsset::Texture>());
 }
 
 void MaterialEditUIController::OnClickedDiffuseMapAddButtotn()
@@ -156,6 +184,23 @@ void MaterialEditUIController::OnDiffuseMapDropped(CoreAsset::AssetID id, int in
     mDiffuseMapListSlotPanel->SetAssetSlotImage(texture, index);
 }
 
+void MaterialEditUIController::OnNormalMapDropped(CoreAsset::AssetID id)
+{
+
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+
+    CoreAsset::Texture *texture = assetManager->GetAsset<CoreAsset::Texture>(id).As<CoreAsset::Texture>();
+
+    if (texture == nullptr)
+        return;
+
+    mMaterialEditData.mNormalTexture = texture;
+
+    mNormalMapSlotPanel->SetSlotImage(texture);
+
+    mMaterialEditData.mHasNormalMap = true;
+}
+
 void MaterialEditUIController::BuildMaterialEdtiData(const CoreAsset::Material &material, MaterialEditData &oEditData)
 {
 
@@ -168,6 +213,8 @@ void MaterialEditUIController::BuildMaterialEdtiData(const CoreAsset::Material &
     oEditData.mMetallic = material.GetMetallic();
     oEditData.mUseExplicitGpuMaterial = material.GetUseExplicitGpuMaterial();
     oEditData.mHasNormalMap = material.HasNormalMap();
+    oEditData.mEmissiveColor = material.GetEmissiveColor();
+    oEditData.mEmissiveIntensity = material.GetEmissiveIntensity();
 
     oEditData.mAlbedoTextures.clear();
     for (const auto &e : material.GetAlbedoTexResourceList())
@@ -189,6 +236,8 @@ void MaterialEditUIController::ApplyEditDataToMaterial(const MaterialEditData &e
     material.SetSpecularFactor(editData.mSpecularFactor);
     material.SetMetallic(editData.mMetallic);
     material.SetRoughness(editData.mRoughness);
+    material.SetEmissiveColor(editData.mEmissiveColor);
+    material.SetEmissiveIntensity(editData.mEmissiveIntensity);
     material.SetUseExplicitGpuMaterial(editData.mUseExplicitGpuMaterial);
 
     std::vector<CoreAsset::AssetMaterialTexResourceContext> &albedoList = material.GetAlbedoTexResourceList();
@@ -234,6 +283,22 @@ float MaterialEditUIController::GetRoughness() const
     return mMaterialEditData.mRoughness;
 }
 
+float MaterialEditUIController::GetMetalic() const
+{
+    return mMaterialEditData.mMetallic;
+}
+
+CoreMath::Vector3 MaterialEditUIController::GetEmissiveColor() const
+{
+
+    return mMaterialEditData.mEmissiveColor;
+}
+float MaterialEditUIController::GetEmissiveIntensity() const
+{
+
+    return mMaterialEditData.mEmissiveIntensity;
+}
+
 void MaterialEditUIController::SetDiffuseColor(const CoreMath::Vector3 &value)
 {
 
@@ -249,6 +314,25 @@ void MaterialEditUIController::SetRoughness(float value)
     if (value < 0.0f)
         value = 0.0f;
     mMaterialEditData.mRoughness = value;
+}
+
+void MaterialEditUIController::SetMetalic(float value)
+{
+
+    if (value < 0.0f)
+        value = 0.0f;
+    mMaterialEditData.mMetallic = value;
+}
+
+void MaterialEditUIController::SetEmissiveColor(const CoreMath::Vector3 &value)
+{
+
+    mMaterialEditData.mEmissiveColor = value;
+}
+void MaterialEditUIController::SetEmissiveIntensity(float value)
+{
+
+    mMaterialEditData.mEmissiveIntensity = value;
 }
 
 UIReflectVector3Panel *MaterialEditUIController::CreateVector3ReflectPanel(

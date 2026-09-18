@@ -87,6 +87,9 @@ class RENDER_SYSTEM_API D3DRenderSystem : public Render::IRenderSystem
     virtual void SetRenderTarget(Core::CommandContext *commandContext, GRM::IGpuResource *rendertarget,
                                  GRM::IGpuResource *depthStenci) override;
 
+    virtual void Dispatch(Core::CommandContext *commandContext,
+                          const Render::ComputeDispatchItem &dispatchItem) override;
+
   private:
     // pso, rootsignature 비교후 바인딩
     void BindPSOIfNeeded(ID3D12GraphicsCommandList *commandList, const Render::RenderItem *beforeRenderItem,
@@ -111,6 +114,9 @@ class RENDER_SYSTEM_API D3DRenderSystem : public Render::IRenderSystem
     // D3D12_RESOURCE_STATES ConvertToD3DResourceState(EResourceState resourceState);
 
     D3D12_RECT ConvertToD3DRect(const Render::RECT &rect);
+
+    void BindComputeShaderResources(ID3D12GraphicsCommandList *commandList,
+                                    const Render::ComputeDispatchItem &dispatchItem);
 
 #pragma endregion
 

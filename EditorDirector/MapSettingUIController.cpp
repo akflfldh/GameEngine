@@ -67,6 +67,14 @@ void MapSettingUIController::BeginUI()
 
 #pragma endregion
 
+    mExposurePanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("AmbientIntensityPanel");
+
+    mExposurePanel->SetTagText("노출 강도");
+    // mAmbientIntensityPanel->SetColor(0.36f, 0.36f, 0.36f);
+    mExposurePanel->BindFloat([this]() { return GetExposure(); }, [this](float value) { SetExposure(value); });
+
+    mScrollBox->AddItem(mExposurePanel);
+
 #pragma region skySphere
 
     mSkySphereTextureSlotPanel = mCanvas->CreateUIElement<UIReflectTextureSlotPanel>("SkySphereTextureSlotPanel");
@@ -124,6 +132,7 @@ void MapSettingUIController::RebuildUI(Map *map)
 
     mAmbientColorPanel->RefreshFromSource();
     mAmbientIntensityPanel->RefreshFromSource();
+    mExposurePanel->RefreshFromSource();
 }
 
 CoreMath::Vector3 MapSettingUIController::GetAmbientColor() const
@@ -180,4 +189,32 @@ void MapSettingUIController::SetSkySphereTexture(CoreAsset::AssetID id)
     }
 
     mTargetMap->SetSkySphereTextureID(id);
+}
+
+float MapSettingUIController::GetExposure() const
+{
+    return GetPostProcessingSettings().mExposure;
+}
+
+void MapSettingUIController::SetExposure(float v)
+{
+
+    if (mTargetMap == nullptr)
+    {
+        return;
+    }
+
+    mTargetMap->SetExposure(v);
+}
+
+Core::PostProcessingSettings MapSettingUIController::GetPostProcessingSettings() const
+{
+
+    if (mTargetMap == nullptr)
+    {
+
+        return {};
+    }
+
+    return mTargetMap->GetPostProcessingSettings();
 }

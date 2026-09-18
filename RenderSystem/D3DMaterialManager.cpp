@@ -20,7 +20,8 @@ D3DRender::D3DMaterialManager::D3DMaterialManager(Microsoft::WRL::ComPtr<ID3D12D
 {
     InitD3DBlendTable();
     InitD3DBlendOpTable();
-    mMasterRootSignature = CreateRootMasterSignature();
+    mMasterRootSignature = CreateMasterRootSignature();
+    mMasterComputeRootSignature = CreateMasterComputeRootSignature();
 }
 
 D3DRender::D3DMaterialManager::~D3DMaterialManager() {}
@@ -139,7 +140,11 @@ Render::MaterialID D3DRender::D3DMaterialManager::CreateMaterial(const Render::M
     std::vector<uint8_t> shaderCode;
     CreateHLSL(info.mHLSLGenerationInfo, shaderCode);
 
-    CompileHLSL(info, compiledShaderTable);
+    bool ret = CompileHLSL(info, compiledShaderTable);
+    if (ret == false)
+    {
+        return MaterialIDNone;
+    }
 
     ID3D12PipelineState *pso = CreatePSO(info, compiledShaderTable);
 
@@ -179,6 +184,37 @@ Render::MaterialID D3DRender::D3DMaterialManager::CreateMaterialDirectly(const R
     return MaterialIDNone;
 }
 
+Render::MaterialID D3DRender::D3DMaterialManager::CreateComputeMaterial(
+    const Render::ComputeMaterialGenerationInfo &info)
+{
+
+    // Material Root Sinature 사용한다.
+    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
+
+    std::vector<uint8_t> shaderCode;
+    // CreateHLSL(info.mHLSLGenerationInfo, shaderCode);
+
+    auto csBlob = CompileHLSL(info.mComputeShaderInfo);
+
+    if (csBlob == nullptr)
+    {
+        return MaterialIDNone;
+    }
+
+    ID3D12PipelineState *pso = CreateComputePSO(info, csBlob);
+
+    if (pso)
+    {
+        auto materialItem = std::make_unique<D3DRender::MaterialItem>();
+        Render::MaterialID matID = materialItem->mID = GetNextMaterialID();
+        materialItem->mPso = pso;
+        mMaterialItemsTable[matID] = std::move(materialItem);
+        return matID;
+    }
+
+    return MaterialIDNone;
+}
+
 D3DRender::MaterialItem *D3DRender::D3DMaterialManager::GetMaterialItem(Render::MaterialID materialID) const
 {
 
@@ -194,6 +230,11 @@ D3DRender::MaterialItem *D3DRender::D3DMaterialManager::GetMaterialItem(Render::
 ID3D12RootSignature *D3DRender::D3DMaterialManager::GetMasterRootSignature() const
 {
     return mMasterRootSignature.Get();
+}
+
+ID3D12RootSignature *D3DRender::D3DMaterialManager::GetMasterComputeRootSignature() const
+{
+    return mMasterComputeRootSignature.Get();
 }
 
 bool D3DRender::D3DMaterialManager::BuildMainPass(const Render::CreationMaterialInfo &creationMaterialInfo,
@@ -1053,7 +1094,7 @@ D3D12_STENCIL_OP D3DRender::D3DMaterialManager::ConvertToD3DStencilOP(Render::ES
     return D3D12_STENCIL_OP();
 }
 
-Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::CreateRootMasterSignature()
+Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::CreateMasterRootSignature()
 {
 
     // 1번 pass buffer
@@ -1198,6 +1239,116 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
     return rootSignature;
 }
 
+Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::CreateMasterComputeRootSignature()
+{
+
+    // 1번 pass buffer
+
+    // 2번 material buffer
+    D3D12_DESCRIPTOR_RANGE descriptorRange[3];
+    std::vector<D3D12_ROOT_PARAMETER> rootParameterVector(3);
+
+    // 0번 buffer
+    rootParameterVector[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameterVector[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    rootParameterVector[0].DescriptorTable.NumDescriptorRanges = 1;
+    rootParameterVector[0].DescriptorTable.pDescriptorRanges = &descriptorRange[0];
+
+    descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+    descriptorRange[0].NumDescriptors = 1;
+    descriptorRange[0].BaseShaderRegister = 0;
+    descriptorRange[0].RegisterSpace = 0;
+    descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    // 1번 input texture 1
+    rootParameterVector[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameterVector[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    rootParameterVector[1].DescriptorTable.NumDescriptorRanges = 1;
+    rootParameterVector[1].DescriptorTable.pDescriptorRanges = &descriptorRange[1];
+
+    descriptorRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+    descriptorRange[1].NumDescriptors = 1;
+    descriptorRange[1].BaseShaderRegister = 0;
+    descriptorRange[1].RegisterSpace = 0;
+    descriptorRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    // 2번 output texture
+    rootParameterVector[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+    rootParameterVector[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    rootParameterVector[2].DescriptorTable.NumDescriptorRanges = 1;
+    rootParameterVector[2].DescriptorTable.pDescriptorRanges = &descriptorRange[2];
+
+    descriptorRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+    descriptorRange[2].NumDescriptors = 1;
+    descriptorRange[2].BaseShaderRegister = 0;
+    descriptorRange[2].RegisterSpace = 0;
+    descriptorRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+    // TODO 함수로 분리하기 정적샘플러 생성
+    //  정적 샘플러 사용
+    D3D12_STATIC_SAMPLER_DESC staticSampler[2] = {};
+    staticSampler[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    staticSampler[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[0].MipLODBias = 0;
+    staticSampler[0].MaxAnisotropy = 1;
+    staticSampler[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+    staticSampler[0].MinLOD = 0;
+    staticSampler[0].MaxLOD = D3D12_FLOAT32_MAX;
+    staticSampler[0].ShaderRegister = 0;
+    staticSampler[0].RegisterSpace = 0;
+    staticSampler[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    staticSampler[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+    staticSampler[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    staticSampler[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+    staticSampler[1].MipLODBias = 0;
+    staticSampler[1].MaxAnisotropy = 1;
+    staticSampler[1].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+    staticSampler[1].MinLOD = 0;
+    staticSampler[1].MaxLOD = D3D12_FLOAT32_MAX;
+    staticSampler[1].ShaderRegister = 1;
+    staticSampler[1].RegisterSpace = 0;
+    staticSampler[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    staticSampler[1].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+    // D3D12RootSignature 생성
+    D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.NumParameters = rootParameterVector.size();
+    rootSignatureDesc.pParameters = rootParameterVector.data();
+    rootSignatureDesc.pStaticSamplers = staticSampler;
+    rootSignatureDesc.NumStaticSamplers = sizeof(staticSampler) / sizeof(D3D12_STATIC_SAMPLER_DESC);
+    rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+    ID3DBlob *serializedRootSignatureBlob = nullptr;
+    ID3DBlob *errorBlob = nullptr;
+    HRESULT ret = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0,
+                                              &serializedRootSignatureBlob, &errorBlob);
+
+    if (FAILED(ret))
+    {
+        LOG_MESSAGE_ERROR("MaterialManager", (char *)errorBlob->GetBufferPointer());
+        return nullptr;
+    }
+
+    ID3D12RootSignature *rootSignature = nullptr;
+    ret = mDevice->CreateRootSignature(0, serializedRootSignatureBlob->GetBufferPointer(),
+                                       serializedRootSignatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+
+    if (FAILED(ret))
+    {
+        const char *error = (const char *)errorBlob->GetBufferPointer();
+        LOG_MESSAGE_ERROR("ShaderCompile", error);
+        OutputDebugStringA(error);
+        return nullptr;
+    }
+
+    return rootSignature;
+}
+
 bool D3DRender::D3DMaterialManager::CreateHLSL(const Render::MaterialHLSLGenerationInfo &hlslGenerationInfo,
                                                std::vector<uint8_t> &oShader)
 {
@@ -1216,28 +1367,40 @@ bool D3DRender::D3DMaterialManager::CompileHLSL(
     {
 
         Microsoft::WRL::ComPtr<ID3DBlob> blob = nullptr;
-        UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-        ID3DBlob *errorBlob = nullptr;
 
-        uint8_t *pShader = shaderStageInfo.mShadeCode;
-        size_t shaderSize = shaderStageInfo.mShaderCodeSize;
+        blob = CompileHLSL(shaderStageInfo);
 
-        HRESULT ret = D3DCompile(pShader, shaderSize, nullptr, nullptr, nullptr, shaderStageInfo.mEntryPoint.c_str(),
-                                 shaderStageInfo.mTarget.c_str(), compileFlags, 0, &blob, &errorBlob);
-
-        if (FAILED(ret))
-        {
-
-            const char *error = (const char *)errorBlob->GetBufferPointer();
-            LOG_MESSAGE_ERROR("ShaderCompile", error);
-            OutputDebugStringA(error);
+        if (blob != nullptr)
+            oShaderTable[shaderStageInfo.mStage] = blob;
+        else
             return false;
-        }
-
-        oShaderTable[shaderStageInfo.mStage] = blob;
     }
 
     return true;
+}
+
+Microsoft::WRL::ComPtr<ID3DBlob> D3DRender::D3DMaterialManager::CompileHLSL(const Render::ShaderSourceInfo &shaderInfo)
+{
+    Microsoft::WRL::ComPtr<ID3DBlob> blob = nullptr;
+    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+    ID3DBlob *errorBlob = nullptr;
+
+    uint8_t *pShader = shaderInfo.mShadeCode;
+    size_t shaderSize = shaderInfo.mShaderCodeSize;
+
+    HRESULT ret = D3DCompile(pShader, shaderSize, nullptr, nullptr, nullptr, shaderInfo.mEntryPoint.c_str(),
+                             shaderInfo.mTarget.c_str(), compileFlags, 0, &blob, &errorBlob);
+
+    if (FAILED(ret))
+    {
+
+        const char *error = (const char *)errorBlob->GetBufferPointer();
+        LOG_MESSAGE_ERROR("ShaderCompile", error);
+        OutputDebugStringA(error);
+        return nullptr;
+    }
+
+    return blob;
 }
 
 ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
@@ -1370,6 +1533,30 @@ ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
     {
 
         LOG_MESSAGE_ERROR("MaterialManager", "파이프라인 생성실패");
+    }
+
+    return pipelineState;
+}
+
+ID3D12PipelineState *D3DRender::D3DMaterialManager::CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info,
+                                                                     Microsoft::WRL::ComPtr<ID3DBlob> &csBlob)
+{
+
+    D3D12_COMPUTE_PIPELINE_STATE_DESC pso = {};
+
+    pso.pRootSignature = mMasterComputeRootSignature.Get();
+
+    pso.CS.pShaderBytecode = csBlob->GetBufferPointer();
+    pso.CS.BytecodeLength = csBlob->GetBufferSize();
+
+    ID3D12PipelineState *pipelineState = nullptr;
+    HRESULT ret = mDevice->CreateComputePipelineState(&pso, IID_PPV_ARGS(&pipelineState));
+
+    if (FAILED(ret))
+    {
+
+        LOG_MESSAGE_ERROR("MaterialManager", "파이프라인 생성실패");
+        return nullptr;
     }
 
     return pipelineState;

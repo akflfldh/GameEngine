@@ -50,6 +50,8 @@ void PrefabWorkSpaceManager::Initialize(UI::UICanvas *canvas, Core::LogicalWindo
 
     // Init logical Window
     InitLogicalWindow(canvas);
+    mLogicalWindow->SetBackBufferClearColor(0, 0, 0, 1);
+
     mWorkSpace->AddLogicalWindow(globalLogicalWindow);
     mWorkSpace->SetGlobalOverlayWindow(globalLogicalWindow);
 
@@ -63,6 +65,7 @@ void PrefabWorkSpaceManager::Initialize(UI::UICanvas *canvas, Core::LogicalWindo
     map->SetName("PlayMap");
     mWorld->Register(engineMode->GetEditorMap());
     mWorld->SetEngineMode(engineMode);
+
     map->SetAmbientLightColor({1.0f, 1.0f, 1.0f});
     map->SetAmbientLightIntensity(1.3f);
     mLogicalWindow->SetWorld(mWorld.get());

@@ -35,6 +35,8 @@ void Render::RenderMaterialResolver::Initialize()
         BuildSkySphereGpuMaterial();
 
         BuildShadowGpuMaterial();
+        BuildToneMappingGpuMaterial();
+        BuildBloomGpuMaterial();
     }
 
     mInitialized = true;
@@ -73,6 +75,8 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         MaterialGenerationInfo gpuMaterialGenerationInfo;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mAlbedoNum = 1;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mHasNormalMap = false;
+        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] =
+            GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -99,6 +103,8 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         MaterialGenerationInfo gpuMaterialGenerationInfo;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mAlbedoNum = 1;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mHasNormalMap = false;
+        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] =
+            GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -226,6 +232,7 @@ void Render::RenderMaterialResolver::BuildDebugGridGpuMaterial()
     debugGridRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
     debugGridRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
     debugGridRenderSettingInfo.mBlendOp = EBlendOp::eADD;
+    debugGridRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
     size_t shaderSize = sizeof(DebugGridHLSL) - 1;
     mgInfo.mShaderInfoList = {{(uint8_t *)DebugGridHLSL, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
@@ -375,6 +382,7 @@ void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
         matRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
         matRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eEnabled;
         matRenderSettingInfo.mDepthWriteMask = false;
+        matRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
         uint8_t *pShader = (uint8_t *)SkySphereHLSL;
         size_t shaderSize = sizeof(SkySphereHLSL) - 1;
@@ -430,4 +438,56 @@ void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
     rmc.mShadingModel = CoreAsset::EShadingModel::eNone;
 
     RegisterGpuMaterial(rmc, ERenderPassType::eShadow, gpuMaterialID);
+}
+
+void Render::RenderMaterialResolver::BuildToneMappingGpuMaterial()
+{
+
+    MaterialGenerationInfo mgInfo;
+    // GrayScale gpuMaterial
+    MaterialRenderSettingInfo &toneMappingRenderSettingInfo = mgInfo.mRenderSettingInfo;
+    toneMappingRenderSettingInfo.mCullMode = ECullMode::eNone;
+    toneMappingRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
+    toneMappingRenderSettingInfo.mCCW = false;
+    toneMappingRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eNone;
+    toneMappingRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
+    toneMappingRenderSettingInfo.mRenderTargetCount = 1;
+    toneMappingRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR8G8B8A8_UNORM_SRGB;
+
+    // grayScaleRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
+    // grayScaleRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
+    // grayScaleRenderSettingInfo.mBlendOp = EBlendOp::eADD;
+
+    size_t shaderSize = sizeof(ToneMappingHLSL) - 1;
+    mgInfo.mShaderInfoList = {{(uint8_t *)ToneMappingHLSL, shaderSize, "VSMain", "vs_5_1", EShaderStage::eVertex},
+                              {(uint8_t *)ToneMappingHLSL, shaderSize, "PSMain", "ps_5_1", EShaderStage::ePixel}};
+
+    MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
+
+    RenderMaterialContext rmc;
+    rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
+    rmc.mTransparent = false;
+
+    RegisterGpuMaterial(rmc, ERenderPassType::eToneMapping, matID);
+}
+
+void Render::RenderMaterialResolver::BuildBloomGpuMaterial()
+{
+    RenderMaterialContext rmc = {};
+
+    ComputeMaterialGenerationInfo horizontalMaterialInfo;
+    horizontalMaterialInfo.mName = "BloomHorizontalHLSL";
+    horizontalMaterialInfo.mComputeShaderInfo = {
+        (uint8_t *)BloomHorizontalHLSL, sizeof(BloomHorizontalHLSL) - 1, "CSMain", "cs_5_1", EShaderStage::eCompute};
+
+    MaterialID horizontalMaterialID = mGpuMaterialManager->CreateComputeMaterial(horizontalMaterialInfo);
+    RegisterGpuMaterial(rmc, ERenderPassType::eBloomHorizontal, horizontalMaterialID);
+
+    ComputeMaterialGenerationInfo verticalMaterialInfo;
+    verticalMaterialInfo.mName = "BloomVerticalHLSL";
+    verticalMaterialInfo.mComputeShaderInfo = {
+        (uint8_t *)BloomVerticalHLSL, sizeof(BloomVerticalHLSL) - 1, "CSMain", "cs_5_1", EShaderStage::eCompute};
+
+    MaterialID verticalMaterialID = mGpuMaterialManager->CreateComputeMaterial(verticalMaterialInfo);
+    RegisterGpuMaterial(rmc, ERenderPassType::eBloomVertical, verticalMaterialID);
 }

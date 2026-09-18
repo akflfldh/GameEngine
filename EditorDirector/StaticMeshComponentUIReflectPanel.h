@@ -24,6 +24,7 @@ class UIDropdown;
 class UIReflectFloatPanel;
 struct DragPayload;
 class UIFoldoutPanel;
+class UIAssetSlotPanel;
 
 class REFLECT_CLASS(EngineClass) StaticMeshComponentUIReflectPanel : public UI::UIImage, public IPropertyBindable
 {
@@ -40,14 +41,14 @@ class REFLECT_CLASS(EngineClass) StaticMeshComponentUIReflectPanel : public UI::
   protected:
     virtual void OnBegin() override;
 
-    UI::UIImage *CreateSubMaterialPanel();
-    void DropMaterialPayload(const DragPayload &payload, int index);
+    UI::UIImage *CreateSubMaterialPanel(const std::string &matName = "");
+    void OnDropMaterialPayload(CoreAsset::AssetID id, int index);
 
     void BuildComponentMesh();
     void BuildPhysicsProperties();
     void SetMesh(CoreAsset::AssetID id);
 
-    void SetSubMaterialPanelNameText(UI::UIImage *subMaterialPanel, const std::string &name);
+    void SetSubMaterialPanelNameText(UIAssetSlotPanel *subMaterialPanel, const std::string &name);
     void RefreshPhysicsProperties();
     size_t GetPhysicsBodyTypeIndex() const;
     void SetPhysicsBodyTypeByIndex(size_t index);
@@ -66,6 +67,6 @@ class REFLECT_CLASS(EngineClass) StaticMeshComponentUIReflectPanel : public UI::
     UIBoolPanel *mPhysicsGravityPanel = nullptr;
     UIReflectFloatPanel *mPhysicsMassPanel = nullptr;
 
-    std::vector<UI::UIImage *> mSubMaterialPanelList;
+    std::vector<UIAssetSlotPanel *> mSubMaterialPanelList;
     UI::UIVerticalLayoutComponent *mVerticalLayoutCom = nullptr;
 };

@@ -39,6 +39,8 @@ struct DefaultMaterialData
     float gMetallic;
     CoreMath::Vector3 gAmbient;
     float gRoughness;
+    CoreMath::Vector3 gEmissiveColor;
+    float gEmissiveIntensity;
 };
 
 struct DefaultLightData

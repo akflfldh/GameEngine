@@ -27,6 +27,7 @@
 #include <Core/WindowedFrameController.h>
 #include <DefaultEditorInspectorManager.h>
 #include <EditorDirector/EditorBuildManager.h>
+#include <EditorDirector/MaterialCreationManager.h>
 #include <EditorDirector/TaskUIController.h>
 #include <EditorDirector/UIDropTargetComponent.h>
 #include <EditorDirector/UIEditorDebugHUD.h>
@@ -101,6 +102,9 @@ void GlobalOverlayManager::Initialize(UI::UICanvas *overlayCanvas, Core::Logical
     mDebugHUD->SetDepthValue(1); // 가장위에
 
     mMainWindow = Quad::EditorDirector::GetInstance()->GetMainSceneWindow();
+
+    mMaterialCreationManager = MaterialCreationManager::GetInstance();
+    mMaterialCreationManager->Initialize(overlayCanvas);
 
     //  mainWindow->mOnMouseEnterCallbackSystem.Register([this]() { OnDragDropMouseEnterMainWindow(); });
     //    mainWindow->mOnMouseLeaveCallbackSystem.Register([this]() { OnDragDropMouseLeaveMainWindow(); });
@@ -560,7 +564,18 @@ void GlobalOverlayManager::CreateAssetContextPanel(UI::UITextButton *ownerButton
         [this](float, float)
         {
             CloseCurrentContextMenuAll();
+            // 임포트 시작전에 먼저 임포트 설정창 띄우기 그곳에서 startimport를 호출하는버튼이있는거임
+
             StartImport();
+        });
+
+    menuMap["CreateMaterial"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseCurrentContextMenuAll();
+            // 임포트 시작전에 먼저 임포트 설정창 띄우기 그곳에서 startimport를 호출하는버튼이있는거임
+
+            StartCreatingMaterial();
         });
 }
 
@@ -784,6 +799,31 @@ void GlobalOverlayManager::CreateLightObjectContextPanel(UI::UITextButton *butto
                     {
                         Core::LightObject *object = map->CreateEntity<Core::LightObject>("Light");
                         object->SetLightType(Core::ELightType::ePoint);
+                    }
+                }
+            }
+            // Cube 생성
+
+            // 엔티티
+            // 정적 메시 컴포넌트 소유,
+        });
+
+    menuMap["Spot Light"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseCurrentContextMenuAll();
+
+            Quad::EditorSceneManager *sceneManager = Quad::EditorSceneManager::GetInstance();
+            if (sceneManager)
+            {
+                auto world = sceneManager->GetUserWorld();
+                if (world)
+                {
+                    Map *map = world->GetCurrentMap();
+                    if (map)
+                    {
+                        Core::LightObject *object = map->CreateEntity<Core::LightObject>("Light");
+                        object->SetLightType(Core::ELightType::eSpot);
                     }
                 }
             }
@@ -1461,6 +1501,16 @@ void GlobalOverlayManager::StartImport()
     std::string path = EditorUtility::OpenFileDialog(nullptr);
 
     Quad::EditorAssetImporterManager::GetInstance()->RequestImport(path.c_str());
+}
+
+void GlobalOverlayManager::StartCreatingMaterial()
+{
+
+    if (mMaterialCreationManager)
+    {
+
+        mMaterialCreationManager->RequestCreatingMaterial();
+    }
 }
 
 void GlobalOverlayManager::UpdateDragDropMainWindowState(Core::LogicalWindow *hitWindow)

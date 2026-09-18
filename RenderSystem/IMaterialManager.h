@@ -29,6 +29,8 @@ class RENDER_SYSTEM_API IMaterialManager
                                                           &info /*, uint8_t *pShader,
                               size_t shaderSize*/) = 0;
 
+    virtual Render::MaterialID CreateComputeMaterial(const ComputeMaterialGenerationInfo &info) = 0;
+
   protected:
   private:
     static IMaterialManager *mImpl;

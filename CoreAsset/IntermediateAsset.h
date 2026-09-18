@@ -56,10 +56,10 @@ struct CORE_ASSET_API IntermediateMaterial : public IntermediateAsset
     std::vector<std::pair<std::string, AssetID>> mTexResourceList;
     std::vector<uint32_t> mSamplerResourceList;
 
-    CoreMath::Vector3 mDiffuseColor;
-    float mDiffuseFactor;
-    CoreMath::Vector3 mSpecular;
-    float mSpecularFactor;
+    CoreMath::Vector3 mDiffuseColor = {1.0f, 1.0f, 1.0f};
+    float mDiffuseFactor = 1.0f;
+    CoreMath::Vector3 mSpecular = {1.0f, 1.0f, 1.0f};
+    float mSpecularFactor = 1.0f;
     float mShininess = 1.0f;
     float mMetalic = 0.4f;
     EShadingModel mShadingModel = EShadingModel::eNone;

@@ -108,15 +108,16 @@ void Render::BillboardRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     bindingPassBufferGpuResource.mType = EShaderResourceType::eConstantBuffer;
 
     mPassData.mGlobalPassBufferResouce = bindingPassBufferGpuResource;
-    mPassData.mViewport = globalFrameData.mSceneViewport;
-    mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    mPassData.mViewport = executeContext.mGlobalSceneViewport;
+    /* globalFrameData.mSceneViewport;
+     mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
+     mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;*/
 
-    mPassData.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
-    mPassData.mScissorRect.mLeft = globalFrameData.mSceneViewport.TopLeftX; //  globalFrameData.mSceneViewport.TopLeftX;
-    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    mPassData.mScissorRect.mTop = globalFrameData.mSceneViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
-    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
+    mPassData.mRenderTarget = nullptr;                           // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
+    mPassData.mScissorRect.mLeft = mPassData.mViewport.TopLeftX; //  globalFrameData.mSceneViewport.TopLeftX;
+    mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + mPassData.mViewport.Width;
+    mPassData.mScissorRect.mTop = mPassData.mViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
+    mPassData.mScissorRect.mBottom = mPassData.mScissorRect.mTop + mPassData.mViewport.Height;
 }
 
 std::vector<Render::RenderItem> Render::BillboardRenderPass::BuildRenderItem(

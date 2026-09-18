@@ -11,9 +11,20 @@ namespace CoreAsset
 struct IntermediateAsset;
 class AssetImporterManager;
 
+struct TextureImportExecutionContext
+{
+    bool bSRGB = true;
+};
+
+struct FBXImportExecutionContext
+{
+};
+
 struct ImportExecutionContext
 {
     bool bEngineAsset = false;
+    TextureImportExecutionContext mTextureContext;
+    FBXImportExecutionContext mFBXContext;
 };
 
 class CORE_ASSET_API IAssetImporter

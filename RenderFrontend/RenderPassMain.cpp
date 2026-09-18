@@ -35,10 +35,10 @@ void Render::RenderPassMain::AddToGraph(RenderPassGraph &renderPassGraph, const 
         {
             RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
                                                    .mHeight = passSetUpData.mWindowHeight,
-                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR16G16B16A16_FLOAT,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR16G16B16A16_FLOAT,
                                                    .mDsvFormat = std::nullopt,
-                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR16G16B16A16_FLOAT,
                                                    .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
@@ -317,6 +317,7 @@ void Render::RenderPassMain::BuildRenderItemTexGpuResources(const MaterialRender
     {
         for (auto texContext : albedoMapList)
         {
+
             texList.push_back(texContext);
         }
     }
@@ -338,13 +339,8 @@ void Render::RenderPassMain::BuildRenderItemTexGpuResources(const MaterialRender
     for (auto tex : texList)
     {
         Render::BindingGpuResource bindingGpuResource;
+        mAssetResolver->RequestResolveAsset(tex);
         bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(tex).getResource();
-
-        if (bindingGpuResource.gpuResource == nullptr)
-        {
-            mAssetResolver->RequestResolveAsset(tex);
-            bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(tex).getResource();
-        }
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
         bindingGpuResourceVector.push_back(std::move(bindingGpuResource));

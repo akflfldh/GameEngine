@@ -25,33 +25,29 @@ void Render::RenderPassUI::AddToGraph(RenderPassGraph &renderPassGraph, const Re
         [pPass = this, passSetUpData](RenderPassGraphBuilder &builder)
         {
             // builder.Write("BackBuffer", "Opaque_UIMainPass", EResourceState::ePresent);
-            RenderResourceDesc outputTargetDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mDsvFormat = std::nullopt,
-                .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
-                .mUsage = GRM::ETextureUsage::eRenderTarget};
+            RenderResourceDesc outputTargetDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                   .mHeight = passSetUpData.mWindowHeight,
+                                                   .mResourceFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mRtvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mDsvFormat = std::nullopt,
+                                                   .mSrvFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM,
+                                                   .mUsage = GRM::ETextureUsage::eRenderTarget};
             builder.Create(pPass->mOutputTargetName, outputTargetDesc, EResourceState::eRenderTarget);
 
-            RenderResourceDesc outputDepthStencilDesc = {
-                .mWidth = passSetUpData.mWindowWidth,
-                .mHeight = passSetUpData.mWindowHeight,
-                .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mRtvFormat = std::nullopt,
-                .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
-                .mSrvFormat = std::nullopt,
-                .mUsage = GRM::ETextureUsage::eDepthStencil};
+            RenderResourceDesc outputDepthStencilDesc = {.mWidth = passSetUpData.mWindowWidth,
+                                                         .mHeight = passSetUpData.mWindowHeight,
+                                                         .mResourceFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mRtvFormat = std::nullopt,
+                                                         .mDsvFormat = GRM::ETextureFormat::eD24_UNORM_S8_UINT,
+                                                         .mSrvFormat = std::nullopt,
+                                                         .mUsage = GRM::ETextureUsage::eDepthStencil};
             builder.Create(pPass->mOutputDepthStencilName, outputDepthStencilDesc, EResourceState::eWriteDepthStencil);
 
             builder.SetRenderTarget(pPass->mOutputTargetName, pPass->GetName(), pPass->mClearRenderTarget, nullptr);
-            builder.SetDepthStencil(pPass->mOutputDepthStencilName, pPass->GetName(),
-                                    DepthStencilClearDesc{.mClearDepth = false,
-                                                          .mClearStencil = false,
-                                                          .mDepth = 1.0f,
-                                                          .mStencil = 0},
-                                    true);
+            builder.SetDepthStencil(
+                pPass->mOutputDepthStencilName, pPass->GetName(),
+                DepthStencilClearDesc{.mClearDepth = false, .mClearStencil = false, .mDepth = 1.0f, .mStencil = 0},
+                true);
         },
         [pPass = this](const RenderPassExecuteContext &executeContext) { pPass->Execute(executeContext); });
 
@@ -114,14 +110,14 @@ void Render::RenderPassUI::SetGlobalData(const Core::GlobalFrameData &globalFram
     oFrameContext.mGlobalPassBufferResouce.mType = Render::EShaderResourceType::eConstantBuffer;
     oFrameContext.mViewport = globalFrameData.mSceneViewport;
 
-    oFrameContext.mViewport.TopLeftX = 0;
-    oFrameContext.mViewport.TopLeftY = 0;
+    oFrameContext.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
+    oFrameContext.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
 
     oFrameContext.mRenderTarget = nullptr;
-    oFrameContext.mScissorRect.mLeft = 0;
+    oFrameContext.mScissorRect.mLeft = oFrameContext.mViewport.TopLeftX;
     // globalFrameData.mSceneViewport.TopLeftX;
     oFrameContext.mScissorRect.mRight = oFrameContext.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    oFrameContext.mScissorRect.mTop = 0; // globalFrameData.mSceneViewport.TopLeftY;
+    oFrameContext.mScissorRect.mTop = oFrameContext.mViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
     oFrameContext.mScissorRect.mBottom = oFrameContext.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
 
     mGlobalScissorRect = oFrameContext.mScissorRect;
@@ -167,12 +163,18 @@ std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
         SRECT currScissorRect = renderCommand.mScissorRect;
         //  bool currUseScissor = renderProxy->mRenderableComponent->GetOwnerUIElement()->GetUseScissorRect();
         bool currUseScissor = renderCommand.mUseScissorRect;
-        if (currUseScissor == false)
+        Render::ScissorRect sicssorRect;
+        if (currUseScissor)
         {
-            currScissorRect = mGlobalScissorRect;
+
+            sicssorRect = ConvertWorldToScreenRect(currScissorRect, globalFrameData);
+        }
+        else
+        {
+            sicssorRect = mGlobalScissorRect;
         }
 
-        Render::ScissorRect sicssorRect = ConvertWorldToScreenRect(currScissorRect, globalFrameData);
+        //  Render::ScissorRect sicssorRect = ConvertWorldToScreenRect(currScissorRect, globalFrameData);
         if ((int)sicssorRect.mLeft == (int)sicssorRect.mRight || ((int)sicssorRect.mTop == (int)sicssorRect.mBottom))
         {
             // render 할 필요가없다.
@@ -266,9 +268,8 @@ SRECT Render::RenderPassUI::ConvertWorldToScreenRect(const SRECT &rect, const Co
 
     long w = globalFrameData.mSceneViewport.Width;
     long h = globalFrameData.mSceneViewport.Height;
-    long viewportOffsetX = 0;
-    // globalFrameData.mSceneViewport.TopLeftX;
-    long viewportOffsetY = 0; // globalFrameData.mSceneViewport.TopLeftY;
+    long viewportOffsetX = globalFrameData.mSceneViewport.TopLeftX;
+    long viewportOffsetY = globalFrameData.mSceneViewport.TopLeftY;
 
     CoreMath::Vector4 worldLT = {rect.mLeft, rect.mTop, 0, 1.0f};
     CoreMath::Vector4 worldRB = {rect.mRight, rect.mBottom, 0, 1.0f};

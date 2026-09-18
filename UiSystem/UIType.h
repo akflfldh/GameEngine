@@ -65,10 +65,10 @@ struct UIColor
 };
 
 inline const UIColor UIColor::White = {1.0f, 1.0f, 1.0f, 1.0f};
-inline const UIColor UIColor::LightGray = {0.8f, 0.8f, 0.8f, 1.0f};
-inline const UIColor UIColor::Gray = {0.4f, 0.4f, 0.4f, 1.0f};
-inline const UIColor UIColor::DarkGray = {0.2f, 0.2f, 0.2f, 1.0f};
-inline const UIColor UIColor::DimGray = {0.1f, 0.1f, 0.1f, 1.0f};
+inline const UIColor UIColor::LightGray = {0.3f, 0.3f, 0.3f, 1.0f};
+inline const UIColor UIColor::Gray = {0.1f, 0.1f, 0.1f, 1.0f};
+inline const UIColor UIColor::DarkGray = {0.05f, 0.05f, 0.05f, 1.0f};
+inline const UIColor UIColor::DimGray = {0.01f, 0.01f, 0.01f, 1.0f};
 inline const UIColor UIColor::DarkYellow = {0.5f, 0.5f, 0.0f, 1.0f};
 
 class UIColorUtility

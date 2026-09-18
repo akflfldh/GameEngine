@@ -42,7 +42,7 @@ void Quad::EditorAssetImporterModule::Initialize()
     assetImporterManager->RegisterAssetImporter(".fbx", fbxImporter);
 }
 
-ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path &file, bool bEngine,
+ImportResult Quad::EditorAssetImporterModule::Import(const EditorImportRequest &importRequest,
                                                      ImportJobContext *jobContext)
 {
 
@@ -50,26 +50,20 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
 
     // 1. assetManager에게 import요청
     CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
-
     QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF ::LogicalFileSystem::GetInstance();
-
-    // auto preLogicalFolder = logicalFileSystem->GetCurrentLogicalFolder();
-    // if (bEngine)
-    //{
-    //     auto engineFolder = logicalFileSystem->GetFolder("/Engine");
-    //     logicalFileSystem->SetCurrentLogicalFolder(engineFolder);
-    // }
 
     // 현재 논리적파일시스템의 현재 폴더경로도 같이 넘긴다.
     const std::string currLogicalFolderPath = logicalFileSystem->GetCurrentLogicalFolderPath();
 
     CoreAsset::AssetImportContext importContext;
     importContext.mCreationContextTable;
-    importContext.mEngineAsset = bEngine;
+    importContext.mEngineAsset = importRequest.bEngine;
     importContext.mRegistryPrefix = currLogicalFolderPath;
-    //   , currLogicalFolderPath.c_str()
 
-    std::vector<CoreAsset::Asset *> importedAssets = assetManager->ImportAsset(file, importContext);
+    CoreAsset::ImportExecutionContext importExecutionContext = Convert(importRequest);
+
+    std::vector<CoreAsset::Asset *> importedAssets =
+        assetManager->ImportAsset(importRequest.mSourcePath, importContext, importExecutionContext);
 
     if (importedAssets.size() == 0)
     {
@@ -91,31 +85,6 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
         }
     }
 
-    //// 이거는 메인스레드가 하도록 옮기자
-    ////  2 결과물이 asset들에대해서 논리적파일시스템에 등록
-    // CoreAsset::AssetMetaDataManager *assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
-
-    // for (size_t i = 0; i < importedAssets.size(); ++i)
-    //{
-    //     CoreAsset::Asset *asset = importedAssets[i];
-    //     if (asset == nullptr)
-    //         continue;
-
-    //    QuadLF::LogicalFileAssetInfo texturelogicalFileInfo;
-    //    texturelogicalFileInfo.mAssetID = asset->GetID();
-    //    texturelogicalFileInfo.mAssetType = asset->GetType();
-    //    texturelogicalFileInfo.mName = asset->GetName().c_str();
-
-    //    QuadLF::LogicalFile *LogicalFile = logicalFileSystem->MakeFile(
-    //        texturelogicalFileInfo, asset->GetName().c_str(), logicalFileSystem->GetCurrentLogicalFolder(), false);
-
-    //    CoreAsset::AssetMetaData *assetMetaData = assetMetaDataManager->GetMetaData(asset->GetID());
-
-    //    assetMetaData->mFilePath = LogicalFile->GetFullPath(); // 논리적 파일상대경로(물리적 파일경로이기도 하다)
-    //}
-
-    // logicalFileSystem->SetCurrentLogicalFolder(preLogicalFolder);
-
     if (jobContext)
         jobContext->ReportCompeleted("임포트 완료", importedAssets);
 
@@ -135,19 +104,13 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
 
     QuadLF::LogicalFileSystem *logicalFileSystem = QuadLF ::LogicalFileSystem::GetInstance();
 
-    // auto preLogicalFolder = logicalFileSystem->GetCurrentLogicalFolder();
-    // if (bEngine)
-    //{
-    //     auto engineFolder = logicalFileSystem->GetFolder("/Engine");
-    //     logicalFileSystem->SetCurrentLogicalFolder(engineFolder);
-    // }
-
     // 현재 논리적파일시스템의 현재 폴더경로도 같이 넘긴다.
     const std::string currLogicalFolderPath = logicalFileSystem->GetCurrentLogicalFolderPath();
 
-    //   , currLogicalFolderPath.c_str()
+    CoreAsset::ImportExecutionContext importExecutionContext;
 
-    std::vector<CoreAsset::Asset *> importedAssets = assetManager->ImportAsset(file, assetImportContext);
+    std::vector<CoreAsset::Asset *> importedAssets =
+        assetManager->ImportAsset(file, assetImportContext, importExecutionContext);
 
     Render::AssetResolver *assetResovler = Render::AssetResolver::GetInstance();
     for (auto asset : importedAssets)
@@ -164,7 +127,32 @@ ImportResult Quad::EditorAssetImporterModule::Import(const std::filesystem::path
     return importResult;
 }
 
-ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::string &file, bool bEngine)
+CoreAsset::ImportExecutionContext Quad::EditorAssetImporterModule::Convert(
+    const EditorImportRequest &importRequest) const
+{
+
+    CoreAsset::ImportExecutionContext executionContext;
+
+    switch (importRequest.mAssetImportType)
+    {
+    case EAssetImporterType::eTexture:
+
+        executionContext.mTextureContext.bSRGB = importRequest.mTextureSettings.bSRGB;
+        break;
+
+    case EAssetImporterType::eFbx:
+
+        break;
+
+    case EAssetImporterType::eFont:
+
+        break;
+    }
+
+    return executionContext;
+}
+
+ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::filesystem::path &file, bool bEngine)
 {
 
     AsyncThreadPool *threadPool = AsyncThreadPool::GetInstance();
@@ -177,7 +165,28 @@ ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::strin
         [this, file, bEngine, notifyChannel]()
         {
             ImportJobContext context(notifyChannel);
-            Import(file.c_str(), bEngine, &context);
+            EditorImportRequest importRequest;
+
+            Import(importRequest, &context);
+        });
+
+    return importTaskHandle;
+}
+
+ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const EditorImportRequest &importRequest)
+{
+
+    AsyncThreadPool *threadPool = AsyncThreadPool::GetInstance();
+
+    std::shared_ptr<ImportNotifyChannel> notifyChannel = std::make_shared<ImportNotifyChannel>();
+    ImportTaskHandle importTaskHandle;
+    importTaskHandle.mNotifyChannel = notifyChannel;
+
+    threadPool->Submit(
+        [this, importRequest, notifyChannel]()
+        {
+            ImportJobContext context(notifyChannel);
+            Import(importRequest, &context);
         });
 
     return importTaskHandle;
@@ -185,7 +194,10 @@ ImportTaskHandle Quad::EditorAssetImporterModule::RequestImport(const std::strin
 
 ImportResult Quad::EditorAssetImporterModule::RequestImportSync(const std::filesystem::path &file, bool bEngine)
 {
-    return Import(file, bEngine, nullptr);
+    EditorImportRequest importRequest;
+    importRequest.bEngine = bEngine;
+    importRequest.mSourcePath = file;
+    return Import(importRequest, nullptr);
 }
 
 ImportResult Quad::EditorAssetImporterModule::RequestImportSync(const std::filesystem::path &file,
@@ -196,6 +208,8 @@ ImportResult Quad::EditorAssetImporterModule::RequestImportSync(const std::files
 
 ImportResult Quad::EditorAssetImporterModule::ImportDendencySync(const char *file, bool bEngine)
 {
-
-    return Import(file, bEngine, nullptr);
+    EditorImportRequest importRequest;
+    importRequest.bEngine = bEngine;
+    importRequest.mSourcePath = file;
+    return Import(importRequest, nullptr);
 }

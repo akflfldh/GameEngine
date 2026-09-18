@@ -70,6 +70,14 @@ CoreAsset::ImportPackage Import::TextureImporter::Import(
     grmScratchImage.mMetadata.mMipLevels = texMetaData.mipLevels;
     grmScratchImage.mMetadata.mDimension = ConvertTextureType(texMetaData.dimension);
     grmScratchImage.mMetadata.mFormat = ConvertToDxgiFormat(texMetaData.format);
+
+    if (executionContext.mTextureContext.bSRGB == false &&
+        GRM::IsSRGBType(grmScratchImage.mMetadata.mFormat))
+    {
+        grmScratchImage.mMetadata.mFormat =
+            GRM::ConvertToNonSRGBType(grmScratchImage.mMetadata.mFormat);
+    }
+
     if (grmScratchImage.mMetadata.mFormat == GRM::ETextureFormat::eUnknown)
     {
         // log
@@ -94,6 +102,12 @@ CoreAsset::ImportPackage Import::TextureImporter::Import(
         grmScratchImage.mImages[i].mRowPitch = d3dImages[i].rowPitch;
         grmScratchImage.mImages[i].mSlicePitch = d3dImages[i].slicePitch;
         grmScratchImage.mImages[i].mFormat = ConvertToDxgiFormat(d3dImages[i].format);
+        if (executionContext.mTextureContext.bSRGB == false &&
+            GRM::IsSRGBType(grmScratchImage.mImages[i].mFormat))
+        {
+            grmScratchImage.mImages[i].mFormat =
+                GRM::ConvertToNonSRGBType(grmScratchImage.mImages[i].mFormat);
+        }
     }
 
     textureDesc.mTextureUsage = GRM::ETextureUsage::eShaderResource;

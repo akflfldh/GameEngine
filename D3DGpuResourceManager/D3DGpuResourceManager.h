@@ -105,6 +105,7 @@ class GPURESOURCE_MANAGER_API D3DGpuResourceManager : public GRM::IGpuResourceMa
     void CreateRtvHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc);
     void CreateSrvHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc);
     void CreateDsvHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc);
+    void CreateUavHandle(D3DGpuTexture *texture, const GRM::TextureDesc &textureDesc);
 
     D3DGpuTexture *GenerateTextureObject(Microsoft::WRL::ComPtr<ID3D12Resource> textureResource);
 

@@ -176,6 +176,13 @@ class CORE_API_LIB Map : public CoreAsset::Asset
 
 #pragma endregion
 
+#pragma region PostProcessingSettings
+
+    void SetExposure(float exposure);
+    const Core::PostProcessingSettings &GetPostProcessingSettings() const;
+
+#pragma endregion
+
 #pragma region skysphere settings
 
     void SetSkySphereEnableFlag(bool flag);
@@ -281,6 +288,7 @@ class CORE_API_LIB Map : public CoreAsset::Asset
     Core::GameModeSetting mGameModeSetting;
     Core::AmbientLightSettings mAmbientLightSettings;
     Core::SkySphereSettings mSkySphereSettings;
+    Core::PostProcessingSettings mPostProcessingSettings;
 
     //  MapPhysicsContext mPhysicsContext;
 };
