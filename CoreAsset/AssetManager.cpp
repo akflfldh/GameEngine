@@ -14,8 +14,6 @@
 #include <CoreAsset/IAssetDataSource.h>
 #include <CoreBase/CoreAssert.h>
 #include <CoreBase/FVector.h>
-#include <CoreDevice/ImageLoader.h>
-#include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <IAssetImporter.h>
 #include <Utility/Utility.h>
 
@@ -806,7 +804,6 @@ std::vector<CoreAsset::AssetPtr> CoreAsset::AssetManager::CreateBuiltInStaticMes
 
         intermediate.mTexResourceList.push_back(
             {mDefaultGrayTexture.Get()->GetName().c_str(), mDefaultGrayTexture.GetAssetID()});
-        intermediate.mGpuMaterialID = 5;
         intermediate.mSamplerResourceList.push_back(1);
         intermediate.mDiffuseFactor = 1.0f;
         intermediate.mDiffuseColor = {1.0f, 1.0f, 1.0f};
@@ -937,7 +934,6 @@ std::vector<CoreAsset::AssetPtr> CoreAsset::AssetManager::CreatStaticMeshEditorU
 
         intermediate.mTexResourceList.push_back(
             {mDefaultWhiteTexture.Get()->GetName().c_str(), mDefaultWhiteTexture.GetAssetID()});
-        intermediate.mGpuMaterialID = 0;
         intermediate.mSamplerResourceList.push_back(1);
         intermediate.mDiffuseFactor = 1.0f;
         intermediate.mDiffuseColor = {1.0f, 1.0f, 1.0f};
@@ -954,7 +950,6 @@ std::vector<CoreAsset::AssetPtr> CoreAsset::AssetManager::CreatStaticMeshEditorU
 
         intermediate.mTexResourceList.push_back(
             {mDefaultWhiteTexture.Get()->GetName().c_str(), mDefaultWhiteTexture.GetAssetID()});
-        intermediate.mGpuMaterialID = 0;
         intermediate.mSamplerResourceList.push_back(1);
         intermediate.mDiffuseFactor = 1.0f;
         intermediate.mDiffuseColor = {0.4f, 0.4f, 0.4f};

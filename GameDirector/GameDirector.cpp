@@ -330,9 +330,7 @@ void Quad::GameDirector::LoadAssets()
     // gpuBufferContextSystem->LoadShaderBufferFile(mGameRuntimeConfig->GetGameRootDirectory() /
     //                                              "Shader/shaderbuffer.shader.buffer");
 
-    auto gpuMaterialManager = Render::IMaterialManager::GetInstance();
-
-    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>(gpuMaterialManager);
+    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>();
 
     //  AssetResolver, ObjectRenderItemBuilder, UIRenderItemBuilder, IRenderProxyManager
 

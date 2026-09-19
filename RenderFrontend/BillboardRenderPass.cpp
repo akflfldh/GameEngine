@@ -15,8 +15,6 @@ Render::BillboardRenderPass::BillboardRenderPass()
     SetPassName("BillboardRenderPass");
     SetBufferID(1);
 
-    //  mGpuMaterialID = AssetResolver::GetInstance()->GetPassGpuMaterialID(BillboardMat);
-
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eBillboard;
     rmc.mTransparent = false;

@@ -4,7 +4,6 @@
 #include <RenderFrontend/RenderPassGraph.h>
 #include <RenderSystem/IRenderSystem.h>
 
-#include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/RenderMaterialResolver.h>
 
 Render::RenderDebugGridPass::RenderDebugGridPass()
@@ -12,8 +11,6 @@ Render::RenderDebugGridPass::RenderDebugGridPass()
     SetPassName("DebugGridPass");
     SetBufferID(1);
     mUseDefaultViewport = false;
-    // mPassMatID = Render::AssetResolver::GetInstance()->GetPassGpuMaterialID(DebugGridMat);
-
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = true;

@@ -198,8 +198,6 @@
 // void CoreAsset::SerializedMaterial::Serialize(QuadRW::BinaryWriter &writer)
 //{
 //     SerializedAsset::Serialize(writer);
-//     writer.Write(mGpuMaterialID);
-//
 //     writer.Write(mTexResourceList.size());
 //     for (const auto &texResourceElement : mTexResourceList)
 //     {
@@ -217,8 +215,6 @@
 // void CoreAsset::SerializedMaterial::DeSerialize(QuadRW::BinaryReader &reader)
 //{
 //     SerializedAsset::DeSerialize(reader);
-//     reader.Read(mGpuMaterialID);
-//
 //     size_t texResourceNum = 0;
 //     reader.Read(texResourceNum);
 //     mTexResourceList.resize(texResourceNum);

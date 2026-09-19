@@ -5,6 +5,7 @@
 #include <Core/WindowedFrameController.h>
 #include <Core/World.h>
 #include <CoreAsset/AssetManager.h>
+#include <CoreAsset/Font.h>
 #include <CoreAsset/Material.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreBase/CoreAssert.h>
@@ -32,6 +33,7 @@
 #include <UiSystem/UIElement.h>
 #include <UiSystem/UIManager.h>
 #include <UiSystem/UIRenderableComponent.h>
+#include <UiSystem/UITextComponent.h>
 #include <sstream>
 
 bool Render::PooledRenderResource::isMatch(const RenderResourceDesc &rhs) const
@@ -596,45 +598,32 @@ void Render::RenderPipelineManager::ExcuteRenderPassGraph(Core::LogicalWindow *w
         {
             auto renderProxy = uiRenderProxyList[i];
             UIRenderCommand renderCommand;
-            //= renderCommandList[i];
 
             //  renderCommand.mUIMaterial = renderProxy->mRenderableComponent->GetUIMeshComponentPtr()->mUIMaterial;
 
             CoreAsset::Material *material = renderProxy->mRenderableComponent->GetUIMeshComponentPtr()->mUIMaterial;
             renderCommand.mUIMaterialID = material->GetID();
-            renderCommand.mGpuMaterialID = material->GetGpuMaterialID();
 
-            if (renderPassExecuteContext.mUIMaterialRenderSnapshotTable.find(renderCommand.mUIMaterialID) ==
-                renderPassExecuteContext.mUIMaterialRenderSnapshotTable.end())
+            renderCommand.mRole = renderProxy->mRenderableComponent->GetRenderRole();
+
+            if (renderCommand.mRole == UI::UIRenderRole::eImage)
             {
 
-                MaterialRenderSnapshot materialRenderSnapshot;
-                materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() * material->GetDiffuseFactor();
-                materialRenderSnapshot.mMetallic = material->GetMetallic();
-                materialRenderSnapshot.mRoughness = material->GetRoughness();
-                materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-                materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
-                materialRenderSnapshot.mShadingModel = material->GetShadingMode();
+                auto &albedoTexList = material->GetAlbedoTexResourceList();
 
-                for (const auto &texContext : material->GetAlbedoTexResourceList())
-                {
-                    materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
-                }
+                if (albedoTexList.empty() == false)
+                    renderCommand.mMatSnapshot.mTextureAssetID = albedoTexList.back().mTexture.GetAssetID();
+            }
+            else if (renderCommand.mRole == UI::UIRenderRole::eFont)
+            {
 
-                if (material->HasNormalMap())
-                {
-                    materialRenderSnapshot.mNormalMap =
-                        material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
-                }
-                // if (material->GetUploadDirty())
-                // {
-                //     materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
-                //  }
+                auto textCom = static_cast<UI::UITextComponent *>(renderProxy->mRenderableComponent);
 
-                renderPassExecuteContext.mUIMaterialRenderSnapshotTable[renderCommand.mUIMaterialID] =
-                    materialRenderSnapshot;
+                auto font = textCom->GetFont();
+                font->GetGlyphAltas();
 
-                // material->ClearUploadDirty();
+                renderCommand.mMatSnapshot.mColor = textCom->GetColor().ConvertVector3();
+                renderCommand.mMatSnapshot.mTextureAssetID = font->GetGlyphAltas().GetAssetID();
             }
 
             renderCommand.mUseScissorRect = renderProxy->mRenderableComponent->GetOwnerUIElement()->GetUseScissorRect();
@@ -822,31 +811,6 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
                 if (materialSnapshotTable.find(materialHandle) == materialSnapshotTable.end())
                 {
-                    //// 더티 머터리얼 수집
-                    // MaterialRenderSnapshot materialRenderSnapshot;
-                    // materialRenderSnapshot.mHandle = materialHandle;
-                    // materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() *
-                    // material->GetDiffuseFactor(); materialRenderSnapshot.mMetallic = material->GetMetallic();
-                    // materialRenderSnapshot.mRoughness = material->GetRoughness();
-                    // materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-                    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
-                    // materialRenderSnapshot.mShadingModel = material->GetShadingMode();
-                    // materialRenderSnapshot.mAmbient = material->GetAmbient();
-
-                    // for (const auto &texContext : material->GetAlbedoTexResourceList())
-                    //{
-                    //     materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
-                    // }
-
-                    // if (material->HasNormalMap())
-                    //{
-                    //     materialRenderSnapshot.mNormalMap =
-                    //         material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
-                    // }
-                    // if (material->GetUploadDirty())
-                    //{
-                    //     materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
-                    // }
 
                     materialSnapshotTable[materialHandle] = GetMaterialSnapshot(material);
 
@@ -910,32 +874,6 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
                 if (materialSnapshotTable.find(renderCommand.mMaterialHandle) == materialSnapshotTable.end())
                 {
-                    //// 더티 머터리얼 수집
-                    // MaterialRenderSnapshot materialRenderSnapshot;
-                    // materialRenderSnapshot.mHandle = renderCommand.mMaterialHandle;
-                    // materialRenderSnapshot.mDiffuseFactor = material->GetDiffuseColor() *
-                    // material->GetDiffuseFactor(); materialRenderSnapshot.mMetallic = material->GetMetallic();
-                    // materialRenderSnapshot.mRoughness = material->GetRoughness();
-                    // materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-                    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
-                    // materialRenderSnapshot.mShadingModel = material->GetShadingMode();
-                    // materialRenderSnapshot.mAmbient = material->GetAmbient();
-
-                    // for (const auto &texContext : material->GetAlbedoTexResourceList())
-                    //{
-                    //     materialRenderSnapshot.mAlbedoMapList.push_back(texContext.mTexture.As<CoreAsset::Texture>());
-                    // }
-
-                    // if (material->HasNormalMap())
-                    //{
-                    //     materialRenderSnapshot.mNormalMap =
-                    //         material->GetNormalTexResource().mTexture.As<CoreAsset::Texture>();
-                    // }
-                    // if (material->GetUploadDirty())
-                    //{
-                    //     materialRenderSnapshot.mMaterialUploadDirtyFlag = true;
-                    // }
-                    // materialSnapshotTable[renderCommand.mMaterialHandle] = materialRenderSnapshot;
 
                     materialSnapshotTable[renderCommand.mMaterialHandle] = GetMaterialSnapshot(material);
 
@@ -1034,11 +972,12 @@ Render::MaterialRenderSnapshot Render::RenderPipelineManager::GetMaterialSnapsho
     materialRenderSnapshot.mMetallic = material->GetMetallic();
     materialRenderSnapshot.mRoughness = material->GetRoughness();
     materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-    materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
+    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
     materialRenderSnapshot.mShadingModel = material->GetShadingMode();
     materialRenderSnapshot.mAmbient = material->GetAmbient();
     materialRenderSnapshot.mEmissiveColor = material->GetEmissiveColor();
     materialRenderSnapshot.mEmissiveIntensity = material->GetEmissiveIntensity();
+    materialRenderSnapshot.mMaterialAssetID = material->GetID();
 
     for (const auto &texContext : material->GetAlbedoTexResourceList())
     {

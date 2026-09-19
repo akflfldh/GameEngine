@@ -3,6 +3,7 @@
 #include "UiSystem/IUIComponent.h"
 #include "UiSystem/IUIRenderProxyManager.h"
 #include <CoreBase/CoreBaseType.h>
+#include <UiSystem/UIType.h>
 
 #include "UIRenderableComponent.generated.h"
 
@@ -39,6 +40,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIRenderableComponent : public IUI
 
     UIRenderProxy *GetRenderProxy() const;
 
+    UIRenderRole GetRenderRole() const;
+
   protected:
     UIMeshComponent mMeshComponent;
 
@@ -46,6 +49,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIRenderableComponent : public IUI
     bool mRenderActiveState;
 
     std::unique_ptr<UIRenderProxy> mRenderProxy;
+
+    UIRenderRole mRenderRole = UIRenderRole::eImage;
 };
 
 } // namespace UI

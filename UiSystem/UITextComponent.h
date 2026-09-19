@@ -8,6 +8,11 @@
 #include <UITextComponent.generated.h>
 #include <glm/detail/type_float.hpp>
 
+namespace CoreAsset
+{
+class Font;
+}
+
 namespace UI
 {
 struct TextSelectionRect
@@ -76,6 +81,8 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UITextComponent : public UIRendera
 
     void SetScrollOffsetX(float offset);
     float GetScrollOffsetX() const;
+    CoreAsset::Font *GetFont() const;
+    UI::UIColor GetColor() const;
 
   protected:
     virtual void OnBegin() override;

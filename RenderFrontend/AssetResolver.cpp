@@ -1,5 +1,4 @@
 ﻿#include "AssetResolver.h"
-#include <Core/MaterialSystem.h>
 #include <CoreAsset/Asset.h>
 #include <CoreAsset/AssetManager.h>
 
@@ -7,7 +6,6 @@
 #include <CoreAsset/Material.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
-#include <CoreAsset/UIMaterialManager.h>
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <D3DGpuResourceManager/GpuBufferContextSystemImpl.h>
 #include <D3DGpuResourceManager/IGpuResource.h>
@@ -198,11 +196,6 @@ void Render::AssetResolver::EndResourceResolveThread()
     {
         mWorkerThread.join();
     }
-}
-
-Render::MaterialID Render::AssetResolver::GetPassGpuMaterialID(const std::string &name)
-{
-    return mPassGpuMaterialTable[name];
 }
 
 int Render::AssetResolver::GetLightStructuredGpuBufferID() const
@@ -423,207 +416,6 @@ void Render::AssetResolver::RegisterBuiltInAsset()
         ResolveAsset(asset);
     }
 
-    //// BuildStaticMeshOpaqueGpuMaterial
-    //// BuildStaticMeshOutlineWriteStencilGpuMaterial
-    //// BuildStaticMeshOutlineDrawGpuMaterial
-    //// BuildGrayScaleGpuMaterial
-    //// BuildDebugGridGpuMaterial
-    ///*
-    // BuildBillboardGpuMaterial();
-    // BuildDebugLineGpuMaterial();
-    // BuildUIGpuMaterial();
-    //*/
-
-    // Core::MaterialSystem *materialSystem = Core::MaterialSystem::GetInstance();
-
-    // CoreAsset::Material *defulatStaticMeshMaterial =
-    //     static_cast<CoreAsset::Material *>(mAssetManager->GetDefaultStaticMeshMaterial().Get());
-
-    // MaterialRenderSettingInfo defaultStaticMeshMatRenderSettingInfo;
-    // materialSystem->BuildGpuMaterialDirectly(defulatStaticMeshMaterial, (uint8_t *)DefaultStaticMeshHLSL,
-    //                                          sizeof(DefaultStaticMeshHLSL) - 1,
-    //                                          defaultStaticMeshMatRenderSettingInfo);
-
-    //// outline stencil gpu Material
-    // MaterialRenderSettingInfo staticMeshOutlineWriteStencilRenderSettingInfo;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mCullMode = ECullMode::eBack;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mCCW = false;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eNone;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mStencilWriteMode = EStencilWriteMode::eEnabled;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mStencilFrontCompareMode = EDepthStencilCompareMode::eAlways;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mStencilFrontPassOp = EStencilOP::eReplace;
-    // staticMeshOutlineWriteStencilRenderSettingInfo.mStencilFrontFailOp = EStencilOP::eKeep;
-
-    // std::vector<ShaderSourceInfo> staticMeshOutlineWriteStencilShaderInfoList = {
-    //     {nullptr, 0, "VS_Stencil", "vs_5_1", EShaderStage::eVertex}};
-
-    // MaterialID staticMeshOutlineWriteStencilGpuMatID = materialSystem->CreateSystemGpuMaterial(
-    //     (uint8_t *)OutlineStaticMeshHLSL, sizeof(OutlineStaticMeshHLSL) - 1,
-    //     staticMeshOutlineWriteStencilRenderSettingInfo, staticMeshOutlineWriteStencilShaderInfoList);
-
-    // mPassGpuMaterialTable[OutlineStencilMat] = staticMeshOutlineWriteStencilGpuMatID;
-
-    //// outline draw gpu Material
-
-    //// outline stencil gpu Material
-    // MaterialRenderSettingInfo staticMeshOutlineDrawRenderSettingInfo;
-    // staticMeshOutlineDrawRenderSettingInfo.mCullMode = ECullMode::eBack;
-    // staticMeshOutlineDrawRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    // staticMeshOutlineDrawRenderSettingInfo.mCCW = false;
-    // staticMeshOutlineDrawRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eNone;
-    // staticMeshOutlineDrawRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    // staticMeshOutlineDrawRenderSettingInfo.mStencilWriteMode = EStencilWriteMode::eEnabled;
-    // staticMeshOutlineDrawRenderSettingInfo.mStencilFrontCompareMode = EDepthStencilCompareMode::eNotEqual;
-    // staticMeshOutlineDrawRenderSettingInfo.mStencilFrontPassOp = EStencilOP::eZero;
-    // staticMeshOutlineDrawRenderSettingInfo.mStencilFrontFailOp = EStencilOP::eKeep;
-
-    // std::vector<ShaderSourceInfo> staticMeshOutlineDrawShaderInfoList = {
-    //     {nullptr, 0, "VS_DrawOutline", "vs_5_1", EShaderStage::eVertex},
-    //     {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel}};
-
-    // MaterialID staticMeshOutlineDrawGpuMatID = materialSystem->CreateSystemGpuMaterial(
-    //     (uint8_t *)OutlineStaticMeshHLSL, sizeof(OutlineStaticMeshHLSL) - 1, staticMeshOutlineDrawRenderSettingInfo,
-    //     staticMeshOutlineDrawShaderInfoList);
-
-    // mPassGpuMaterialTable[OutlineDrawMat] = staticMeshOutlineDrawGpuMatID;
-
-    //// GrayScale gpuMaterial
-    // MaterialRenderSettingInfo grayScaleRenderSettingInfo;
-    // grayScaleRenderSettingInfo.mCullMode = ECullMode::eNone;
-    // grayScaleRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    // grayScaleRenderSettingInfo.mCCW = false;
-    // grayScaleRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eNone;
-    // grayScaleRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    // grayScaleRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
-    // grayScaleRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
-    // grayScaleRenderSettingInfo.mBlendOp = EBlendOp::eADD;
-
-    // std::vector<ShaderSourceInfo> grayScaleShaderInfoList = {{nullptr, 0, "VSMain", "vs_5_1", EShaderStage::eVertex},
-    //                                                          {nullptr, 0, "PSMain", "ps_5_1", EShaderStage::ePixel}};
-
-    // MaterialID grayScaleGpuMatID = materialSystem->CreateSystemGpuMaterial(
-    //     (uint8_t *)GrayScaleHLSL, sizeof(GrayScaleHLSL) - 1, grayScaleRenderSettingInfo, grayScaleShaderInfoList);
-
-    // mPassGpuMaterialTable[GrayScaleMat] = grayScaleGpuMatID;
-
-    //// DebugGrid GpuMaterial
-    // MaterialRenderSettingInfo debugGridRenderSettingInfo;
-    // debugGridRenderSettingInfo.mCullMode = ECullMode::eNone;
-    // debugGridRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    // debugGridRenderSettingInfo.mCCW = false;
-    // debugGridRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-    // debugGridRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    // debugGridRenderSettingInfo.mBlendMode = EBlendMode::eAlphaBlend;
-    // debugGridRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
-    // debugGridRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
-    // debugGridRenderSettingInfo.mBlendOp = EBlendOp::eADD;
-
-    // std::vector<ShaderSourceInfo> debugGridShaderInfoList = {{nullptr, 0, "VS", "vs_5_1", EShaderStage::eVertex},
-    //                                                          {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel}};
-
-    // MaterialID debugGridGpuMatID = materialSystem->CreateSystemGpuMaterial(
-    //     (uint8_t *)DebugGridHLSL, sizeof(DebugGridHLSL) - 1, debugGridRenderSettingInfo, debugGridShaderInfoList);
-
-    // mPassGpuMaterialTable[DebugGridMat] = debugGridGpuMatID;
-
-    // BuildBillboardGpuMaterial();
-    // BuildDebugLineGpuMaterial();
-    // BuildUIGpuMaterial();
-}
-
-void Render::AssetResolver::BuildBillboardGpuMaterial()
-{
-    Core::MaterialSystem *materialSystem = Core::MaterialSystem::GetInstance();
-
-    MaterialRenderSettingInfo gpuRenderSettingInfo;
-    gpuRenderSettingInfo.mCullMode = ECullMode::eNone;
-    gpuRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    gpuRenderSettingInfo.mCCW = false;
-    gpuRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-    std::vector<ShaderSourceInfo> ShaderInfoList = {{nullptr, 0, "VS", "vs_5_1", EShaderStage::eVertex},
-                                                    {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel},
-                                                    {nullptr, 0, "GS", "gs_5_1", EShaderStage::eGeometry}};
-
-    MaterialID GpuMatID =
-        materialSystem->CreateSystemGpuMaterial((uint8_t *)BillboardHLSL, sizeof(BillboardHLSL) - 1,
-                                                gpuRenderSettingInfo, ShaderInfoList, EInputLayoutType::eBillboard);
-
-    mPassGpuMaterialTable[BillboardMat] = GpuMatID;
-}
-
-void Render::AssetResolver::BuildDebugLineGpuMaterial()
-{
-
-    Core::MaterialSystem *materialSystem = Core::MaterialSystem::GetInstance();
-
-    MaterialRenderSettingInfo gpuRenderSettingInfo;
-    gpuRenderSettingInfo.mCullMode = ECullMode::eNone;
-    gpuRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    gpuRenderSettingInfo.mCCW = false;
-    gpuRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-    std::vector<ShaderSourceInfo> ShaderInfoList = {{nullptr, 0, "VS", "vs_5_1", EShaderStage::eVertex},
-                                                    {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel}};
-
-    MaterialID GpuMatID =
-        materialSystem->CreateSystemGpuMaterial((uint8_t *)DebugLineHLSL, sizeof(DebugLineHLSL) - 1,
-                                                gpuRenderSettingInfo, ShaderInfoList, EInputLayoutType::eLine);
-
-    mPassGpuMaterialTable[DebugLineMat] = GpuMatID;
-}
-
-void Render::AssetResolver::BuildUIGpuMaterial()
-{
-
-    auto uiMaterialManager = CoreAsset::UIMaterialManager::GetInstance();
-    Core::MaterialSystem *materialSystem = Core::MaterialSystem::GetInstance();
-
-    // gpuMaterial 생성
-
-    // defaultUIMat
-
-    MaterialRenderSettingInfo defaultUIMatRenderSettingInfo;
-    defaultUIMatRenderSettingInfo.mCullMode = ECullMode::eNone;
-    defaultUIMatRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    defaultUIMatRenderSettingInfo.mCCW = false;
-    defaultUIMatRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-    defaultUIMatRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    defaultUIMatRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
-    defaultUIMatRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
-    defaultUIMatRenderSettingInfo.mBlendOp = EBlendOp::eADD;
-
-    std::vector<ShaderSourceInfo> defaultUIMatShaderInfoList = {{nullptr, 0, "VS", "vs_5_1", EShaderStage::eVertex},
-                                                                {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel}};
-
-    MaterialID defaultUIGpuMaterialID = materialSystem->CreateSystemGpuMaterial(
-        (uint8_t *)DefaultUIHLSL, sizeof(DefaultUIHLSL) - 1, defaultUIMatRenderSettingInfo, defaultUIMatShaderInfoList,
-        EInputLayoutType::eUI);
-
-    // defaultFontMat
-
-    MaterialRenderSettingInfo defaultUIFontMatRenderSettingInfo;
-    defaultUIFontMatRenderSettingInfo.mCullMode = ECullMode::eNone;
-    defaultUIFontMatRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-    defaultUIFontMatRenderSettingInfo.mCCW = false;
-    defaultUIFontMatRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-    defaultUIFontMatRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eDisabled;
-    defaultUIFontMatRenderSettingInfo.mBlendMode = EBlendMode::eAlphaBlend;
-    defaultUIFontMatRenderSettingInfo.mBlendSrc = EBlend::eBLEND_SRC_ALPHA;
-    defaultUIFontMatRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
-    defaultUIFontMatRenderSettingInfo.mBlendOp = EBlendOp::eADD;
-
-    std::vector<ShaderSourceInfo> defaultUIFontMatShaderInfoList = {{nullptr, 0, "VS", "vs_5_1", EShaderStage::eVertex},
-                                                                    {nullptr, 0, "PS", "ps_5_1", EShaderStage::ePixel}};
-
-    MaterialID defaultUIFontGpuMaterialID = materialSystem->CreateSystemGpuMaterial(
-        (uint8_t *)DefaultFontHLSL, sizeof(DefaultFontHLSL) - 1, defaultUIFontMatRenderSettingInfo,
-        defaultUIFontMatShaderInfoList, EInputLayoutType::eUI);
-
-    // Register
-
-    uiMaterialManager->RegisterDefaultUIGpuMaterialID(defaultUIGpuMaterialID);
-    uiMaterialManager->RegsiterDefaultUIFontGpuMaterialID(defaultUIFontGpuMaterialID);
 }
 
 void Render::AssetResolver::BuildGpuBuffers()

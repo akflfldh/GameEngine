@@ -2,7 +2,6 @@
 #include "CoreAsset/Material.h"
 #include <CoreAsset/AssetManager.h>
 #include <Logger/Logger.h>
-#include <RenderSystem/IMaterialManager.h>
 #include <assert.h>
 
 CoreAsset::UIMaterialManager *CoreAsset::UIMaterialManager::mInstance = nullptr;
@@ -18,8 +17,8 @@ CoreAsset::UIMaterialManager *CoreAsset::UIMaterialManager::GetInstance()
     return mInstance;
 }
 
-CoreAsset::UIMaterialManager::UIMaterialManager(Render::IMaterialManager *gpuMaterialManager)
-    : mGpuMaterialManager(gpuMaterialManager), mDefaultGizmoMaterial(nullptr), mNextAssetID(1)
+CoreAsset::UIMaterialManager::UIMaterialManager()
+    : mDefaultGizmoMaterial(nullptr), mNextAssetID(1)
 {
     if (mInstance != nullptr)
     {
@@ -45,7 +44,7 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::GetOrCreateDefaultMaterial(Co
     Material *material = GetDefaultMaterial(texture);
 
     if (material == nullptr)
-        material = CreateDefaultMaterial(texture, mDefaultUIGpuMaterialID);
+        material = CreateDefaultMaterial(texture);
 
     return material;
 }
@@ -77,17 +76,6 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::GetOrCreateDefaultFontMateria
     return GetOrCreateDefaultFontMaterial(texture);
 }
 
-void CoreAsset::UIMaterialManager::RegisterDefaultUIGpuMaterialID(Render::MaterialID id)
-{
-
-    mDefaultUIGpuMaterialID = id;
-}
-void CoreAsset::UIMaterialManager::RegsiterDefaultUIFontGpuMaterialID(Render::MaterialID id)
-{
-
-    mDefaultFontGpuMaterialID = id;
-}
-
 CoreAsset::Material *CoreAsset::UIMaterialManager::GetDefaultGizmoMaterial()
 {
     if (mDefaultGizmoMaterial == nullptr)
@@ -107,12 +95,10 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::GetDefaultMaterial(CoreAsset:
     return it->second.get();
 }
 
-CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultMaterial(CoreAsset::Texture *texture,
-                                                                         Render::MaterialID id)
+CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultMaterial(CoreAsset::Texture *texture)
 {
     // TODO material asset id
     std::unique_ptr<Material> newMaterial(new Material(GetNextAssetID()));
-    newMaterial->mGpuMaterialID = id;
     newMaterial->SetUseExplicitGpuMaterial(true);
 
     // 기본 ui머터리얼은 리소스가 텍스처 하나일뿐이다. 이코드는 더 간단히 수정가능
@@ -130,16 +116,6 @@ CoreAsset::Material *CoreAsset::UIMaterialManager::CreateDefaultGizmoMaterial()
 {
 
     std::unique_ptr<Material> newMaterial(new Material(GetNextAssetID()));
-    // newMaterial->mGpuMaterialID = DefaultGizmoUIGpuMaterialID;
-
-    // const Render::ShaderResourceInfoSet &shaderResourceInfoSet =
-    //     mGpuMaterialManager->GetMaterialShaderResourceInfo(newMaterial->mGpuMaterialID);
-
-    // newMaterial->mTexResourceContextList.resize(shaderResourceInfoSet.mObjectTextureShaderResourceInfoVector.size());
-    // newMaterial->mSamplerResourceContextList.resize(
-    //     shaderResourceInfoSet.mObjectSamplerShaderResourceInfoVector.size());
-
-    // mDefaultGizmoMaterial = std::move(newMaterial);
 
     return mDefaultGizmoMaterial.get();
 }
@@ -148,8 +124,6 @@ void CoreAsset::UIMaterialManager::CreateDefaultFontMaterial(CoreAsset::Texture 
 {
 
     std::unique_ptr<Material> newMaterial(new Material(GetNextAssetID()));
-    newMaterial->mGpuMaterialID = mDefaultFontGpuMaterialID;
-
     newMaterial->AddAlbedoTexSlot();
 
     // 기본 ui머터리얼은 리소스가 텍스처 하나일뿐이다. 이코드는 더 간단히 수정가능

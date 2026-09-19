@@ -1,9 +1,6 @@
 ﻿#include "MaterialFactory.h"
-#include <CoreAsset/AssetManager.h>
-#include <CoreAsset/AssetMetaDataType.h>
-#include <CoreAsset/IntermediateAsset.h >
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreAsset/Material.h>
-#include <RenderSystem/IMaterialManager.h>
 
 CoreAsset::MaterialFactory *CoreAsset::MaterialFactory::GetInstance()
 {
@@ -38,7 +35,6 @@ CoreAsset::Asset *CoreAsset::MaterialFactory::CreateAssetFromData(const Intermed
 
     // 메타데이터
     //   material->SetName(intermediateAsset.mAssetName);
-    material->SetGpuMaterial(intermediateMaterial.mGpuMaterialID);
 
     material->SetRoughness(1.0f - intermediateMaterial.mShininess);
     material->SetDiffuseColor(intermediateMaterial.mDiffuseColor);

@@ -2,7 +2,6 @@
 #include "RenderFrontend/RenderPassGraph.h"
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
-#include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/RenderMaterialResolver.h>
 #include <RenderSystem/IRenderSystem.h>
 
@@ -11,8 +10,6 @@ Render::DebugLineRenderPass::DebugLineRenderPass()
 
     SetPassName("DebugLineRenderPass");
     SetBufferID(1);
-    //    mGpuMaterialID = AssetResolver::GetInstance()->GetPassGpuMaterialID(DebugLineMat);
-
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eDebugLine;
     rmc.mTransparent = false;

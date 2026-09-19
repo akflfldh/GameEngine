@@ -1,5 +1,4 @@
 ﻿#include "RenderMaterialResolver.h"
-#include <CoreAsset/UIMaterialManager.h>
 #include <RenderFrontend/ShaderData.h>
 #include <RenderSystem/IMaterialManager.h>
 
@@ -42,6 +41,20 @@ void Render::RenderMaterialResolver::Initialize()
     mInitialized = true;
 }
 
+Render::MaterialID Render::RenderMaterialResolver::Resolve(CoreAsset::AssetID materialAssetID,
+                                                           const RenderMaterialContext &context,
+                                                           ERenderPassType passType)
+{
+
+    RenderMaterialVariantKey key;
+    key.mRenderMaterialContext = context;
+    key.mRenderPassType = passType;
+
+    std::optional<Render::MaterialID> matID = FindAssetMaterialOverride(materialAssetID, key);
+
+    return matID.value_or<Render::MaterialID>(Resolve(context, passType));
+}
+
 Render::MaterialID Render::RenderMaterialResolver::Resolve(const RenderMaterialContext &renderMaterialContext,
                                                            ERenderPassType passType)
 {
@@ -61,6 +74,89 @@ void Render::RenderMaterialResolver::RegisterGpuMaterial(const RenderMaterialCon
     mGpuMaterialIDTable[key] = id;
 }
 
+void Render::RenderMaterialResolver::RegisterAssetMaterialOverride(CoreAsset::AssetID materialAssetID,
+                                                                   const RenderMaterialVariantKey &variantKey,
+                                                                   MaterialID gpuMaterialID)
+{
+
+    VariantKeyTable &keyTable = mOverrideGpuMaterialKeyTable[materialAssetID];
+
+    keyTable[variantKey] = gpuMaterialID;
+}
+
+void Render::RenderMaterialResolver::UnregisterAssetMaterialOverrides(CoreAsset::AssetID materialAssetID)
+{
+
+    auto keyIt = mOverrideGpuMaterialKeyTable.find(materialAssetID);
+
+    if (keyIt == mOverrideGpuMaterialKeyTable.end())
+        return;
+
+    mOverrideGpuMaterialKeyTable.erase(keyIt);
+}
+
+Render::MaterialID Render::RenderMaterialResolver::CreateAndRegisterAssetMaterialOverride(
+    CoreAsset::AssetID materialAssetID, const RenderMaterialContext &context, ERenderPassType passType,
+    const MaterialGenerationInfo &generationInfo)
+{
+
+    Render::MaterialID gpuMatID = CreateGpuMaterial(generationInfo);
+
+    if (gpuMatID == MaterialIDNone)
+    {
+        return MaterialIDNone;
+    }
+
+    RenderMaterialVariantKey key;
+    key.mRenderMaterialContext = context;
+    key.mRenderPassType = passType;
+    RegisterAssetMaterialOverride(materialAssetID, key, gpuMatID);
+
+    return gpuMatID;
+}
+
+void Render::RenderMaterialResolver::RegisterSystemGpuMaterial(ESystemMaterialRole role, MaterialID gpuMaterialID)
+{
+
+    mSystemGpuMaterialTable[role] = gpuMaterialID;
+}
+
+Render::MaterialID Render::RenderMaterialResolver::ResolveSystemGpuMaterial(ESystemMaterialRole role) const
+{
+    auto it = mSystemGpuMaterialTable.find(role);
+    return it != mSystemGpuMaterialTable.end() ? it->second : MaterialIDNone;
+}
+
+Render::MaterialID Render::RenderMaterialResolver::CreateGpuMaterial(const MaterialGenerationInfo &info)
+{
+
+    MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(info);
+
+    return matID;
+}
+
+std::optional<Render::MaterialID> Render::RenderMaterialResolver::FindAssetMaterialOverride(
+    CoreAsset::AssetID materialAssetID, const RenderMaterialVariantKey &variantKey) const
+{
+
+    auto keyIt = mOverrideGpuMaterialKeyTable.find(materialAssetID);
+
+    if (keyIt == mOverrideGpuMaterialKeyTable.end())
+    {
+
+        return {};
+    }
+
+    auto gpuMatIt = keyIt->second.find(variantKey);
+
+    if (gpuMatIt == keyIt->second.end())
+    {
+        return {};
+    }
+
+    return gpuMatIt->second;
+}
+
 Render::MaterialID Render::RenderMaterialResolver::GetGpuMaterialID(const RenderMaterialVariantKey &key) const
 {
     auto it = mGpuMaterialIDTable.find(key);
@@ -75,8 +171,7 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         MaterialGenerationInfo gpuMaterialGenerationInfo;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mAlbedoNum = 1;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mHasNormalMap = false;
-        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] =
-            GRM::ETextureFormat::eR16G16B16A16_FLOAT;
+        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -103,8 +198,7 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         MaterialGenerationInfo gpuMaterialGenerationInfo;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mAlbedoNum = 1;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mHasNormalMap = false;
-        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] =
-            GRM::ETextureFormat::eR16G16B16A16_FLOAT;
+        gpuMaterialGenerationInfo.mRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -303,9 +397,6 @@ void Render::RenderMaterialResolver::BuildDebugLineGpuMaterial()
 }
 void Render::RenderMaterialResolver::BuildUIGpuMaterial()
 {
-
-    auto uiMaterialManager = CoreAsset::UIMaterialManager::GetInstance();
-
     // gpuMaterial 생성
 
     // defaultUIMat
@@ -362,10 +453,8 @@ void Render::RenderMaterialResolver::BuildUIGpuMaterial()
 
         defaultUIFontGpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
     }
-    // Register
-
-    uiMaterialManager->RegisterDefaultUIGpuMaterialID(defaultUIGpuMaterialID);
-    uiMaterialManager->RegsiterDefaultUIFontGpuMaterialID(defaultUIFontGpuMaterialID);
+    RegisterSystemGpuMaterial(ESystemMaterialRole::DefaultUI, defaultUIGpuMaterialID);
+    RegisterSystemGpuMaterial(ESystemMaterialRole::DefaultUIFont, defaultUIFontGpuMaterialID);
 }
 
 void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
@@ -477,16 +566,16 @@ void Render::RenderMaterialResolver::BuildBloomGpuMaterial()
 
     ComputeMaterialGenerationInfo horizontalMaterialInfo;
     horizontalMaterialInfo.mName = "BloomHorizontalHLSL";
-    horizontalMaterialInfo.mComputeShaderInfo = {
-        (uint8_t *)BloomHorizontalHLSL, sizeof(BloomHorizontalHLSL) - 1, "CSMain", "cs_5_1", EShaderStage::eCompute};
+    horizontalMaterialInfo.mComputeShaderInfo = {(uint8_t *)BloomHorizontalHLSL, sizeof(BloomHorizontalHLSL) - 1,
+                                                 "CSMain", "cs_5_1", EShaderStage::eCompute};
 
     MaterialID horizontalMaterialID = mGpuMaterialManager->CreateComputeMaterial(horizontalMaterialInfo);
     RegisterGpuMaterial(rmc, ERenderPassType::eBloomHorizontal, horizontalMaterialID);
 
     ComputeMaterialGenerationInfo verticalMaterialInfo;
     verticalMaterialInfo.mName = "BloomVerticalHLSL";
-    verticalMaterialInfo.mComputeShaderInfo = {
-        (uint8_t *)BloomVerticalHLSL, sizeof(BloomVerticalHLSL) - 1, "CSMain", "cs_5_1", EShaderStage::eCompute};
+    verticalMaterialInfo.mComputeShaderInfo = {(uint8_t *)BloomVerticalHLSL, sizeof(BloomVerticalHLSL) - 1, "CSMain",
+                                               "cs_5_1", EShaderStage::eCompute};
 
     MaterialID verticalMaterialID = mGpuMaterialManager->CreateComputeMaterial(verticalMaterialInfo);
     RegisterGpuMaterial(rmc, ERenderPassType::eBloomVertical, verticalMaterialID);

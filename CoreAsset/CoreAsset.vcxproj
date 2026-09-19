@@ -125,13 +125,13 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)D3DGpuResourceManager\;$(SolutionDir)Utility\;%(AdditionalIncludeDirectories);$(SolutionDir)Utility;$(SolutionDir)BinaryReaderWriter;$(SolutionDir)RenderSystem</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)D3DGpuResourceManager\;$(SolutionDir)Utility\;%(AdditionalIncludeDirectories);$(SolutionDir)Utility;$(SolutionDir)BinaryReaderWriter</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3DGpuResourceManager.lib;Utility.lib;BinaryReaderWriter.lib;RenderSystem.lib;Logger.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>D3DGpuResourceManager.lib;Utility.lib;BinaryReaderWriter.lib;Logger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -555,12 +555,12 @@ struct COREMATH_API REFLECT_STRUCT(EngineClass) Quaternion
     {
 
         float sqLen = X * X + Y * Y + Z * Z + W * W;
-        if (sqLen > 0.0000001f)
+        if (sqLen < 0.0000001f)
         {
             return Quaternion{0, 0, 0, 1};
         }
 
-        float invLen = 1.0f / std::sqrt(sqLen);
+        float invLen = 1.0f / sqLen;
         return Quaternion{-X * invLen, -Y * invLen, -Z * invLen, W * invLen};
     }
 

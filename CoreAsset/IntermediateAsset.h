@@ -6,7 +6,6 @@
 #include <CommonHeader/GpuTypes.h>
 #include <CoreAsset/CoreAssetDLLMacro.h>
 #include <CoreBase/FString.h>
-#include <RenderSystem/MaterialType.h>
 #include <string>
 #include <vector>
 namespace QuadRW
@@ -52,7 +51,6 @@ struct CORE_ASSET_API IntermediateTexture : public IntermediateAsset
 struct CORE_ASSET_API IntermediateMaterial : public IntermediateAsset
 {
 
-    Render::MaterialID mGpuMaterialID;
     std::vector<std::pair<std::string, AssetID>> mTexResourceList;
     std::vector<uint32_t> mSamplerResourceList;
 

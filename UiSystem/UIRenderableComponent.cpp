@@ -68,3 +68,9 @@ UI::UIRenderProxy *UI::UIRenderableComponent::GetRenderProxy() const
 {
     return mRenderProxy.get();
 }
+
+UI::UIRenderRole UI::UIRenderableComponent::GetRenderRole() const
+{
+
+    return mRenderRole;
+}

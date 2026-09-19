@@ -50,11 +50,9 @@ class RenderPassUI : public IRenderPass
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &renderPassExecuteContext);
 
     SRECT ConvertWorldToScreenRect(const SRECT &rect, const Core::GlobalFrameData &globalFrameData);
-    void SetUpRenderItemShaderResource(const RenderPassExecuteContext &renderPassExecuteContext, RenderItem &renderItem,
-                                       const UIRenderCommand &renderCommand);
+    void SetUpRenderItemShaderResource(RenderItem &renderItem, CoreAsset::AssetID textureAssetID);
 
-    void BuildRenderItemTexGpuResources(const MaterialRenderSnapshot &materialRenderSnapshot,
-
+    void BuildRenderItemTexGpuResources(CoreAsset::AssetID textureAssetID,
                                         std::vector<BindingGpuResource> &bindingGpuResourceVector);
 
     Render::ScissorRect mGlobalScissorRect;

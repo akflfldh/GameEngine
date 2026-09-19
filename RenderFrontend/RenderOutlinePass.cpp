@@ -13,10 +13,6 @@ Render::RenderOutlinePass::RenderOutlinePass()
 {
     SetPassName("RenderOutlinePass");
     SetBufferID(1);
-    // auto assetResolver = Render::AssetResolver::GetInstance();
-    // mStaticMeshStencilMaterialID = assetResolver->GetPassGpuMaterialID(OutlineStencilMat);
-    // mStaticMeshOutlineMaterialID = assetResolver->GetPassGpuMaterialID(OutlineDrawMat);
-
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;

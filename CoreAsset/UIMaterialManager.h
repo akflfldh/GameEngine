@@ -3,15 +3,9 @@
 #include "CoreAsset/AssetPtr.h"
 #include "CoreAsset/AssetType.h"
 #include "CoreAsset/CoreAssetDLLMacro.h"
-#include <RenderSystem/MaterialType.h>
 #include <memory>
 #include <stack>
 #include <unordered_map>
-
-namespace Render
-{
-class IMaterialManager;
-}
 
 namespace CoreAsset
 {
@@ -24,7 +18,7 @@ class CORE_ASSET_API UIMaterialManager
 {
   public:
     static UIMaterialManager *GetInstance();
-    UIMaterialManager(Render::IMaterialManager *gpuMaterialManager);
+    UIMaterialManager();
     ~UIMaterialManager();
 
     UIMaterialManager(const UIMaterialManager &) = delete;
@@ -39,13 +33,9 @@ class CORE_ASSET_API UIMaterialManager
     CoreAsset::Material *GetOrCreateDefaultFontMaterial(CoreAsset::Texture *texture = nullptr);
     CoreAsset::Material *GetOrCreateDefaultFontMaterial(CoreAsset::AssetID textureID = 0);
 
-    void RegisterDefaultUIGpuMaterialID(Render::MaterialID id);
-    void RegsiterDefaultUIFontGpuMaterialID(Render::MaterialID id);
-
   private:
     CoreAsset::Material *GetDefaultMaterial(CoreAsset::Texture *texture) const;
-    CoreAsset::Material *CreateDefaultMaterial(CoreAsset::Texture *texture,
-                                               Render::MaterialID id );
+    CoreAsset::Material *CreateDefaultMaterial(CoreAsset::Texture *texture);
 
     CoreAsset::Material *CreateDefaultGizmoMaterial();
 
@@ -55,7 +45,6 @@ class CORE_ASSET_API UIMaterialManager
 
   private:
     static UIMaterialManager *mInstance;
-    Render::IMaterialManager *mGpuMaterialManager;
 
     std::unordered_map<AssetID, std::unique_ptr<CoreAsset::Material>> mDefaultMaterialTable;
 
@@ -64,10 +53,6 @@ class CORE_ASSET_API UIMaterialManager
 
     std::stack<AssetID> mAssetIDFreeList;
     CoreAsset::AssetID mNextAssetID = 1;
-
-    Render::MaterialID mDefaultUIGpuMaterialID;
-    Render::MaterialID mDefaultGizmoUIGpuMaterialID;
-    Render::MaterialID mDefaultFontGpuMaterialID;
 };
 
 } // namespace CoreAsset

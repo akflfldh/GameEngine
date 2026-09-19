@@ -917,7 +917,7 @@ void Quad::EditorDirector::InitSystems()
     mAssetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
 
     // UI
-    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>(Render::IMaterialManager::GetInstance());
+    mUIMaterialManager = std::make_unique<CoreAsset::UIMaterialManager>();
 
     mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(mRenderSystem, mUIManager, mGpuResourceManager,
                                                                          Render::AssetResolver::GetInstance());

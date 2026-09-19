@@ -15,6 +15,11 @@ class CORE_ASSET_API Font : public Asset
     Font();
     ~Font();
 
+    static EAssetType GetAssetType()
+    {
+        return EAssetType::eFont;
+    }
+
     const FontGlyph *GetGlyph(uint32_t unicode) const;
 
     AssetPtr GetGlyphAltas() const;

@@ -87,8 +87,6 @@ void CoreAsset::Material::Serialize(Arch &arch)
 {
     Asset::Serialize(arch);
 
-    arch << mGpuMaterialID;
-
     arch << mDiffuseColor;
     arch << mDiffuseFactor;
     arch << mSpecular;
@@ -105,12 +103,6 @@ void CoreAsset::Material::Serialize(Arch &arch)
     arch << mNormalMapResourceContext;
     arch << mHasNormalMap;
     arch << mSamplerResourceContextList;
-}
-
-void CoreAsset::Material::SetGpuMaterial(Render::MaterialID id)
-{
-
-    mGpuMaterialID = id;
 }
 
 std::vector<CoreAsset::AssetMaterialTexResourceContext> &CoreAsset::Material::GetAlbedoTexResourceList()
@@ -167,16 +159,7 @@ void CoreAsset::Material::SetHasNormalMap(bool flag)
 }
 void CoreAsset::Material::AddAlbedoTexSlot()
 {
-    AssetMaterialTexResourceContext context;
-
-    Render::TextureShaderResourceInfo &info = context.mTexShaderResourceInfo;
-
-    info.mFormat = GRM::ETextureFormat::eR8G8B8A8_UNORM;
-    info.mDimension = Render::EShaderResourceDimension::eTex2D;
-    info.mType = Render::EShaderResourceType::eTexture;
-    info.mName = "AlbedoTexture";
-
-    mAlbedoResourceContextList.push_back({info, nullptr});
+    mAlbedoResourceContextList.push_back({nullptr});
 }
 
 void CoreAsset::Material::SetMetallic(float value)

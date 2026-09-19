@@ -13,6 +13,8 @@ UI::UITextComponent::UITextComponent()
 
     CoreAsset::Font *font = static_cast<CoreAsset::Font *>(mFont.Get());
 
+    mRenderRole = UIRenderRole::eFont;
+
     if (font)
     {
         mMeshComponent.mUIMaterial =
@@ -212,6 +214,17 @@ float UI::UITextComponent::GetTextStartY() const
 
     float startY = GetActualTop() + font->GetFontMatrix().mAscender * mFontSize;
     return startY;
+}
+
+CoreAsset::Font *UI::UITextComponent::GetFont() const
+{
+    return mFont.As<CoreAsset::Font>();
+}
+
+UI::UIColor UI::UITextComponent::GetColor() const
+{
+
+    return mColor;
 }
 
 float UI::UITextComponent::GetLineHeight() const

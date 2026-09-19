@@ -49,6 +49,7 @@
 #include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
 #include <RenderFrontend/RenderFrontendType.h>
+#include <RenderFrontend/RenderMaterialResolver.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <Utility/Utility.h>
@@ -452,6 +453,9 @@ void Quad::EditorProjectManager::LoadProjectAsset()
 
 void Quad::EditorProjectManager::CreateEditorAsset()
 {
+
+    Render::RenderMaterialResolver *renderMaterialAssetResolver = Render::RenderMaterialResolver::GetInstance();
+
     EditorConfig *editorConfig = EditorConfig::GetInstance();
     const std::filesystem::path &editorRootPath = editorConfig->GetEditorRootPath();
     const std::filesystem::path editorShaderPath = editorRootPath / "Shader";
@@ -459,17 +463,6 @@ void Quad::EditorProjectManager::CreateEditorAsset()
     const std::filesystem::path GizmoMaterialHLSLPath = editorShaderPath / "GizmoMesh.hlsl";
 
     std::vector<uint8_t> shaderBuffer;
-    /*  std::ifstream fin(GizmoMaterialHLSLPath.c_str(), std::ios::binary);
-      CHECK(fin.is_open() == true);
-
-      fin.seekg(0, std::ios_base::end);
-      size_t fileSize = fin.tellg();
-      fin.seekg(0, std::ios_base::beg);
-              std::vector<uint8_t> shaderBuffer(fileSize);
-
-      fin.read((char *)shaderBuffer.data(), fileSize);
-
-      fin.close();*/
 
     auto pysicalFileSystem = QuadPF::PhysicalFileSystem::GetInstance();
     if (!pysicalFileSystem->ReadFileToBuffer(GizmoMaterialHLSLPath, shaderBuffer))
@@ -485,35 +478,51 @@ void Quad::EditorProjectManager::CreateEditorAsset()
     CoreAsset::IntermediateMaterial intermediateGizmoMat;
     intermediateGizmoMat.mAssetName = "GizmoMaterial";
     intermediateGizmoMat.mAssetType = CoreAsset::EAssetType::eMaterial;
-    intermediateGizmoMat.mGpuMaterialID = 10;
 
     CoreAsset::Material *gizmoMaterial = static_cast<CoreAsset::Material *>(
         assetManager->CreateAsset(CoreAsset::EAssetType::eMaterial, intermediateGizmoMat, "Engine", true).Get());
 
     gizmoMaterial->SetUseExplicitGpuMaterial(true);
 
-    Render::MaterialRenderSettingInfo gizmoRenderSettingInfo;
+    // gpu mat 생성 ,등록
+    Render::MaterialGenerationInfo gizmoGpuMatGenInfo;
+    Render::MaterialRenderSettingInfo &gizmoRenderSettingInfo = gizmoGpuMatGenInfo.mRenderSettingInfo;
     gizmoRenderSettingInfo.mCullMode = Render::ECullMode::eNone;
     gizmoRenderSettingInfo.mFillMode = Render::EFillMode::eSolidMode;
     gizmoRenderSettingInfo.mCCW = 0;
     gizmoRenderSettingInfo.mDepthCompareMode = Render::EDepthStencilCompareMode::eLess;
     gizmoRenderSettingInfo.mBlendMode = Render::EBlendMode::eOpaque;
     gizmoRenderSettingInfo.mDepthWriteMode = Render::EDepthWriteMode::eEnabled;
+    gizmoGpuMatGenInfo.mInputLayoutType = Render::EInputLayoutType::eStaticMesh;
 
-    materialSystem->BuildGpuMaterialDirectly(gizmoMaterial, shaderBuffer.data(), shaderBuffer.size(),
-                                             gizmoRenderSettingInfo);
+    //    uint8_t *mShadeCode;
+    // size_t mShaderCodeSize;
+    // std::string mEntryPoint; // 셰이더 진입함수이름
+    // std::string mTarget;     // ex) vs_5_1, ps_5_0
+    // EShaderStage mStage;     // 각 셰이더 타입
+
+    gizmoGpuMatGenInfo.mShaderInfoList = {
+        {shaderBuffer.data(), shaderBuffer.size(), "VS", "vs_5_1", Render::EShaderStage::eVertex},
+        {shaderBuffer.data(), shaderBuffer.size(), "PS", "ps_5_1", Render::EShaderStage::ePixel}};
+
+    Render::RenderMaterialContext renderMaterialContext;
+    renderMaterialContext.mGeometryType = Render::ERenderGeometryType::eStaticMesh;
+    renderMaterialContext.mTransparent = false;
+    renderMaterialContext.mShadingModel = CoreAsset::EShadingModel::eUnlit;
+
+    renderMaterialAssetResolver->CreateAndRegisterAssetMaterialOverride(
+        gizmoMaterial->GetID(), renderMaterialContext, Render::ERenderPassType::eEditorOverlay, gizmoGpuMatGenInfo);
+
+    // material asset resolver register
+
+    // Render::RenderMaterialVariantKey gizmoGpuMatKey;
+
+    // renderMaterialAssetResolver->RegisterAssetMaterialOverride(gizmoMaterial->GetID(), gizmoGpuMatKey, );
+
+    // materialSystem->BuildGpuMaterialDirectly(gizmoMaterial, shaderBuffer.data(), shaderBuffer.size(),
+    //                                          gizmoRenderSettingInfo);
 
     const std::filesystem::path DebugColliderMaterialHLSLPath = editorShaderPath / "DebugCollider.hlsl";
-    // fin.open(DebugColliderMaterialHLSLPath.c_str(), std::ios::binary);
-
-    // CHECK(fin.is_open() == true);
-    // fin.seekg(0, std::ios_base::end);
-    // fileSize = fin.tellg();
-    // fin.seekg(0, std::ios_base::beg);
-    // shaderBuffer.resize(fileSize);
-    // fin.read((char *)shaderBuffer.data(), fileSize);
-
-    // fin.close();
 
     if (!pysicalFileSystem->ReadFileToBuffer(DebugColliderMaterialHLSLPath, shaderBuffer))
     {
@@ -525,23 +534,35 @@ void Quad::EditorProjectManager::CreateEditorAsset()
     CoreAsset::IntermediateMaterial intermediateMat;
     intermediateMat.mAssetName = "DefaultColliderMaterial";
     intermediateMat.mAssetType = CoreAsset::EAssetType::eMaterial;
-    intermediateMat.mGpuMaterialID = 11;
 
     CoreAsset::Material *defaultColliderMat = static_cast<CoreAsset::Material *>(
         assetManager->CreateAsset(CoreAsset::EAssetType::eMaterial, intermediateMat, "Engine", true).Get());
 
     defaultColliderMat->SetUseExplicitGpuMaterial(true);
+    Render::MaterialGenerationInfo defaultColliderGpuMatGenInfo;
 
-    Render::MaterialRenderSettingInfo defaultColliderRenderSettingInfo;
+    Render::MaterialRenderSettingInfo &defaultColliderRenderSettingInfo =
+        defaultColliderGpuMatGenInfo.mRenderSettingInfo;
     defaultColliderRenderSettingInfo.mCullMode = Render::ECullMode::eBack;
     defaultColliderRenderSettingInfo.mFillMode = Render::EFillMode::eWireFrameMode;
     defaultColliderRenderSettingInfo.mCCW = 0;
     defaultColliderRenderSettingInfo.mDepthCompareMode = Render::EDepthStencilCompareMode::eLess;
     defaultColliderRenderSettingInfo.mBlendMode = Render::EBlendMode::eOpaque;
     defaultColliderRenderSettingInfo.mDepthWriteMode = Render::EDepthWriteMode::eEnabled;
+    defaultColliderGpuMatGenInfo.mInputLayoutType = Render::EInputLayoutType::eStaticMesh;
 
-    materialSystem->BuildGpuMaterialDirectly(defaultColliderMat, shaderBuffer.data(), shaderBuffer.size(),
-                                             defaultColliderRenderSettingInfo);
+    defaultColliderGpuMatGenInfo.mShaderInfoList = {
+        {shaderBuffer.data(), shaderBuffer.size(), "VS", "vs_5_1", Render::EShaderStage::eVertex},
+        {shaderBuffer.data(), shaderBuffer.size(), "PS", "ps_5_1", Render::EShaderStage::ePixel}};
+
+    Render::RenderMaterialContext defaultColliderRenderMaterialContext;
+    defaultColliderRenderMaterialContext.mGeometryType = Render::ERenderGeometryType::eStaticMesh;
+    defaultColliderRenderMaterialContext.mTransparent = false;
+    defaultColliderRenderMaterialContext.mShadingModel = CoreAsset::EShadingModel::eUnlit;
+
+    renderMaterialAssetResolver->CreateAndRegisterAssetMaterialOverride(
+        defaultColliderMat->GetID(), defaultColliderRenderMaterialContext, Render::ERenderPassType::eEditorOverlay,
+        defaultColliderGpuMatGenInfo);
 }
 
 void Quad::EditorProjectManager::LoadEditorAsset() {}

@@ -4,7 +4,6 @@
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <D3DGpuResourceManager/GpuSamplerSystem.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
-#include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/RenderMaterialResolver.h>
 #include <RenderFrontend/RenderPassGraph.h>
 #include <RenderSystem/IMaterialManager.h>
@@ -13,8 +12,6 @@
 Render::ToneMappingRenderPass::ToneMappingRenderPass()
 {
     SetBufferID(1);
-    //    mPassGpuMaterialID = Render::AssetResolver::GetInstance()->GetPassGpuMaterialID(GrayScaleMat);
-
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;

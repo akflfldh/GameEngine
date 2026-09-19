@@ -4,7 +4,6 @@
 #include "CoreAsset/AssetIDTable.h"
 #include "CoreAsset/AssetPtr.h"
 #include "CoreAsset/CoreAssetDLLMacro.h"
-#include <RenderSystem/MaterialType.h>
 #include <vector>
 
 namespace CoreAsset
@@ -23,13 +22,9 @@ class CORE_ASSET_API MaterialManager
     MaterialManager();
     ~MaterialManager();
 
-    Material *CreateMaterial(Render::MaterialID gpuMaterialID, const std::string &name, const std::string &path = "");
+    Material *CreateMaterial(const std::string &name, const std::string &path = "");
     Material *GetAsset(AssetID id) const;
     Material *GetAsset(const std::string &name) const;
-
-    //// load를 통한 생성
-    // Material *CreateMaterial(const CoreAsset::SerializedMaterial &serializedMaterial,
-    //                          const CoreAsset::AssetMetaData &metaData, const std::string &path);
 
   private:
     Material *CreateMaterialInstance(const std::string &name, const std::string &path);

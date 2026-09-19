@@ -62,6 +62,15 @@ struct UIColor
     static const UIColor DarkGray;
     static const UIColor DimGray;
     static const UIColor DarkYellow;
+
+    CoreMath::Vector3 ConvertVector3()
+    {
+        return {mR, mG, mB};
+    }
+    CoreMath::Vector4 ConvertVector4()
+    {
+        return {mR, mG, mB, mA};
+    }
 };
 
 inline const UIColor UIColor::White = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -341,6 +350,12 @@ struct UIControlStyleOverride
         if (mFontSize)
             style.mFontSize = *mFontSize;
     }
+};
+
+enum class UIRenderRole
+{
+    eImage = 0,
+    eFont
 };
 
 } // namespace UI

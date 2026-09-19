@@ -1,12 +1,13 @@
 ﻿#include "RenderPassUI.h"
-#include <CoreAsset/Material.h>
+#include <CoreAsset/AssetManager.h>
+#include <CoreAsset/Texture.h>
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
 #include <D3DGpuResourceManager/GpuSamplerSystem.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <RenderFrontend/AssetResolver.h>
+#include <RenderFrontend/RenderMaterialResolver.h>
 #include <RenderFrontend/RenderPassGraph.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
-#include <RenderSystem/IMaterialManager.h>
 #include <UiSystem/UIElement.h>
 #include <UiSystem/UIRenderableComponent.h>
 
@@ -126,7 +127,7 @@ void Render::RenderPassUI::SetGlobalData(const Core::GlobalFrameData &globalFram
 std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
     const RenderPassExecuteContext &renderPassExecuteContext)
 {
-
+    auto renderMaterialResolver = RenderMaterialResolver::GetInstance();
     const std::vector<UIRenderCommand> &renderCommandList = renderPassExecuteContext.mUIRenderCommandList;
     const Core::GlobalFrameData &globalFrameData = renderPassExecuteContext.mUIGlobalFrameData;
 
@@ -140,7 +141,8 @@ std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
     GRM::GRMPtr indexBufferPtr;
     uiRenderItemBuilder->UploadStart(vertexBufferPtr, indexBufferPtr);
 
-    CoreAsset::AssetID prevMatID = 0;
+    CoreAsset::AssetID prevTexID = NoneAssetID;
+    Render::MaterialID prevGpuMatID = MaterialIDNone;
     bool prevUseScissor = false;
     SRECT prevScissorRect = mGlobalScissorRect;
     Render::RenderItem *currentRenderItem = nullptr;
@@ -152,16 +154,40 @@ std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
     {
         const UIRenderCommand &renderCommand = renderCommandList[i];
 
-        // 배치를 이어갈수있는가 ? 새로운배치가 필요한가?
-        // mat , scissorRect로 판정한다 .
-
         bool bNeedNewBatch = false;
-        CoreAsset::AssetID currMatID = renderCommand.mUIMaterialID;
-        //        renderCommand.mUIMaterial->GetID();
+        CoreAsset::AssetID currTexID = renderCommand.mMatSnapshot.mTextureAssetID;
+        Render::MaterialID currGpuMatID = MaterialIDNone;
 
-        //  SRECT currScissorRect = renderProxy->mRenderableComponent->GetOwnerUIElement()->GetSicssorRectRegion();
+        switch (renderCommand.mRole)
+        {
+        case UI::UIRenderRole::eImage:
+            currGpuMatID =
+                renderMaterialResolver->ResolveSystemGpuMaterial(ESystemMaterialRole::DefaultUI);
+            break;
+        case UI::UIRenderRole::eFont:
+            currGpuMatID =
+                renderMaterialResolver->ResolveSystemGpuMaterial(ESystemMaterialRole::DefaultUIFont);
+            break;
+        }
+
+        if (currGpuMatID == MaterialIDNone)
+            continue;
+
+        CoreAsset::Texture *texture = nullptr;
+        CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+        if (currTexID != NoneAssetID)
+        {
+            texture = assetManager->GetAsset<CoreAsset::Texture>(currTexID).As<CoreAsset::Texture>();
+        }
+        if (texture == nullptr)
+        {
+            texture = assetManager->GetDefaultAsset(CoreAsset::EAssetType::eTexture).As<CoreAsset::Texture>();
+            currTexID = texture != nullptr ? texture->GetID() : NoneAssetID;
+        }
+        if (texture == nullptr)
+            continue;
+
         SRECT currScissorRect = renderCommand.mScissorRect;
-        //  bool currUseScissor = renderProxy->mRenderableComponent->GetOwnerUIElement()->GetUseScissorRect();
         bool currUseScissor = renderCommand.mUseScissorRect;
         Render::ScissorRect sicssorRect;
         if (currUseScissor)
@@ -189,11 +215,13 @@ std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
         else
         {
 
-            if (prevMatID != currMatID)
+            if (prevTexID != currTexID)
+                bNeedNewBatch = true;
+            else if (prevGpuMatID != currGpuMatID)
                 bNeedNewBatch = true;
             else if (prevUseScissor != currUseScissor)
                 bNeedNewBatch = true;
-            else if (prevUseScissor && (prevScissorRect != currScissorRect))
+            else if (prevScissorRect != sicssorRect)
                 bNeedNewBatch = true;
         }
 
@@ -220,14 +248,15 @@ std::vector<Render::RenderItem> Render::RenderPassUI::BuildRenderItem(
             currentRenderItem = &renderItemVec.back();
             currentRenderItem->bUseScissor = currUseScissor;
             currentRenderItem->mScissor = sicssorRect;
-            currentRenderItem->mMaterialID = renderCommand.mGpuMaterialID;
+            currentRenderItem->mMaterialID = currGpuMatID;
             currentBatchCommands.clear();
 
-            prevMatID = currMatID;
-            prevScissorRect = currScissorRect;
+            prevTexID = currTexID;
+            prevGpuMatID = currGpuMatID;
+            prevScissorRect = sicssorRect;
             prevUseScissor = currUseScissor;
 
-            SetUpRenderItemShaderResource(renderPassExecuteContext, *currentRenderItem, renderCommand);
+            SetUpRenderItemShaderResource(*currentRenderItem, currTexID);
         }
 
         currentBatchCommands.push_back(renderCommand);
@@ -304,46 +333,35 @@ SRECT Render::RenderPassUI::ConvertWorldToScreenRect(const SRECT &rect, const Co
     return SRECT{(float)finalLeft, (float)finalRight, (float)finalTop, (float)finalBottom};
 }
 
-void Render::RenderPassUI::SetUpRenderItemShaderResource(const RenderPassExecuteContext &renderPassExecuteContext,
-                                                         RenderItem &renderItem, const UIRenderCommand &renderCommand)
+void Render::RenderPassUI::SetUpRenderItemShaderResource(RenderItem &renderItem,
+                                                         CoreAsset::AssetID textureAssetID)
 {
-    Render::IMaterialManager *gpuMaterialManager = Render::IMaterialManager::GetInstance();
-    AssetResolver *assetResolver = AssetResolver::GetInstance();
-
-    const MaterialRenderSnapshot &materialRenderSnapshot =
-        renderPassExecuteContext.mUIMaterialRenderSnapshotTable.find(renderCommand.mUIMaterialID)->second;
-
-    BuildRenderItemTexGpuResources(materialRenderSnapshot, renderItem.mBindingGpuTexResourceVector);
+    BuildRenderItemTexGpuResources(textureAssetID, renderItem.mBindingGpuTexResourceVector);
 
     renderItem.mInstance.mInstanceCount = 1;
 }
 
-void Render::RenderPassUI::BuildRenderItemTexGpuResources(const MaterialRenderSnapshot &materialRenderSnapshot,
+void Render::RenderPassUI::BuildRenderItemTexGpuResources(CoreAsset::AssetID textureAssetID,
                                                           std::vector<BindingGpuResource> &bindingGpuResourceVector)
 {
+    CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+    CoreAsset::Texture *texture = nullptr;
 
-    // albedo
-    std::vector<CoreAsset::Texture *> texList;
-    for (auto &tex : materialRenderSnapshot.mAlbedoMapList)
+    if (textureAssetID != NoneAssetID)
     {
-
-        texList.push_back(tex);
+        texture = assetManager->GetAsset<CoreAsset::Texture>(textureAssetID).As<CoreAsset::Texture>();
     }
-
-    // normal map
-    // if (material->has)
-    //  texList.push_back(static_cast<CoreAsset::Texture *>(material->GetNormalTexResource().mTexture.Get()));
-
-    // add bindingGpuResource
-    for (auto tex : texList)
+    if (texture == nullptr)
     {
-        Render::BindingGpuResource bindingGpuResource;
-        // bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource();
-
-        mAssetResolver->RequestResolveAsset(tex);
-        bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(tex).getResource();
-
-        bindingGpuResource.mType = EShaderResourceType::eTexture;
-        bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
+        texture = assetManager->GetDefaultAsset(CoreAsset::EAssetType::eTexture).As<CoreAsset::Texture>();
     }
+    if (texture == nullptr)
+        return;
+
+    mAssetResolver->RequestResolveAsset(texture);
+
+    Render::BindingGpuResource bindingGpuResource;
+    bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(texture).getResource();
+    bindingGpuResource.mType = EShaderResourceType::eTexture;
+    bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
 }

@@ -52,7 +52,7 @@ AssetLoader.cpp
 
 target_compile_definitions(CoreAsset PRIVATE CORE_ASSET_EXPORT)
 
-target_link_libraries(CoreAsset PUBLIC compiler_flags headerDir CoreAllocator CoreBase Logger GpuResourceManager Utility BinaryReaderWriter RenderSystem CoreDevice CoreMath)
+target_link_libraries(CoreAsset PUBLIC compiler_flags headerDir CoreBase Logger Utility BinaryReaderWriter CoreMath)
 
 target_include_directories(CoreAsset PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

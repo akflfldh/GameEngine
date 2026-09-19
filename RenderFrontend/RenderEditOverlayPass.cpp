@@ -125,95 +125,22 @@ std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
         renderItem.mScissor = mPassData.mScissorRect;
 
         uint32_t materialHandle = command.mMaterialHandle;
+
         const MaterialRenderSnapshot &materialRenderSnapshot =
             executeContext.mMaterialRenderSnapshotTable.find(materialHandle)->second;
 
-        //        CoreAsset::Material *material = command.mMaterial;
-
-        if (materialRenderSnapshot.mUseExplicitGpuMat)
-        {
-            renderItem.mMaterialID = materialRenderSnapshot.mGpuMatID;
-        }
-        else
-        {
-
-            RenderMaterialContext rmc;
-            rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
-            rmc.mTransparent = false;
-            renderItem.mMaterialID = renderMaterialResolver->Resolve(rmc, Render::ERenderPassType::eMain);
-        }
+        RenderMaterialContext rmc;
+        rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
+        rmc.mTransparent = false;
+        rmc.mShadingModel = CoreAsset::EShadingModel::eUnlit;
+        renderItem.mMaterialID = renderMaterialResolver->Resolve(materialRenderSnapshot.mMaterialAssetID, rmc,
+                                                                 Render::ERenderPassType::eEditorOverlay);
 
         BuildRenderItemMeshData(command, renderItem);
 
         BuildRenderItemBufferGpuResources(command, renderItem.mBindingGpuBufferResourceVector);
 
         BuildRenderItemTexGpuResources(materialRenderSnapshot, renderItem.mBindingGpuTexResourceVector);
-        // binding gpu resource (모두 object단위 gpu resource)
-        // tex, sampler, buffer
-
-        //// gpu material - binding object resource list
-        // const Render::ShaderResourceInfoSet &bindingShaderResourceInfoSet =
-        //     mGpuMaterialManager->GetMaterialShaderResourceInfo(renderItem.mMaterialID);
-
-        //// tex
-        // const std::vector<CoreAsset::AssetMaterialTexResourceContext> &texResourceContextVector =
-        //     material->GetTexResourceContextList();
-        // for (int i = 0; i < bindingShaderResourceInfoSet.mObjectTextureShaderResourceInfoVector.size(); ++i)
-        //{
-        //     Render::BindingGpuResource bindingGpuResource;
-        //     bindingGpuResource.gpuResource =
-        //         mAssetResolver->GetGpuResource(texResourceContextVector[i].mTexture.Get()).getResource();
-
-        //    if (bindingGpuResource.gpuResource == nullptr)
-        //    {
-        //        mAssetResolver->RequestResolveAsset(texResourceContextVector[i].mTexture.Get());
-        //        bindingGpuResource.gpuResource =
-        //            mAssetResolver->GetGpuResource(texResourceContextVector[i].mTexture.Get()).getResource();
-        //    }
-
-        //    bindingGpuResource.mType = EShaderResourceType::eTexture;
-        //    bindingGpuResource.mName =
-        //    bindingShaderResourceInfoSet.mObjectTextureShaderResourceInfoVector[i].mName;
-        //    renderItem.mBindingGpuResourceVector.push_back(std::move(bindingGpuResource));
-        //}
-
-        //// buffer
-        // for (int i = 0; i < bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector.size(); ++i)
-        //{
-        //     uint32_t bufferID = bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mBufferID;
-        //     Render::BindingGpuResource bindingGpuResource;
-
-        //    bindingGpuResource.mType =
-        //    bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mType;
-
-        //    GRM::GpuBufferContext *gpuBufferContext = mGpuBufferContextSystem->GetGpuBufferContext(bufferID);
-
-        //    // 일단 버퍼 하나
-        //    uint32_t bufferIndexOffset = gpuBufferContext->mAllocateRange.UseRange(1);
-
-        //    uint32_t bufferOffset = bufferIndexOffset * gpuBufferContext->mBufferDesc.mElementDataSize;
-
-        //    // std::vector<uint8_t> pData(gpuBufferContext->mBufferDesc.mElementDataSize);
-
-        //    // bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mCreateBufferData(&command,
-        //    // nullptr,
-        //    // pData.data());
-
-        //    Render::StaticMeshGizmoData objectData;
-
-        //    mRenderUploadManager->UploadStaticMeshGizmoData(command, objectData);
-        //    // upload
-        //    mGpuResourceManager->UploadBufferData(gpuBufferContext->mGpuBuffer, &objectData,
-        //                                          gpuBufferContext->mBufferDesc.mElementDataSize, 1,
-        //                                          bufferOffset);
-
-        //    bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
-        //    bindingGpuResource.mName =
-        //    bindingShaderResourceInfoSet.mObjectBufferShaderResourceInfoVector[i].mName;
-        //    bindingGpuResource.mOffset = bufferIndexOffset;
-
-        //    renderItem.mBindingGpuResourceVector.push_back(std::move(bindingGpuResource));
-        //}
 
         renderItemVec.push_back(std::move(renderItem));
     }

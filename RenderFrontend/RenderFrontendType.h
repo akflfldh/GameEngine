@@ -35,6 +35,20 @@ enum class EDefaultGpuBufferType : uint8_t
     eConstantObject256
 };
 
+enum class ESystemMaterialRole : uint8_t
+{
+    DefaultUI,
+    DefaultUIFont,
+
+    DebugGrid,
+    DebugLine,
+    OutlineStencil,
+    OutlineDraw,
+    ToneMapping,
+    BloomHorizontal,
+    BloomVertical
+};
+
 enum class ERenderPassType : uint8_t
 {
     eMain = 0,
@@ -78,13 +92,23 @@ struct RenderMaterialContext
     };
 };
 
+struct UIMaterialRenderSnapshot
+{
+    CoreMath::Vector3 mColor = {1, 1, 1};
+    CoreAsset::AssetID mTextureAssetID = NoneAssetID;
+};
+
 struct UIRenderCommand
 {
     // CoreAsset::Material *mUIMaterial;
     CoreAsset::AssetID mUIMaterialID;
-    Render::MaterialID mGpuMaterialID;
+    // Render::MaterialID mGpuMaterialID;
     bool mUseScissorRect;
     SRECT mScissorRect;
+
+    UI::UIRenderRole mRole = UI::UIRenderRole::eImage;
+
+    UIMaterialRenderSnapshot mMatSnapshot;
 
     // std::vector<UI::UIVertex> mVertexList;
     // std::vector<uint32_t> mIndexList;
@@ -100,7 +124,7 @@ struct MaterialRenderSnapshot
 {
     bool mMaterialUploadDirtyFlag = false;
     bool mUseExplicitGpuMat = false;
-    uint32_t mGpuMatID = 0;
+    CoreAsset::AssetID mMaterialAssetID = NoneAssetID;
 
     CoreMath::Vector3 mDiffuseFactor = {1, 1, 1};
     CoreMath::Vector3 mAmbient = {0, 0, 0};

@@ -3,7 +3,6 @@
 #include <CoreAsset/AssetType.h>
 #include <D3DGpuResourceManager/GRMPtr.h>
 #include <RenderFrontend/RenderFrontendDllMarco.h>
-#include <RenderSystem/MaterialType.h>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -37,13 +36,6 @@ struct MeshGpuResourceContext
     GRM::GRMPtr mVertexBuffer;
 };
 
-constexpr const char *OutlineStencilMat = "OutlineStencilMat";
-constexpr const char *OutlineDrawMat = "OutlineDrawMat";
-constexpr const char *GrayScaleMat = "GrayScaleMat";
-constexpr const char *DebugGridMat = "DebugGridMat";
-constexpr const char *BillboardMat = "BillboardMat";
-constexpr const char *DebugLineMat = "DebugLineMat";
-
 class RENDER_FRONTEND_API AssetResolver
 {
   public:
@@ -63,8 +55,6 @@ class RENDER_FRONTEND_API AssetResolver
     void SetDefaultTexture(CoreAsset::Asset *asset);
 
     void EndResourceResolveThread();
-
-    Render::MaterialID GetPassGpuMaterialID(const std::string &name);
 
     int GetLightStructuredGpuBufferID() const;
     int GetBillboardStructuredGpuBufferID() const;
@@ -90,9 +80,6 @@ class RENDER_FRONTEND_API AssetResolver
     void PushResolveRequest(CoreAsset::Asset *asset);
 
     void RegisterBuiltInAsset();
-    void BuildBillboardGpuMaterial();
-    void BuildDebugLineGpuMaterial();
-    void BuildUIGpuMaterial();
     void BuildGpuBuffers();
 
   private:
@@ -114,9 +101,6 @@ class RENDER_FRONTEND_API AssetResolver
     bool mIsWorkerRunning;
 
     mutable std::shared_mutex mAssetTableMutex;
-
-    // TODO Pass용 GPU머터리얼 ID 테이블
-    std::unordered_map<std::string, Render::MaterialID> mPassGpuMaterialTable;
 
     int mLightGpuBufferContextID = 4;
     int mBillboardGpuBufferContextID = 5;

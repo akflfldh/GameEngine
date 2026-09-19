@@ -187,11 +187,6 @@ std::vector<Render::RenderItem> Render::RenderPassMain::BuildRenderItem(const Re
 
         const MaterialRenderSnapshot &materialRenderSnapshot = matIt->second;
 
-        if (materialRenderSnapshot.mUseExplicitGpuMat)
-        {
-            renderItem.mMaterialID = materialRenderSnapshot.mGpuMatID;
-        }
-        else
         {
             RenderMaterialContext rmc;
             rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
