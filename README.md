@@ -29,6 +29,9 @@
 ![Game Scene Example](Docs/Images/GamePlayScene.gif)
 
 
+![Game Scene Example2](Docs/Images/GamePlayScene2.gif)
+
+
 
 <details>
 <summary>더 많은 프리뷰 보기</summary>
@@ -73,9 +76,8 @@
 >[!NOTE]
 >  현재 개인 학습 및 엔진 구조 연구를 목적으로 개발 중입니다.
 >
-> - FBX 임포트는 현재 정적 메시를 중심으로 지원합니다.
 > - 물리 시스템은 Box 강체 충돌을 중심으로 개발 중입니다.
-> - 스키닝 메시와 애니메이션 시스템은 아직 지원하지 않습니다.
+ 
 
 
 
@@ -100,9 +102,7 @@ GameEngine/
   ├─ ClangCodeGenerator.exe
   ├─ zstd.dll
   ├─ zlibd1.dll
-  └─ QuadCallbackSystemDLL/
-      ├─ QuadCallbackSystem.lib
-      └─ QuadCallbackSystem.dll
+
 ```
 
 4.  vcpkg 최상위 폴더경로를 환경변수 VCPKG_ROOT로 설정해야합니다.
