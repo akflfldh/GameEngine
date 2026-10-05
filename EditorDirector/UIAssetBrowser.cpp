@@ -1,8 +1,13 @@
 ﻿#include "UIAssetBrowser.h"
+#include <EditorDirector/EditorUIUtility.h>
+#include <Core/Map.h>
 #include <Core/Prefab.h>
+#include <CoreAsset/AnimationClip.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
+#include <EditorDirector/EditorAssetManager.h>
 #include <EditorDirector/EditorDirector.h>
+#include <EditorDirector/EditorProjectManager.h>
 #include <EditorDirector/GlobalOverlayManager.h>
 #include <EditorDirector/UIFileItem.h>
 #include <EditorDirector/UIGridLayoutComponent.h>
@@ -21,14 +26,19 @@
 #include <UiSystem/UIElementPtr.h>
 #include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
-#include <UiSystem/UIMouseDragComponent.h>
+#include <UiSystem/UIManager.h>
 #include <UiSystem/UIText.h>
+#include <UiSystem/UITextButton.h>
 #include <UiSystem/UITextComponent.h>
 #include <UiSystem/UITextInputComponent.h>
 #include <UiSystem/UIVerticalLayoutComponent.h>
+#include <algorithm>
+#include <cmath>
+
 UIAssetBrowser::UIAssetBrowser()
     : mFilePanel(nullptr), mDirectoryTreePanel(nullptr), mGlobalFileEditBox(nullptr), mCurrEditingFileItem(nullptr),
-      mFileItemSelectableCom(nullptr), mBodyPanel(nullptr), mBodyMinHeight(1.0f), mToolbar(nullptr)
+      mFileItemSelectableCom(nullptr), mBodyPanel(nullptr), mBodyMinHeight(1.0f), mToolbar(nullptr),
+      mFileOptionPanel(nullptr), mNavigationBar(nullptr)
 {
 
     mVerticalLayoutComponent = CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
@@ -46,13 +56,34 @@ void UIAssetBrowser::OnBegin()
     logicalFileSystem->mOnRemovedFileCallbackSystem.Register(
         [this](QuadLF::LogicalFile *file, QuadLF::LogicalFolder *parentFolder) { OnRemovedFile(file, parentFolder); });
 
-    CreateBrowserResizeHeightHandle();
     CreateToolbar();
 
     CreateNavigationBar();
     CreateBody();
+    CreateFileOptionPanel();
 
-    mVerticalLayoutComponent->CalculateLayout();
+    // Canvas 직속 팝업과 이름 편집창도 탭 비활성화에 맞춰 닫는다.
+    mOnActiveElementCallbackSystem.Register([this](bool active)
+                                             {
+                                                 if (!active)
+                                                     CloseTransientPanels();
+                                             });
+
+    if (auto canvas = GetDestCanvas())
+    {
+        // 구독 해제는 별도로 다루되, 브라우저 제거 후에는 기존 UI handle로 유효성을 확인한다.
+        canvas->mOnInputActivationChangedCallbackSystem.Register(
+            [browser = UI::UIElementPtr<UIAssetBrowser>(this)](bool active)
+            {
+                if (!active)
+                {
+                    if (auto instance = browser.Get())
+                        instance->CloseOptionsPanel();
+                }
+            });
+    }
+
+    SetContentSize(GetWidth(), GetHeight());
 
     if (mCurrFolder)
         SelectFolderProgrammtically(mCurrFolder);
@@ -67,38 +98,13 @@ void UIAssetBrowser::SelectFolderProgrammtically(QuadLF::LogicalFolder *newFolde
     OnSelectedNewFolder(newFolder);
 }
 
-void UIAssetBrowser::CreateBrowserResizeHeightHandle()
-{
-
-    auto resizeHandle = CreateChildUIElement<UI::UIElement>("ResizeHandle");
-    auto imageCom = resizeHandle->CreateUIComponent<UI::UIImageComponent>("ImageCom");
-
-    auto dragCom = resizeHandle->CreateUIComponent<UI::UIMouseDragComponent>("dragCom");
-
-    dragCom->mOnHoverCallbackSystem.Register([imageCom]() { imageCom->SetColor(0.5f, 0.5f, 0.5f); });
-    dragCom->mOnReleaseHoverCallbackSystem.Register([imageCom]() { imageCom->SetColor(0.3f, 0.3f, 0.3f); });
-
-    dragCom->mOnDragStartedCallbackSystem.Register([imageCom]() { imageCom->SetColor(0.7f, 0.7f, 0.7f); });
-    dragCom->mOnDraggedCallbackSystem.Register([this](const UI::UIMouseDragContext &context)
-                                               { OnDraggingResizeHandle(context.mDeltaX, context.mDeltaY); });
-    dragCom->mOnDragEndededCallbackSystem.Register([imageCom]() { imageCom->SetColor(0.5f, 0.5f, 0.5f); });
-
-    imageCom->NotUseTexture();
-    imageCom->SetColor(0.3, 0.3, 0.3);
-    float width = mTransform.GetSize().x;
-    resizeHandle->SetSize(width, 8);
-    resizeHandle->SetPositionLocal(0, 0);
-
-    //   toolbar->SetParent(this);
-}
-
 void UIAssetBrowser::CreateToolbar()
 {
     float width = mTransform.GetSize().x;
 
     auto canvas = GetDestCanvas();
-    auto toolbar = canvas->CreateUIElement<UI::UIImage>("Toolbar");
-    toolbar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto toolbar = EditorUIUtility::CreateSectionHeader(canvas, "Toolbar");
+
     // auto imageCom = toolbar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     toolbar->mImageCom->NotUseTexture();
@@ -116,8 +122,8 @@ void UIAssetBrowser::CreateNavigationBar()
     float width = mTransform.GetSize().x;
 
     auto canvas = GetDestCanvas();
-    auto bar = canvas->CreateUIElement<UI::UIImage>("Navigationobar");
-    bar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto bar = EditorUIUtility::CreateSectionHeader(canvas, "Navigationobar");
+
     //    auto imageCom = bar->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     bar->mImageCom->NotUseTexture();
@@ -126,13 +132,9 @@ void UIAssetBrowser::CreateNavigationBar()
     bar->SetWidth(width);
     //    bar->SetSize(width, mToolbarMaxHeight);
 
-    auto backButton = bar->CreateChildUIElement<UI::UIButton>("BackButton");
-    auto forwardButton = bar->CreateChildUIElement<UI::UIButton>("ForwardButton");
+    auto backButton = EditorUIUtility::CreateSmallButton(bar, "BackButton");
+    auto forwardButton = EditorUIUtility::CreateSmallButton(bar, "ForwardButton");
 
-    UI::UIControlStyleOverride buttonStyleOverride;
-    buttonStyleOverride.mHeight = 30.0f;
-    forwardButton->SetStyleOverride(buttonStyleOverride);
-    backButton->SetStyleOverride(buttonStyleOverride);
 
     // backButton->SetSize(40, 40);
     // forwardButton->SetSize(40, 40);
@@ -157,7 +159,7 @@ void UIAssetBrowser::CreateBody()
 {
     float width = mTransform.GetSize().x;
     auto canvas = GetDestCanvas();
-    auto body = canvas->CreateUIElement<UISplitterPanel>("Body");
+    auto body = EditorUIUtility::Create<UISplitterPanel>(canvas, "Body");
     auto imageCom = body->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     imageCom->NotUseTexture();
@@ -168,7 +170,7 @@ void UIAssetBrowser::CreateBody()
 
     body->SetParent(this);
 
-    auto folderPanel = canvas->CreateUIElement<UIDirectoryTree>("folderPanel");
+    auto folderPanel = EditorUIUtility::Create<UIDirectoryTree>(canvas, "folderPanel");
     auto folderPanelImageCom = folderPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     folderPanel->SetFileSystem(QuadLF::LogicalFileSystem::GetInstance());
 
@@ -180,7 +182,7 @@ void UIAssetBrowser::CreateBody()
 
     mDirectoryTreePanel = folderPanel;
 
-    auto filePanel = canvas->CreateUIElement<UIScrollBox>("folderPanel");
+    auto filePanel = EditorUIUtility::Create<UIScrollBox>(canvas, "folderPanel");
     //   auto filePanelImageCom = filePanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     //  auto filePanelGridLayoutCom = filePanel->CreateUIComponent<UIGridLayoutComponent>("GridLayoutCom");
     filePanel->SetLayout(EUIScrollLayout::eGrid);
@@ -206,17 +208,63 @@ void UIAssetBrowser::CreateBody()
     body->SetSecondChildElement(filePanel);
     body->SetFirstChildElement(folderPanel);
 
-    mGlobalFileEditBox = canvas->CreateUIElement<UI::UIEditBox>("GlobalEditBox");
-    mGlobalFileEditBox->SetFontSize(20.0f);
-    mGlobalFileEditBox->SetSize(50, 50);
+    mGlobalFileEditBox = EditorUIUtility::CreateTextInput(canvas, "GlobalEditBox");
+    // EditorUIUtility의 공통 폰트 규격 유지: mGlobalFileEditBox->SetFontSize(20.0f);
+    // EditorUIUtility의 기본 높이 유지: mGlobalFileEditBox->SetSize(50, 50);
+    mGlobalFileEditBox->SetWidth(50);
     mGlobalFileEditBox->SetActiveFlag(false);
     mGlobalFileEditBox->SetOverflowMode(UI::EUITextOverflowMode::eWordWrap);
     mGlobalFileEditBox->SetUseScissorRect(true);
-    mGlobalFileEditBox->SetTextColor(0.0f, 0.0f, 0.0f);
-    mGlobalFileEditBox->SetBackgroundColor(1.0f, 1.0f, 1.0f);
+    // EditorUIUtility의 기본 색상 유지: mGlobalFileEditBox->SetTextColor(0.0f, 0.0f, 0.0f);
+    // EditorUIUtility의 기본 색상 유지: mGlobalFileEditBox->SetBackgroundColor(1.0f, 1.0f, 1.0f);
 
     mGlobalFileEditBox->mOnLostKeyboardFocusCallbackSystem.Register([this]() { FinishEditingFileItem(); });
     mBodyPanel = body;
+}
+
+void UIAssetBrowser::CreateFileOptionPanel()
+{
+
+    auto canvas = GetDestCanvas();
+
+    mFileOptionPanel = EditorUIUtility::CreatePanel(canvas, "FileOptionPanel");
+
+
+    mFileOptionPanel->SetHeight(900.0f);
+    mFileOptionPanel->SetWidth(400.0f);
+
+    mFileOptionPanel->SetActiveFlag(false);
+
+    canvas->mOnPreviewMouseDownCallbackSystem.Register(
+        [browser = UI::UIElementPtr<UIAssetBrowser>(this)](UI::UIElement *hitElement)
+        {
+            auto instance = browser.Get();
+            if (!instance || !instance->mFileOptionPanel || !instance->mFileOptionPanel->GetActiveFlag())
+                return;
+
+            // 메뉴 자신과 중첩된 항목은 유지한다. nullptr(빈 공간)와 다른 UI 클릭은 닫는다.
+            if (!UI::UIManager::GetInstance()->IsSameOrDescendant(hitElement, instance->mFileOptionPanel))
+                instance->CloseOptionsPanel();
+        });
+
+    canvas->mOnInputActivationChangedCallbackSystem.Register([this](bool inputActiveState) { CloseOptionsPanel(); });
+
+    mFileOptionPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
+
+    auto assetDuplicateButton = EditorUIUtility::CreateSmallTextButton(mFileOptionPanel, "AssetDuplicateButton");
+    assetDuplicateButton->mTextComponent->SetText("복사하기");
+    assetDuplicateButton->SetWidth(mFileOptionPanel->GetWidth());
+
+    assetDuplicateButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseOptionsPanel();
+            OnClikedDuplicateAssetButton();
+        });
+
+    auto test = EditorUIUtility::CreateSmallTextButton(mFileOptionPanel, "AssetDuplicateButton");
+    test->mTextComponent->SetText("Test 버튼");
+    test->SetWidth(mFileOptionPanel->GetWidth());
 }
 
 void UIAssetBrowser::OnSelectedFile(QuadLF::LogicalNode *node)
@@ -236,6 +284,18 @@ void UIAssetBrowser::OnSelectedFile(QuadLF::LogicalNode *node)
         switch (assetType)
         {
 
+        case CoreAsset::EAssetType::eMap:
+        {
+            CoreAsset::AssetPtr mapAsset =
+                CoreAsset::AssetManager::GetInstance()->GetAsset<Map>(file->GetAssetInfo().mAssetID);
+            Map *map = mapAsset.As<Map>();
+            if (map)
+            {
+                // 저장 확인과 편집 맵 전환은 기존 프로젝트 관리 경로에 맡긴다.
+                Quad::EditorProjectManager::GetInstance()->OpenMap(map);
+            }
+        }
+        break;
         case CoreAsset::EAssetType::ePrefab:
         {
             auto editorDirector = Quad::EditorDirector::GetInstance();
@@ -257,6 +317,14 @@ void UIAssetBrowser::OnSelectedFile(QuadLF::LogicalNode *node)
                                                        .Get());
 
             editorDirector->ChangeToMaterialEditWorkSpace(material);
+        }
+        break;
+        case CoreAsset::EAssetType::eAnimation:
+        {
+            CoreAsset::AssetPtr clipAsset = CoreAsset::AssetManager::GetInstance()->GetAsset<CoreAsset::AnimationClip>(
+                file->GetAssetInfo().mAssetID);
+            Quad::EditorDirector::GetInstance()->ChangeToAnimationClipEditWorkSpace(
+                clipAsset.As<CoreAsset::AnimationClip>());
         }
         break;
         }
@@ -375,6 +443,9 @@ void UIAssetBrowser::NavigateToFolder(QuadLF::LogicalFolder *folder, bool addToH
 
 void UIAssetBrowser::FinishEditingFileItem()
 {
+    // 탭 전환의 편집 취소 뒤 포커스 해제 알림이 도착할 수도 있다.
+    if (mCurrEditingFileItem == nullptr)
+        return;
     mGlobalFileEditBox->SetActiveFlag(false);
     mCurrEditingFileItem->mFileTextElement->SetActiveFlag(true);
 
@@ -400,6 +471,65 @@ void UIAssetBrowser::FinishEditingFileItem()
 
 void OpenFileItem(UIFileItem *fileItem) {}
 
+void UIAssetBrowser::OnRightClickedFileItem(float x, float y)
+{
+    auto canvas = mFileOptionPanel->GetDestCanvas();
+    if (!canvas)
+        return;
+
+    mFileOptionPanel->SetActiveFlag(true);
+
+    mFileOptionPanel->SetPositionLocal(x, y);
+
+    const float windowHeight = canvas->GetWindowSize().Y;
+    const float panelHeight = mFileOptionPanel->GetHeight();
+    // 올바르게 렌더링하기위해서
+    // 창의 크기(높이)가 height보다 작다 그러면 어쩔수없어 그냥 x,y 위치지정
+
+    // 근데 창의 높이가 height보다 커 - > 그런경우에 그  y로 지정하면 y + height > 창의 height 보다 크다? -> 그러면
+    // 벗어난만큼 y를 뺸 위치에 지정
+
+    if (windowHeight < panelHeight)
+    {
+        return;
+    }
+    else if (windowHeight < panelHeight + y)
+    {
+
+        mFileOptionPanel->SetPositionLocal(x, y - (panelHeight + y - windowHeight));
+    }
+}
+
+void UIAssetBrowser::ActiveOptionalPanel(UI::UIElement *panel, float x, float y) {}
+
+void UIAssetBrowser::ReleaseCallbacks() {}
+
+void UIAssetBrowser::OnClikedDuplicateAssetButton()
+{
+
+    // 현재 선택된 파일아이템 에셋에대해
+    //
+    // 복사수행 요청
+    if (mCurrSelectedFileItem == nullptr)
+        return;
+
+    auto fileNode = mCurrSelectedFileItem->GetLogicalFileNode();
+
+    if (fileNode && fileNode->GetNodeType() == QuadLF::ELogicalNodeType::eFile)
+    {
+
+        QuadLF::LogicalFile *file = static_cast<QuadLF::LogicalFile *>(fileNode);
+
+        CoreAsset::AssetID assetID = file->GetAssetInfo().mAssetID;
+
+        // 브라우저의 탐색 폴더는 파일시스템의 전역 현재 폴더와 다를 수 있다.
+        if (!Quad::EditorAssetManager::GetInstance()->DuplicateAsset(assetID, mCurrFolder).Get())
+        {
+            GlobalOverlayManager::GetInstance()->ShowMessageBox("에셋 복제 또는 파일 등록에 실패했습니다.");
+        }
+    }
+}
+
 void UIAssetBrowser::OnCreatedFile(QuadLF::LogicalFile *newFile, QuadLF::LogicalFolder *parentFolder)
 {
 
@@ -424,7 +554,7 @@ UIFileItem *UIAssetBrowser::CreateFileItem()
     if (canvas == nullptr)
         return nullptr;
 
-    auto item = canvas->CreateUIElement<UIFileItem>("item");
+    auto item = EditorUIUtility::Create<UIFileItem>(canvas, "item");
     //   auto com = item->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     item->mOnFileOpendCallbackSystem.Register([this](QuadLF::LogicalNode *node) { OnSelectedFile(node); });
@@ -432,6 +562,9 @@ UIFileItem *UIAssetBrowser::CreateFileItem()
     // 눌렀을때 Global EditBox로 대체
     item->mFileTextButtonComponent->mButtonClickCallbackSystem.Register([item, this](float x, float y)
                                                                         { OnClickedFileItemText(item, x, y); });
+
+    item->mFileRightButtonComponent->mButtonClickCallbackSystem.Register([this](float x, float y)
+                                                                         { OnRightClickedFileItem(x, y); });
 
     UISelectableComponent *selectableCom = item->GetSelectableComponent();
     selectableCom->mOnSelectedCallbackSystem.Register([this, selectableCom](bool flag)
@@ -465,15 +598,18 @@ void UIAssetBrowser::OnSelectedFileItem(bool flag, UISelectableComponent *select
 {
     if (flag)
     {
+
         UISelectableComponent *preSelectableCom = mFileItemSelectableCom;
         mFileItemSelectableCom = selectableCom; // 중요
         if (preSelectableCom)
         {
             preSelectableCom->SetSelect(false, true);
         }
+        mCurrSelectedFileItem = static_cast<UIFileItem *>(selectableCom->GetOwnerUIElement());
     }
     else
     {
+        mCurrSelectedFileItem = nullptr;
         // 외부요인으로인해 선택해제.
         // 현재 선택된 것이 동일할때만 nullptr처리
         if (mFileItemSelectableCom == selectableCom)
@@ -486,21 +622,43 @@ void UIAssetBrowser::OnSelectedFileItem(bool flag, UISelectableComponent *select
 void UIAssetBrowser::SetInitFolder(QuadLF::LogicalFolder *folder)
 {
     mCurrFolder = folder;
+    // 이미 Begin된 Canvas에서는 자식 생성 즉시 OnBegin이 호출되므로 뒤늦은 초기 폴더 지정도 반영한다.
+    if (folder && mIsBegun && mDirectoryTreePanel && mFilePanel)
+        SelectFolderProgrammtically(folder);
 }
 
 void UIAssetBrowser::ResizeBrowserHeight(float deltaY)
 {
-
+    if (!mBodyPanel || !std::isfinite(deltaY))
+        return;
     float bodyHeight = std::clamp(mBodyPanel->GetHeight() - deltaY, mBodyMinHeight, mBodyMaxHeight);
-    mBodyPanel->SetHeight(bodyHeight);
+    SetContentSize(GetWidth(), bodyHeight + mToolbar->GetHeight() + mNavigationBar->GetHeight());
+}
+
+void UIAssetBrowser::SetContentSize(float width, float height)
+{
+    if (!std::isfinite(width) || !std::isfinite(height))
+        return;
+    width = std::max(1.0f, width);
+    height = std::max(1.0f, height);
+    SetSize(width, height);
+    if (!mIsBegun || !mToolbar || !mNavigationBar || !mBodyPanel)
+        return;
+
+    // 작은 높이에서도 본문이 남도록 각 헤더의 높이를 전체 영역의 1/4 이하로 제한한다.
+    const float headerHeight = std::min(mToolbarMaxHeight, height * 0.25f);
+    const float bodyHeight = std::max(1.0f, height - 2.0f * headerHeight);
+    mToolbar->SetSize(width, headerHeight);
+    mNavigationBar->SetSize(width, headerHeight);
+    mBodyPanel->SetSize(width, bodyHeight);
     mDirectoryTreePanel->SetHeight(bodyHeight);
     mFilePanel->SetHeight(bodyHeight);
-
-    float toolbarHeight = (bodyHeight) / mBodyMaxHeight * mToolbarMaxHeight;
-    mToolbar->SetHeight(toolbarHeight);
-    mNavigationBar->SetHeight(toolbarHeight);
-
     mBodyPanel->UpdateLayout();
+
+    // 기존 splitter가 결정한 파일 영역 시작 위치를 사용하여 양쪽 콘텐츠를 본문 너비에 맞춘다.
+    const float filePanelX = mFilePanel->mTransform.GetLocalPosition().x;
+    mDirectoryTreePanel->SetWidth(std::max(1.0f, filePanelX - 10.0f));
+    mFilePanel->SetWidth(std::max(1.0f, width - filePanelX));
     mVerticalLayoutComponent->CalculateLayout();
 }
 
@@ -518,8 +676,23 @@ void UIAssetBrowser::SetMinBodyHeight(float y)
         mBodyMinHeight = 1.0F;
 }
 
-void UIAssetBrowser::OnDraggingResizeHandle(float deltaX, float deltaY)
+void UIAssetBrowser::CloseOptionsPanel()
 {
 
-    ResizeBrowserHeight(deltaY);
+    if (mFileOptionPanel)
+    {
+        mFileOptionPanel->SetActiveFlag(false);
+    }
+}
+
+void UIAssetBrowser::CloseTransientPanels()
+{
+    CloseOptionsPanel();
+    if (!mGlobalFileEditBox)
+        return;
+    if (mCurrEditingFileItem)
+        mCurrEditingFileItem->mFileTextElement->SetActiveFlag(true);
+    mCurrEditingFileItem = nullptr;
+    mGlobalFileEditBox->SetActiveFlag(false);
+    mGlobalFileEditBox->GetTextInputComponent()->ReleaseKeyboardFocus();
 }

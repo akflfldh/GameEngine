@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <UiSystem/UIElement.h>
+#include <string>
 
 #include "UIText.generated.h"
 
@@ -27,11 +28,12 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIText : public UIElement
 
     void SetTextColor(const UI::UIColor &color);
 
+    std::string GetText() const;
+
   protected:
     UITextComponent *mTextComponent;
 
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UIControlStyle &style) override;
+    virtual void OnUpdatedAutoSize(float scale) override;
 
   private:
 };

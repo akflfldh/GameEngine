@@ -27,7 +27,7 @@ class REFLECT_CLASS(EngineClass) UIHierarchyItem : public UI::UIImage
     void SetHeaderHeight(float h);
     void SetHeaderText(const std::string &text);
     std::string GetHeaderText() const;
-    UI::UITextButton *GetHeaderPanel() const;
+    UI::UIButton *GetHeaderPanel() const;
 
     void AddItem(UI::UIElement *element);
     void RemoveItem(UI::UIElement *element);
@@ -49,15 +49,14 @@ class REFLECT_CLASS(EngineClass) UIHierarchyItem : public UI::UIImage
 
   protected:
     void UpdateHeight();
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UI::UIControlStyle &style) override;
-
     // style일변화 , hover,등 상태변화 에서 호출
     virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state) override;
 
     // UI::UIButton *mHeaderPanel;
     // UI::UIText *mHeaderText;
-    UI::UITextButton *mHeaderPanel; // 해당오브젝트에대한 판넬
+    //  UI::UITextButton *mHeaderPanel; // 해당오브젝트에대한 판넬
+    UI::UIButton *mHeaderPanel;
+    UI::UIText *mHeaderText;
     UI::UIButton *mExpandButton;
     UI::UIImage *mIconImage = nullptr;
     UI::UIImage *mContentPanel; // 자식들에대한 리스트 판넬

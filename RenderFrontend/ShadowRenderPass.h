@@ -23,10 +23,11 @@ class ShadowRenderPass : public IRenderPass
   private:
     void SetGlobalData(const RenderPassExecuteContext &executeContext);
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &executeContex);
-    bool BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command, Render::RenderItem &renderItem);
-    void BuildRenderItemBufferGpuResources(const Render::StaticMeshRenderCommnad &command,
+    bool BuildRenderItemMeshData(const Render::MeshRenderCommand &command, Render::RenderItem &renderItem);
+    void BuildRenderItemBufferGpuResources(const Render::MeshRenderCommand &command,
                                            std::vector<BindingGpuResource> &bindingGpuResourceVector);
-    Render::MaterialID mGpuMaterialID;
+    Render::MaterialID mStaticGpuMaterialID;
+    Render::MaterialID mSkinningGpuMaterialID;
 
     Render::FrameContext mPassData;
 };

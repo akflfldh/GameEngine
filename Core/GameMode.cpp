@@ -4,6 +4,7 @@
 #include <Core/ControllableEntity.h>
 #include <Core/Map.h>
 #include <Core/ObjectController.h>
+#include <Core/PlayerController.h>
 #include <Core/PlayerStart.h>
 
 GameMode::GameMode() {}
@@ -47,6 +48,33 @@ void GameMode::SetupPlay(Map *map)
     {
         SetActiveCamera(map, cameraComponent);
     }
+}
+
+void GameMode::ProcessLocalInputActions(Map *map)
+{
+
+    PlayerController *controller = static_cast<PlayerController *>(map->GetCurrentObjectController());
+
+    if (controller)
+    {
+        std::unordered_map<std::string, InputActionValue> logicalInputActions = controller->CollectLocalInputActions();
+        for (auto &action : logicalInputActions)
+        {
+            controller->PutInputAction(action.first, action.second);
+        }
+    }
+}
+
+ControllableEntity *GameMode::SpwanPlayerObject(Map *map)
+{
+
+    return CreateDefaultPlayerObject(map, map->GetGameModeSetting());
+}
+
+PlayerController *GameMode::SpwanPlayerController(Map *map)
+{
+
+    return static_cast<PlayerController *>(CreateDefaultPlayerController(map, map->GetGameModeSetting()));
 }
 
 ObjectController *GameMode::ResolvePlayerController(Map *map)
@@ -156,7 +184,7 @@ ControllableEntity *GameMode::CreateDefaultPlayerObject(Map *map, const Core::Ga
     if (playerStart)
     {
         request.mPosition = playerStart->GetPositionWorld();
-        request.mScale = playerStart->GetScaleWorld();
+        // request.mScale = playerStart->GetScaleWorld();
         request.mRotation = playerStart->GetRotationWorld();
     }
 

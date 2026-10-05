@@ -21,7 +21,10 @@ enum class EDragDropType
     eObject,
     eObjectItem,
     ePrefab,
-    eComponent
+    eComponent,
+    eAssetSkinningMesh,
+    eAssetSkeleton,
+    eMap
 };
 
 struct DragPayload

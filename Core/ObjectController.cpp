@@ -33,6 +33,17 @@ Object *ObjectController::GetPossessObject() const
     return mObject.Get();
 }
 
+Core::MouseMode ObjectController::GetMouseMode() const
+{
+    return mMouseMode;
+}
+
+void ObjectController::SetMouseMode(Core::MouseMode mode)
+{
+
+    mMouseMode = mode;
+}
+
 void ObjectController::OnPossess(ControllableEntity *ControllableEntity) {}
 
 void ObjectController::OnUnPossess() {}

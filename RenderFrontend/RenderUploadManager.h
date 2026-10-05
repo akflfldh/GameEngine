@@ -9,10 +9,13 @@ struct CommonPassData
     CoreMath::Matrix4X4 gViewProj;
 };
 
-struct StaticMeshObjectData
+struct MeshObjectData
 {
     CoreMath::Matrix4X4 gWorld;
     CoreMath::Matrix4X4 gWorldInvTrans;
+
+    uint32_t gPaletteOffset = 0;
+    uint32_t gPaletteCount = 0;
 };
 
 struct DebugColliderData
@@ -25,6 +28,10 @@ struct StaticMeshOutlineData
 {
     CoreMath::Matrix4X4 gWorld;
     CoreMath::Vector4 gOutlineColor;
+    // 스키닝 outline 변형에서만 사용하며, 정적 메시 커맨드는 0을 전달한다.
+    uint32_t gPaletteOffset = 0;
+    uint32_t gPaletteCount = 0;
+    uint32_t gPadding[2] = {};
 };
 
 struct StaticMeshGizmoData
@@ -63,6 +70,11 @@ struct BillboardData
     float mPadding2;
 };
 
+struct SkinPaletteData
+{
+    CoreMath::Matrix4X4 mMatrix;
+};
+
 class RenderUploadManager
 {
 
@@ -73,10 +85,10 @@ class RenderUploadManager
 
     // StaticMeshRenderCommand → ObjectStaticData 채워서 업로드
     // void UploadCommonPassData(CommonPassData &data);
-    void UploadStaticMeshObjectBuffer(const StaticMeshRenderCommnad &cmd, StaticMeshObjectData &data);
-    void UploadDebugColliderBuffer(const StaticMeshRenderCommnad &cmd, DebugColliderData &data);
-    void UploadStaticMeshOutlineData(const StaticMeshOutlineRenderCommand &cmd, StaticMeshOutlineData &data);
-    void UploadStaticMeshGizmoData(const StaticMeshRenderCommnad &cmd, StaticMeshGizmoData &data);
+    void UploadStaticMeshObjectBuffer(const MeshRenderCommand &cmd, MeshObjectData &data);
+    void UploadDebugColliderBuffer(const MeshRenderCommand &cmd, DebugColliderData &data);
+    void UploadStaticMeshOutlineData(const MeshOutlineRenderCommand &cmd, StaticMeshOutlineData &data);
+    void UploadStaticMeshGizmoData(const MeshRenderCommand &cmd, StaticMeshGizmoData &data);
 
     void UploadDefaultMaterialData(const MaterialRenderSnapshot &snapshot, DefaultMaterialData &data);
 

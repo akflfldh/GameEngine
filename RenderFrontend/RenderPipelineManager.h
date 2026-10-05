@@ -18,9 +18,11 @@ namespace Core
 {
 struct GlobalFrameData;
 class LogicalWindow;
+struct MeshRenderProxy;
 }; // namespace Core
 
 class World;
+class Map;
 
 namespace Render
 {
@@ -150,9 +152,15 @@ class RENDER_FRONTEND_API RenderPipelineManager
     void ExcuteRenderPassGraph(Core::LogicalWindow *window, RenderContext *renderContext);
 
     void CreateRenderCommands(World *world, RenderPassExecuteContext &executeContext);
+    // 렌더링 대상 Map 하나의 메시/광원/디버그 데이터를 공통 뷰 snapshot에 추가한다.
+    void CreateMapRenderCommands(const Map *map, RenderPassExecuteContext &executeContext);
 
     void BuildSkysphereSnapshot(World *world, RenderPassExecuteContext &executeContext);
     void BuildPostProcessingSnapshot(World *world, RenderPassExecuteContext &executeContext);
+
+    void BuildMeshRenderCommands(std::vector<MeshRenderCommand> &oMeshRenderCommands,
+                                 Core::MeshRenderProxy *meshRenderProxy, CoreAsset::Mesh *mesh,
+                                 RenderPassExecuteContext &executeContext);
 
     MaterialRenderSnapshot GetMaterialSnapshot(CoreAsset::Material *mat) const;
 

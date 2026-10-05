@@ -104,6 +104,7 @@ void Render::BillboardRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     bindingPassBufferGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingPassBufferGpuResource.mOffset = bufferSizeOffset;
     bindingPassBufferGpuResource.mType = EShaderResourceType::eConstantBuffer;
+    bindingPassBufferGpuResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
     mPassData.mGlobalPassBufferResouce = bindingPassBufferGpuResource;
     mPassData.mViewport = executeContext.mGlobalSceneViewport;
@@ -176,6 +177,8 @@ void Render::BillboardRenderPass::BuildObjectStructuredBuffer(RenderItem &render
 
     BindingGpuResource objectStructedBufferBinidngGpuResource;
     objectStructedBufferBinidngGpuResource.mType = EShaderResourceType::eStructuredBuffer;
+    objectStructedBufferBinidngGpuResource.mSemantic =
+        EMasterRootBindingSemantic::eBillboardObjectStructuredBuffer;
 
     GRM::GpuStructuredBufferContext *gpuStructuredBufferContext = static_cast<GRM::GpuStructuredBufferContext *>(
         gpuBufferContextSystem->GetGpuBufferContext(AssetResolver::GetInstance()->GetBillboardStructuredGpuBufferID()));
@@ -225,6 +228,7 @@ void Render::BillboardRenderPass::BuildRenderItemTexGpuResource(RenderItem &rend
 
     bindingTexResource.gpuResource = gpuResource;
     bindingTexResource.mType = EShaderResourceType::eTexture;
+    bindingTexResource.mSemantic = EMasterRootBindingSemantic::eBillboardTexture;
 
     renderItem.mBindingGpuTexResourceVector.push_back(bindingTexResource);
 }

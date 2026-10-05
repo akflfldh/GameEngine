@@ -1,4 +1,5 @@
 ﻿#include "UIReflectFloatPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorInspectorUtility.h>
 #include <ReflectSystem/ReflectionPropertyInfo.h>
 #include <UiSystem/UIEditBox.h>
@@ -38,17 +39,16 @@ void UIReflectFloatPanel::OnBegin()
     // SetSize(500.0f, 100.0f);
     //  SetColor(0.3f, 0.3f, 0.3f);
 
-    mTagText = CreateChildUIElement<UI::UIText>("TagText");
+    mTagText = EditorUIUtility::CreateLabel(this, "TagText");
     //   mTagText->SetFontSize(20.0f);
     // mTagText->SetHeight(30.0f);
     //  mTagText->SetTextColor({0, 0, 0});
     //    mTagText->SetPositionLocal(0, 40);
 
-    mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
+    mEditBox = EditorUIUtility::CreateNumberInput(this, "EditBox");
     mEditBox->SetWidth(100);
-    mEditBox->SetBackgroundColor(1, 1, 1);
-    mEditBox->SetTextColor(0, 0, 0);
-    mEditBox->SetTextInputType(UI::EUITextInputType::eNumber);
+    // EditorUIUtility의 기본 색상 유지: mEditBox->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: mEditBox->SetTextColor(0, 0, 0);
     mEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
     mEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
 

@@ -122,6 +122,7 @@ void Render::RenderDebugGridPass::SetGlobalData(const Core::GlobalFrameData &glo
     mPassConstantBufferResource.mOffset = bufferSizeOffset; //
     // bufferIndexOffset;
     mPassConstantBufferResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    mPassConstantBufferResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
     // passData
     mPassData.mViewport = globalFrameData.mSceneViewport;

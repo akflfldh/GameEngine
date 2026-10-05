@@ -14,6 +14,7 @@
 #include <RenderFrontend/RenderUploadManager.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <RenderSystem/IRenderSystem.h>
+#include <utility>
 
 Render::RenderPassMain::RenderPassMain()
 {
@@ -86,6 +87,11 @@ void Render::RenderPassMain::SetGlobalData(const Core::GlobalFrameData &globalFr
                                            const RenderPassExecuteContext &executeContext)
 {
 
+    // FrameContext는 pass 객체가 재사용하므로 선택적 global resource가 이전 프레임에서 남지 않게 초기화한다.
+    mPassData.mGlobalStructuredBufferResource = {};
+    mPassData.mGlobalStructuredBufferResource2 = {};
+    mPassData.mGlobalPassTexResourceVector.clear();
+
     MainConstnatData mainConstantData;
     // 필요한 pass 데이터
     mainConstantData.mViewProj = globalFrameData.mViewProj;
@@ -121,6 +127,7 @@ void Render::RenderPassMain::SetGlobalData(const Core::GlobalFrameData &globalFr
     mPassConstantBufferResource.mOffset = bufferSizeOffset; //
     // bufferIndexOffset;
     mPassConstantBufferResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    mPassConstantBufferResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
     // 일반적인 MainPass들은 전체화면이라고생각
     //  최종
@@ -142,11 +149,11 @@ void Render::RenderPassMain::SetGlobalData(const Core::GlobalFrameData &globalFr
         GRM::GpuStructuredBufferContext *gpuStructuredBufferContext = static_cast<GRM::GpuStructuredBufferContext *>(
             gpuBufferContextSystem->GetGpuBufferContext(AssetResolver::GetInstance()->GetLightStructuredGpuBufferID()));
 
-        gpuStructuredBufferContext->mGpuBuffersPerFrame[gpuStructuredBufferContext->mCurrFrameIndex];
-
         mPassData.mGlobalStructuredBufferResource.gpuResource =
             gpuStructuredBufferContext->mGpuBuffersPerFrame[gpuStructuredBufferContext->mCurrFrameIndex].getResource();
         mPassData.mGlobalStructuredBufferResource.mOffset = 0;
+        mPassData.mGlobalStructuredBufferResource.mType = EShaderResourceType::eStructuredBuffer;
+        mPassData.mGlobalStructuredBufferResource.mSemantic = EMasterRootBindingSemantic::eLightStructuredBuffer;
     }
 
     GRM::GRMPtr shadowMapTex = executeContext.renderPassGraph->GetTexture("DirectionalShadowMap");
@@ -154,7 +161,23 @@ void Render::RenderPassMain::SetGlobalData(const Core::GlobalFrameData &globalFr
     BindingGpuResource shadowMapBindingResource;
     shadowMapBindingResource.gpuResource = shadowMapTex.getResource();
     shadowMapBindingResource.mType = Render::EShaderResourceType::eTexture;
-    mPassData.mGlobalPassTexResourceVector.push_back({6, shadowMapBindingResource});
+    shadowMapBindingResource.mSemantic = EMasterRootBindingSemantic::eShadowMapTexture;
+    mPassData.mGlobalPassTexResourceVector.push_back(shadowMapBindingResource);
+
+    // Anim Palette
+
+    if (executeContext.mSkinPaletteSnapshot.size() != 0)
+    {
+        GRM::GpuStructuredBufferContext *gpuStructuredBufferContext =
+            static_cast<GRM::GpuStructuredBufferContext *>(gpuBufferContextSystem->GetGpuBufferContext(
+                AssetResolver::GetInstance()->GetSkinPaletteStructuredGpuBufferID()));
+
+        mPassData.mGlobalStructuredBufferResource2.gpuResource =
+            gpuStructuredBufferContext->mGpuBuffersPerFrame[gpuStructuredBufferContext->mCurrFrameIndex].getResource();
+        mPassData.mGlobalStructuredBufferResource2.mOffset = 0;
+        mPassData.mGlobalStructuredBufferResource2.mType = EShaderResourceType::eStructuredBuffer;
+        mPassData.mGlobalStructuredBufferResource2.mSemantic = EMasterRootBindingSemantic::eSkinPaletteStructuredBuffer;
+    }
 }
 
 std::vector<Render::RenderItem> Render::RenderPassMain::BuildRenderItem(const RenderPassExecuteContext &executeContext)
@@ -166,11 +189,11 @@ std::vector<Render::RenderItem> Render::RenderPassMain::BuildRenderItem(const Re
 
     std::vector<Render::RenderItem> renderItemVec;
 
-    for (const auto &command : executeContext.mOpaqueStaticMeshRenderCommandList)
+    for (const auto &command : executeContext.mOpaqueMeshRenderCommandList)
     {
 
         // staticMesh가 지정되지않아서 무시
-        if (command.mStaticMesh == nullptr)
+        if (command.mMesh == nullptr)
             continue;
 
         Render::RenderItem renderItem;
@@ -189,7 +212,7 @@ std::vector<Render::RenderItem> Render::RenderPassMain::BuildRenderItem(const Re
 
         {
             RenderMaterialContext rmc;
-            rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
+            rmc.mGeometryType = command.mGeometryType;
             rmc.mTransparent = false;
             rmc.mShadingModel = materialRenderSnapshot.mShadingModel;
 
@@ -213,11 +236,11 @@ std::vector<Render::RenderItem> Render::RenderPassMain::BuildRenderItem(const Re
     return renderItemVec;
 }
 
-bool Render::RenderPassMain::BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command,
+bool Render::RenderPassMain::BuildRenderItemMeshData(const Render::MeshRenderCommand &command,
                                                      Render::RenderItem &renderItem)
 {
 
-    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mStaticMesh->GetSubMeshVector();
+    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mMesh->GetSubMeshVector();
     const CoreAsset::SubMesh subMesh = subMeshVector[command.mSubMeshIndex];
 
     // instance
@@ -232,11 +255,11 @@ bool Render::RenderPassMain::BuildRenderItemMeshData(const Render::StaticMeshRen
     renderItem.mMeshItem.mIndexOffset = subMesh.mIndexOffset;
     renderItem.mMeshItem.mVertexOffset = subMesh.mVertexOffset;
 
-    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
 
     if (meshGpuContext.mVertexBuffer.getResource() == nullptr)
     {
-        mAssetResolver->RequestResolveAsset(command.mStaticMesh);
+        mAssetResolver->RequestResolveAsset(command.mMesh);
         return false;
     }
 
@@ -247,7 +270,7 @@ bool Render::RenderPassMain::BuildRenderItemMeshData(const Render::StaticMeshRen
 }
 
 void Render::RenderPassMain::BuildRenderItemBufferGpuResources(
-    const Render::StaticMeshRenderCommnad &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
+    const Render::MeshRenderCommand &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
 {
     // buffer
 
@@ -262,7 +285,7 @@ void Render::RenderPassMain::BuildRenderItemBufferGpuResources(
 
     uint32_t bufferOffset = bufferIndexOffset * gpuBufferContext->mBufferDesc.mElementDataSize;
 
-    StaticMeshObjectData objectData;
+    MeshObjectData objectData;
     mRenderUploadManager->UploadStaticMeshObjectBuffer(command, objectData);
 
     // upload
@@ -271,6 +294,7 @@ void Render::RenderPassMain::BuildRenderItemBufferGpuResources(
     bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingGpuResource.mOffset = bufferOffset;
     bindingGpuResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eObjectConstantBuffer;
 
     bindingGpuResourceVector.push_back(bindingGpuResource);
 
@@ -285,6 +309,7 @@ void Render::RenderPassMain::BuildRenderItemBufferGpuResources(
     bindingMatGpuResource.gpuResource = matBufferContext->mGpuBuffer.getResource();
     bindingMatGpuResource.mOffset = bufferOffset;
     bindingMatGpuResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    bindingMatGpuResource.mSemantic = EMasterRootBindingSemantic::eMaterialConstantBuffer;
 
     bindingGpuResourceVector.push_back(bindingMatGpuResource);
 }
@@ -294,50 +319,30 @@ void Render::RenderPassMain::BuildRenderItemTexGpuResources(const MaterialRender
                                                             std::vector<BindingGpuResource> &bindingGpuResourceVector)
 {
 
-    // tex
-
-    // diffuse
-    std::vector<CoreAsset::Texture *> texList;
-
     const std::vector<CoreAsset::Texture *> &albedoMapList = materialRenderSnapshot.mAlbedoMapList;
+    CoreAsset::Texture *albedoTexture =
+        albedoMapList.empty() ? static_cast<CoreAsset::Texture *>(
+                                    CoreAsset::AssetManager::GetInstance()->GetDefafultDiffuseWhiteMap().Get())
+                              : albedoMapList.front();
+    CoreAsset::Texture *normalTexture =
+        materialRenderSnapshot.mNormalMap != nullptr
+            ? materialRenderSnapshot.mNormalMap
+            : static_cast<CoreAsset::Texture *>(CoreAsset::AssetManager::GetInstance()->GetDefaultNormalMap().Get());
 
-    if (albedoMapList.empty())
-    {
-        // 기본적으로 하나의 diffuse map은 바인딩
+    // 현재 Main HLSL 계약은 albedo t1 한 장과 normal t2 한 장이다. Asset에 여러 albedo가 있어도
+    // 벡터 순서로 다른 register에 밀어 넣지 않고 셰이더가 선언한 첫 albedo만 사용한다.
+    const std::pair<CoreAsset::Texture *, EMasterRootBindingSemantic> textureBindings[] = {
+        {albedoTexture, EMasterRootBindingSemantic::eAlbedoTexture},
+        {normalTexture, EMasterRootBindingSemantic::eNormalTexture}};
 
-        texList.push_back(static_cast<CoreAsset::Texture *>(
-            CoreAsset::AssetManager::GetInstance()->GetDefafultDiffuseWhiteMap().Get()));
-    }
-    else
-    {
-        for (auto texContext : albedoMapList)
-        {
-
-            texList.push_back(texContext);
-        }
-    }
-
-    // normal map
-
-    if (materialRenderSnapshot.mNormalMap != nullptr)
-    {
-        texList.push_back(materialRenderSnapshot.mNormalMap);
-    }
-    else
-    {
-        // 디폴트 노멀맵부여
-        texList.push_back(
-            static_cast<CoreAsset::Texture *>(CoreAsset::AssetManager::GetInstance()->GetDefaultNormalMap().Get()));
-    }
-
-    // add bindingGpuResource
-    for (auto tex : texList)
+    for (const auto &[texture, semantic] : textureBindings)
     {
         Render::BindingGpuResource bindingGpuResource;
-        mAssetResolver->RequestResolveAsset(tex);
-        bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(tex).getResource();
+        mAssetResolver->RequestResolveAsset(texture);
+        bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(texture).getResource();
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = semantic;
         bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
     }
 }

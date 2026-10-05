@@ -6,6 +6,7 @@
 #include <Core/ObjectController.h>
 #include <Core/ObjectManager.h>
 #include <Core/Prefab.h>
+#include <Core/RenderIDManager.h>
 #include <Core/SceneComponent.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreBase/BinaryArch.h>
@@ -13,7 +14,8 @@
 #include <ReflectSystem/ReflectionSystem.h>
 #include <Utility/Utility.h>
 #include <algorithm>
-Map::Map() : Asset(CoreAsset::EAssetType::eMap), mDirty(false)
+Map::Map()
+    : Asset(CoreAsset::EAssetType::eMap), mDirty(false), mRenderID(Core::RenderIDManager::GetInstance()->AllocID())
 {
 
     mReflectionSystem = Quad::ReflectionSystem::GetInstance();
@@ -630,6 +632,61 @@ void Map::Serialize(Arch &arch)
     Asset::Serialize(arch);
 }
 
+bool Map::CopyDataFrom(const CoreAsset::Asset &source, std::string *failureReason)
+{
+    const Map *sourceMap = dynamic_cast<const Map *>(&source);
+    if (!sourceMap)
+    {
+        if (failureReason)
+            *failureReason = "Map 에셋이 필요합니다.";
+        return false;
+    }
+    if (this == sourceMap)
+        return Asset::CopyDataFrom(source, failureReason);
+    // 활성 월드에 붙은 맵을 덮어쓰면 callback/physics/render 등록까지 교체해야 하므로 복제용 빈 맵만 허용한다.
+    if (mWorld || mStarted || mPlayBegun || !mEntityList.empty() || !mEngineEntityList.empty())
+    {
+        if (failureReason)
+            *failureReason = "Map 성분 복사의 대상은 월드에 연결되지 않은 빈 Map이어야 합니다.";
+        return false;
+    }
+    if (sourceMap->GetLoadState() != CoreAsset::EAssetLoadState::Loaded && !sourceMap->GetRawDataDirty())
+    {
+        if (failureReason)
+            *failureReason = "Map의 raw data를 로드하거나 작성한 뒤 복사해야 합니다.";
+        return false;
+    }
+
+    // Asset::Serialize는 ID/이름까지 기록하므로 사용하지 않는다. 기존 raw 경로로 영구 엔티티와
+    // scene/game 설정만 복원하며, world/render ID/callback/엔진 임시 엔티티는 원본에서 가져오지 않는다.
+    BinaryArch writer(false);
+    writer.Start();
+    const_cast<Map *>(sourceMap)->SerilaizeRawData(writer); // 저장 분기는 원본 데이터를 읽기만 한다.
+    BinaryArch reader(true);
+    reader.StartRead(writer.GetBufferFromMemory(), writer.GetBufferSize());
+    const bool previousDirtyActive = mAssetDirtyActive;
+    mAssetDirtyActive = false;
+    SerilaizeRawData(reader);
+    mAssetDirtyActive = previousDirtyActive;
+    reader.End();
+    writer.End();
+
+    // 기존 ID로 참조 fixup이 완료된 다음 새 인스턴스 ID를 부여하고 조회 테이블도 동기화한다.
+    mEntityIDTable.clear();
+    for (Object *object : mEntityList)
+    {
+        object->SetObjectUniqueID(CoreUtility::Utility::MakeUniqueID());
+        for (Component *component : object->GetComponentList())
+        {
+            if (component && !component->GetDeadState())
+                object->UpdateComponentID(component->GetUniqueID(), CoreUtility::Utility::MakeUniqueID(), component);
+        }
+        object->RefreshComponentIDTable();
+        mEntityIDTable[object->GetUniqueID()] = object;
+    }
+    return Asset::CopyDataFrom(source, failureReason);
+}
+
 void Map::SerilaizeRawData(Arch &arch)
 {
     Core::ObjectManager *objectManager = Core::ObjectManager::GetInstance();
@@ -860,7 +917,7 @@ Object *Map::SpawnObject(const Core::SpawnRequestContext &spawnRequestContext)
     {
         entity->SetPositionLocal(spawnRequestContext.mPosition);
         entity->SetRotationLocal(spawnRequestContext.mRotation);
-        entity->SetScaleLocal(spawnRequestContext.mScale);
+        //   entity->SetScaleLocal(spawnRequestContext.mScale);
     }
 
     return object;
@@ -921,11 +978,6 @@ bool Map::RayHit(const CoreMath::Ray &ray, Core::HitResult &oHitResult) const
     }
 
     return bHitAnything;
-}
-
-void Map::SetRenderID(uint32_t id)
-{
-    mRenderID = id;
 }
 
 uint32_t Map::GetRenderID() const
@@ -1368,6 +1420,7 @@ void Map::SerializeGameModeSetting(Arch &arch)
     arch << mGameModeSetting.mDefaultPlayerObjectClassName;
     arch << mGameModeSetting.mDefaultPlayerObjectPrefabID;
     arch << mGameModeSetting.mDefaultPlayerControllerClassName;
+    arch << mGameModeSetting.mMouseMode;
 }
 
 void Map::SerializeSceneSetting(Arch &arch)

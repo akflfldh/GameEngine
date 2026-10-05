@@ -69,6 +69,9 @@ class CORE_ASSET_API AssetManager
     // 에셋 raw데이터 저장(texture, mesh만 해당)
     bool StoreAssetRawData(Asset *asset, const std::filesystem::path &filePath);
 
+    // 대상 registryPrefix와 원본 표시 이름으로 중복 없는 이름을 정한다. 목적지/domain은 호출자가 지정한다.
+    AssetPtr DuplicateAsset(AssetPtr source, const char *registryPrefix, bool bEngine = false);
+
     // 타입까지 검사하고 Asset 반환
     template <typename T> AssetPtr GetAsset(const char *assetName) const;
     template <typename T> AssetPtr GetAsset(AssetID id) const;
@@ -119,6 +122,15 @@ class CORE_ASSET_API AssetManager
     void SetAssetRawFileName(AssetMetaData *assetMetaData);
 
     void ProcessImportOptions(ImportPackage &importPackage);
+
+    /*
+    텍스처가 아닌 에셋 임포트시에 텍스처 임포트 요청 후처리
+    */
+    void ProcessTextureImportRequest(ImportPackage &importPackage,
+                                     const ImportExecutionContext &importExecutionContext);
+
+    void GetAssetUniqueName(const std::string &displayName, const std::string &prefix, std::string &oNewDisplayName,
+                            std::string &oNewUniqueName);
 
   private:
     AssetManager();

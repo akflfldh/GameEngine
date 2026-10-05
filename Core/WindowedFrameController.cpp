@@ -204,10 +204,14 @@ void Core::WindowedFrameController::OnInputEvent(const Quad::RawInputData &input
     }
 
     if (window == nullptr)
+    {
         window = GetLogicalWindowOnMouse(inputData);
+    }
 
     if (window)
     {
+        SetMouseMode(window->GetMouseMode(), window);
+
         Core::GlobalAppHelper *globalAppHelper = Core::GlobalAppHelper::GetInstance();
 
         if (inputData.IsMouseEvent())
@@ -301,6 +305,41 @@ void Core::WindowedFrameController::MaximizedWindow()
     {
 
         mWindow->Show(SW_SHOWMAXIMIZED);
+    }
+}
+
+void Core::WindowedFrameController::SetMouseMode(Core::MouseMode mode, LogicalWindow *targetLogicalWindow)
+{
+    if (targetLogicalWindow == nullptr || targetLogicalWindow->GetOwnerController() != this || !mWindow)
+        return;
+
+    Quad::InputSystem *inputSystem = Quad::InputSystem::GetInstance();
+    if (inputSystem == nullptr || inputSystem->GetCurrentWindowHandle() != mWindow->GetWindowHandle())
+        return;
+
+    // OnInputEvent의 라우팅과 동일하게 캡처된 창을 우선한다.
+    // 캡처 중에는 hover 대상이 갱신되지 않을 수 있으므로 hover만으로 판단하지 않는다.
+    LogicalWindow *inputTarget =
+        mMouseCapturedLogicalWindow ? mMouseCapturedLogicalWindow : mCurrentLogicalWindowOnMouse;
+    if (inputTarget != targetLogicalWindow)
+        return;
+
+    if (mode == Core::MouseMode::Captured)
+    {
+        mWindow->SetCursorVisible(false);
+        Render::Viewport viewport = targetLogicalWindow->mViewportController.GetViewport();
+
+        RECT clientRect;
+        clientRect.left = viewport.TopLeftX;
+        clientRect.top = viewport.TopLeftY;
+        clientRect.right = clientRect.left + viewport.Width;
+        clientRect.bottom = clientRect.top + viewport.Height;
+
+        mWindow->ClipCursor(&clientRect);
+    }
+    else
+    {
+        mWindow->SetCursorVisible(true);
     }
 }
 

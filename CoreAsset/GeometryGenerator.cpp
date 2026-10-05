@@ -207,6 +207,37 @@ void CoreAsset::GeometryGenerator::CaculateVertexNoraml(std::vector<StaticVertex
     }
 }
 
+void CoreAsset::GeometryGenerator::CaculateVertexNoraml(std::vector<SkinningVertex> &vertexVec,
+                                                        const std::vector<MeshIndexType> &indexVec)
+{
+    for (CoreAsset::SkinningVertex &vertex : vertexVec)
+    {
+        vertex.mNormal = CoreMath::Vector3::Zero;
+    }
+
+    for (size_t i = 0; i < indexVec.size(); i += 3)
+    {
+
+        MeshIndexType index1 = indexVec[i];
+        MeshIndexType index2 = indexVec[i + 1];
+        MeshIndexType index3 = indexVec[i + 2];
+
+        CoreMath::Vector3 e1 = vertexVec[index2].mPos - vertexVec[index1].mPos;
+        CoreMath::Vector3 e2 = vertexVec[index3].mPos - vertexVec[index1].mPos;
+
+        CoreMath::Vector3 faceNormal = e1.Cross(e2).GetNormalize();
+
+        vertexVec[index1].mNormal += faceNormal;
+        vertexVec[index2].mNormal += faceNormal;
+        vertexVec[index3].mNormal += faceNormal;
+    }
+
+    for (auto &vertex : vertexVec)
+    {
+        vertex.mNormal.Normalize();
+    }
+}
+
 CoreAsset::GeometryGenerator::~GeometryGenerator() {}
 
 CoreAsset::MeshData CoreAsset::GeometryGenerator::CreateCube(float width, float height, float depth)
@@ -873,6 +904,35 @@ void CoreAsset::GeometryGenerator::CaculateTangents(std::vector<StaticVertex> &v
                                                     const std::vector<uint32_t> &indices)
 {
     for (CoreAsset::StaticVertex &vertex : vertices)
+    {
+        vertex.mTangent = CoreMath::Vector4::Zero;
+    }
+
+    std::vector<CoreMath::Vector3> biTangentList(vertices.size());
+
+    for (size_t i = 0; i < indices.size() / 3; ++i)
+    {
+        CoreAsset::MeshIndexType index1 = indices[i * 3 + 0];
+        CoreAsset::MeshIndexType index2 = indices[i * 3 + 1];
+        CoreAsset::MeshIndexType index3 = indices[i * 3 + 2];
+
+        // CaculateTangent(v1,v2,v3);
+        CaculateTangent(vertices[index1].mPos, vertices[index2].mPos, vertices[index3].mPos, vertices[index1].mTex,
+                        vertices[index2].mTex, vertices[index3].mTex, vertices[index1].mTangent,
+                        vertices[index2].mTangent, vertices[index3].mTangent, biTangentList[index1],
+                        biTangentList[index2], biTangentList[index3]);
+    }
+
+    for (size_t i = 0; i < vertices.size(); ++i)
+    {
+        FinishCaculateTangent(vertices[i].mNormal, biTangentList[i], vertices[i].mTangent);
+    }
+}
+void CoreAsset::GeometryGenerator::CaculateTangents(std::vector<SkinningVertex> &vertices,
+                                                    const std::vector<uint32_t> &indices)
+{
+
+    for (CoreAsset::SkinningVertex &vertex : vertices)
     {
         vertex.mTangent = CoreMath::Vector4::Zero;
     }

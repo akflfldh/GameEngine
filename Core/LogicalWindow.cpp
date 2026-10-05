@@ -7,6 +7,7 @@
 #include <CoreMath/Geometry.h>
 #include <InputSystem/InputSystem.h>
 #include <InputSystem/InputType.h>
+#include <UiSystem/UICanvas.h>
 #include <UiSystem/UIManager.h>
 #include <Window/BaseWindow.h>
 
@@ -69,12 +70,18 @@ World *Core::LogicalWindow::GetWorld() const
 void Core::LogicalWindow::SetActiveCanvas(UI::UICanvas *uiCanvas)
 {
 
-    if (uiCanvas == nullptr)
+    if (uiCanvas == nullptr || mCurrActiveCanvas == uiCanvas)
         return;
+
+    // 교체된 캔버스에 입력 활성 상태가 남지 않게 하고, 새 캔버스에는 현재 창 상태를 전달한다.
+    if (mCurrActiveCanvas)
+        mCurrActiveCanvas->OnInputActivationChanged(false);
+
     mCurrActiveCanvas = uiCanvas;
 
     UI::UIManager *manager = UI::UIManager::GetInstance();
     manager->ActivateCanvas(mCurrActiveCanvas);
+    mCurrActiveCanvas->OnInputActivationChanged(mActiveState);
 }
 
 UI::UICanvasID Core::LogicalWindow::GetActiveCanvasID() const
@@ -135,7 +142,11 @@ void Core::LogicalWindow::UpdateFrameData()
 {
     CameraComponent *cameraComponent = nullptr;
     if (mWorld)
+    {
         cameraComponent = mWorld->GetCurrentCameraCom();
+
+        MouseMode mouseMode = mWorld->GetMouseMode();
+    }
 
     if (cameraComponent)
     {
@@ -327,13 +338,13 @@ void Core::LogicalWindow::OnInputEvent(const Quad::RawInputData &rawInputData)
 
 void Core::LogicalWindow::SetActiveState(bool state)
 {
+    if (mActiveState == state)
+        return;
 
     mActiveState = state;
-    if (mActiveState == false)
-    {
-
-        // world에 이벤트를 전달할수도
-    }
+    // UI는 LogicalWindow를 참조하지 않고 자기 캔버스의 알림만 구독한다.
+    if (mCurrActiveCanvas)
+        mCurrActiveCanvas->OnInputActivationChanged(state);
 }
 bool Core::LogicalWindow::IsActive() const
 {
@@ -493,4 +504,15 @@ CoreMath::Ray Core::LogicalWindow::CaculateWorldRay(int clientPosX, int clientPo
     //  mWorldRay = inputDataWorld.mWorldRay;
 
     return ray;
+}
+
+Core::MouseMode Core::LogicalWindow::GetMouseMode() const
+{
+
+    if (mWorld)
+    {
+        return mWorld->GetMouseMode();
+    }
+
+    return Core::MouseMode::Free;
 }

@@ -57,6 +57,10 @@ void UIDragSourceComponent::OnMouseMove(const Quad::RawInputData &inputData, flo
 void UIDragSourceComponent::OnMouseDown(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
                                         bool &bConsume)
 {
+    // 우클릭 메뉴 버튼과 같은 요소에 붙으므로 드래그 캡처는 왼쪽 버튼으로만 시작한다.
+    if (!(inputData.mInputState & EInputState::eMouseLButtonDown) || mPress)
+        return;
+
     mPress = true;
     mMouseDownStartX = worldPosX;
     mMouseDownStartY = worldPosY;
@@ -68,6 +72,8 @@ void UIDragSourceComponent::OnMouseDown(const Quad::RawInputData &inputData, flo
 void UIDragSourceComponent::OnMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
                                       bool &bConsume)
 {
+    if (!(inputData.mInputState & EInputState::eMouseLButtonUp))
+        return;
 
     if (mPress)
     {
@@ -109,8 +115,8 @@ void UIDragSourceComponent::OnPreviewMouseMove(const Quad::RawInputData &inputDa
 void UIDragSourceComponent::OnPreviewMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
                                              bool &bSteal)
 {
-
-    if (!mPress)
+    // preview 경로에서도 우클릭 해제가 진행 중인 왼쪽 드래그를 종료하지 않도록 한다.
+    if (!mPress || !(inputData.mInputState & EInputState::eMouseLButtonUp))
         return;
 
     if (mDragStart)

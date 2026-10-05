@@ -10,22 +10,23 @@ Render::RenderUploadManager::RenderUploadManager() {}
 
 Render::RenderUploadManager::~RenderUploadManager() {}
 
-void Render::RenderUploadManager::UploadStaticMeshObjectBuffer(const StaticMeshRenderCommnad &cmd,
-                                                               StaticMeshObjectData &data)
+void Render::RenderUploadManager::UploadStaticMeshObjectBuffer(const MeshRenderCommand &cmd, MeshObjectData &data)
 {
 
     data.gWorld = cmd.mTransform;
     data.gWorldInvTrans = data.gWorld.GetInversed().GetTransposed();
+    data.gPaletteOffset = cmd.mSkinPaletteOffset;
+    data.gPaletteCount = cmd.mSkinPaletteCount;
 }
 
-void Render::RenderUploadManager::UploadDebugColliderBuffer(const StaticMeshRenderCommnad &cmd, DebugColliderData &data)
+void Render::RenderUploadManager::UploadDebugColliderBuffer(const MeshRenderCommand &cmd, DebugColliderData &data)
 {
 
     data.gWorld = cmd.mTransform;
     data.gColor = cmd.mCustomShaderData;
 }
 
-void Render::RenderUploadManager::UploadStaticMeshOutlineData(const StaticMeshOutlineRenderCommand &cmd,
+void Render::RenderUploadManager::UploadStaticMeshOutlineData(const MeshOutlineRenderCommand &cmd,
                                                               StaticMeshOutlineData &data)
 {
     data.gWorld = cmd.mTransform;
@@ -33,10 +34,11 @@ void Render::RenderUploadManager::UploadStaticMeshOutlineData(const StaticMeshOu
     data.gOutlineColor[1] = cmd.mOutlineColorG;
     data.gOutlineColor[2] = cmd.mOutlineColorB;
     data.gOutlineColor[3] = cmd.mOutlineColorA;
+    data.gPaletteOffset = cmd.mSkinPaletteOffset;
+    data.gPaletteCount = cmd.mSkinPaletteCount;
 }
 
-void Render::RenderUploadManager::UploadStaticMeshGizmoData(const StaticMeshRenderCommnad &cmd,
-                                                            StaticMeshGizmoData &data)
+void Render::RenderUploadManager::UploadStaticMeshGizmoData(const MeshRenderCommand &cmd, StaticMeshGizmoData &data)
 {
     data.gWorld = cmd.mTransform;
     data.gColor = cmd.mCustomShaderData;

@@ -1,6 +1,8 @@
 ﻿#include "UIFoldoutPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
+#include <UiSystem/UIHorizontalLayoutComponent.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIText.h>
 #include <UiSystem/UIVerticalLayoutComponent.h>
@@ -18,33 +20,33 @@ void UIFoldoutPanel::OnBegin()
     UI::UIImage::OnBegin();
     SetHeight(100.0f);
 
-    mHeaderPanel = CreateChildUIElement<UI::UIImage>("HeaderPanel");
+    mHeaderPanel = EditorUIUtility::CreateSectionHeader(this, "HeaderPanel");
     mHeaderPanel->SetWidth(mTransform.GetSize().r);
     // mHeaderPanel->SetHeight(50.0f);
     //  mHeaderPanel->SetColor({1.0f, 0.4f, 0.4f});
-    mHeaderPanel->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+
     mHeaderPanel->mImageCom->SetUseBorderFlag(true);
     mHeaderPanel->mImageCom->SetBorderColor(UI::UIColor::LightGray);
 
-    /*mOnChangedSizeCallbackSystem.Register([this](UI::UIElement *parent)
-                                          { mHeaderPanel->SetWidth(mTransform.GetSize().r); });*/
-    // WIDTH 는 OnTransformChanged에서 동일하게
+    auto horizontalCom = mHeaderPanel->CreateUIComponent<UI::UIHorizontalLayoutComponent>("HoriCom");
+    horizontalCom->SetItemPaddingX(5.0f);
+    horizontalCom->SetItemPaddingTop(7.0f);
 
-    mHeaderTagText = mHeaderPanel->CreateChildUIElement<UI::UIText>("HeaderText");
-    // mHeaderTagText->SetHeight(30.0f);
-    constexpr float textOffsetX = 40.0f;
-    mHeaderTagText->SetPositionLocal(textOffsetX, 0);
-    mHeaderTagText->SetWidth(mHeaderPanel->GetWidth() - textOffsetX);
-
-    mHeaderButton = mHeaderPanel->CreateChildUIElement<UI::UIButton>("HeaderButton");
+    mHeaderButton = EditorUIUtility::CreateSmallButton(mHeaderPanel, "HeaderButton");
     // mHeaderButton->SetSize(30, 30);
     mHeaderButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)
                                                                            { SetExpanded(!mIsExpanded); });
     mHeaderButton->mUIImageComponent->UseTexture();
     mHeaderButton->mUIImageComponent->SetTexture("Engine/ExpandArrowDown");
 
-    mContentPanel = CreateChildUIElement<UI::UIImage>("ContentPanel");
-    mContentPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mHeaderTagText = EditorUIUtility::CreateLabel(mHeaderPanel, "HeaderText");
+    // mHeaderTagText->SetHeight(30.0f);
+    constexpr float textOffsetX = 40.0f;
+    // mHeaderTagText->SetPositionLocal(textOffsetX, 0);
+    mHeaderTagText->SetWidth(mHeaderPanel->GetWidth() - textOffsetX);
+
+    mContentPanel = EditorUIUtility::CreatePanel(this, "ContentPanel");
+
     mVerticalLayoutCom = mContentPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
     mContentPanel->SetPositionLocal(0, mHeaderPanel->GetHeight());
     //   mContentPanel->SetColor(0.4f, 0.4f, 0.4f);
@@ -182,8 +184,8 @@ void UIFoldoutPanel::SetHeaderColor(const UI::UIColor &color)
 
     if (mHeaderPanel)
     {
-        UI::UIControlStyleOverride style;
-        style.mBackgroundColor = color;
-        mHeaderPanel->SetStyleOverride(style);
+        UI::UIControlStyleOverride visual;
+        visual.mBackgroundColor = color;
+        mHeaderPanel->SetStyleOverride(visual);
     }
 }

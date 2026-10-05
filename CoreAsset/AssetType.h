@@ -5,6 +5,7 @@
 #include <CoreBase/Arch.h>
 #include <CoreBase/Blitable_Trait.h>
 #include <CoreMath/CoreMath.h>
+#include <array>
 #include <string>
 
 namespace CoreAsset
@@ -13,6 +14,16 @@ namespace CoreAsset
 class Asset;
 using AssetID = uint64_t;
 #define NoneAssetID 0
+
+// Asset과 생성 컨텍스트가 공유하는 메모리 로드 상태이며, 실제 상태의 보관과 갱신은 Asset이 담당한다.
+// 디스크 저장 여부나 dirty 상태를 나타내지 않는다.
+enum class EAssetLoadState
+{
+    Unloaded,
+    Loading,
+    Loaded, // 실제 에셋 데이터가 메모리에 준비된 상태다.
+    Failed
+};
 
 enum class EAssetType : uint32_t
 {
@@ -28,7 +39,8 @@ enum class EAssetType : uint32_t
     eCount = 0x1 << 9,
     eMap = 0x1 << 10,
     eFont = 0x1 << 11,
-    eCXX = 0x1 << 12
+    eCXX = 0x1 << 12,
+    eSkeleton = 0x1 << 13
 };
 
 // 이설정들보고 렌더시스템이 샘플러를 동적으로 만들어서 바인딩하거나,기존의 샘플러를 바인딩할것이다.
@@ -78,10 +90,16 @@ struct StaticVertex
     CoreMath::Vector4 mTangent;
 };
 
+/// 스키닝 가능한 mesh 정점의 영구 CPU 에셋 형식이다.
+/// joint index는 SkinBinding의 palette index이며 Skeleton joint index나 GPU handle을 직접 저장하지 않는다.
 struct SkinningVertex
 {
-
-    int b = 2;
+    CoreMath::Vector3 mPos;
+    CoreMath::Vector2 mTex;
+    CoreMath::Vector3 mNormal;
+    CoreMath::Vector4 mTangent;
+    std::array<uint32_t, 8> mJointIndices{};
+    std::array<float, 8> mJointWeights{};
 };
 
 struct SubMesh

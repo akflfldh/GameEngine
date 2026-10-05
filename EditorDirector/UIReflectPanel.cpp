@@ -1,5 +1,9 @@
 ﻿#include "UIReflectPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 
+#include <AnimatorComponentUIReflectPanel.h>
+#include <BoxColliderComponentUIReflectPanel.h>
+#include <LightComponentUIReflectPanel.h>
 #include <Core/Component.h>
 #include <Core/Entity.h>
 #include <Core/Object.h>
@@ -12,6 +16,7 @@
 #include <ReflectSystem/ReflectionPropertyInfo.h>
 #include <ReflectSystem/ReflectionSystem.h>
 #include <StaticMeshComponentUIReflectPanel.h>
+#include <SkeletalMeshComponentUIReflectPanel.h>
 #include <UIReflectPanelFactory.h>
 #include <UIReflectVector3Panel.h>
 #include <UiSystem/UICanvas.h>
@@ -50,10 +55,10 @@ void TransformReflectPanel::Update(float deltaTime)
 void TransformReflectPanel::Initialize(UI::UICanvas *canvas, ETransformTargetType targetType)
 {
     mTargetType = targetType;
-    mTransformFoldPanel = canvas->CreateUIElement<UIFoldoutPanel>("TransformFoldPanel");
+    mTransformFoldPanel = EditorUIUtility::CreateFoldoutPanel(canvas, "TransformFoldPanel");
     mTransformFoldPanel->SetHeaderText("Transform");
 
-    mTransformFoldPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+
 
     mTransformFoldPanel->SetWidth(600.0f);
     mTransformFoldPanel->SetHeaderColor(UI::UIColor::DarkYellow);
@@ -126,7 +131,7 @@ void TransformReflectPanel::BuildPanels(UI::UICanvas *canvas)
 {
     auto createPanel = [this, canvas](const char *name, const char *tagText) -> UIReflectVector3Panel *
     {
-        UIReflectVector3Panel *panel = canvas->CreateUIElement<UIReflectVector3Panel>(name);
+        UIReflectVector3Panel *panel = EditorUIUtility::CreateVector3Field(canvas, name);
         // panel->SetColor(0.4f, 0.4f, 0.4f);
         panel->SetWidth(mTransformFoldPanel->mTransform.GetSize().r);
         panel->SetTagText(tagText);
@@ -333,7 +338,7 @@ void UIReflectPanel::OnTransformChanged(UI::ETransformChangeType type)
 
 UI::UIImage *UIReflectPanel::CreateBackgroundPanel()
 {
-    auto panel = CreateChildUIElement<UI::UIImage>("BasePanel");
+    auto panel = EditorUIUtility::Create<UI::UIImage>(this, "BasePanel");
     panel->SetSize(400, 120);
     return panel;
 }
@@ -440,9 +445,47 @@ bool UIReflectPanel::BuildEngineComponentClass(Component *com, Quad::ClassInfo *
 
     std::string componentName = comClassInfo->GetTypeName();
 
+    if (componentName == "LightComponent")
+    {
+        // Transform은 공통 패널에 맡기고 전용 패널로 처리해 자동 프로퍼티 UI 중복을 막는다.
+        auto panel = reflectPanelFactory->GetLightPanel(this);
+        panel->Build(com);
+        panel->SetWidth(mTransform.GetSize().r);
+        mReflectPanelList.push_back(panel);
+        return true;
+    }
+
+    if (componentName == "BoxColliderComponent")
+    {
+        // SceneComponent의 Transform은 공통 패널에 맡기고 형상/바디 속성만 추가한다.
+        auto panel = reflectPanelFactory->GetBoxColliderPanel(this);
+        panel->Build(com);
+        panel->SetWidth(mTransform.GetSize().r);
+        mReflectPanelList.push_back(panel);
+        return true;
+    }
+
     if (componentName == "StaticMeshComponent")
     {
         auto panel = reflectPanelFactory->GetStaticMeshPanel(this);
+        panel->Build(com);
+        panel->SetWidth(mTransform.GetSize().r);
+        mReflectPanelList.push_back(panel);
+        return true;
+    }
+
+    if (componentName == "SkeletalMeshComponent")
+    {
+        auto panel = reflectPanelFactory->GetSkeletalMeshPanel(this);
+        panel->Build(com);
+        panel->SetWidth(mTransform.GetSize().r);
+        mReflectPanelList.push_back(panel);
+        return true;
+    }
+
+    if (componentName == "AnimatorComponent")
+    {
+        auto panel = reflectPanelFactory->GetAnimatorPanel(this);
         panel->Build(com);
         panel->SetWidth(mTransform.GetSize().r);
         mReflectPanelList.push_back(panel);

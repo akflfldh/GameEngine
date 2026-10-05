@@ -1,4 +1,5 @@
 ﻿#include "MapSettingUIController.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/Map.h>
 #include <UIReflectFloatPanel.h>
 #include <UIReflectTextureSlotPanel.h>
@@ -35,7 +36,7 @@ void MapSettingUIController::BeginUI()
         return;
 
     // scrollBox
-    mScrollBox = mCanvas->CreateUIElement<UIScrollBox>("ScrollBox");
+    mScrollBox = EditorUIUtility::Create<UIScrollBox>(mCanvas, "ScrollBox");
 
     if (mScrollBox == nullptr)
         return;
@@ -47,7 +48,7 @@ void MapSettingUIController::BeginUI()
     mScrollBox->SetPositionLocal(mScrollBoxPos.X, mScrollBoxPos.Y);
     mScrollBox->SetLayout(EUIScrollLayout::eVertical);
 
-    mAmbientColorPanel = mCanvas->CreateUIElement<UIReflectVector3Panel>("AmbientColorPanel");
+    mAmbientColorPanel = EditorUIUtility::CreateVector3Field(mCanvas, "AmbientColorPanel");
     mAmbientColorPanel->SetTagText("주변광 색상");
     // mAmbientColorPanel->SetColor(0.36f, 0.36f, 0.36f);
 
@@ -56,7 +57,7 @@ void MapSettingUIController::BeginUI()
 
     mScrollBox->AddItem(mAmbientColorPanel);
 
-    mAmbientIntensityPanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("AmbientIntensityPanel");
+    mAmbientIntensityPanel = EditorUIUtility::CreateFloatField(mCanvas, "AmbientIntensityPanel");
 
     mAmbientIntensityPanel->SetTagText("주변광 강도");
     // mAmbientIntensityPanel->SetColor(0.36f, 0.36f, 0.36f);
@@ -67,7 +68,7 @@ void MapSettingUIController::BeginUI()
 
 #pragma endregion
 
-    mExposurePanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("AmbientIntensityPanel");
+    mExposurePanel = EditorUIUtility::CreateFloatField(mCanvas, "AmbientIntensityPanel");
 
     mExposurePanel->SetTagText("노출 강도");
     // mAmbientIntensityPanel->SetColor(0.36f, 0.36f, 0.36f);
@@ -77,7 +78,7 @@ void MapSettingUIController::BeginUI()
 
 #pragma region skySphere
 
-    mSkySphereTextureSlotPanel = mCanvas->CreateUIElement<UIReflectTextureSlotPanel>("SkySphereTextureSlotPanel");
+    mSkySphereTextureSlotPanel = EditorUIUtility::Create<UIReflectTextureSlotPanel>(mCanvas, "SkySphereTextureSlotPanel");
     mSkySphereTextureSlotPanel->SetTagText("스카이 구");
     mSkySphereTextureSlotPanel->BindTexture([this]() { return GetSkySphereTexture(); },
                                             [this](CoreAsset::AssetID id) { SetSkySphereTexture(id); });

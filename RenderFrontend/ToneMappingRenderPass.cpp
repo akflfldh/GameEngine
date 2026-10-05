@@ -109,6 +109,7 @@ void Render::ToneMappingRenderPass::SetGlobalData(const RenderPassExecuteContext
     oFrameContext.mGlobalPassBufferResouce.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     oFrameContext.mGlobalPassBufferResouce.mOffset = bufferSizeOffset;
     oFrameContext.mGlobalPassBufferResouce.mType = Render::EShaderResourceType::eConstantBuffer;
+    oFrameContext.mGlobalPassBufferResouce.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
     oFrameContext.mViewport = executeContext.mGlobalSceneViewport;
 
     oFrameContext.mRenderTarget = nullptr;
@@ -145,6 +146,7 @@ void Render::ToneMappingRenderPass::Execute(const RenderPassExecuteContext &exec
         CHECK(bindingGpuResource.gpuResource != nullptr, "GrayScale sceneTex Resource is nullptr");
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = EMasterRootBindingSemantic::ePostProcessInputTexture;
         renderItem.mBindingGpuTexResourceVector.push_back(std::move(bindingGpuResource));
     }
 
@@ -156,6 +158,7 @@ void Render::ToneMappingRenderPass::Execute(const RenderPassExecuteContext &exec
         CHECK(bindingGpuResource.gpuResource != nullptr, "GrayScale sceneTex Resource is nullptr");
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = EMasterRootBindingSemantic::ePostProcessSecondaryTexture;
         renderItem.mBindingGpuTexResourceVector.push_back(std::move(bindingGpuResource));
     }
 

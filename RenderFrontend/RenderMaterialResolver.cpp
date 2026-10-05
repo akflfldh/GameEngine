@@ -2,6 +2,23 @@
 #include <RenderFrontend/ShaderData.h>
 #include <RenderSystem/IMaterialManager.h>
 
+namespace
+{
+void ConfigureSkinningVertexVariant(Render::MaterialGenerationInfo &generationInfo)
+{
+    // 정적/스키닝 변형은 렌더 상태와 HLSL을 공유하고, 정점 입력 및 VS 컴파일 계약만 분리한다.
+    generationInfo.mInputLayoutType = Render::EInputLayoutType::eSkinningMesh;
+    for (Render::ShaderSourceInfo &shaderInfo : generationInfo.mShaderInfoList)
+    {
+        if (shaderInfo.mStage == Render::EShaderStage::eVertex)
+        {
+            shaderInfo.mShaderMacros = {{"ENABLE_SKINNING", "1"}};
+            return;
+        }
+    }
+}
+} // namespace
+
 Render::RenderMaterialResolver *Render::RenderMaterialResolver::GetInstance()
 {
 
@@ -168,6 +185,7 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
 {
 
     {
+        // Static
         MaterialGenerationInfo gpuMaterialGenerationInfo;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mAlbedoNum = 1;
         gpuMaterialGenerationInfo.mHLSLGenerationInfo.mHasNormalMap = false;
@@ -175,9 +193,13 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
-        gpuMaterialGenerationInfo.mShaderInfoList.push_back({(uint8_t *)DefaultStaticMeshHLSL,
-                                                             sizeof(DefaultStaticMeshHLSL) - 1, "VS", "vs_5_1",
-                                                             EShaderStage::eVertex});
+        gpuMaterialGenerationInfo.mShaderInfoList.push_back({
+            (uint8_t *)DefaultStaticMeshHLSL,
+            sizeof(DefaultStaticMeshHLSL) - 1,
+            "VS",
+            "vs_5_1",
+            EShaderStage::eVertex,
+        });
 
         gpuMaterialGenerationInfo.mShaderInfoList.push_back({(uint8_t *)DefaultStaticMeshHLSL,
                                                              sizeof(DefaultStaticMeshHLSL) - 1, "PS", "ps_5_1",
@@ -191,6 +213,15 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
         rmc.mTransparent = false;
         RegisterGpuMaterial(rmc, Render::ERenderPassType::eMain, matID);
+
+        ConfigureSkinningVertexVariant(gpuMaterialGenerationInfo);
+        gpuMaterialGenerationInfo.mName = "SkinningMeshOpaque";
+        MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(gpuMaterialGenerationInfo);
+
+        RenderMaterialContext skinningRmc;
+        skinningRmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+        skinningRmc.mTransparent = false;
+        RegisterGpuMaterial(skinningRmc, Render::ERenderPassType::eMain, skinningMatID);
     }
 
     // Unlit 버전
@@ -219,6 +250,16 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         rmc.mTransparent = false;
         rmc.mShadingModel = CoreAsset::EShadingModel::eUnlit;
         RegisterGpuMaterial(rmc, Render::ERenderPassType::eMain, matID);
+
+        ConfigureSkinningVertexVariant(gpuMaterialGenerationInfo);
+        gpuMaterialGenerationInfo.mName = "SkinningMeshOpaque_Unlit";
+        MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(gpuMaterialGenerationInfo);
+
+        RenderMaterialContext skinningRmc;
+        skinningRmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+        skinningRmc.mTransparent = false;
+        skinningRmc.mShadingModel = CoreAsset::EShadingModel::eUnlit;
+        RegisterGpuMaterial(skinningRmc, Render::ERenderPassType::eMain, skinningMatID);
     }
 }
 
@@ -249,6 +290,13 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineWriteStencilGpuMateri
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;
     RegisterGpuMaterial(rmc, Render::ERenderPassType::eOutlineStencil, matID);
+
+    // outline 상태는 공유하고 정점 입력/VS만 스키닝 변형으로 분리한다.
+    ConfigureSkinningVertexVariant(mgInfo);
+    mgInfo.mName = "SkinningMeshOutlineStencil";
+    MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
+    rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+    RegisterGpuMaterial(rmc, Render::ERenderPassType::eOutlineStencil, skinningMatID);
 }
 
 void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
@@ -280,6 +328,12 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;
     RegisterGpuMaterial(rmc, ERenderPassType::eOutlineDraw, matID);
+
+    ConfigureSkinningVertexVariant(mgInfo);
+    mgInfo.mName = "SkinningMeshOutlineDraw";
+    MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
+    rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+    RegisterGpuMaterial(rmc, ERenderPassType::eOutlineDraw, skinningMatID);
 }
 
 void Render::RenderMaterialResolver::BuildGrayScaleGpuMaterial()
@@ -493,40 +547,45 @@ void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
 {
+    MaterialGenerationInfo mgInfo;
 
-    MaterialID gpuMaterialID;
-    {
-        MaterialGenerationInfo mgInfo;
+    MaterialRenderSettingInfo &matRenderSettingInfo = mgInfo.mRenderSettingInfo;
+    // matRenderSettingInfo.mCullMode = ECullMode::eNone;
+    matRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
+    matRenderSettingInfo.mCCW = false;
+    matRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
+    matRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eEnabled;
+    matRenderSettingInfo.mDepthWriteMask = true;
+    // color render target 없음으로 설정합니다.
+    matRenderSettingInfo.mRenderTargetCount = 0;
+    matRenderSettingInfo.mDepthStencilFormat = GRM::ETextureFormat::eD32_FLOAT;
 
-        MaterialRenderSettingInfo &matRenderSettingInfo = mgInfo.mRenderSettingInfo;
-        // matRenderSettingInfo.mCullMode = ECullMode::eNone;
-        matRenderSettingInfo.mFillMode = EFillMode::eSolidMode;
-        matRenderSettingInfo.mCCW = false;
-        matRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
-        matRenderSettingInfo.mDepthWriteMode = EDepthWriteMode::eEnabled;
-        matRenderSettingInfo.mDepthWriteMask = true;
-        // color render target 없음으로 설정합니다.
-        matRenderSettingInfo.mRenderTargetCount = 0;
-        matRenderSettingInfo.mDepthStencilFormat = GRM::ETextureFormat::eD32_FLOAT;
+    matRenderSettingInfo.mDepthBias = 10000;
+    matRenderSettingInfo.mSlopeScaledDepthBias = 2.0f;
 
-        matRenderSettingInfo.mDepthBias = 10000;
-        matRenderSettingInfo.mSlopeScaledDepthBias = 2.0f;
+    uint8_t *pShader = (uint8_t *)ShadowHLSL;
+    size_t shaderSize = sizeof(ShadowHLSL) - 1;
+    mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex}};
 
-        uint8_t *pShader = (uint8_t *)ShadowHLSL;
-        size_t shaderSize = sizeof(ShadowHLSL) - 1;
-        mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex}};
+    mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
+    mgInfo.mName = "StaticMeshShadow";
+    MaterialID gpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
 
-        mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
-
-        gpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
-    }
-    // Register
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;
     rmc.mShadingModel = CoreAsset::EShadingModel::eNone;
-
     RegisterGpuMaterial(rmc, ERenderPassType::eShadow, gpuMaterialID);
+
+    ConfigureSkinningVertexVariant(mgInfo);
+    mgInfo.mName = "SkinningMeshShadow";
+    MaterialID skinningGpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
+
+    RenderMaterialContext skinningRmc;
+    skinningRmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+    skinningRmc.mTransparent = false;
+    skinningRmc.mShadingModel = CoreAsset::EShadingModel::eNone;
+    RegisterGpuMaterial(skinningRmc, ERenderPassType::eShadow, skinningGpuMaterialID);
 }
 
 void Render::RenderMaterialResolver::BuildToneMappingGpuMaterial()

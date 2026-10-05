@@ -1,4 +1,5 @@
 ﻿#include "UIFileItem.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <CoreBase/CallbackSystem.h>
 #include <EditorDirector/UIDragSourceComponent.h>
 #include <EditorDirector/UISelectableComponent.h>
@@ -32,6 +33,9 @@ UIFileItem::UIFileItem()
     mSelectOverlayImageCom->SetDepthValue(0);
 
     mFileTextWidthRatio = 0.9f;
+
+    mFileRightButtonComponent = CreateUIComponent<UI::UIButtonComponent>("FileRightButtonCom");
+    mFileRightButtonComponent->SetTriggerButton(UI::EUIMouseButton::eRight);
 }
 
 UIFileItem::~UIFileItem() {}
@@ -42,7 +46,7 @@ void UIFileItem::OnBegin()
 
     auto canvas = GetDestCanvas();
 
-    mFileImageElement = canvas->CreateUIElement<UI::UIImage>("FileImageElement");
+    mFileImageElement = EditorUIUtility::Create<UI::UIImage>(canvas, "FileImageElement");
     mFileImageElement->mImageCom->UseTexture();
     mFileImageElement->mImageCom->SetTexture("Engine/DefaultGray");
 
@@ -52,9 +56,9 @@ void UIFileItem::OnBegin()
     mFileImageElement->SetOnlyVisible(true);
     // SetFileImageSizeRatio(mFileImageWidthRatio, mFileImageHeightRatio);
 
-    mFileTextElement = CreateChildUIElement<UI::UIText>("FileTextElement");
+    mFileTextElement = EditorUIUtility::CreateLabel(this, "FileTextElement");
     mFileTextElement->SetPositionLocal(0, 0);
-    mFileTextElement->SetFontSize(20.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: mFileTextElement->SetFontSize(20.0f);
     mFileTextElement->SetUseScissorRect(true);
     mFileTextElement->SetOnlyVisible(true);
     mFileTextElement->GetTextComponent()->SetOverflowMode(UI::EUITextOverflowMode::eEllipsis);
@@ -83,7 +87,7 @@ void UIFileItem::SetLogicalFileNode(QuadLF::LogicalNode *node)
 
         const QuadLF::LogicalFileAssetInfo &assetInfo = fileNode->GetAssetInfo();
 
-        DragPayload payload;
+        DragPayload payload{};
 
         switch (assetInfo.mAssetType)
         {
@@ -105,6 +109,24 @@ void UIFileItem::SetLogicalFileNode(QuadLF::LogicalNode *node)
             mFileImageElement->mImageCom->SetTexture("Engine/MeshTexture");
         }
         break;
+        case CoreAsset::EAssetType::eSkinningMesh:
+        {
+            payload.mType = EDragDropType::eAssetSkinningMesh;
+            mFileImageElement->mImageCom->SetTexture("Engine/SkinningMesh");
+        }
+        break;
+        case CoreAsset::EAssetType::eSkeleton:
+        {
+            payload.mType = EDragDropType::eAssetSkeleton;
+            mFileImageElement->mImageCom->SetTexture("Engine/Skeleton");
+        }
+        break;
+        // AnimationClip은 아직 드롭 대상이 없어 아이콘만 표시하고 payload는 eNone으로 둔다.
+        case CoreAsset::EAssetType::eAnimation:
+        {
+            mFileImageElement->mImageCom->SetTexture("Engine/AnimationClip");
+        }
+        break;
         case CoreAsset::EAssetType::eCXX:
         {
             payload.mType = EDragDropType::eObject;
@@ -117,6 +139,11 @@ void UIFileItem::SetLogicalFileNode(QuadLF::LogicalNode *node)
             mFileImageElement->mImageCom->SetTexture("Engine/Prefab");
         }
         break;
+        case CoreAsset::EAssetType::eMap:
+        {
+            payload.mType = EDragDropType::eMap;
+            mFileImageElement->mImageCom->SetTexture("Engine/Map");
+        }
         }
         payload.mAssetID = assetInfo.mAssetID;
         mDragDropCom->SetPayload(payload);
@@ -170,6 +197,12 @@ void UIFileItem::OnTransformChanged(UI::ETransformChangeType type)
 UISelectableComponent *UIFileItem::GetSelectableComponent() const
 {
     return mSelectableCom;
+}
+
+QuadLF::LogicalNode *UIFileItem::GetLogicalFileNode() const
+{
+
+    return mFileNode;
 }
 
 void UIFileItem::HandleDoubleClick()

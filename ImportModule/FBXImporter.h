@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <CoreAsset/IAssetImporter.h>
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreMath/CoreMath.h>
 #include <filesystem>
 #include <memory>
@@ -20,6 +21,7 @@ namespace fbxsdk
 // struct FbxDouble3;
 class FbxManager;
 class FbxScene;
+class FbxAnimStack;
 class FbxNode;
 class FbxMesh;
 class FbxLayerElementMaterial;
@@ -34,6 +36,19 @@ class FbxTexture;
 
 namespace Import
 {
+
+struct FBXControlPoint
+{
+
+    CoreMath::Vector3 mPos;
+
+    float mWeight[8]{};
+    int mJointIndex[8]{};
+
+    // 최대 8개
+    //  영향을 주는 joint개수 ;
+    int mJointCount = 0;
+};
 
 struct FbxMeshNodeInfo
 {
@@ -61,12 +76,55 @@ struct FBXImportVertex
     int mMaterialSlotIndex = 0;
 
     // skinningData
+    int32_t mJointIndex0[4]{};
+    int32_t mJointIndex1[4]{};
+    CoreMath::Vector4 mJointWeight0{};
+    CoreMath::Vector4 mJointWeight1{};
 };
+// struct FBXImportSkinningVertex
+//{
+//     CoreMath::Vector3 mPosition;
+//     CoreMath::Vector3 mNormal;
+//     CoreMath::Vector2 mUV;
+//     CoreMath::Vector4 mTangent;
+//     int mMaterialSlotIndex = 0;
+//     uint32_t mJointIndex0[4];
+//     uint32_t mJointIndex1[4];
+//     CoreMath::Vector4 mJointWeight0;
+//     CoreMath::Vector4 mJointWeight1;
+// };
+
+struct FBXImportJoint
+{
+    std::string mName;
+    std::string mStableKey; // 표시 이름과 별개로 clip track과 Skeleton joint를 연결하는 계층 키다.
+
+    // 부모
+    int32_t mParentJointIndex = 0;
+
+    // 자식
+    std::vector<int32_t> mChildJointIndexList;
+
+    CoreMath::Matrix4X4 mReferencePose;
+};
+
+struct FBXImportSkeleton
+{
+
+    std::vector<FBXImportJoint> mJoints;
+
+    std::unordered_map<fbxsdk::FbxNode *, int32_t> mJointNodeIndexTable;
+
+    fbxsdk::FbxNode *mRootSkeletonNode = nullptr;
+};
+
 struct FBXMaterialKeyContext
 {
     CoreAsset::ImportAssetKey mKey;
     bool mVaild = true;
     int mGlobalIndex = 0;
+    // 같은 표시 이름의 FBX 재질도 패키지 내부에서는 원본 객체별로 구별한다.
+    CoreAsset::ImportAssetKey mImportKey;
 };
 struct FBXImportSubMesh
 {
@@ -95,6 +153,7 @@ struct FBXImportMesh
 
     std::string mName;
     std::vector<FBXImportVertex> mVertices;
+    //   std::vector<FBXImportSkinningVertex> mSkinningVertices;
     std::vector<uint32_t> mIndices;
 
     std::vector<FBXImportSubMesh> mSubMeshes;
@@ -102,6 +161,11 @@ struct FBXImportMesh
     std::vector<FBXImportMeshPart> mMeshParts;
     std::vector<FBXImportMeshPartInstance> mMeshPartInstances;
     CoreAsset::ImportAssetKey mMeshKey;
+
+    std::vector<uint32_t> mPaletteToSkeletonJoint;
+    std::vector<CoreMath::Matrix4X4> mInverseBindMatrices;
+
+    bool bSkinned = false;
 };
 
 struct FBXImportTempMeshPerMat
@@ -141,7 +205,10 @@ struct FBXImportContext
     // std::vector<fbxsdk::FbxNode *> mMeshNodes;
 
     // 해당메시와 연결된 노드들
-    std::unordered_map<fbxsdk::FbxMesh *, std::vector<fbxsdk::FbxNode *>> mMeshToNodes;
+    std::unordered_map<fbxsdk::FbxMesh *, std::vector<fbxsdk::FbxNode *>> mStaticMeshToNodes;
+    std::vector<fbxsdk::FbxMesh *> mSkinnedMeshNodeList;
+
+    std::vector<fbxsdk::FbxMesh *> mAllMeshNodes;
 
     // materials - key table
     std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> mMaterialKeyTable;
@@ -162,6 +229,11 @@ struct FBXImportContext
     bool mNeedToCalculateTangents = false;
 
     CoreMath::Matrix4X4 mBakeAxisTransformMatrix;
+
+    FBXImportSkeleton mSkeleton;
+
+    // 샘플링이 완료된 clip만 보관하며, BuildIntermediateAssets에서 ImportPackage로 소유권을 넘긴다.
+    std::vector<CoreAsset::ImportedIntermediateAsset> mAnimationClipAssets;
 };
 
 class FBXImporter : public CoreAsset::IAssetImporter
@@ -179,9 +251,11 @@ class FBXImporter : public CoreAsset::IAssetImporter
     CoreAsset::ImportPackage Load(const std::filesystem::path &filePath) const;
 
   private:
-    void ConvertAxisSystem(FBXImportContext &importContext, fbxsdk::FbxScene *scene) const;
+    bool ConvertAxisSystem(FBXImportContext &importContext, fbxsdk::FbxScene *scene, std::string &failureReason) const;
     void ConvertUnitSystem(fbxsdk::FbxScene *scene) const;
     void Triangulate(fbxsdk::FbxScene *scene) const;
+    bool ValidateAnimationJointTransforms(fbxsdk::FbxScene *scene, std::string &failureReason) const;
+    bool ValidateAnimationJointNode(fbxsdk::FbxNode *node, std::string &failureReason) const;
 
     // Node, Attribute 수집
     void TraverseScene(fbxsdk::FbxScene *scene, FBXImportContext &importContext) const;
@@ -189,9 +263,18 @@ class FBXImporter : public CoreAsset::IAssetImporter
 
 #pragma region Extract
 
+    void ExtractSkeletonData(FBXImportContext &importContext) const;
+    void ExtractAnimationData(FBXImportContext &importContext) const;
+    void ExtractAnimationClipData(FBXImportContext &importContext, fbxsdk::FbxAnimStack *animStack,
+                                  int stackIndex) const;
     void ExtractData(FBXImportContext &importContext) const;
 
     void ExtractMeshData(
+        FBXImportContext &importContext, FBXImportAssetContext &importAssetContext, fbxsdk::FbxMesh *fbxMesh,
+        const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
+        bool bIndexFlip) const;
+
+    void ExtractSkinnedMeshData(
         FBXImportAssetContext &importAssetContext, fbxsdk::FbxMesh *fbxMesh,
         const std::vector<fbxsdk::FbxNode *> &fbxNodes,
         const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
@@ -227,7 +310,12 @@ class FBXImporter : public CoreAsset::IAssetImporter
     void BakeVertex(std::vector<FBXImportVertex> &vertices, const fbxsdk::FbxAMatrix &matrix, bool bFlipZ) const;
 
 #pragma region Build
-    void BuildIntermediateAssets(const FBXImportContext &importContext, CoreAsset::ImportPackage &oImportPackage) const;
+    void BuildSkinnedMeshData(
+        FBXImportAssetContext &importAssetContext, const std::vector<fbxsdk::FbxMesh *> &fbxSkinnedMeshList,
+        std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
+        const CoreMath::Matrix4X4 &bakeAxisTransformMatrix, const FBXImportSkeleton &fbxSkeleton) const;
+
+    bool BuildIntermediateAssets(FBXImportContext &importContext, CoreAsset::ImportPackage &oImportPackage) const;
 
     CoreAsset::ImportedIntermediateAsset BuildIntermediateMeshAsset(
         FBXImportMesh *importMesh, std::vector<CoreAsset::ImportDependencyContext> &oDependencyList) const;
@@ -236,25 +324,32 @@ class FBXImporter : public CoreAsset::IAssetImporter
         const FBXImportContext &importContext, std::vector<CoreAsset::ImportDependencyContext> &oDependencyList) const;
 
     bool BuildIntermediateMaterialAssets(fbxsdk::FbxSurfaceMaterial *surfaceMaterial,
-
+                                         const CoreAsset::ImportAssetKey &materialImportKey,
+                                         const std::unordered_map<fbxsdk::FbxTexture *, CoreAsset::ImportAssetKey>
+                                             &textureImportKeyTable,
                                          std::vector<CoreAsset::ImportDependencyContext> &oDependencyList,
                                          CoreAsset::ImportedIntermediateAsset &oImportedIntermediateAsset) const;
 
     // 중복된 임시 vertex 구축
     void BuildTempVertices(
         fbxsdk::FbxMesh *fbxMesh, std::vector<FBXImportVertex> &oTempVertices,
-        const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable) const;
+        const std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &fbxMaterialKeyTable,
+        FBXImportSkeleton &skeleton, bool &bSkinning) const;
     // vertex 의 중복처리 및 인덱스 배열 구축 ,subMeshList구축
     void BuildIndexedVertices(const std::vector<FBXImportVertex> &tempVertices,
                               std::vector<FBXImportVertex> &oFinalVertices, std::vector<uint32_t> &oFinalIndices,
-                              std::vector<FBXImportSubMesh> &oSubMeshList, bool bIndexFlip) const;
+                              std::vector<FBXImportSubMesh> &oSubMeshList, bool bIndexFlip, bool bSkinned) const;
 
     // 메시 part , partInstance를 구축 , fbxMaterial들을 테이블에 등록
     void BuildMeshParts(
         FBXImportMesh *pImportMesh, const std::vector<fbxsdk::FbxNode *> &fbxNodes,
         std::unordered_map<fbxsdk::FbxSurfaceMaterial *, FBXMaterialKeyContext> &oFbxMaterialKeyTable) const;
 
-    void CollectTextureDependencyFromProperty(fbxsdk::FbxSurfaceMaterial *fbxSurfaceMaterial, const char *propertyName,
+    void CollectTextureDependencyFromProperty(fbxsdk::FbxSurfaceMaterial *fbxSurfaceMaterial,
+                                              const CoreAsset::ImportAssetKey &materialImportKey,
+                                              const std::unordered_map<fbxsdk::FbxTexture *, CoreAsset::ImportAssetKey>
+                                                  &textureImportKeyTable,
+                                              const char *propertyName,
                                               CoreAsset::EImportDependencySubInfo subInfo,
                                               std::vector<CoreAsset::ImportDependencyContext> &oDependencyList) const;
 
@@ -267,6 +362,8 @@ class FBXImporter : public CoreAsset::IAssetImporter
 #pragma region Utility
 
     void GetGeometrix(fbxsdk::FbxNode *node, fbxsdk::FbxAMatrix &oMatrix) const;
+
+    bool IsSkinningFbxMesh(fbxsdk::FbxMesh *mesh) const;
 
 #pragma endregion
 

@@ -14,19 +14,25 @@
 #include <CoreAsset/GlobalAssetRegistrySystem.h>
 #include <CoreAsset/assetManager.h>
 #include <CoreBase/AsyncThreadPool.h>
+#include <EditorDirector/BottomPanel.h>
 #include <EditorDirector/ClassGenerationManager.h>
 #include <EditorDirector/EditorAssetImporterManager.h>
 #include <EditorDirector/EditorAssetImporterModule.h>
 #include <EditorDirector/EditorDirector.h>
 #include <EditorDirector/EditorProjectManager.h>
 #include <EditorDirector/EditorSceneManager.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/EditorUtility.h>
 #include <EditorDirector/MapPlaySettingPanel.h>
 #include <EditorDirector/PrefabGenerationManager.h>
+#include <EditorDirector/UIAssetBrowser.h>
 
 #include <Core/WindowedFrameController.h>
 #include <DefaultEditorInspectorManager.h>
+#include <EditorDirector/EditorAssetManager.h>
 #include <EditorDirector/EditorBuildManager.h>
+#include <EditorDirector/EditorProjectManager.h>
+#include <EditorDirector/LogPanel.h>
 #include <EditorDirector/MaterialCreationManager.h>
 #include <EditorDirector/TaskUIController.h>
 #include <EditorDirector/UIDropTargetComponent.h>
@@ -35,15 +41,16 @@
 #include <EditorSceneManager.h>
 #include <IInspector.h>
 #include <InputSystem/InputSystem.h>
+#include <Logger/Logger.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <Prefab.h>
 #include <ProjectGenerator.h>
 #include <ReflectSystem/ReflectionClassInfo.h>
-#include <UIAssetBrowser.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UICanvas.h>
 #include <UiSystem/UIEditBox.h>
+#include <UiSystem/UIHorizontalLayoutComponent.h>
 #include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIMovableComponent.h>
@@ -78,17 +85,43 @@ void GlobalOverlayManager::Initialize(UI::UICanvas *overlayCanvas, Core::Logical
 
     // 미리 panel들을 생성.
     CreateToobar();
-    // assetBrowser
-    auto uiAssetBrowser = overlayCanvas->CreateUIElement<UIAssetBrowser>("UIAssetBrowser");
-    uiAssetBrowser->SetWidth(3000.0);
+    // 하단 공통 컨테이너가 Asset Browser와 Log 콘텐츠 및 높이 조절 핸들을 준비한다.
+    auto bottomPanel = EditorUIUtility::Create<BottomPanel>(overlayCanvas, "BottomPanel");
+    mBottomPanel = bottomPanel;
+    bottomPanel->SetWidth(3000.0f);
 
-    uiAssetBrowser->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eLeft);
-    uiAssetBrowser->SetHorizontalPivotOffset(0.0f);
+    bottomPanel->SetHorizontalAnchor(0.0f);
+    bottomPanel->SetHorizontalOffset(0.0f);
 
-    uiAssetBrowser->SetVerticalPivotSide(UI::EUIPosPivotVertical::eBottom);
-    uiAssetBrowser->SetVerticalPivotOffset(0.0f);
+    bottomPanel->SetVerticalAnchor(1.0f);
+    bottomPanel->SetVerticalOffset(-(bottomPanel->GetSize().Y + 0.0f));
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    bottomPanel->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetVerticalOffset(-(element->GetSize().Y + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
-    uiAssetBrowser->SetInitFolder(QuadLF::LogicalFileSystem::GetInstance()->GetAssetFolder());
+    bottomPanel->SetInitFolder(QuadLF::LogicalFileSystem::GetInstance()->GetAssetFolder());
+
+    auto logger = QuadLog::Logger::GetInstance();
+    if (logger)
+    {
+
+        logger->mCallbackSystem.Register(
+            [this, bottomPanel](const char *message)
+            {
+                if (!(bottomPanel && bottomPanel->GetLogPanel()))
+                    return;
+
+                std::lock_guard<std::mutex> lock(mLogUIContext.mMutex);
+
+                mLogUIContext.mMessageQueue.push(message);
+
+                return;
+            });
+    }
 
     CreateMessageBox();
     CreateSaveMapPanel();
@@ -97,7 +130,7 @@ void GlobalOverlayManager::Initialize(UI::UICanvas *overlayCanvas, Core::Logical
     CreateProjectBuildPanel();
     // Debug Panel
 
-    mDebugHUD = overlayCanvas->CreateUIElement<UIEditorDebugHUD>("DebugHUD");
+    mDebugHUD = EditorUIUtility::Create<UIEditorDebugHUD>(overlayCanvas, "DebugHUD");
     mDebugHUD->SetPositionLocal(0, 0);
     mDebugHUD->SetDepthValue(1); // 가장위에
 
@@ -106,6 +139,8 @@ void GlobalOverlayManager::Initialize(UI::UICanvas *overlayCanvas, Core::Logical
     mMaterialCreationManager = MaterialCreationManager::GetInstance();
     mMaterialCreationManager->Initialize(overlayCanvas);
 
+    Quad::EditorProjectManager::GetInstance()->mOnOpendMapCallbackSystem.Register([this](Map *map)
+                                                                                  { OnOpnedNewMap(map); });
     //  mainWindow->mOnMouseEnterCallbackSystem.Register([this]() { OnDragDropMouseEnterMainWindow(); });
     //    mainWindow->mOnMouseLeaveCallbackSystem.Register([this]() { OnDragDropMouseLeaveMainWindow(); });
 }
@@ -202,24 +237,61 @@ void GlobalOverlayManager::Update(float deltaTime)
     //         mCurrentTaskUIController->Update();
     //     }
     // }
+
+    if (mBottomPanel)
+    {
+        auto logPanel = mBottomPanel->GetLogPanel();
+        if (logPanel)
+        {
+
+            while (mLogUIContext.mMessageQueue.empty() == false)
+            {
+                logPanel->AppendMessage(mLogUIContext.mMessageQueue.front());
+                mLogUIContext.mMessageQueue.pop();
+            }
+        }
+    }
 }
 
 void GlobalOverlayManager::ChangeToDefaultEdit()
 {
 
     mToolbar->SetActiveFlag(true);
+    mBottomPanel->SetActiveFlag(true);
 }
 
 void GlobalOverlayManager::ChangeToPrefabEdit()
 {
 
     mToolbar->SetActiveFlag(false);
+    mBottomPanel->SetActiveFlag(true);
 }
 
 void GlobalOverlayManager::ChangeToMaterialEdit()
 {
 
     mToolbar->SetActiveFlag(false);
+    mBottomPanel->SetActiveFlag(true);
+}
+
+void GlobalOverlayManager::ChangeToAnimationClipEdit()
+{
+    mToolbar->SetActiveFlag(false);
+    mBottomPanel->SetActiveFlag(true);
+}
+
+void GlobalOverlayManager::ChangeToProjectSetting()
+{
+    // 별도 루트로 생성된 팝업은 부모 패널을 숨기는 것만으로 닫히지 않으므로 먼저 정리한다.
+    CloseCurrentContextMenuAll();
+    mBottomPanel->GetAssetBrowser()->CloseTransientPanels();
+    mToolbar->SetActiveFlag(false);
+    mBottomPanel->SetActiveFlag(false);
+}
+
+BottomPanel *GlobalOverlayManager::GetBottomPanel() const
+{
+    return mBottomPanel;
 }
 
 void GlobalOverlayManager::ShowMessageBox(const std::string &str)
@@ -236,23 +308,25 @@ void GlobalOverlayManager::CloseMessageBox()
 
 void GlobalOverlayManager::CreateMessageBox()
 {
-    mMessageBox = mOverlayCanvas->CreateUIElement<UI::UIImage>("MessageBox");
+    mMessageBox = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, "MessageBox");
     mMessageBox->SetActiveFlag(false);
     mMessageBox->SetColor(0.4f, 0.4f, 0.4f);
     mMessageBox->SetSize(300, 300);
     mMessageBox->SetPositionLocal(400, 900);
 
     mMessageBoxTextCom = mMessageBox->CreateUIComponent<UI::UITextComponent>("TextCom");
+    EditorUIUtility::ApplyTextPreset(mMessageBoxTextCom);
     mMessageBoxTextCom->SetOverflowMode(UI::EUITextOverflowMode::eWordWrap);
-    mMessageBoxTextCom->SetFontSize(30.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: mMessageBoxTextCom->SetFontSize(30.0f);
     mMessageBoxTextCom->SetPaddingLeft(30.0f);
     mMessageBoxTextCom->SetPaddingTop(30.0f);
 
-    auto exitButton = mMessageBox->CreateChildUIElement<UI::UIButton>("ExitButton");
+    auto exitButton = EditorUIUtility::CreateSmallButton(mMessageBox, "ExitButton");
 
-    exitButton->SetSize(40, 40);
+    // EditorUIUtility의 기본 높이 유지: exitButton->SetSize(40, 40);
+    exitButton->SetWidth(40);
     exitButton->SetPositionLocal(mMessageBox->mTransform.GetSize().x - exitButton->mTransform.GetSize().x, 0);
-    exitButton->mUIImageComponent->SetColor(1.0f, 0.0f, 0.0f);
+    // EditorUIUtility의 기본 색상 유지: exitButton->mUIImageComponent->SetColor(1.0f, 0.0f, 0.0f);
     exitButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float) { CloseMessageBox(); });
     exitButton->mUIImageComponent->UseTexture();
     exitButton->mUIImageComponent->SetTexture("Engine/Exit");
@@ -271,7 +345,7 @@ void GlobalOverlayManager::CreateToobar()
     // Toolbar도 ListPanel 이어야할듯?
     // Toolbar에 리스트로는 bar들이 들어가는거고
 
-    mToolbar = mOverlayCanvas->CreateUIElement<UI::UIImage>("Toolbar");
+    mToolbar = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, "Toolbar");
     auto *layout = mToolbar->CreateUIComponent<UI::UIVerticalLayoutComponent>("ToolbarVerticalLayout");
 
     mToolbar->SetSize(3000, 200);
@@ -287,9 +361,9 @@ void GlobalOverlayManager::CreateToobar()
 void GlobalOverlayManager::CreateProjectBar()
 {
 
-    auto projectBar = mToolbar->CreateChildUIElement<UI::UIImage>("projectBar");
+    auto projectBar = EditorUIUtility::CreateSectionHeader(mToolbar, "projectBar");
     projectBar->SetWidth(mToolbar->mTransform.GetSize().r);
-    projectBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+
     projectBar->mImageCom->SetUseBorderFlag(true);
     projectBar->mImageCom->SetBorderThickness(1.0f);
     struct MenuData
@@ -318,13 +392,19 @@ void GlobalOverlayManager::CreateProjectBar()
     CreateEditContextPanel(menuMap["Edit"]);
     CreateAssetContextPanel(menuMap["Asset"]);
     CreateObjectContextPanel(menuMap["Object"]);
+
+    auto *projectSettingButton =
+        AddMenuButton(projectBar, "프로젝트 설정", "ProjectSetting", 180.0f, UI::UIColor{0.5f, 0.5f, 0.5f, 1.0f});
+    projectSettingButton->SetPositionLocal(currentPosX, 0.0f);
+    projectSettingButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [](float, float) { Quad::EditorDirector::GetInstance()->ChangeToProjectSettingWorkSpace(); });
 }
 
 void GlobalOverlayManager::CreateSceneBar()
 {
 
-    auto sceneBar = mToolbar->CreateChildUIElement<UI::UIImage>("SceneBar");
-    sceneBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto sceneBar = EditorUIUtility::CreateSectionHeader(mToolbar, "SceneBar");
+
     sceneBar->SetWidth(mToolbar->mTransform.GetSize().r);
     sceneBar->mImageCom->SetUseBorderFlag(true);
     sceneBar->mImageCom->SetBorderThickness(1.0f);
@@ -351,8 +431,7 @@ void GlobalOverlayManager::CreateSceneBar()
 void GlobalOverlayManager::CreatePlayBar()
 {
 
-    auto playBar = mToolbar->CreateChildUIElement<UI::UIImage>("PlayBar");
-    playBar->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto playBar = EditorUIUtility::CreateSectionHeader(mToolbar, "PlayBar");
 
     playBar->SetColor({0.4F, 0.4F, 0.4F});
     playBar->SetWidth(mToolbar->mTransform.GetSize().r);
@@ -361,14 +440,10 @@ void GlobalOverlayManager::CreatePlayBar()
     //  playBar->SetPositionLocal(0, 80);
 
     // PlayButton
-    auto playButton = playBar->CreateChildUIElement<UI::UIButton>("PlayButton");
+    auto playButton = EditorUIUtility::CreateSmallButton(playBar, "PlayButton");
     playButton->SetUseHoverImageColor(false);
     playButton->mUIImageComponent->UseTexture();
     playButton->mUIImageComponent->SetTexture("Engine/PlayStartState");
-
-    UI::UIControlStyleOverride buttonStyleOverride;
-    buttonStyleOverride.mHeight = 30.0f;
-    playButton->SetStyleOverride(buttonStyleOverride);
 
     // playButton->SetSize(100, 100);
 
@@ -399,13 +474,12 @@ void GlobalOverlayManager::CreatePlayBar()
         });
 
     // Pause
-    auto pauseButton = playBar->CreateChildUIElement<UI::UIButton>("PlayButton");
+    auto pauseButton = EditorUIUtility::CreateSmallButton(playBar, "PlayButton");
     pauseButton->SetPositionLocal(50, 0);
     pauseButton->SetUseHoverImageColor(false);
     pauseButton->mUIImageComponent->UseTexture();
     pauseButton->mUIImageComponent->SetTexture("Engine/PlayEnd");
 
-    pauseButton->SetStyleOverride(buttonStyleOverride);
     // pauseButton->SetSize(50, 50);
     pauseButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this, playButton, pauseButton](float, float)
@@ -425,12 +499,9 @@ UI::UITextButton *GlobalOverlayManager::AddMenuButton(UI::UIElement *parent, con
     UI::UIColor hoverColor = {0.7f, 0.7f, 0.7f, 1.0f};
     UI::UIColor hoverReleaseColor = baseColor;
 
-    UI::UIControlStyleOverride styleOverride;
-    styleOverride.mLeftPadding = 0.0F;
+    auto menu = EditorUIUtility::CreateSmallTextButton(parent, objectName.c_str());
 
-    auto menu = parent->CreateChildUIElement<UI::UITextButton>(objectName.c_str());
-
-    menu->SetStyleOverride(styleOverride);
+    menu->mTextComponent->SetPaddingLeft(0.0f);
 
     // menu->SetSize(width, 40);
     menu->SetWidth(width);
@@ -447,7 +518,7 @@ UI::UITextButton *GlobalOverlayManager::AddMenuButton(UI::UIElement *parent, con
 UI::UIImage *GlobalOverlayManager::CreateBaseContextPanel(UI::UITextButton *button, const std::string &objectName,
                                                           float width, int dir)
 {
-    auto panel = mOverlayCanvas->CreateUIElement<UI::UIImage>(objectName.c_str());
+    auto panel = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, objectName.c_str());
     panel->SetColor(0.4f, 0.4f, 0.4f);
     panel->SetSize(width, 40);
     glm::vec2 buttonWorldPos = button->mTransform.GetWorldPosition();
@@ -502,6 +573,20 @@ void GlobalOverlayManager::CreateFileContextPanel(UI::UITextButton *fileButton)
     }
 
     verticalLayoutCom->CalculateLayout();
+
+    menuMap["NewMapButton"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseCurrentContextMenuAll();
+
+            // 일단 map asset 생성하기
+            Map *newMap = Quad::EditorAssetManager::GetInstance()->CreateNewMap();
+            if (newMap)
+            {
+                LOG_MESSAGE_INFO("Map", "Map생성 성공");
+                Quad::EditorSceneManager::GetInstance()->AddUserMap(newMap);
+            }
+        });
 
     menuMap["SaveProject"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float)
@@ -908,27 +993,56 @@ void GlobalOverlayManager::CreatePlayerStartAtEditorView()
 
 void GlobalOverlayManager::CreateSaveMapPanel()
 {
+    // 컨테이너와 텍스트를 분리하여 텍스트용 공통 높이가 대화상자 전체에 적용되지 않게 한다.
+    // 컨테이너의 영역만 지정하고 색상, 안내 글꼴, 버튼 높이와 상태별 색상은 공통 테마를 따른다.
+    auto saveMapPanel = EditorUIUtility::CreatePanel(mOverlayCanvas, "SaveMapPanel");
 
-    auto saveMapPanel = mOverlayCanvas->CreateUIElement<UI::UIText>("SaveMapPanel");
-    auto imageCom = saveMapPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
-    imageCom->SetColor(0.2f, 0.2f, 0.2f);
+    saveMapPanel->SetWidth(600.0f);
+    saveMapPanel->SetHeight(400.0f);
+    saveMapPanel->SetDepthValue(0);
 
-    // Yes, no  자식 ui버튼 두개 생성
-    auto saveButton = saveMapPanel->CreateChildUIElement<UI::UITextButton>("SaveButton");
-    auto saveCancelButton = saveMapPanel->CreateChildUIElement<UI::UITextButton>("SaveCancelButton");
+    auto message = EditorUIUtility::CreateLabel(saveMapPanel, "SaveMapMessage");
+    message->SetText("현재 맵의 변경 내용을 저장하시겠습니까?");
+    message->SetWidth(560.0f);
+    message->SetHorizontalAnchor(0.0f);
+    message->SetHorizontalOffset(20.0f);
+    message->SetVerticalAnchor(0.0f);
+    message->SetVerticalOffset(20.0f);
 
-    saveButton->mTextComponent->SetFontSize(20.0f);
-    saveCancelButton->mTextComponent->SetFontSize(20.0f);
+    auto saveButton = EditorUIUtility::CreateSmallTextButton(saveMapPanel, "SaveButton");
+    auto saveCancelButton = EditorUIUtility::CreateSmallTextButton(saveMapPanel, "SaveCancelButton");
 
-    saveMapPanel->SetSize(600, 400);
-    saveButton->SetSize(100, 50);
-    saveCancelButton->SetSize(100, 50);
+    // 생성 유틸리티에서 확정한 버튼 높이를 기준으로 하단 Anchor를 배치한다.
+    saveButton->SetWidth(100.0f);
+    saveButton->SetHorizontalAnchor(1.0f);
+    saveButton->SetHorizontalOffset(-(saveButton->GetSize().X + 180.0f));
+    saveButton->SetVerticalAnchor(1.0f);
+    saveButton->SetVerticalOffset(-(saveButton->GetSize().Y + 20.0f));
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    saveButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 180.0f));
+            element->SetVerticalOffset(-(element->GetSize().Y + 20.0f));
+            element->UpdatePosAnchor();
+        });
 
-    saveButton->SetPositionLocal(200, 300);
-    saveCancelButton->SetPositionLocal(400, 300);
+    saveCancelButton->SetWidth(140.0f);
+    saveCancelButton->SetHorizontalAnchor(1.0f);
+    saveCancelButton->SetHorizontalOffset(-(saveCancelButton->GetSize().X + 20.0f));
+    saveCancelButton->SetVerticalAnchor(1.0f);
+    saveCancelButton->SetVerticalOffset(-(saveCancelButton->GetSize().Y + 20.0f));
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    saveCancelButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 20.0f));
+            element->SetVerticalOffset(-(element->GetSize().Y + 20.0f));
+            element->UpdatePosAnchor();
+        });
 
     saveButton->mTextComponent->SetText("저장");
-    saveCancelButton->mTextComponent->SetText("취소");
+    saveCancelButton->mTextComponent->SetText("저장하지 않음");
 
     saveButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float)
@@ -965,7 +1079,7 @@ void GlobalOverlayManager::CreateSaveMapPanel()
 void GlobalOverlayManager::CreateDragDropImage()
 {
 
-    mDragDropImage = mOverlayCanvas->CreateUIElement<UI::UIImage>("DragDropImage");
+    mDragDropImage = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, "DragDropImage");
     mDragDropImage->SetSize(50, 50);
     mDragDropImage->SetActiveFlag(false);
     mDragDropImage->SetOnlyVisible(true);
@@ -977,41 +1091,55 @@ void GlobalOverlayManager::CreateDragDropImage()
 
 void GlobalOverlayManager::CreateProjectBuildPanel()
 {
+    mProjectBuildPanel = EditorUIUtility::CreatePanel(mOverlayCanvas, "ProjectBuildPanel");
 
-    UI::UIControlStyleOverride buttonControlStyleOverride;
-    buttonControlStyleOverride.mHeight = 40.0f;
+    auto buildPanelVerticalLayoutCom = mProjectBuildPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerCom");
 
-    mProjectBuildPanel = mOverlayCanvas->CreateUIElement<UI::UIImage>("ProjectBuildPanel");
-
-    UI::UIControlStyleOverride styleOverride;
-    styleOverride.mHeight = 250.0f;
-    mProjectBuildPanel->SetStyleOverride(styleOverride);
-
-    mProjectBuildPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
-    mProjectBuildPanel->SetWidth(1000);
+    mProjectBuildPanel->SetWidth(800);
+    mProjectBuildPanel->SetHeight(400.0f);
     mProjectBuildPanel->SetActiveFlag(false);
     mProjectBuildPanel->SetDepthValue(0);
 
-    auto pathTag = mProjectBuildPanel->CreateChildUIElement<UI::UIText>("PathNameTag");
-    pathTag->SetWidth(200);
-    pathTag->SetPositionLocal(20, 100);
+    auto exitButton = EditorUIUtility::CreateSmallButton(mProjectBuildPanel, "ExitButton");
+    // exitButton->SetSize(40, 40);
+    exitButton->SetPosAnchorActive(true);
+    exitButton->SetHorizontalAnchor(1.0f);
+    exitButton->SetHorizontalOffset(-(exitButton->GetSize().X + 0.0f));
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    exitButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
+    exitButton->mUIImageComponent->UseTexture();
+    exitButton->mUIImageComponent->SetTexture("Engine/Exit");
+
+    auto pathPanel = EditorUIUtility::CreatePanel(mProjectBuildPanel, "pathPanel");
+    pathPanel->SetHeight(100.0f);
+    pathPanel->SetWidth(800.0f);
+    pathPanel->CreateUIComponent<UI::UIHorizontalLayoutComponent>("HoriCom");
+
+    auto pathTag = EditorUIUtility::CreateLabel(pathPanel, "PathNameTag");
+    pathTag->SetWidth(100);
+    // pathTag->SetPositionLocal(20, 100);
     pathTag->SetText("경로");
 
-    auto pathEditBox = mProjectBuildPanel->CreateChildUIElement<UI::UIEditBox>("PathEditBox");
+    auto pathEditBox = EditorUIUtility::CreateTextInput(pathPanel, "PathEditBox");
 
-    pathEditBox->SetWidth(500.0f);
+    pathEditBox->SetWidth(400.0f);
+    // EditorUIUtility의 기본 색상 유지: pathEditBox->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: pathEditBox->SetTextColor(0, 0, 0);
+    // pathEditBox->SetPositionLocal(pathTag->mTransform.GetLocalPosition().x + pathTag->mTransform.GetSize().x + 40.0f,
+    //                              pathTag->mTransform.GetLocalPosition().y);
+
     pathEditBox->SetBackgroundColor(1, 1, 1);
-    pathEditBox->SetTextColor(0, 0, 0);
-    pathEditBox->SetPositionLocal(pathTag->mTransform.GetLocalPosition().x + pathTag->mTransform.GetSize().x + 40.0f,
-                                  pathTag->mTransform.GetLocalPosition().y);
-
     // 경로 탐색 버튼
 
-    auto pathSearchButton = mProjectBuildPanel->CreateChildUIElement<UI::UIButton>("PathSearchButton");
-    pathSearchButton->SetStyleOverride(buttonControlStyleOverride);
+    auto pathSearchButton = EditorUIUtility::CreateSmallButton(pathPanel, "PathSearchButton");
 
-    pathSearchButton->SetPositionLocal(pathEditBox->mTransform.GetLocalPosition().x + pathEditBox->GetWidth() + 10.0f,
-                                       pathEditBox->mTransform.GetLocalPosition().y);
+    /*pathSearchButton->SetPositionLocal(pathEditBox->mTransform.GetLocalPosition().x + pathEditBox->GetWidth() + 10.0f,
+                                       pathEditBox->mTransform.GetLocalPosition().y);*/
     pathSearchButton->mUIImageComponent->SetUseBorderFlag(true);
     pathSearchButton->mUIImageComponent->SetBorderColor(UI::UIColor::White);
 
@@ -1027,14 +1155,22 @@ void GlobalOverlayManager::CreateProjectBuildPanel()
 
     // 빌드 수행 버튼
 
-    auto buildButton = mProjectBuildPanel->CreateChildUIElement<UI::UITextButton>("BuildButton");
+    auto buildButton = EditorUIUtility::CreateSmallTextButton(mProjectBuildPanel, "BuildButton");
     buildButton->SetWidth(100.0f);
     buildButton->mTextComponent->SetText("빌드");
-    buildButton->mTextComponent->SetPaddingLeft(30.0f);
+    //   buildButton->mTextComponent->SetPaddingLeft(30.0f);
     buildButton->mUIImageComponent->SetUseBorderFlag(true);
 
-    buildButton->SetPositionLocal(pathTag->mTransform.GetLocalPosition().x + pathTag->mTransform.GetSize().x + 40.0f,
-                                  pathTag->mTransform.GetLocalPosition().y + 50.0f);
+    buildButton->SetHorizontalOffset(-(buildButton->GetSize().X + 50.0f));
+    buildButton->SetHorizontalAnchor(1.0f);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    buildButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 50.0f));
+            element->UpdatePosAnchor();
+        });
+    buildButton->SetPosAnchorActive(true);
 
     buildButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [pathEditBox](float, float)
@@ -1048,12 +1184,6 @@ void GlobalOverlayManager::CreateProjectBuildPanel()
             //     EditorBuildManager 에게 buildPath 전달하면 빌드 매니저가 수행하도록 한다.
         });
 
-    auto exitButton = mProjectBuildPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
-    exitButton->SetStyleOverride(buttonControlStyleOverride);
-    // exitButton->SetSize(40, 40);
-    exitButton->SetPositionLocal(mProjectBuildPanel->mTransform.GetSize().x - exitButton->mTransform.GetSize().x, 0);
-    exitButton->mUIImageComponent->UseTexture();
-    exitButton->mUIImageComponent->SetTexture("Engine/Exit");
     exitButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this, pathEditBox](float, float)
         {
@@ -1062,19 +1192,22 @@ void GlobalOverlayManager::CreateProjectBuildPanel()
             mProjectBuildPanel->SetActiveFlag(false);
             mProjectBuildPanel->ReleaseMouseCaptureInput();
         });
+
+    mProjectBuildPanel->SetPositionLocal(200, 200);
 }
 
 void GlobalOverlayManager::CreateGenerationObjectClassPanel()
 {
 
-    mGenerationObjectClassPanel = mOverlayCanvas->CreateUIElement<UI::UIImage>("GenerataionObjectClassPanel");
+    mGenerationObjectClassPanel = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, "GenerataionObjectClassPanel");
     mGenerationObjectClassPanel->SetSize(800, 700);
     mGenerationObjectClassPanel->SetActiveFlag(false);
     mGenerationObjectClassPanel->SetColor({0.3f, 0.3f, 0.3f});
     mGenerationObjectClassPanel->SetPositionLocal(200.0f, 200.0f);
 
-    auto exitButton = mGenerationObjectClassPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
-    exitButton->SetSize(40, 40);
+    auto exitButton = EditorUIUtility::CreateSmallButton(mGenerationObjectClassPanel, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: exitButton->SetSize(40, 40);
+    exitButton->SetWidth(40);
     exitButton->SetPositionLocal(
         mGenerationObjectClassPanel->mTransform.GetSize().x - exitButton->mTransform.GetSize().x, 0);
     exitButton->mUIImageComponent->UseTexture();
@@ -1084,47 +1217,52 @@ void GlobalOverlayManager::CreateGenerationObjectClassPanel()
 
     float fontSize = 20.0f;
 
-    auto classInputPanel = mGenerationObjectClassPanel->CreateChildUIElement<UI::UIImage>("ClassInputPanel");
+    auto classInputPanel = EditorUIUtility::Create<UI::UIImage>(mGenerationObjectClassPanel, "ClassInputPanel");
     classInputPanel->SetSize(mGenerationObjectClassPanel->mTransform.GetSize().r, 200);
     classInputPanel->SetColor(1.0f, 0.3f, 0.3f);
     classInputPanel->SetPositionLocal(0, 500);
 
-    auto parentClassNameTag = classInputPanel->CreateChildUIElement<UI::UIText>("ParentClassNameTag");
-    parentClassNameTag->SetSize(200, 30);
+    auto parentClassNameTag = EditorUIUtility::CreateLabel(classInputPanel, "ParentClassNameTag");
+    // EditorUIUtility의 기본 높이 유지: parentClassNameTag->SetSize(200, 30);
+    parentClassNameTag->SetWidth(200);
     parentClassNameTag->SetPositionLocal(20, 10);
-    parentClassNameTag->SetFontSize(fontSize);
+    // EditorUIUtility의 공통 폰트 규격 유지: parentClassNameTag->SetFontSize(fontSize);
     parentClassNameTag->SetText("부모 클래스");
 
-    auto parentClassNameEditBox = classInputPanel->CreateChildUIElement<UI::UIEditBox>("ParentClassEditBox");
-    parentClassNameEditBox->SetSize(500, 30);
-    parentClassNameEditBox->SetFontSize(fontSize);
-    parentClassNameEditBox->SetBackgroundColor(1, 1, 1);
-    parentClassNameEditBox->SetTextColor(0, 0, 0);
+    auto parentClassNameEditBox = EditorUIUtility::CreateTextInput(classInputPanel, "ParentClassEditBox");
+    // EditorUIUtility의 기본 높이 유지: parentClassNameEditBox->SetSize(500, 30);
+    parentClassNameEditBox->SetWidth(500);
+    // EditorUIUtility의 공통 폰트 규격 유지: parentClassNameEditBox->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: parentClassNameEditBox->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: parentClassNameEditBox->SetTextColor(0, 0, 0);
     parentClassNameEditBox->SetPositionLocal(parentClassNameTag->mTransform.GetLocalPosition().x +
                                                  parentClassNameTag->mTransform.GetSize().x + 40.0f,
                                              parentClassNameTag->mTransform.GetLocalPosition().y);
 
-    auto classNameTag = classInputPanel->CreateChildUIElement<UI::UIText>("classNameTag");
-    classNameTag->SetSize(200, 30);
+    auto classNameTag = EditorUIUtility::CreateLabel(classInputPanel, "classNameTag");
+    // EditorUIUtility의 기본 높이 유지: classNameTag->SetSize(200, 30);
+    classNameTag->SetWidth(200);
     classNameTag->SetPositionLocal(20, parentClassNameTag->mTransform.GetLocalPosition().y +
                                            parentClassNameTag->mTransform.GetSize().y + 10);
-    classNameTag->SetFontSize(fontSize);
+    // EditorUIUtility의 공통 폰트 규격 유지: classNameTag->SetFontSize(fontSize);
     classNameTag->SetText("클래스 이름");
 
-    auto classNameEditBox = classInputPanel->CreateChildUIElement<UI::UIEditBox>("classEditBox");
-    classNameEditBox->SetSize(500, 30);
-    classNameEditBox->SetFontSize(fontSize);
-    classNameEditBox->SetBackgroundColor(1, 1, 1);
-    classNameEditBox->SetTextColor(0, 0, 0);
+    auto classNameEditBox = EditorUIUtility::CreateTextInput(classInputPanel, "classEditBox");
+    // EditorUIUtility의 기본 높이 유지: classNameEditBox->SetSize(500, 30);
+    classNameEditBox->SetWidth(500);
+    // EditorUIUtility의 공통 폰트 규격 유지: classNameEditBox->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: classNameEditBox->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: classNameEditBox->SetTextColor(0, 0, 0);
     classNameEditBox->SetPositionLocal(classNameTag->mTransform.GetLocalPosition().x +
                                            classNameTag->mTransform.GetSize().x + 40.0f,
                                        classNameTag->mTransform.GetLocalPosition().y);
 
-    auto classGeneartionButton = classInputPanel->CreateChildUIElement<UI::UITextButton>("ClassGenerationButton");
-    classGeneartionButton->SetSize(100, 40);
-    classGeneartionButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
+    auto classGeneartionButton = EditorUIUtility::CreateSmallTextButton(classInputPanel, "ClassGenerationButton");
+    // EditorUIUtility의 기본 높이 유지: classGeneartionButton->SetSize(100, 40);
+    classGeneartionButton->SetWidth(100);
+    // EditorUIUtility의 기본 색상 유지: classGeneartionButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
     classGeneartionButton->mTextComponent->SetText(" 생성 ");
-    classGeneartionButton->mTextComponent->SetFontSize(fontSize);
+    // EditorUIUtility의 공통 폰트 규격 유지: classGeneartionButton->mTextComponent->SetFontSize(fontSize);
     classGeneartionButton->SetPositionLocal(
         classInputPanel->mTransform.GetSize().x - classGeneartionButton->mTransform.GetSize().x - 20.0f,
         classInputPanel->mTransform.GetSize().y - 10.0f - classGeneartionButton->mTransform.GetSize().y);
@@ -1191,7 +1329,7 @@ void GlobalOverlayManager::CreateGenerationObjectClassPanel()
 
     // Class list
     auto classListScrollPanel =
-        mGenerationObjectClassPanel->CreateChildUIElement<ClassListUIScrollPanel>("ClassListScrollPanel");
+        EditorUIUtility::Create<ClassListUIScrollPanel>(mGenerationObjectClassPanel, "ClassListScrollPanel");
     classListScrollPanel->SetScrollPanelColor(0.2f, 0.2f, 0.2f);
     classListScrollPanel->SetSize(700, 500);
 
@@ -1212,13 +1350,14 @@ void GlobalOverlayManager::CreateGenerationObjectClassPanel()
 void GlobalOverlayManager::CreateGenerationPrefabPanel()
 {
 
-    mGenerationPrefabPanel = mOverlayCanvas->CreateUIElement<UI::UIImage>("GenerationPrefabPanel");
+    mGenerationPrefabPanel = EditorUIUtility::Create<UI::UIImage>(mOverlayCanvas, "GenerationPrefabPanel");
     mGenerationPrefabPanel->SetSize(800, 800);
     mGenerationPrefabPanel->SetColor(0.4f, 0.4f, 0.4f);
     mGenerationPrefabPanel->SetPositionLocal(500, 600);
 
-    auto exitButton = mGenerationPrefabPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
-    exitButton->SetSize(40, 40);
+    auto exitButton = EditorUIUtility::CreateSmallButton(mGenerationPrefabPanel, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: exitButton->SetSize(40, 40);
+    exitButton->SetWidth(40);
     exitButton->mUIImageComponent->UseTexture();
     exitButton->mUIImageComponent->SetTexture("Engine/Exit");
     exitButton->SetPositionLocal(mGenerationPrefabPanel->mTransform.GetSize().x - exitButton->mTransform.GetSize().x,
@@ -1227,7 +1366,7 @@ void GlobalOverlayManager::CreateGenerationPrefabPanel()
         [this](float, float) { mGenerationPrefabPanel->SetActiveFlag(false); });
 
     auto classListScrollPanel =
-        mGenerationPrefabPanel->CreateChildUIElement<ClassListUIScrollPanel>("ClassListScrollPanel");
+        EditorUIUtility::Create<ClassListUIScrollPanel>(mGenerationPrefabPanel, "ClassListScrollPanel");
     classListScrollPanel->SetScrollPanelColor(0.2f, 0.2f, 0.2f);
     classListScrollPanel->SetSize(700, 500);
 
@@ -1235,17 +1374,19 @@ void GlobalOverlayManager::CreateGenerationPrefabPanel()
     float marginX = 20.0f;
     float marginY = 30.0f;
 
-    auto parentTag = mGenerationPrefabPanel->CreateChildUIElement<UI::UIText>("ParentTag");
-    parentTag->SetSize(100, 40);
-    parentTag->SetFontSize(fontSize);
-    parentTag->SetTextColor({1, 1, 1});
+    auto parentTag = EditorUIUtility::CreateLabel(mGenerationPrefabPanel, "ParentTag");
+    // EditorUIUtility의 기본 높이 유지: parentTag->SetSize(100, 40);
+    parentTag->SetWidth(100);
+    // EditorUIUtility의 공통 폰트 규격 유지: parentTag->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: parentTag->SetTextColor({1, 1, 1});
     parentTag->SetText("부모 클래스");
     parentTag->SetPositionLocal(marginX, classListScrollPanel->mTransform.GetLocalPosition().y +
                                              classListScrollPanel->mTransform.GetSize().y + marginY);
 
-    auto parentText = mGenerationPrefabPanel->CreateChildUIElement<UI::UIText>("ParentText");
-    parentText->SetSize(500, 40);
-    parentText->SetFontSize(fontSize);
+    auto parentText = EditorUIUtility::CreateLabel(mGenerationPrefabPanel, "ParentText");
+    // EditorUIUtility의 기본 높이 유지: parentText->SetSize(500, 40);
+    parentText->SetWidth(500);
+    // EditorUIUtility의 공통 폰트 규격 유지: parentText->SetFontSize(fontSize);
     parentText->SetPositionLocal(parentTag->mTransform.GetLocalPosition().x + parentTag->mTransform.GetSize().x +
                                      marginX,
                                  parentTag->mTransform.GetLocalPosition().y);
@@ -1253,29 +1394,32 @@ void GlobalOverlayManager::CreateGenerationPrefabPanel()
     classListScrollPanel->mOnClickedClassItemCallbackSystem.Register([parentText](const std::string &className)
                                                                      { parentText->SetText(className); });
 
-    auto prefabNameTag = mGenerationPrefabPanel->CreateChildUIElement<UI::UIText>("PrefabNameTag");
-    prefabNameTag->SetSize(100, 40);
-    prefabNameTag->SetFontSize(fontSize);
-    prefabNameTag->SetTextColor({1, 1, 1});
+    auto prefabNameTag = EditorUIUtility::CreateLabel(mGenerationPrefabPanel, "PrefabNameTag");
+    // EditorUIUtility의 기본 높이 유지: prefabNameTag->SetSize(100, 40);
+    prefabNameTag->SetWidth(100);
+    // EditorUIUtility의 공통 폰트 규격 유지: prefabNameTag->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: prefabNameTag->SetTextColor({1, 1, 1});
     prefabNameTag->SetText("프리팹 이름");
     prefabNameTag->SetPositionLocal(marginX, parentTag->mTransform.GetLocalPosition().y +
                                                  parentTag->mTransform.GetSize().y + marginY);
 
-    auto prefabNameEditBox = mGenerationPrefabPanel->CreateChildUIElement<UI::UIEditBox>("PrefabNameEditBox");
-    prefabNameEditBox->SetSize(500, 40);
-    prefabNameEditBox->SetFontSize(fontSize);
-    prefabNameEditBox->SetTextColor(0, 0, 0);
-    prefabNameEditBox->SetBackgroundColor(0.3f, 0.3f, 0.3f);
+    auto prefabNameEditBox = EditorUIUtility::CreateTextInput(mGenerationPrefabPanel, "PrefabNameEditBox");
+    // EditorUIUtility의 기본 높이 유지: prefabNameEditBox->SetSize(500, 40);
+    prefabNameEditBox->SetWidth(500);
+    // EditorUIUtility의 공통 폰트 규격 유지: prefabNameEditBox->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: prefabNameEditBox->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 색상 유지: prefabNameEditBox->SetBackgroundColor(0.3f, 0.3f, 0.3f);
     prefabNameEditBox->SetPositionLocal(prefabNameTag->mTransform.GetLocalPosition().x +
                                             parentTag->mTransform.GetSize().x + marginX,
                                         prefabNameTag->mTransform.GetLocalPosition().y);
 
-    auto generationButton = mGenerationPrefabPanel->CreateChildUIElement<UI::UITextButton>("PrefabGenerationButton");
-    generationButton->SetSize(100, 40);
+    auto generationButton = EditorUIUtility::CreateSmallTextButton(mGenerationPrefabPanel, "PrefabGenerationButton");
+    // EditorUIUtility의 기본 높이 유지: generationButton->SetSize(100, 40);
+    generationButton->SetWidth(100);
     generationButton->mTextComponent->SetText("생성");
-    generationButton->mTextComponent->SetFontSize(fontSize);
-    generationButton->mTextComponent->SetColor(1, 1, 1);
-    generationButton->mUIImageComponent->SetColor(0.2f, 0.2f, 0.2f);
+    // EditorUIUtility의 공통 폰트 규격 유지: generationButton->mTextComponent->SetFontSize(fontSize);
+    // EditorUIUtility의 기본 색상 유지: generationButton->mTextComponent->SetColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: generationButton->mUIImageComponent->SetColor(0.2f, 0.2f, 0.2f);
     generationButton->SetPositionLocal(
         mGenerationPrefabPanel->mTransform.GetSize().x - generationButton->mTransform.GetSize().x - 20.0f,
         prefabNameTag->mTransform.GetSize().y + prefabNameTag->mTransform.GetLocalPosition().y + marginY);
@@ -1373,7 +1517,7 @@ void GlobalOverlayManager::OpenGameModeSettingPanel()
 
     if (mMapPlaySettingPanel == nullptr)
     {
-        mMapPlaySettingPanel = mOverlayCanvas->CreateUIElement<MapPlaySettingPanel>("MapPlaySettingPanel");
+        mMapPlaySettingPanel = EditorUIUtility::Create<MapPlaySettingPanel>(mOverlayCanvas, "MapPlaySettingPanel");
         mMapPlaySettingPanel->SetSize(500, 300);
         mMapPlaySettingPanel->SetPositionLocal(300, 300);
     }
@@ -1407,6 +1551,7 @@ void GlobalOverlayManager::OpenProjectBuildPanel()
 
     if (mProjectBuildPanel)
     {
+
         mProjectBuildPanel->SetActiveFlag(true);
         mProjectBuildPanel->RequestMouseCaptureInput(nullptr);
     }
@@ -1692,9 +1837,14 @@ void GlobalOverlayManager::CloseCurrentContextMenuAll()
 
 void GlobalOverlayManager::ShowSaveMapBox(Map *map, const std::function<void()> &onDecisionCallback)
 {
-    mSaveMapPanel->SetActiveFlag(true);
+    // 실제 표시 시점의 캔버스 크기를 사용하므로 초기 생성 시의 미확정 창 크기에 의존하지 않는다.
+    const auto windowSize = mOverlayCanvas->GetWindowSize();
+    const auto panelSize = mSaveMapPanel->GetSize();
+    mSaveMapPanel->SetPositionLocal(max(0.0f, (windowSize.X - panelSize.X) * 0.5f),
+                                    max(0.0f, (windowSize.Y - panelSize.Y) * 0.5f));
     mToSaveMap = map;
     mOnSaveMapDicisionCallback = onDecisionCallback;
+    mSaveMapPanel->SetActiveFlag(true);
 }
 
 void GlobalOverlayManager::StartDragDrop(const DragPayload &payload)
@@ -1859,6 +2009,15 @@ void GlobalOverlayManager::ShowPrefabEditWindow(Prefab *prefab)
     //  mPrefabEditUIContext.SetActive(true);
 
     // 다른창
+}
+
+void GlobalOverlayManager::OnOpnedNewMap(Map *map)
+{
+
+    CloseCurrentContextMenuAll();
+
+    if (mMapPlaySettingPanel)
+        mMapPlaySettingPanel->SetActiveFlag(false);
 }
 
 PrefabEditUIContext::PrefabEditUIContext() {}

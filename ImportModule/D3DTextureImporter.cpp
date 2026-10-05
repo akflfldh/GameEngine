@@ -135,6 +135,7 @@ CoreAsset::ImportPackage Import::TextureImporter::Import(
     {
         importPackage.mInteremdiateAssets[i].mIntermediateAsset = std::move(retVector[i]);
         importPackage.mInteremdiateAssets[i].mKey = path.stem().string();
+        importPackage.mInteremdiateAssets[i].mImportKey = "Texture::" + std::to_string(i);
     }
 
     return importPackage;

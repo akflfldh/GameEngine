@@ -66,11 +66,6 @@ Object *ObjectHierarchyItem::GetObject() const
 }
 
 // style 변화에서 호출
-void ObjectHierarchyItem::ApplyLayoutStyle(const UI::UIControlStyle &style)
-{
-
-    UIHierarchyItem::ApplyLayoutStyle(style);
-}
 
 // style일변화 , hover,등 상태변화 에서 호출
 void ObjectHierarchyItem::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state)

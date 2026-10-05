@@ -155,7 +155,8 @@ bool GRM::GpuBufferContextSystemImpl::CreateBuffer(uint32_t bufferID, GRM::EBuff
     return true;
 }
 
-bool GRM::GpuBufferContextSystemImpl::CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame)
+bool GRM::GpuBufferContextSystemImpl::CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame,
+                                                             uint32_t elementNum)
 {
 
     if (mGpuBufferContextTable.find(bufferID) != mGpuBufferContextTable.end())
@@ -169,7 +170,7 @@ bool GRM::GpuBufferContextSystemImpl::CreateStructuredBuffer(uint32_t bufferID, 
     bufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eCpuWriteOnly;
     bufferDesc.mBufferUsage = EBufferUsage::eStructuredBuffer;
     bufferDesc.mData = nullptr;
-    bufferDesc.mElementDataNum = 256;
+    bufferDesc.mElementDataNum = elementNum == 0 ? 256 : elementNum;
     bufferDesc.mElementDataSize = size;
     //~(15) & (size + 15);
     bufferDesc.mBufferSize = bufferDesc.mElementDataNum * bufferDesc.mElementDataSize;

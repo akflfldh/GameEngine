@@ -168,7 +168,11 @@ Render::MaterialID D3DRender::D3DMaterialManager::CreateMaterialDirectly(const R
 
     // 직접세이더코드가 들어오기때문에 HLSL을 생성할필요는없다 따라서 CreateHLSL은 수행하지않는다.
 
-    CompileHLSL(info, compiledShaderTable);
+    if (CompileHLSL(info, compiledShaderTable) == false)
+    {
+        // variant macro가 잘못되었거나 HLSL 계약과 맞지 않으면 불완전한 shader table로 PSO를 만들지 않는다.
+        return MaterialIDNone;
+    }
 
     ID3D12PipelineState *pso = CreatePSO(info, compiledShaderTable);
 
@@ -235,6 +239,16 @@ ID3D12RootSignature *D3DRender::D3DMaterialManager::GetMasterRootSignature() con
 ID3D12RootSignature *D3DRender::D3DMaterialManager::GetMasterComputeRootSignature() const
 {
     return mMasterComputeRootSignature.Get();
+}
+
+const Render::MaterialBindingRecord *D3DRender::D3DMaterialManager::FindMasterBindingRecord(
+    Render::EMasterRootBindingSemantic semantic) const
+{
+    const auto bindingIt = mMasterBindingRecordTable.find(semantic);
+    if (bindingIt == mMasterBindingRecordTable.end())
+        return nullptr;
+
+    return &bindingIt->second;
 }
 
 bool D3DRender::D3DMaterialManager::BuildMainPass(const Render::CreationMaterialInfo &creationMaterialInfo,
@@ -842,11 +856,11 @@ void D3DRender::D3DMaterialManager::BuildIMainInputLayout(
             // bone index
             // bone weight
             // 2걔씩
-            oInputElementDescVector.push_back({"BONEINDEX", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+            oInputElementDescVector.push_back({"BONEINDEX", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0,
                                                D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
                                                0});
 
-            oInputElementDescVector.push_back({"BONEINDEX", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+            oInputElementDescVector.push_back({"BONEINDEX", 1, DXGI_FORMAT_R32G32B32A32_UINT, 0,
                                                D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
                                                0});
 
@@ -1097,6 +1111,27 @@ D3D12_STENCIL_OP D3DRender::D3DMaterialManager::ConvertToD3DStencilOP(Render::ES
 Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::CreateMasterRootSignature()
 {
 
+    // Root Signature와 별도의 하드코딩 테이블이 어긋나지 않도록 각 root parameter를 정의하는
+    // 같은 함수에서 semantic/register/root binding 계약을 함께 구성한다.
+    Render::MaterialBindingRecordTable bindingRecordTable;
+    auto registerBinding = [&bindingRecordTable](Render::EMasterRootBindingSemantic semantic,
+                                                 uint32_t registerIndex, uint32_t registerSpace,
+                                                 Render::EShaderResourceType resourceType,
+                                                 uint32_t rootParameterIndex,
+                                                 Render::ERootBindingMode bindingMode)
+    {
+        Render::MaterialBindingRecord record;
+        record.mShaderBinding.mRegisterIndex = registerIndex;
+        record.mShaderBinding.mRegisterSpace = registerSpace;
+        record.mShaderBinding.mResourceType = resourceType;
+        record.mRootBinding.mRootParameterIndex = rootParameterIndex;
+        record.mRootBinding.mDescriptorOffset = 0;
+        record.mRootBinding.mBindingMode = bindingMode;
+
+        const bool inserted = bindingRecordTable.emplace(semantic, record).second;
+        assert(inserted);
+    };
+
     // 1번 pass buffer
 
     // 2번 material buffer
@@ -1108,24 +1143,32 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
     rootParameterVector[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     rootParameterVector[0].Descriptor.RegisterSpace = 0;
     rootParameterVector[0].Descriptor.ShaderRegister = 0;
+    registerBinding(Render::EMasterRootBindingSemantic::ePassConstantBuffer, 0, 0,
+                    Render::EShaderResourceType::eConstantBuffer, 0, Render::ERootBindingMode::RootCBV);
 
     // 1번 object buffer
     rootParameterVector[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameterVector[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     rootParameterVector[1].Descriptor.RegisterSpace = 0;
     rootParameterVector[1].Descriptor.ShaderRegister = 1;
+    registerBinding(Render::EMasterRootBindingSemantic::eObjectConstantBuffer, 1, 0,
+                    Render::EShaderResourceType::eConstantBuffer, 1, Render::ERootBindingMode::RootCBV);
 
     // 2번 material buffer
     rootParameterVector[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameterVector[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     rootParameterVector[2].Descriptor.RegisterSpace = 0;
     rootParameterVector[2].Descriptor.ShaderRegister = 2;
+    registerBinding(Render::EMasterRootBindingSemantic::eMaterialConstantBuffer, 2, 0,
+                    Render::EShaderResourceType::eConstantBuffer, 2, Render::ERootBindingMode::RootCBV);
 
     // 3번 light structured buffer
     rootParameterVector[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
     rootParameterVector[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     rootParameterVector[3].Descriptor.RegisterSpace = 0;
     rootParameterVector[3].Descriptor.ShaderRegister = 0;
+    registerBinding(Render::EMasterRootBindingSemantic::eLightStructuredBuffer, 0, 0,
+                    Render::EShaderResourceType::eStructuredBuffer, 3, Render::ERootBindingMode::RootSRV);
 
     // 4 ~ 7번까지 tex
     D3D12_DESCRIPTOR_RANGE texDescriptorRange[MAX_TEXTURE_SLOT];
@@ -1148,6 +1191,28 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
         parameterIndex += 1;
     }
 
+    registerBinding(Render::EMasterRootBindingSemantic::eAlbedoTexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eNormalTexture, 2, 0,
+                    Render::EShaderResourceType::eTexture, 5, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eShadowMapTexture, 3, 0,
+                    Render::EShaderResourceType::eTexture, 6, Render::ERootBindingMode::DescriptorTable);
+
+    // 각 pass는 같은 Master Root Signature 슬롯을 서로 다른 의미로 사용한다. Frontend가 물리 슬롯을
+    // 알지 않도록 pass별 semantic을 동일한 register/root parameter 계약에 별칭으로 등록한다.
+    registerBinding(Render::EMasterRootBindingSemantic::eEditorOverlayTexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eBillboardTexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eUITexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eSkyTexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::ePostProcessInputTexture, 1, 0,
+                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::ePostProcessSecondaryTexture, 2, 0,
+                    Render::EShaderResourceType::eTexture, 5, Render::ERootBindingMode::DescriptorTable);
+
     int parameterOffset = 4 + MAX_TEXTURE_SLOT + 1;
     // 8번 ~ 10번까지 structuredBuffer
     for (int i = 0; i < 3; ++i)
@@ -1160,6 +1225,12 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
         parameterIndex++;
         shaderRegisterOffset++;
     }
+
+    // 첫 번째 object structured-buffer 슬롯(t5/root parameter 8)을 Main/Shadow skin palette가 사용한다.
+    registerBinding(Render::EMasterRootBindingSemantic::eSkinPaletteStructuredBuffer, 5, 0,
+                    Render::EShaderResourceType::eStructuredBuffer, 8, Render::ERootBindingMode::RootSRV);
+    registerBinding(Render::EMasterRootBindingSemantic::eBillboardObjectStructuredBuffer, 5, 0,
+                    Render::EShaderResourceType::eStructuredBuffer, 8, Render::ERootBindingMode::RootSRV);
 
     // TODO 함수로 분리하기 정적샘플러 생성
     //  정적 샘플러 사용
@@ -1235,6 +1306,9 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
         OutputDebugStringA(error);
         return nullptr;
     }
+
+    // Root Signature 생성이 완료된 경우에만 조회 테이블도 공개하여 불완전한 계약 사용을 막는다.
+    mMasterBindingRecordTable = std::move(bindingRecordTable);
 
     return rootSignature;
 }
@@ -1388,17 +1462,35 @@ Microsoft::WRL::ComPtr<ID3DBlob> D3DRender::D3DMaterialManager::CompileHLSL(cons
     uint8_t *pShader = shaderInfo.mShadeCode;
     size_t shaderSize = shaderInfo.mShaderCodeSize;
 
-    HRESULT ret = D3DCompile(pShader, shaderSize, nullptr, nullptr, nullptr, shaderInfo.mEntryPoint.c_str(),
+    // D3DCompile은 배열 끝의 null sentinel을 요구한다. 문자열은 shaderInfo가 컴파일 동안 소유한다.
+    std::vector<D3D_SHADER_MACRO> shaderMacros;
+    const D3D_SHADER_MACRO *shaderMacroData = nullptr;
+    if (shaderInfo.mShaderMacros.empty() == false)
+    {
+        shaderMacros.reserve(shaderInfo.mShaderMacros.size() + 1);
+        for (const Render::ShaderMacroDefinition &macro : shaderInfo.mShaderMacros)
+            shaderMacros.push_back({macro.mMacro.c_str(), macro.mValue.c_str()});
+        shaderMacros.push_back({nullptr, nullptr});
+        shaderMacroData = shaderMacros.data();
+    }
+
+    HRESULT ret = D3DCompile(pShader, shaderSize, nullptr, shaderMacroData, nullptr, shaderInfo.mEntryPoint.c_str(),
                              shaderInfo.mTarget.c_str(), compileFlags, 0, &blob, &errorBlob);
 
     if (FAILED(ret))
     {
-
-        const char *error = (const char *)errorBlob->GetBufferPointer();
-        LOG_MESSAGE_ERROR("ShaderCompile", error);
-        OutputDebugStringA(error);
+        if (errorBlob != nullptr)
+        {
+            const char *error = (const char *)errorBlob->GetBufferPointer();
+            LOG_MESSAGE_ERROR("ShaderCompile", error);
+            OutputDebugStringA(error);
+            errorBlob->Release();
+        }
         return nullptr;
     }
+
+    if (errorBlob != nullptr)
+        errorBlob->Release();
 
     return blob;
 }

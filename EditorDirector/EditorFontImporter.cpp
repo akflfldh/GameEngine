@@ -266,6 +266,7 @@ CoreAsset::ImportPackage Quad::EditorFontImporter::Import(
     for (int i = 0; i < IntermediateAssetVec.size(); ++i)
     {
         importPackage.mInteremdiateAssets[i].mIntermediateAsset = std::move(IntermediateAssetVec[i]);
+        importPackage.mInteremdiateAssets[i].mImportKey = "Font::" + std::to_string(i);
     }
 
     return importPackage;

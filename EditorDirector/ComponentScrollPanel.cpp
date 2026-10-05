@@ -1,4 +1,5 @@
 ﻿#include "ComponentScrollPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/Component.h>
 #include <Core/Entity.h>
 #include <Core/Object.h>
@@ -39,7 +40,7 @@ void ComponentScrollPanel::Initialize(UI::UICanvas *canvas, BaseSelectionManager
     mCanvas = canvas;
     mSelectionManager = selectionManager;
 
-    mScrollBox = canvas->CreateUIElement<UIScrollBox>("ScrollBox");
+    mScrollBox = EditorUIUtility::Create<UIScrollBox>(canvas, "ScrollBox");
     mScrollBox->SetSize(scrollBoxWidth, scrollBoxHeight);
 
     for (int i = 0; i < 10; ++i)
@@ -376,7 +377,7 @@ void ComponentItem::Initialize(UI::UICanvas *canvas, float width, float height)
 
     if (canvas)
     {
-        mUIItem = canvas->CreateUIElement<UIHierarchyItem>("item");
+        mUIItem = EditorUIUtility::Create<UIHierarchyItem>(canvas, "item");
         if (mUIItem)
         {
             mUIItem->SetHeaderHeight(40.0f);

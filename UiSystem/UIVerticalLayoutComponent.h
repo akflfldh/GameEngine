@@ -31,6 +31,7 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIVerticalLayoutComponent : public
 
   protected:
     virtual void OnBegin() override;
+    void SyncChildWidth();
 
   private:
     Core::CallbackID mOwnerElementOnAddedCallbackID;

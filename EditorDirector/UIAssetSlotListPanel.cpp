@@ -1,4 +1,5 @@
 ﻿#include "UIAssetSlotListPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UIAssetSlotPanel.h>
 #include <UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
@@ -23,11 +24,12 @@ void UIAssetSlotListPanel::OnBegin()
 
     SetSize(width, height);
 
-    //  auto buttonBackground = CreateChildUIElement<UI::UIElement>("ButtonBackground");
+    //  auto buttonBackground = EditorUIUtility::Create<UI::UIElement>(this, "ButtonBackground");
     //  buttonBackground->SetSize(width, 40.0f);
 
-    mAddButton = CreateChildUIElement<UI::UIButton>("AddButton");
-    mAddButton->SetSize(30.0f, 30.0f);
+    mAddButton = EditorUIUtility::CreateSmallButton(this, "AddButton");
+    // EditorUIUtility의 기본 높이 유지: mAddButton->SetSize(30.0f, 30.0f);
+    mAddButton->SetWidth(30.0f);
     mAddButton->SetPositionLocal(width - mAddButton->GetWidth() - 10.0f, 5.0f);
     mAddButton->mUIImageComponent->UseTexture();
     mAddButton->mUIImageComponent->SetTexture("Engine/plus");
@@ -78,7 +80,7 @@ void UIAssetSlotListPanel::OnClickedAddButton()
 
 void UIAssetSlotListPanel::AddSlotPanel()
 {
-    UIAssetSlotPanel *slotPanel = CreateChildUIElement<UIAssetSlotPanel>("AssetSlotPanel");
+    UIAssetSlotPanel *slotPanel = EditorUIUtility::Create<UIAssetSlotPanel>(this, "AssetSlotPanel");
     mSlotPanels.push_back(slotPanel);
     slotPanel->mOnDroppedAssetCallbackSystem.Register([this, slotPanel](CoreAsset::AssetID assetID)
                                                       { OnDroppedAssetFileItem(assetID, slotPanel); });

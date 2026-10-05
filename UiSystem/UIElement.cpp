@@ -9,6 +9,9 @@ UI::UIElement::UIElement()
       mKeyboardCapturedComponent(nullptr), mDestCanvas(nullptr), mUseScissorRECT(false), mDeadState(false),
       mIsBegun(false), mOnlyVisible(false)
 {
+    auto size = mTransform.GetSize();
+    mReferenceElementSize.X = size.x;
+    mReferenceElementSize.Y = size.y;
 }
 
 UI::UIElement::UIElement(UIElementID id, const std::string &name)
@@ -20,15 +23,15 @@ UI::UIElement::UIElement(UIElementID id, const std::string &name)
 
 UI::UIElement::~UIElement()
 {
-    /*  std::vector<IUIComponent *> comVector;
+    std::vector<IUIComponent *> comVector;
 
-      comVector.reserve(mComponentContainer.size());
-      for (auto &uiCom : mComponentContainer)
-      {
-          comVector.push_back(uiCom);
-      }*/
+    comVector.reserve(mComponentContainer.size());
+    for (auto &uiCom : mComponentContainer)
+    {
+        comVector.push_back(uiCom);
+    }
 
-    for (auto uiCom : mComponentContainer)
+    for (auto uiCom : comVector)
     {
         ReleaseUIComponent(uiCom->GetComponentName());
     }
@@ -55,7 +58,7 @@ void UI::UIElement::Update(float deltaTime)
     if (!mActiveFlag)
         return;
 
-    UpdatePosPivot();
+    UpdatePosAnchor();
 
     for (auto com : mComponentContainer)
     {
@@ -88,7 +91,8 @@ void UI::UIElement::UpdateVisualStyleIfNeeded()
         if (mDestCanvas == nullptr)
             return;
 
-        const UIControlStyle style = mDestCanvas->GetTheme().GetStyle(mStyleRole);
+        UIControlStyle style = mDestCanvas->GetTheme().GetStyle(mStyleRole);
+        mControlStyleOverride.ApplyTo(style);
 
         EUIVisualState visualState = ResolveVisualState();
         ApplyVisualStyle(style, visualState);
@@ -126,30 +130,47 @@ void UI::UIElement::OnWindowResize(float w, float h)
     if (mParent != nullptr)
         return;
 
-    ApplyPosPivotInParent({w, h});
+    if (UpdateAutoScaledSize())
+    {
+        NotifyTransformChanged(UI::ETransformChangeType::eSize);
+    }
+    ApplyPosAnchorInParent({w, h});
 }
 
 SRECT UI::UIElement::GetScissorRectRegion() const
 {
-    SRECT rect;
+    return mScissorRectRegion;
+}
+
+void UI::UIElement::UpdateScissorRectRegion(const SRECT *parentRect)
+{
+    if (mDeadState)
+        return;
+
     glm::vec2 points[4];
     mTransform.GetQuadWorldPoints(points);
 
-    SRECT parentRect = {points[0].r, points[1].r, points[0].g, points[2].g};
-    if (mParent)
+    SRECT rect = {points[0].r, points[1].r, points[0].g, points[2].g};
+    if (parentRect != nullptr)
     {
-        parentRect = mParent->GetScissorRectRegion();
+        // Scissor 적용 여부와 별개로 모든 부모 영역과 교집합을 구하는 기존 규칙을 유지한다.
+        rect.mLeft = std::max(rect.mLeft, parentRect->mLeft);
+        rect.mRight = std::min(rect.mRight, parentRect->mRight);
+        rect.mTop = std::max(rect.mTop, parentRect->mTop);
+        rect.mBottom = std::min(rect.mBottom, parentRect->mBottom);
     }
 
-    rect.mLeft = std::max(points[0].r, parentRect.mLeft);
-    rect.mRight = std::min(points[1].r, parentRect.mRight);
-    rect.mTop = std::max(points[0].g, parentRect.mTop);
-    rect.mBottom = std::min(points[2].g, parentRect.mBottom);
-
     if (rect.mLeft >= rect.mRight || rect.mTop >= rect.mBottom)
-        return {0, 0, 0, 0};
+        rect = {0, 0, 0, 0};
 
-    return rect;
+    mScissorRectRegion = rect;
+    // 빈 영역도 자손에게 전달해 이전 프레임의 유효 영역이 남지 않도록 한다.
+    // 비활성 요소도 캐시는 갱신하며 실제 렌더 제외 여부는 기존 proxy 수집 경로에 맡긴다.
+    for (UIElement *child : mChildVector)
+    {
+        if (child != nullptr && !child->GetDeadState())
+            child->UpdateScissorRectRegion(&mScissorRectRegion);
+    }
 }
 
 void UI::UIElement::AddChildInternal(UIElement *child)
@@ -326,6 +347,39 @@ void UI::UIElement::SetDeadState()
     mDeadState = true;
 }
 
+bool UI::UIElement::UpdateAutoScaledSize()
+{
+
+    if (mAutoSizeFlag == false)
+        return false;
+
+    CoreMath::Vector2 parentReferenceSize;
+    CoreMath::Vector2 parentActualSize;
+    auto parent = GetParent();
+    if (parent)
+    {
+        parentReferenceSize = parent->GetReferenceSize();
+        parentActualSize = parent->GetSize();
+    }
+    else
+    {
+        auto canvas = GetDestCanvas();
+
+        parentReferenceSize = {1920, 1080};
+        parentActualSize = parentReferenceSize;
+        if (canvas)
+            parentActualSize = canvas->GetWindowSize();
+    }
+
+    float minScale = std::min(parentActualSize.X / parentReferenceSize.X, parentActualSize.Y / parentReferenceSize.Y);
+    CoreMath::Vector2 size = mReferenceElementSize * minScale;
+    mTransform.SetSize(size.X, size.Y);
+
+    OnUpdatedAutoSize(minScale);
+
+    return true;
+}
+
 void UI::UIElement::SetKeyboardCaptureScope(UIElement *scope)
 {
 
@@ -362,7 +416,6 @@ void UI::UIElement::RefreshStyle()
 
     EUIVisualState visualState = ResolveVisualState();
 
-    ApplyLayoutStyle(style);
     ApplyVisualStyle(style, visualState);
 }
 
@@ -370,12 +423,6 @@ void UI::UIElement::DirtyVisualStyle()
 {
 
     mVisualStyleDirty = true;
-}
-
-void UI::UIElement::DirtyLayoutStyle()
-{
-
-    mLayoutStyleDirty = true;
 }
 
 void UI::UIElement::SetStyleOverride(const UIControlStyleOverride &styleOverride)
@@ -388,7 +435,6 @@ void UI::UIElement::SetStyleOverride(const UIControlStyleOverride &styleOverride
 
     EUIVisualState visualState = ResolveVisualState();
 
-    ApplyLayoutStyle(style);
     ApplyVisualStyle(style, visualState);
 }
 
@@ -400,11 +446,21 @@ void UI::UIElement::ClearStyleOverride()
     mControlStyleOverride.mPressedColor.reset();
     mControlStyleOverride.mDisabledColor.reset();
     mControlStyleOverride.mSelectedColor.reset();
+}
 
-    mControlStyleOverride.mFontSize.reset();
-    mControlStyleOverride.mHeight.reset();
-    mControlStyleOverride.mLeftPadding.reset();
-    mControlStyleOverride.mTopPadding.reset();
+void UI::UIElement::SetAutoSizeFlag(bool flag)
+{
+    mAutoSizeFlag = flag;
+
+    if (UpdateAutoScaledSize())
+    {
+        NotifyTransformChanged(UI::ETransformChangeType::eSize);
+    }
+}
+
+bool UI::UIElement::GetAutoSizeFlag() const
+{
+    return mAutoSizeFlag;
 }
 
 UI::UIElement *UI::UIElement::GetKeyboardCaptureScope() const
@@ -727,9 +783,15 @@ void UI::UIElement::UpdateComponentMouseState(const Quad::RawInputData &inputDat
         if (inputData.mInputState & EInputState::eMouseMove)
             mMouseCapturedComponent->OnMouseMove(inputData, x, y);
 
-        if (hitNum == 0)
+        if (hitNum > 0)
         {
-            mMouseCapturedComponent->OnReleaseHover();
+            if (!mMouseCapturedComponent->IsHovered())
+                mMouseCapturedComponent->OnHover(x, y);
+        }
+        else if (hitNum == 0)
+        {
+            if (mMouseCapturedComponent->IsHovered())
+                mMouseCapturedComponent->OnReleaseHover();
         }
 
         return;
@@ -889,27 +951,45 @@ void UI::UIElement::TranslateLocal(const glm::vec2 &shift)
 
 void UI::UIElement::SetSize(const glm::vec2 &size)
 {
+    mReferenceElementSize = {size.x, size.y};
 
-    mTransform.SetSize(size);
+    if (mAutoSizeFlag == false)
+    {
+        mTransform.SetSize(size);
+    }
+    else
+    {
+        auto canvas = GetDestCanvas();
+
+        if (canvas)
+        {
+            auto size = canvas->GetWindowSize();
+            UpdateAutoScaledSize();
+        }
+    }
 
     NotifyTransformChanged(ETransformChangeType::eSize);
 }
+
 void UI::UIElement::SetSize(float w, float h)
 {
 
-    mTransform.SetSize(w, h);
-    NotifyTransformChanged(ETransformChangeType::eSize);
+    SetSize({w, h});
 }
 void UI::UIElement::SetHeight(float h)
 {
 
-    mTransform.SetHeight(h);
-    NotifyTransformChanged(ETransformChangeType::eSize);
+    SetSize({mReferenceElementSize.X, h});
+
+    // mTransform.SetHeight(h);
+    // NotifyTransformChanged(ETransformChangeType::eSize);
 }
 void UI::UIElement::SetWidth(float w)
 {
-    mTransform.SetWidth(w);
-    NotifyTransformChanged(ETransformChangeType::eSize);
+    SetSize({w, mReferenceElementSize.Y});
+
+    // mTransform.SetWidth(w);
+    // NotifyTransformChanged(ETransformChangeType::eSize);
 }
 
 int UI::UIElement::GetWidth() const
@@ -929,6 +1009,11 @@ CoreMath::Vector2 UI::UIElement::GetSize() const
     return {size.x, size.y};
 }
 
+CoreMath::Vector2 UI::UIElement::GetReferenceSize() const
+{
+    return mReferenceElementSize;
+}
+
 void UI::UIElement::NotifyTransformChanged(ETransformChangeType type)
 {
     this->OnTransformChanged(type);
@@ -940,9 +1025,9 @@ void UI::UIElement::NotifyTransformChanged(ETransformChangeType type)
     if (type == ETransformChangeType::eSize || type == ETransformChangeType::eAll)
     {
 
-        if (GetPosPivotActive())
+        if (GetPosAnchorActive())
         {
-            mPosPviotContext.mUpdateDirty = true;
+            mPosAnchorContext.mUpdateDirty = true;
         }
 
         for (auto child : mChildVector)
@@ -964,122 +1049,134 @@ void UI::UIElement::BroadCastChangedSize()
     }
 }
 
-void UI::UIElement::SetPosPivotActive(bool flag)
+void UI::UIElement::SetPosAnchorActive(bool flag)
 {
-
-    mPosPviotContext.mPosPivotActive = flag;
+    mPosAnchorContext.mPosAnchorActive = flag;
+    mPosAnchorContext.mUpdateDirty = true;
 }
 
-bool UI::UIElement::GetPosPivotActive() const
+bool UI::UIElement::GetPosAnchorActive() const
 {
-    return mPosPviotContext.mPosPivotActive;
+    return mPosAnchorContext.mPosAnchorActive;
 }
 
-void UI::UIElement::SetHorizontalPivotSide(EUIPosPivotHorizontal pivotSide)
+void UI::UIElement::SetAnchor(const CoreMath::Vector2 &anchor)
 {
-
-    mPosPviotContext.mPivotHorizontal = pivotSide;
-
-    if (mPosPviotContext.mPivotHorizontal != EUIPosPivotHorizontal::eNone)
-    {
-        mPosPviotContext.mPosPivotActive = true;
-        mPosPviotContext.mUpdateDirty = true;
-    }
+    SetHorizontalAnchor(anchor.X);
+    SetVerticalAnchor(anchor.Y);
 }
 
-void UI::UIElement::SetVerticalPivotSide(EUIPosPivotVertical pivotSide)
+void UI::UIElement::SetHorizontalAnchor(float anchor)
 {
-
-    mPosPviotContext.mPivotVertical = pivotSide;
-    if (mPosPviotContext.mPivotVertical != EUIPosPivotVertical::eNone)
-    {
-        mPosPviotContext.mPosPivotActive = true;
-        mPosPviotContext.mUpdateDirty = true;
-    }
+    mPosAnchorContext.mAnchor.X = std::clamp(anchor, 0.0f, 1.0f);
+    mPosAnchorContext.mHorizontalAnchorActive = true;
+    mPosAnchorContext.mPosAnchorActive = true;
+    mPosAnchorContext.mUpdateDirty = true;
 }
 
-void UI::UIElement::SetHorizontalPivotOffset(float offset)
+void UI::UIElement::SetVerticalAnchor(float anchor)
 {
-
-    mPosPviotContext.mHorizontalOffset = offset;
-    mPosPviotContext.mUpdateDirty = true;
+    mPosAnchorContext.mAnchor.Y = std::clamp(anchor, 0.0f, 1.0f);
+    mPosAnchorContext.mVerticalAnchorActive = true;
+    mPosAnchorContext.mPosAnchorActive = true;
+    mPosAnchorContext.mUpdateDirty = true;
 }
 
-void UI::UIElement::SetVerticalPivotOffset(float offset)
+void UI::UIElement::SetPivot(const CoreMath::Vector2 &pivot)
+{
+    SetHorizontalPivot(pivot.X);
+    SetVerticalPivot(pivot.Y);
+}
+
+void UI::UIElement::SetHorizontalPivot(float pivot)
 {
 
-    mPosPviotContext.mVerticalOffset = offset;
-    mPosPviotContext.mUpdateDirty = true;
+    mPosAnchorContext.mPivot.X = std::clamp(pivot, 0.0f, 1.0f);
+    mPosAnchorContext.mUpdateDirty = true;
+}
+
+void UI::UIElement::SetVerticalPivot(float pivot)
+{
+    mPosAnchorContext.mPivot.Y = std::clamp(pivot, 0.0f, 1.0f);
+    mPosAnchorContext.mUpdateDirty = true;
+}
+
+void UI::UIElement::SetOffset(const CoreMath::Vector2 &offset)
+{
+    SetHorizontalOffset(offset.X);
+    SetVerticalOffset(offset.Y);
+}
+
+void UI::UIElement::SetHorizontalOffset(float offset)
+{
+    mPosAnchorContext.mOffset.X = offset;
+    mPosAnchorContext.mUpdateDirty = true;
+}
+
+void UI::UIElement::SetVerticalOffset(float offset)
+{
+    mPosAnchorContext.mOffset.Y = offset;
+    mPosAnchorContext.mUpdateDirty = true;
 }
 
 void UI::UIElement::OnParentSizeChanged()
 {
-    mPosPviotContext.mUpdateDirty = true;
-    UpdatePosPivot();
-}
-
-void UI::UIElement::UpdatePosPivot()
-{
-    if (GetPosPivotActive() == false || (mPosPviotContext.mUpdateDirty == false))
-        return;
-
-    mPosPviotContext.mUpdateDirty = false;
-
-    CoreMath::Vector2 size;
-
-    if (mParent == nullptr)
+    mPosAnchorContext.mUpdateDirty = true;
+    auto parent = GetParent();
+    if (parent && mAutoSizeFlag)
     {
-        if (mDestCanvas)
+        if (UpdateAutoScaledSize())
         {
-            size = mDestCanvas->GetWindowSize();
+            NotifyTransformChanged(UI::ETransformChangeType::eSize);
         }
     }
-    else
+    // AutoSize 적용 이후 최종 위치를 계산하여 새 크기를 기준으로 자식을 배치한다.
+    UpdatePosAnchor();
+}
+
+void UI::UIElement::UpdatePosAnchor()
+{
+    if (!GetPosAnchorActive() || !mPosAnchorContext.mUpdateDirty)
+        return;
+
+    CoreMath::Vector2 size;
+    if (mParent)
     {
         size = mParent->GetSize();
     }
+    else if (mDestCanvas)
+    {
+        size = mDestCanvas->GetWindowSize();
+    }
+    else
+    {
+        // Canvas 연결 전에는 기준 영역이 없으므로 다음 갱신에서 다시 시도한다.
+        return;
+    }
 
-    ApplyPosPivotInParent(size);
+    mPosAnchorContext.mUpdateDirty = false;
+    ApplyPosAnchorInParent(size);
 }
 
-void UI::UIElement::ApplyPosPivotInParent(const CoreMath::Vector2 &parentSize)
+void UI::UIElement::ApplyPosAnchorInParent(const CoreMath::Vector2 &parentSize)
 {
-
-    float width = mTransform.GetSize().x;
-    float height = mTransform.GetSize().y;
+    if (!GetPosAnchorActive())
+        return;
 
     float x = mTransform.GetLocalPosition().x;
     float y = mTransform.GetLocalPosition().y;
 
-    switch (mPosPviotContext.mPivotHorizontal)
-    {
-    case EUIPosPivotHorizontal::eLeft:
-    {
-        x = mPosPviotContext.mHorizontalOffset;
-    }
-    break;
-    case EUIPosPivotHorizontal::eRight:
-    {
-        x = parentSize.X - width - mPosPviotContext.mHorizontalOffset;
-    }
-    break;
-    }
+    // 자체 Pivot은 현재 (0, 0)이므로 좌상단을 부모의 비율 기준점 + 절대 Offset에 배치한다.
+    // 비활성 축은 기존 수동/레이아웃 위치를 보존한다.
+    if (mPosAnchorContext.mHorizontalAnchorActive)
+        x = parentSize.X * mPosAnchorContext.mAnchor.X - GetWidth() * mPosAnchorContext.mPivot.X +
+            mPosAnchorContext.mOffset.X;
+    if (mPosAnchorContext.mVerticalAnchorActive)
+        y = parentSize.Y * mPosAnchorContext.mAnchor.Y - GetHeight() * mPosAnchorContext.mPivot.Y +
+            mPosAnchorContext.mOffset.Y;
 
-    switch (mPosPviotContext.mPivotVertical)
-    {
-    case EUIPosPivotVertical::eTop:
-    {
-        y = mPosPviotContext.mVerticalOffset;
-    }
-    break;
-    case EUIPosPivotVertical::eBottom:
-    {
-        y = parentSize.Y - mPosPviotContext.mVerticalOffset - height;
-    }
-    break;
-    }
-
-    SetPositionLocal(x, y);
+    if (x != mTransform.GetLocalPosition().x || y != mTransform.GetLocalPosition().y)
+        SetPositionLocal(x, y);
 }
 
 #pragma endregion
@@ -1106,15 +1203,12 @@ size_t UI::UIElement::GetComponentsNum(const char *className) const
 
 void UI::UIElement::ApplyVisualStyle(const UI::UIControlStyle &style, EUIVisualState visualState) {}
 
-void UI::UIElement::ApplyLayoutStyle(const UIControlStyle &style)
-{
-    SetHeight(style.mHeight);
-}
-
 UI::EUIVisualState UI::UIElement::ResolveVisualState() const
 {
     return EUIVisualState::eNormal;
 }
+
+void UI::UIElement::OnUpdatedAutoSize(float scale) {}
 
 size_t UI::UIElement::GetComponentsInner(IUIComponent **comArray, size_t maxCount, const char *className)
 {

@@ -19,6 +19,11 @@ template <typename T, typename Valid = void> struct CheckInstancePtr
 // 이런 콜백들의 리턴은 무조건 void
 // 생성자에서 바인딩하면 X
 // Begin 이후부터 바인딩 해야한다 .
+// 현재 내부 동기화는 없다. 서로 다른 스레드에서 등록·해제·실행이 겹치면
+// 리스너 목록과 정리 목록을 함께 보호하거나, 이 작업들을 단일 스레드로 제한해야 한다.
+// 등록·해제에만 mutex를 적용하는 것으로는 실행과의 동시 접근을 막을 수 없다.
+// 동기화를 추가해도 잠금을 유지한 채 콜백을 호출하면, 콜백에서 같은 잠금을 요구하는
+// 등록·해제·재실행 또는 Logger 재호출로 교착될 수 있다. 콜백 재진입과 잠금 순서도 고려해야 한다.
 
 template <typename... Args> class MultiCallbackSystem
 {

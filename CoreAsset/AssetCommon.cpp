@@ -24,6 +24,7 @@ const char *CoreAsset::GetAssetFileExtension(EAssetType assetType)
     case EAssetType::eMaterial:
     case EAssetType::eTexture:
     case EAssetType::eAnimation:
+    case EAssetType::eSkeleton:
     case EAssetType::eSound:
         return GetAssetFileExtension();
     case EAssetType::eMap:

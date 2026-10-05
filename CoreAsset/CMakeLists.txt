@@ -1,4 +1,18 @@
 ﻿add_library(CoreAsset SHARED
+AnimationTypes.h
+AnimationTypes.cpp
+AnimationAssetFactory.h
+AnimationAssetFactory.cpp
+AnimationAssetLoader.h
+AnimationAssetLoader.cpp
+AnimationAssetStorer.h
+AnimationAssetStorer.cpp
+AnimationClip.h
+AnimationClip.cpp
+Skeleton.h
+Skeleton.cpp
+SkinningMesh.h
+SkinningMesh.cpp
 Asset.h 
 AssetType.h
 AssetCommon.h 

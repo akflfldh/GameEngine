@@ -1,4 +1,5 @@
 ﻿#include <Core/Map.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/MapPlaySettingPanel.h>
 #include <EditorDirector/UISearchSelectBox.h>
 #include <UiSystem/UIButton.h>
@@ -162,14 +163,14 @@ void MapPlaySettingPanel::CreatePlayerObjectUI(float posY)
 {
     float posX = 0;
 
-    auto objectPlayerTag = CreateChildUIElement<UI::UIText>("ObjectPlayerTag");
+    auto objectPlayerTag = EditorUIUtility::CreateLabel(this, "ObjectPlayerTag");
     // objectPlayerTag->SetFontSize(20.0F);
     objectPlayerTag->SetText("플레이어 오브젝트");
     posX = 10;
 
     objectPlayerTag->SetPositionLocal(posX, posY);
 
-    mSearchObjectSelectBox = CreateChildUIElement<UISearchSelectBox>("searchBox");
+    mSearchObjectSelectBox = EditorUIUtility::Create<UISearchSelectBox>(this, "searchBox");
     mSearchObjectSelectBox->SetWidth(200.0f);
     mSearchObjectSelectBox->mOnSelectedItemChangedCallbackSystem.Register([this](uint32_t itemID)
                                                                           { SetSelectedObjectSource(itemID); });
@@ -185,14 +186,14 @@ void MapPlaySettingPanel::CreatePlayerControllerUI(float posY)
 {
 
     float posX = 0;
-    auto tag = CreateChildUIElement<UI::UIText>("PlayerControllerTag");
+    auto tag = EditorUIUtility::CreateLabel(this, "PlayerControllerTag");
     //  tag->SetFontSize(20.0F);
     tag->SetText("플레이어 컨트롤러");
     posX = 10;
 
     tag->SetPositionLocal(posX, posY);
 
-    mSearchControllerSelectBox = CreateChildUIElement<UISearchSelectBox>("PlayerControllerSearchBox");
+    mSearchControllerSelectBox = EditorUIUtility::Create<UISearchSelectBox>(this, "PlayerControllerSearchBox");
     mSearchControllerSelectBox->SetWidth(200.0f);
     mSearchControllerSelectBox->mOnSelectedItemChangedCallbackSystem.Register([this](uint32_t itemID)
                                                                               { SetSelectedControllerSource(itemID); });
@@ -206,13 +207,14 @@ void MapPlaySettingPanel::CreatePlayerControllerUI(float posY)
 void MapPlaySettingPanel::CreateTitle(float posY)
 {
 
-    auto titleText = CreateChildUIElement<UI::UIText>("Title");
+    auto titleText = EditorUIUtility::CreateLabel(this, "Title");
     titleText->SetText("게임모드");
     titleText->SetPositionLocal(10, posY);
-    titleText->SetTextColor({1, 1, 1});
+    // EditorUIUtility의 기본 색상 유지: titleText->SetTextColor({1, 1, 1});
 
-    auto exitButton = CreateChildUIElement<UI::UIButton>("ExitButton");
-    exitButton->SetSize(40, 40);
+    auto exitButton = EditorUIUtility::CreateSmallButton(this, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: exitButton->SetSize(40, 40);
+    exitButton->SetWidth(40);
     exitButton->mUIImageComponent->UseTexture();
     exitButton->mUIImageComponent->SetTexture("Engine/Exit");
 

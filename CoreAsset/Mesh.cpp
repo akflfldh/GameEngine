@@ -100,3 +100,27 @@ CORE_ASSET_API Arch &CoreAsset::operator<<(Arch &arch, SubMesh &subMesh)
     // TODO: 여기에 return 문을 삽입합니다.
     return arch;
 }
+
+bool CoreAsset::Mesh::CopyDataFrom(const Asset &source, std::string *failureReason)
+{
+    const Mesh *sourceMesh = dynamic_cast<const Mesh *>(&source);
+    if (!sourceMesh || GetType() != source.GetType())
+    {
+        if (failureReason)
+            *failureReason = "같은 타입의 Mesh 에셋이 필요합니다.";
+        return false;
+    }
+    // 헤더만 로드된 메시를 복제하면 새 ID에는 읽어 올 원본 raw 파일이 없어 데이터가 유실된다.
+    if (sourceMesh->mIndexVector.size() != sourceMesh->mIndexNum)
+    {
+        if (failureReason)
+            *failureReason = "Mesh의 index raw data를 먼저 로드해야 합니다.";
+        return false;
+    }
+    mIndexVector = sourceMesh->mIndexVector;
+    mIndexNum = sourceMesh->mIndexNum;
+    // SubMesh의 MaterialID는 같은 외부 에셋 참조를 유지한다.
+    mSubMeshVector = sourceMesh->mSubMeshVector;
+    mAABB = sourceMesh->mAABB;
+    return Asset::CopyDataFrom(source, failureReason);
+}

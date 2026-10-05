@@ -8,7 +8,7 @@
 #include <EditorDirector/EditorSceneController.h>
 #include <EditorDirector/EditorSceneManager.h>
 
-EditorEditMode::EditorEditMode() : mShowDebugCollider(false)
+EditorEditMode::EditorEditMode() : mShowDebugCollider(false), mIsBegunEditorMap(false)
 {
     mEditorMap = new Map();
     // Quad::EditorSceneManager::GetInstance()->GetUserWorld()->Register(mEditorMap);
@@ -16,15 +16,45 @@ EditorEditMode::EditorEditMode() : mShowDebugCollider(false)
 
 EditorEditMode::~EditorEditMode() {}
 
-void EditorEditMode::Start(Map *map)
+void EditorEditMode::StartPlay()
+{
+    // 편집 모드에는 GameInstance를 소유하는 플레이 세션이 없다.
+}
+
+void EditorEditMode::BeginMap(Map *map)
 {
     if (map == nullptr)
         return;
 
-    InitializeGizmo(mEditorMap);
-    InitializeVisualizerManager(mEditorMap);
-    mEditorMap->Start();
+    // 맵 전환은 렌더링 목록을 새 맵으로 교체하므로, 기즈모/visualizer용 맵을 명시적으로 함께 렌더링한다.
+    if (World *world = map->GetWorld())
+        world->AddRenderingMap(mEditorMap);
+
+    if (mIsBegunEditorMap == false)
+    {
+        InitializeGizmo(mEditorMap);
+        InitializeVisualizerManager(mEditorMap);
+        mEditorMap->Start();
+        mIsBegunEditorMap = true;
+    }
     map->Start();
+}
+
+void EditorEditMode::EndMap(Map *)
+{
+    // 편집 맵은 플레이를 시작하지 않았으므로 EndPlay로 원본 엔티티를 정리하지 않는다.
+    // 이전 맵의 카메라/컨트롤러 참조만 해제하고, 보조 맵과 기즈모는 다음 편집 맵에서도 유지한다.
+    mEditorController = nullptr;
+    mEditorCamearComponent = nullptr;
+    if (mIsBegunEditorMap)
+    {
+        GetTransformGizmo().SetActive(false);
+    }
+}
+
+void EditorEditMode::EndPlay(Map *)
+{
+    // 편집 모드는 플레이 세션을 시작하지 않으므로 편집 중인 맵과 UI를 유지한다.
 }
 
 void EditorEditMode::Update(Map *map, float DeltaTime)

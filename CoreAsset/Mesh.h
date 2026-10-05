@@ -20,7 +20,6 @@ class CORE_ASSET_API Mesh : public Asset
     std::vector<SubMesh> &GetSubMeshVector();
     void SetSubMeshVector(const std::vector<SubMesh> &vec);
     void SetSubMeshVector(std::vector<SubMesh> &&vec);
-
     void SetSubMeshMaterial(AssetID materialID, unsigned int subMeshIndex = 0);
 
     uint64_t GetIndexNum() const;
@@ -32,6 +31,14 @@ class CORE_ASSET_API Mesh : public Asset
     void SetIndexVector(const std::vector<MeshIndexType> &vec);
 
     const CoreMath::AABB &GetAABB() const;
+
+    virtual void *GetVertexData() = 0;
+    virtual uint64_t GetVertexNum() const = 0;
+
+    // 세부 vertex 한 요소 크기
+    virtual uint32_t GetVertexStride() const = 0;
+
+    virtual bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr) override;
 
   protected:
     void SetAABB(const CoreMath::AABB &aabb);

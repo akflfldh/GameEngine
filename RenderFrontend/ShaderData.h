@@ -20,6 +20,10 @@ cbuffer ObjectBuffer :register(b1)
 {
     float4x4 gWorld;
     float4x4 gWorldInvTrans;
+
+    uint gPaletteOffset = 0;
+    uint gPaletteCount = 0;
+
 };
 
 cbuffer MaterialBuffer :register(b2)
@@ -53,6 +57,10 @@ Texture2D _TexMap :register(t1);
 Texture2D NormalMap :register(t2);
 Texture2D gShadowMap :register(t3);
 
+#if defined(ENABLE_SKINNING)
+StructuredBuffer<float4x4> gSkinPalette : register(t5);
+#endif
+
 SamplerState _LinearSampler :register(s0);
 SamplerComparisonState _ShadowSampler : register(s2);
 
@@ -63,6 +71,12 @@ struct VertexIn
     float2 mTex : TEX;  
     float3 mNormal : NORMAL;
     float4 mTangent : TANGENT;
+#if defined(ENABLE_SKINNING)
+    uint4 mJointIndices0 : BONEINDEX0;
+    uint4 mJointIndices1 : BONEINDEX1;
+    float4 mJointWeights0 : BONEWEIGHT0;
+    float4 mJointWeights1 : BONEWEIGHT1;
+#endif
 };
 
 
@@ -212,7 +226,8 @@ float3 SpecularBRDF(float3 light, float3 normal, float3 toEye,float roughness ,f
     */
 
     
-    float alpha = roughness * roughness;
+    
+    float alpha = max( roughness * roughness , 0.01f);    //roghness가 0이면 Nan문제가생김.
     float3 halfVector=  normalize(light+toEye);
 
   //  float3 F =  GetFresnel(fresnel0,halfVector, light);
@@ -375,13 +390,35 @@ float3 ComputeLighting(LightData light,float3 albedo ,  float3 posW, float3 norm
 VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
-    float4 posW = mul(gWorld,float4(vin.mPosL,1.0F));
+    float4 positionLocal = float4(vin.mPosL, 1.0f);
+    float3 normalLocal = vin.mNormal;
+    float3 tangentLocal = vin.mTangent.xyz;
+
+#if defined(ENABLE_SKINNING)
+    // Palette는 mesh bind object space에서 현재 skeleton object space로 변환한다.
+    // Component world는 아래에서 한 번만 적용하며, V1은 positive uniform joint scale만 지원한다.
+    float4x4 skinMatrix =
+        gSkinPalette[vin.mJointIndices0.x+gPaletteOffset] * vin.mJointWeights0.x +
+        gSkinPalette[vin.mJointIndices0.y+gPaletteOffset] * vin.mJointWeights0.y +
+        gSkinPalette[vin.mJointIndices0.z+gPaletteOffset] * vin.mJointWeights0.z +
+        gSkinPalette[vin.mJointIndices0.w+gPaletteOffset] * vin.mJointWeights0.w +
+        gSkinPalette[vin.mJointIndices1.x+gPaletteOffset] * vin.mJointWeights1.x +
+        gSkinPalette[vin.mJointIndices1.y+gPaletteOffset] * vin.mJointWeights1.y +
+        gSkinPalette[vin.mJointIndices1.z+gPaletteOffset] * vin.mJointWeights1.z +
+        gSkinPalette[vin.mJointIndices1.w+gPaletteOffset] * vin.mJointWeights1.w;
+
+    positionLocal = mul(skinMatrix, positionLocal);
+    normalLocal = mul((float3x3)skinMatrix, normalLocal);
+    tangentLocal = mul((float3x3)skinMatrix, tangentLocal);
+#endif
+
+    float4 posW = mul(gWorld, positionLocal);
     vout.mPosW = posW.xyz;
     vout.mPosH =mul(posW,gViewProj);
 
     vout.mTex = vin.mTex;
-    vout.mNormal = mul(gWorldInvTrans, float4(vin.mNormal,0.0f));
-    vout.mTangent = mul(gWorldInvTrans,float4(vin.mTangent.xyz,0.0f));
+    vout.mNormal = mul(gWorldInvTrans, float4(normalLocal,0.0f));
+    vout.mTangent = mul(gWorldInvTrans,float4(tangentLocal,0.0f));
     vout.mTangent.w = vin.mTangent.w;
     vout.mShadowPosH = mul(posW,mLightViewProj);
     
@@ -490,7 +527,14 @@ cbuffer ObjectBuffer :register(b1)
 {
     float4x4 gWorld;
     float4 gOutlineColor;
+    uint gPaletteOffset;
+    uint gPaletteCount;
+    uint2 gPadding;
 };
+
+#if defined(ENABLE_SKINNING)
+StructuredBuffer<float4x4> gSkinPalette : register(t5);
+#endif
 
 
 struct VertexIn
@@ -499,6 +543,12 @@ struct VertexIn
     float2 mTex : TEX;  
     float3 mNormal : NORMAL;   
     float4 mTagent :TANGENT;
+#if defined(ENABLE_SKINNING)
+    uint4 mJointIndices0 : BONEINDEX0;
+    uint4 mJointIndices1 : BONEINDEX1;
+    float4 mJointWeights0 : BONEWEIGHT0;
+    float4 mJointWeights1 : BONEWEIGHT1;
+#endif
 };
 
 
@@ -507,12 +557,30 @@ struct VertexOut
     float4 mPosH :SV_POSITION;
 };
 
+float4 GetOutlinePositionLocal(VertexIn vin)
+{
+    float4 positionLocal = float4(vin.mPosL, 1.0f);
+#if defined(ENABLE_SKINNING)
+    // Main pass와 동일한 palette를 먼저 적용해야 stencil과 확대 외곽선이 현재 pose를 따른다.
+    float4x4 skinMatrix =
+        gSkinPalette[vin.mJointIndices0.x + gPaletteOffset] * vin.mJointWeights0.x +
+        gSkinPalette[vin.mJointIndices0.y + gPaletteOffset] * vin.mJointWeights0.y +
+        gSkinPalette[vin.mJointIndices0.z + gPaletteOffset] * vin.mJointWeights0.z +
+        gSkinPalette[vin.mJointIndices0.w + gPaletteOffset] * vin.mJointWeights0.w +
+        gSkinPalette[vin.mJointIndices1.x + gPaletteOffset] * vin.mJointWeights1.x +
+        gSkinPalette[vin.mJointIndices1.y + gPaletteOffset] * vin.mJointWeights1.y +
+        gSkinPalette[vin.mJointIndices1.z + gPaletteOffset] * vin.mJointWeights1.z +
+        gSkinPalette[vin.mJointIndices1.w + gPaletteOffset] * vin.mJointWeights1.w;
+    positionLocal = mul(skinMatrix, positionLocal);
+#endif
+    return positionLocal;
+}
+
 
 VertexOut VS_Stencil(VertexIn vin)
 {
      VertexOut vout;
-    float3 scaledPosL= vin.mPosL * 1.0f;
-    float4 posW = mul(gWorld,float4(scaledPosL,1.0F));
+    float4 posW = mul(gWorld, GetOutlinePositionLocal(vin));
     vout.mPosH =mul(posW,gViewProj);
 
     return vout;
@@ -522,7 +590,7 @@ VertexOut VS_Stencil(VertexIn vin)
 VertexOut VS_DrawOutline(VertexIn vin)
 {
     VertexOut vout;
-    float3 scaledPosL= vin.mPosL * 1.03f;
+    float3 scaledPosL= GetOutlinePositionLocal(vin).xyz * 1.03f;
     float4 posW = mul(gWorld,float4(scaledPosL,1.0F));
     vout.mPosH =mul(posW,gViewProj);
 
@@ -1061,11 +1129,24 @@ cbuffer ObjectBuffer : register(b1)
 {
     float4x4 gWorld;
     float4x4 gWorldInvTrans;
+
+    uint gPaletteOffset = 0;
+    uint gPaletteCount = 0;
 };
+
+#if defined(ENABLE_SKINNING)
+StructuredBuffer<float4x4> gSkinPalette : register(t5);
+#endif
 
 struct VertexIn
 {
     float3 mPosL : POSITION;
+#if defined(ENABLE_SKINNING)
+    uint4 mJointIndices0 : BONEINDEX0;
+    uint4 mJointIndices1 : BONEINDEX1;
+    float4 mJointWeights0 : BONEWEIGHT0;
+    float4 mJointWeights1 : BONEWEIGHT1;
+#endif
 };
 
 struct VertexOut
@@ -1077,7 +1158,22 @@ VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
 
-    float4 posW = mul(gWorld, float4(vin.mPosL, 1.0f));
+    float4 positionLocal = float4(vin.mPosL, 1.0f);
+#if defined(ENABLE_SKINNING)
+    // Main pass와 동일한 palette 식을 사용해야 shadow silhouette도 현재 pose를 따른다.
+    float4x4 skinMatrix =
+        gSkinPalette[vin.mJointIndices0.x+gPaletteOffset] * vin.mJointWeights0.x +
+        gSkinPalette[vin.mJointIndices0.y+gPaletteOffset] * vin.mJointWeights0.y +
+        gSkinPalette[vin.mJointIndices0.z+gPaletteOffset] * vin.mJointWeights0.z +
+        gSkinPalette[vin.mJointIndices0.w+gPaletteOffset] * vin.mJointWeights0.w +
+        gSkinPalette[vin.mJointIndices1.x+gPaletteOffset] * vin.mJointWeights1.x +
+        gSkinPalette[vin.mJointIndices1.y+gPaletteOffset] * vin.mJointWeights1.y +
+        gSkinPalette[vin.mJointIndices1.z+gPaletteOffset] * vin.mJointWeights1.z +
+        gSkinPalette[vin.mJointIndices1.w+gPaletteOffset] * vin.mJointWeights1.w;
+    positionLocal = mul(skinMatrix, positionLocal);
+#endif
+
+    float4 posW = mul(gWorld, positionLocal);
     vout.mPosH = mul(posW,gLightViewProj);
 
     return vout;

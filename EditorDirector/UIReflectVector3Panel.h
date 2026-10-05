@@ -46,7 +46,6 @@ class REFLECT_CLASS(EngineClass) UIReflectVector3Panel : public UI::UIImage, pub
     //  Core::MultiCallbackSystem<const CoreMath::Vector3 &> mOnValueChanged;
 
   protected:
-    virtual void ApplyLayoutStyle(const UI::UIControlStyle &style) override;
 
   private:
     enum class EAxis : uint8_t

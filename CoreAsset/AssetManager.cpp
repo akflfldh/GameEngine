@@ -11,7 +11,10 @@
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
 // #include <CoreAsset/g_DefaultFontTexture.h>
+#include <CoreAsset/AnimationClip.h>
 #include <CoreAsset/IAssetDataSource.h>
+#include <CoreAsset/Skeleton.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreBase/CoreAssert.h>
 #include <CoreBase/FVector.h>
 #include <IAssetImporter.h>
@@ -113,19 +116,23 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(EAssetType assetType,
         asset->SetName(creationContext.mRequestedAssetName.c_str());
     }
 
-    std::string displayName = asset->GetName().c_str();
-    std::string uniqueName = std::string(registryPrefix) + "/" + displayName;
+    std::string displayName;
+    std::string uniqueName;
+    GetAssetUniqueName(asset->GetName().c_str(), std::string(registryPrefix), displayName, uniqueName);
 
-    // uniqueName의 중복을 검사해야한다. , 전역테이블시스템으로부터
-    size_t nameCount = 0;
-    std::string displayNameTemp = displayName;
-    while (mGlobalAssetRegistrySystem->GetAsset(uniqueName) != nullptr)
-    {
-        displayNameTemp = displayName + std::to_string(nameCount++);
-        uniqueName = std::string(registryPrefix) + "/" + displayNameTemp;
-    }
+    //    std::string displayName = asset->GetName().c_str();
+    // std::string uniqueName = std::string(registryPrefix) + "/" + displayName;
 
-    asset->SetName(displayNameTemp.c_str());
+    //// uniqueName의 중복을 검사해야한다. , 전역테이블시스템으로부터
+    // size_t nameCount = 0;
+    // std::string displayNameTemp = displayName;
+    // while (mGlobalAssetRegistrySystem->GetAsset(uniqueName) != nullptr)
+    //{
+    //     displayNameTemp = displayName + std::to_string(nameCount++);
+    //     uniqueName = std::string(registryPrefix) + "/" + displayNameTemp;
+    // }
+
+    asset->SetName(displayName.c_str());
 
     if (creationContext.mRequestedAssetID != NoneAssetID)
     {
@@ -139,6 +146,7 @@ CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAsset(EAssetType assetType,
         asset->SetRawDataDirty(true);
     }
 
+    asset->SetLoadState(creationContext.mInitLoadState);
     mAssetMetaDataManager->Register(asset, bEngine);
 
     return asset;
@@ -295,7 +303,7 @@ bool CoreAsset::AssetManager::LoadAssetRawData(CoreAsset::Asset *asset)
     bool ret = mAssetRawDataSource->ReadRawData(request, buffer);
     if (!ret)
     {
-        asset->SetLoadState(Asset::LoadState::Failed);
+        asset->SetLoadState(EAssetLoadState::Failed);
         return ret;
     }
 
@@ -303,11 +311,11 @@ bool CoreAsset::AssetManager::LoadAssetRawData(CoreAsset::Asset *asset)
 
     if (ret)
     {
-        asset->SetLoadState(Asset::LoadState::Loaded);
+        asset->SetLoadState(EAssetLoadState::Loaded);
     }
     else
     {
-        asset->SetLoadState(Asset::LoadState::Failed);
+        asset->SetLoadState(EAssetLoadState::Failed);
     }
 
     return ret;
@@ -328,32 +336,45 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
 
     // import
     ImportPackage importPackage = mAssetImporterManager->Import(filePath, importExecutionContext);
-    if (importPackage.mInteremdiateAssets.empty())
+    if (importPackage.mFailed || importPackage.mInteremdiateAssets.empty())
     {
         return {};
     }
 
     ProcessImportOptions(importPackage);
 
-    if (importPackage.mImportRequestTextureContexts.empty() == false)
+    ProcessTextureImportRequest(importPackage, importExecutionContext);
+
+    // 의존성 해소 전에 중복 import key를 거부한다. 생성 이후 덮어쓰면 잘못된 AssetID가 저장된다.
+    std::unordered_map<ImportAssetKey, size_t> importKeyIndexTable;
+    for (size_t index = 0; index < importPackage.mInteremdiateAssets.size(); ++index)
     {
-        for (const ImportRequestTextureContext &e : importPackage.mImportRequestTextureContexts)
-        {
-
-            ImportPackage textureImportPackage =
-                mAssetImporterManager->Import(e.mFilePath.c_str(), importExecutionContext);
-
-            for (auto &e : textureImportPackage.mInteremdiateAssets)
-            {
-                importPackage.mInteremdiateAssets.push_back(std::move(e));
-            }
-        }
+        const ImportedIntermediateAsset &importedAsset = importPackage.mInteremdiateAssets[index];
+        if (importedAsset.mValid &&
+            (importedAsset.mImportKey.empty() || !importKeyIndexTable.emplace(importedAsset.mImportKey, index).second))
+            return {};
     }
 
     // factory create
     std::vector<Asset *> assetPtrVector;
 
     std::unordered_map<CoreAsset::ImportAssetKey, Asset *> importKeyAssetTable;
+
+    auto FindIntermediateFromKey =
+        [&importPackage](const CoreAsset::ImportAssetKey &key) -> CoreAsset::IntermediateAsset *
+    {
+        auto it = std::find_if(importPackage.mInteremdiateAssets.begin(), importPackage.mInteremdiateAssets.end(),
+                               [&key](const ImportedIntermediateAsset &importedIntermediateAsset)
+                               {
+                                   if (importedIntermediateAsset.mValid && importedIntermediateAsset.mImportKey == key)
+                                       return true;
+
+                                   return false;
+                               });
+
+        return it == importPackage.mInteremdiateAssets.end() ? nullptr : it->mIntermediateAsset.get();
+    };
+
     for (size_t assetIndex = 0; assetIndex < importPackage.mInteremdiateAssets.size(); ++assetIndex)
     {
         ImportedIntermediateAsset &importedIntermediateAsset = importPackage.mInteremdiateAssets[assetIndex];
@@ -361,13 +382,13 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
         if (importedIntermediateAsset.mValid == false)
             continue;
 
-        AssetCreationContext creationContext;
+        AssetCreationContext creationContext; // 에셋 생성 추가적인 외부설정
 
         auto it = importContext.mCreationContextTable.find(importedIntermediateAsset.mKey);
 
         if (it != importContext.mCreationContextTable.end())
         {
-            creationContext = it->second;
+            creationContext = it->second; // 외부에서 설정했을때만 (기본임포트는 일반적으로 설정이없다)
         }
 
         const auto &intermediateAssetPtr = importedIntermediateAsset.mIntermediateAsset;
@@ -375,13 +396,17 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
         Asset *asset = CreateAsset(intermediateAssetPtr->mAssetType, intermediateAssetPtr.get(),
                                    importContext.mRegistryPrefix.c_str(), importContext.mEngineAsset, creationContext)
                            .Get();
+        // Skeleton pose 검증 등에서 factory가 실패할 수 있으므로 null을 의존성 테이블에 넣지 않는다.
+        if (asset == nullptr)
+            return {};
 
         assetPtrVector.push_back(asset);
 
-        importKeyAssetTable[importedIntermediateAsset.mKey] = asset;
+        importKeyAssetTable.emplace(importedIntermediateAsset.mImportKey, asset);
     }
 
-    // dependency
+    // 임포트 에셋들의 의존성 후처리
+    //  dependency
     for (const auto &dependencyContext : importPackage.mDependencyContexts)
     {
 
@@ -390,7 +415,10 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
         {
         case EImportDependencyType::eSubMeshDefaultMaterial:
         {
-            Mesh *mesh = static_cast<CoreAsset::Mesh *>(importKeyAssetTable[dependencyContext.mOwnerAssetKey]);
+            const auto ownerIt = importKeyAssetTable.find(dependencyContext.mOwnerAssetKey);
+            if (ownerIt == importKeyAssetTable.end() || ownerIt->second == nullptr)
+                return {};
+            Mesh *mesh = static_cast<Mesh *>(ownerIt->second);
             Asset *material = nullptr;
             if (dependencyContext.mSubInfo == EImportDependencySubInfo::eUseDefaultMaterial)
             {
@@ -398,9 +426,14 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
             }
             else
             {
-
-                material = importKeyAssetTable[dependencyContext.mDependencyAssetKey];
+                const auto materialIt = importKeyAssetTable.find(dependencyContext.mDependencyAssetKey);
+                if (materialIt == importKeyAssetTable.end())
+                    return {};
+                material = materialIt->second;
             }
+            if (material == nullptr || material->GetType() != EAssetType::eMaterial || slotIndex < 0 ||
+                static_cast<size_t>(slotIndex) >= mesh->GetSubMeshVector().size())
+                return {};
             mesh->SetSubMeshMaterial(material->GetID(), slotIndex);
         }
         break;
@@ -414,6 +447,48 @@ std::vector<CoreAsset::Asset *> CoreAsset::AssetManager::ImportAsset(
         break;
         case EImportDependencyType::eMaterialTexture:
         {
+        }
+        break;
+        case EImportDependencyType::eSkinningMesh_Skeleton:
+        {
+            const auto ownerIt = importKeyAssetTable.find(dependencyContext.mOwnerAssetKey);
+            const auto skeletonIt = importKeyAssetTable.find(dependencyContext.mDependencyAssetKey);
+            if (ownerIt == importKeyAssetTable.end() || skeletonIt == importKeyAssetTable.end() ||
+                ownerIt->second == nullptr || skeletonIt->second == nullptr)
+                return {};
+            SkinningMesh *mesh = static_cast<SkinningMesh *>(ownerIt->second);
+            Skeleton *skeleton = static_cast<Skeleton *>(skeletonIt->second);
+
+            AssetID skeletonID = skeleton->GetID();
+
+            mesh->SetSkeleton(skeletonID);
+            mesh->SetSkeletonSignature(skeleton->GetStructureSignature());
+            if (!mesh->GetSkinBinding().Validate(*skeleton))
+                return {};
+        }
+        break;
+        case EImportDependencyType::eAnimClip_Skeleton:
+        {
+            const auto ownerIt = importKeyAssetTable.find(dependencyContext.mOwnerAssetKey);
+            const auto skeletonIt = importKeyAssetTable.find(dependencyContext.mDependencyAssetKey);
+            if (ownerIt == importKeyAssetTable.end() || skeletonIt == importKeyAssetTable.end() ||
+                ownerIt->second == nullptr || skeletonIt->second == nullptr)
+                return {};
+            AnimationClip *clip = static_cast<AnimationClip *>(ownerIt->second);
+            Skeleton *skeleton = static_cast<Skeleton *>(skeletonIt->second);
+
+            AssetID skeletonID = skeleton->GetID();
+
+            CoreAsset::IntermediateAnimationClip *intermediateAnimClip =
+                static_cast<CoreAsset::IntermediateAnimationClip *>(
+                    FindIntermediateFromKey(dependencyContext.mOwnerAssetKey));
+
+            if (intermediateAnimClip == nullptr ||
+                !clip->Configure(skeletonID, skeleton->GetStructureSignature(), intermediateAnimClip->mDurationSeconds,
+                                 intermediateAnimClip->mSampleRateNumerator,
+                                 intermediateAnimClip->mSampleRateDenominator, intermediateAnimClip->mSampleCount,
+                                 intermediateAnimClip->mTracks))
+                return {};
         }
         break;
         }
@@ -446,6 +521,46 @@ bool CoreAsset::AssetManager::StoreAssetRawData(Asset *asset, const std::filesys
     bool ret = mAssetIOManager->StoreAssetRawData(asset, filePath, assetMetaData);
 
     return ret;
+}
+
+CoreAsset::AssetPtr CoreAsset::AssetManager::DuplicateAsset(AssetPtr source, const char *registryPrefix, bool bEngine)
+{
+
+    CoreAsset::Asset *sourceAsset = source.Get();
+    if (sourceAsset == nullptr || registryPrefix == nullptr)
+        return nullptr;
+
+    CoreAsset::Asset *newAsset = mAssetFactoryManager->CreateEmptyAsset(sourceAsset->GetType());
+
+    if (newAsset == nullptr)
+        return nullptr;
+
+    // 복사가 실패한 빈 에셋은 registry/metadata에 공개하지 않는다.
+    std::string failureReason;
+    if (!newAsset->CopyDataFrom(*sourceAsset, &failureReason))
+    {
+        delete newAsset;
+        return nullptr;
+    }
+
+    // 원본이 위치한 폴더와 무관하게 호출자가 지정한 목적지에서 이름 중복을 검사한다.
+    std::string sourceDisplayName = sourceAsset->GetName().c_str();
+    std::string destDisplayName;
+    std::string destUniqueName;
+    GetAssetUniqueName(sourceDisplayName, registryPrefix, destDisplayName, destUniqueName);
+
+    newAsset->SetName(destDisplayName.c_str());
+
+    mGlobalAssetRegistrySystem->RegisterAsset(newAsset, destUniqueName, bEngine);
+
+    if (bEngine == false)
+    {
+        newAsset->SetRawDataDirty(true);
+    }
+
+    mAssetMetaDataManager->Register(newAsset, bEngine);
+
+    return newAsset;
 }
 
 CoreAsset::AssetPtr CoreAsset::AssetManager::CreateAssetInner()
@@ -520,6 +635,14 @@ void CoreAsset::AssetManager::ProcessImportOptions(ImportPackage &importPackage)
                 GeometryGenerator::CaculateVertexNoraml(intermediateStaticMesh->mVertexVector,
                                                         intermediateStaticMesh->mIndexVector);
             }
+            else if (impportIntermediateAsset.mIntermediateAsset->mAssetType == EAssetType::eSkinningMesh)
+            {
+                IntermediateSkinningMesh *intermediateSkinningMesh =
+                    static_cast<IntermediateSkinningMesh *>(impportIntermediateAsset.mIntermediateAsset.get());
+
+                GeometryGenerator::CaculateVertexNoraml(intermediateSkinningMesh->mVertexVector,
+                                                        intermediateSkinningMesh->mIndexVector);
+            }
         }
     }
 
@@ -530,15 +653,66 @@ void CoreAsset::AssetManager::ProcessImportOptions(ImportPackage &importPackage)
         {
             if (impportIntermediateAsset.mIntermediateAsset->mAssetType == EAssetType::eStaticMesh)
             {
-
                 IntermediateStaticMesh *intermediateStaticMesh =
                     static_cast<IntermediateStaticMesh *>(impportIntermediateAsset.mIntermediateAsset.get());
 
                 GeometryGenerator::CaculateTangents(intermediateStaticMesh->mVertexVector,
                                                     intermediateStaticMesh->mIndexVector);
             }
+            else if (impportIntermediateAsset.mIntermediateAsset->mAssetType == EAssetType::eSkinningMesh)
+            {
+                IntermediateSkinningMesh *intermediateSkinningMesh =
+                    static_cast<IntermediateSkinningMesh *>(impportIntermediateAsset.mIntermediateAsset.get());
+
+                GeometryGenerator::CaculateTangents(intermediateSkinningMesh->mVertexVector,
+                                                    intermediateSkinningMesh->mIndexVector);
+            }
         }
     }
+}
+
+void CoreAsset::AssetManager::ProcessTextureImportRequest(ImportPackage &importPackage,
+                                                          const ImportExecutionContext &importExecutionContext)
+{
+
+    if (importPackage.mImportRequestTextureContexts.empty() == false)
+    {
+        for (const ImportRequestTextureContext &e : importPackage.mImportRequestTextureContexts)
+        {
+
+            ImportPackage textureImportPackage =
+                mAssetImporterManager->Import(e.mFilePath.c_str(), importExecutionContext);
+
+            for (size_t textureIndex = 0; textureIndex < textureImportPackage.mInteremdiateAssets.size();
+                 ++textureIndex)
+            {
+                ImportedIntermediateAsset &textureAsset = textureImportPackage.mInteremdiateAssets[textureIndex];
+                // 별도 텍스처 임포터의 로컬 키를 FBX 패키지에서 예약한 키로 치환한다.
+                textureAsset.mImportKey = textureIndex == 0 ? e.mKey : e.mKey + "::" + std::to_string(textureIndex);
+                importPackage.mInteremdiateAssets.push_back(std::move(textureAsset));
+            }
+        }
+    }
+}
+
+void CoreAsset::AssetManager::GetAssetUniqueName(const std::string &displayName, const std::string &prefix,
+                                                 std::string &oNewDisplayName, std::string &oNewUniqueName)
+{
+
+    // uniqueName의 중복을 검사해야한다. , 전역테이블시스템으로부터
+
+    std::string uniqueName = prefix + "/" + displayName;
+
+    size_t nameCount = 0;
+    std::string displayNameTemp = displayName;
+    while (mGlobalAssetRegistrySystem->GetAsset(uniqueName) != nullptr)
+    {
+        displayNameTemp = displayName + std::to_string(nameCount++);
+        uniqueName = prefix + "/" + displayNameTemp;
+    }
+
+    oNewDisplayName = std::move(displayNameTemp);
+    oNewUniqueName = std::move(uniqueName);
 }
 
 std::vector<CoreAsset::AssetPtr> CoreAsset::AssetManager::CreateBuiltInAsset()

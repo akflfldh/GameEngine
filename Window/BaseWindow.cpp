@@ -412,6 +412,54 @@ void Quad::BaseWindow::SetKeyboardCapture(bool flag)
     }
 }
 
+void Quad::BaseWindow::SetCursorVisible(bool visible)
+{
+    // ShowCursor의 표시 카운터는 HWND별 상태가 아니라 스레드 단위 상태다.
+    // 같은 스레드의 여러 창이 상태를 공유해야 창 전환 후 복원 요청이 누락되지 않는다.
+    static thread_local bool hasAppliedVisibility = false;
+    static thread_local bool appliedVisibility = true;
+    if (hasAppliedVisibility && appliedVisibility == visible)
+        return;
+
+    // 단순 bool 대입 API가 아니므로 표시(0 이상) / 숨김(음수) 경계까지 맞춘다.
+    // 동일 상태의 반복 요청은 위에서 차단하여 표시 카운터가 계속 누적되지 않게 한다.
+    if (visible)
+    {
+        while (::ShowCursor(TRUE) < 0)
+        {
+        }
+    }
+    else
+    {
+        while (::ShowCursor(FALSE) >= 0)
+        {
+        }
+    }
+
+    appliedVisibility = visible;
+    hasAppliedVisibility = true;
+}
+
+bool Quad::BaseWindow::ClipCursor(const RECT *clientRect)
+{
+    // 커서 제한은 HWND별 상태가 아니다. 해제에는 좌표 변환이나 유효한 창 핸들이 필요 없다.
+    if (clientRect == nullptr)
+        return ::ClipCursor(nullptr) != FALSE;
+
+    if (mWindowHandle == nullptr || clientRect->right <= clientRect->left || clientRect->bottom <= clientRect->top)
+        return false;
+
+    // 전달받은 영역에는 논리적 창의 오프셋이 이미 포함되어 있어야 한다.
+    // Win32 ClipCursor는 화면 좌표를 요구하므로 클라이언트 원점을 기준으로 두 모서리를 변환한다.
+    POINT topLeft = {clientRect->left, clientRect->top};
+    POINT bottomRight = {clientRect->right, clientRect->bottom};
+    if (!::ClientToScreen(mWindowHandle, &topLeft) || !::ClientToScreen(mWindowHandle, &bottomRight))
+        return false;
+
+    RECT screenRect = {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
+    return ::ClipCursor(&screenRect) != FALSE;
+}
+
 void Quad::BaseWindow::ShutDown()
 {
     if (mWindowHandle)

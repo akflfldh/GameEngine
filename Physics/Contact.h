@@ -179,5 +179,5 @@ class KinematicContact
     // 관통깊이
     float mPenetration = 0.0f;
 
-    void ResolvePenetration();
+    void ResolvePenetration(CoreMath::Vector3 & linearChage, CoreMath::Vector3 & angularChange);
 };

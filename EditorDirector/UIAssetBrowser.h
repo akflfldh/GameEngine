@@ -35,17 +35,22 @@ class REFLECT_CLASS(EngineClass) UIAssetBrowser : public UI::UIElement
     void SelectFolderProgrammtically(QuadLF::LogicalFolder *newFolder);
 
     void ResizeBrowserHeight(float deltaY);
+    // 하단 컨테이너에서 받은 전체 콘텐츠 영역에 맞춰 툴바·탐색바·본문 크기를 배분한다.
+    void SetContentSize(float width, float height);
 
     void SetMaxBodyHeight(float y);
     void SetMinBodyHeight(float y);
 
+    void CloseOptionsPanel();
+    void CloseTransientPanels();
+
   private:
     virtual void OnBegin() override;
 
-    void CreateBrowserResizeHeightHandle();
     void CreateToolbar();
     void CreateNavigationBar();
     void CreateBody();
+    void CreateFileOptionPanel();
 
     void OnSelectedFile(QuadLF::LogicalNode *file);
 
@@ -66,7 +71,14 @@ class REFLECT_CLASS(EngineClass) UIAssetBrowser : public UI::UIElement
 
     void OnCreatedFile(QuadLF::LogicalFile *newFile, QuadLF::LogicalFolder *parentFolder);
     void OnRemovedFile(QuadLF::LogicalFile *file, QuadLF::LogicalFolder *preParentFolder);
-    void OnDraggingResizeHandle(float deltaX, float deltaY);
+
+    void OnRightClickedFileItem(float x, float y);
+    void ActiveOptionalPanel(UI::UIElement *panel, float x, float y);
+
+    // 외부에등록한 콜백들을 모두 해제
+    void ReleaseCallbacks();
+
+    void OnClikedDuplicateAssetButton();
 
   private:
     UI::UIVerticalLayoutComponent *mVerticalLayoutComponent;
@@ -75,6 +87,7 @@ class REFLECT_CLASS(EngineClass) UIAssetBrowser : public UI::UIElement
     UISplitterPanel *mBodyPanel;
     UIElement *mToolbar;
     UIElement *mNavigationBar;
+    UIElement *mFileOptionPanel;
 
     float mToolbarMaxHeight = 50.0f;
     float mBodyMaxHeight = 400.0f;
@@ -86,6 +99,7 @@ class REFLECT_CLASS(EngineClass) UIAssetBrowser : public UI::UIElement
     UI::UIEditBox *mGlobalFileEditBox;
 
     // 현재 선택된&&  텍스트 수정중인 파일아이템
+    UIFileItem *mCurrSelectedFileItem;
     UIFileItem *mCurrEditingFileItem;
     UISelectableComponent *mFileItemSelectableCom;
 

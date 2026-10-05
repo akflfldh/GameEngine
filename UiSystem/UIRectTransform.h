@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <stdint.h>
 #include <vector>
+
 namespace UI
 {
 class UIElement;

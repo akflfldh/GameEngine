@@ -43,7 +43,11 @@ class GeometryGenerator
     static MeshData CreateSkySphere(float radius, int sliceCount, int stackCount);
 
     static void CaculateVertexNoraml(std::vector<StaticVertex> &vertexVec, const std::vector<MeshIndexType> &indexVec);
+    static void CaculateVertexNoraml(std::vector<SkinningVertex> &vertexVec,
+                                     const std::vector<MeshIndexType> &indexVec);
+
     static void CaculateTangents(std::vector<StaticVertex> &vertices, const std::vector<uint32_t> &indices);
+    static void CaculateTangents(std::vector<SkinningVertex> &vertices, const std::vector<uint32_t> &indices);
 
   private:
     GeometryGenerator();

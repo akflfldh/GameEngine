@@ -90,6 +90,7 @@ class CORE_API_LIB Map : public CoreAsset::Asset
     void RegisterEntityDeleter(const std::function<void(Object *)> &deleter);
 
     virtual void Serialize(Arch &arch);
+    bool CopyDataFrom(const CoreAsset::Asset &source, std::string *failureReason = nullptr) override;
 
     void SerilaizeRawData(Arch &arch);
 
@@ -144,7 +145,6 @@ class CORE_API_LIB Map : public CoreAsset::Asset
 
     bool RayHit(const CoreMath::Ray &ray, Core::HitResult &oHitResult) const;
 
-    void SetRenderID(uint32_t id);
     uint32_t GetRenderID() const;
 
     void SetWorld(World *world);
@@ -268,7 +268,9 @@ class CORE_API_LIB Map : public CoreAsset::Asset
     std::vector<ObjectController *> mObjectControllerList;
     bool mDirty;
 
-    uint32_t mRenderID = 0;
+    // 생성 시 프로세스 공통 allocator에서 발급받는 런타임 프록시 그룹 ID다.
+    // AssetID와 별개이며 직렬화하거나 다른 Map에서 복사하지 않고, 맵의 수명 동안 변경하지 않는다.
+    const uint32_t mRenderID;
 
     World *mWorld = nullptr;
 

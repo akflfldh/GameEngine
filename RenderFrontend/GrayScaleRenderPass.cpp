@@ -102,6 +102,7 @@ void Render::GrayScaleRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     oFrameContext.mGlobalPassBufferResouce.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     oFrameContext.mGlobalPassBufferResouce.mOffset = bufferSizeOffset;
     oFrameContext.mGlobalPassBufferResouce.mType = Render::EShaderResourceType::eConstantBuffer;
+    oFrameContext.mGlobalPassBufferResouce.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
     oFrameContext.mViewport = globalFrameData.mSceneViewport;
 
     oFrameContext.mRenderTarget = nullptr;
@@ -137,6 +138,7 @@ void Render::GrayScaleRenderPass::Execute(const RenderPassExecuteContext &execut
         CHECK(bindingGpuResource.gpuResource != nullptr, "GrayScale sceneTex Resource is nullptr");
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = EMasterRootBindingSemantic::ePostProcessInputTexture;
         renderItem.mBindingGpuTexResourceVector.push_back(std::move(bindingGpuResource));
     }
 

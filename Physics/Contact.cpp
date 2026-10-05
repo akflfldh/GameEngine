@@ -503,7 +503,7 @@ void PhysicsContact::matchAwakeState()
     }
 }
 
-void KinematicContact::ResolvePenetration()
+void KinematicContact::ResolvePenetration(CoreMath::Vector3 &linearChage, CoreMath::Vector3 &angularChange)
 {
 
     if (mKinematicBody == nullptr)
@@ -514,6 +514,7 @@ void KinematicContact::ResolvePenetration()
     mNormalTowardKinematic.Normalize();
 
     mKinematicBody->mPosition += mNormalTowardKinematic * (mPenetration + 0.001f);
+    linearChage = mNormalTowardKinematic * (mPenetration + 0.001f);
 
     // normal 방향 ( Kinematic을 향하는방향)
     float normalVelocity = mKinematicBody->mVelocity.Dot(mNormalTowardKinematic);

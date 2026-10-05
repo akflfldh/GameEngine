@@ -2,7 +2,10 @@
 
 #include <Core/CoreType.h>
 #include <CoreBase/Arch.h>
+#include <CoreBase/CallbackSystem.h>
 #include <Physics/PhysicsType.h>
+
+class SceneComponent;
 
 enum class EPhysicsCollisionShapePolicy : uint8_t
 {
@@ -97,3 +100,25 @@ inline Arch &operator<<(Arch &arch, PhysicsComponentSettings &settings)
     arch << settings.mShapeBuildDataList;
     return arch;
 }
+
+enum class ECollisionResponseType : uint8_t
+{
+    eIgnore = 0,
+    eOverlap,
+    eBlock
+};
+
+enum class ECollisionResponseEventType : uint8_t
+{
+    eBegin = 0,
+    eEnd
+};
+
+struct CollisionResponseData
+{
+    ECollisionResponseType responseType;   // Overlap / Block
+    ECollisionResponseEventType eventType; // Begin / End
+    SceneComponent *otherComponent = nullptr;
+};
+
+using CollisionResponseCallbackSystem = Core::MultiCallbackSystem<const CollisionResponseData &>;

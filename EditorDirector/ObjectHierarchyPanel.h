@@ -75,9 +75,6 @@ class REFLECT_CLASS(EngineClass) ObjectHierarchyPanel : public UI::UIElement
     ObjectHierarchyItem *FindObjectItem(Object *object);
 
   protected:
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UI::UIControlStyle &style) override;
-
     // style일변화 , hover,등 상태변화 에서 호출
     virtual void ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state) override;
 

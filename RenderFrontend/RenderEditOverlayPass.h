@@ -25,9 +25,9 @@ class RenderEditOverlayPass : public Render::IRenderPass
   private:
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &executeContext);
 
-    void BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command, Render::RenderItem &renderItem);
+    void BuildRenderItemMeshData(const Render::MeshRenderCommand &command, Render::RenderItem &renderItem);
 
-    void BuildRenderItemBufferGpuResources(const Render::StaticMeshRenderCommnad &command,
+    void BuildRenderItemBufferGpuResources(const Render::MeshRenderCommand &command,
                                            std::vector<BindingGpuResource> &bindingGpuResourceVector);
     void BuildRenderItemTexGpuResources(const MaterialRenderSnapshot &materialRenderSnapshot,
                                         std::vector<BindingGpuResource> &bindingGpuResourceVector);

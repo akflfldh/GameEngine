@@ -273,7 +273,7 @@ void UI::UITextInputComponent::OnKeyDown(const Quad::EKeyCode &key, bool &bConsu
 
             if (startIndex > endIndex)
             {
-                endIndex = startIndex;
+                std::swap(startIndex, endIndex);
             }
 
             mCursorIndex = startIndex;

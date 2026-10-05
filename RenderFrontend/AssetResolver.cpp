@@ -4,6 +4,7 @@
 
 #include <CoreAsset/AssetMetaDataManager.h>
 #include <CoreAsset/Material.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
 #include <D3DGpuResourceManager/GpuBufferContextSystem.h>
@@ -63,6 +64,7 @@ bool Render::AssetResolver::RequestResolveAsset(CoreAsset::Asset *asset)
         break;
         // TODO 메시는 사실지금 작동하지않음.
         case CoreAsset::EAssetType::eStaticMesh:
+        case CoreAsset::EAssetType::eSkinningMesh:
         {
             if (mMeshGpuResourceTable.find(assetID) == mMeshGpuResourceTable.end())
             {
@@ -101,8 +103,13 @@ bool Render::AssetResolver::ResolveAsset(CoreAsset::Asset *asset) const
         break;
 
     case CoreAsset::EAssetType::eStaticMesh:
+    case CoreAsset::EAssetType::eSkinningMesh:
+        return ResolveMesh(static_cast<CoreAsset::Mesh *>(asset));
+        // return ResolveStaticMesh(static_cast<CoreAsset::StaticMesh *>(asset));
+        break;
 
-        return ResolveStaticMesh(static_cast<CoreAsset::StaticMesh *>(asset));
+        //  return ResolveSkinningMesh(static_cast<CoreAsset::SkinningMesh *>(asset));
+
         break;
     }
     // 향후 다른타입에셋들도 추가
@@ -203,6 +210,11 @@ int Render::AssetResolver::GetLightStructuredGpuBufferID() const
     return mLightGpuBufferContextID;
 }
 
+int Render::AssetResolver::GetSkinPaletteStructuredGpuBufferID() const
+{
+    return mSkinPaletteGpuBufferContextID;
+}
+
 int Render::AssetResolver::GetBillboardStructuredGpuBufferID() const
 {
     return mBillboardGpuBufferContextID;
@@ -228,7 +240,7 @@ bool Render::AssetResolver::ResolveTexture(CoreAsset::Texture *texture) const
     if (texture == nullptr)
         return true;
 
-  // auto assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
+    // auto assetMetaDataManager = CoreAsset::AssetMetaDataManager::GetInstance();
 
     bool bEngine = false;
 
@@ -246,7 +258,7 @@ bool Render::AssetResolver::ResolveTexture(CoreAsset::Texture *texture) const
 
     CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
 
-    if (texture->GetLoadState() != CoreAsset::Asset::LoadState::Loaded)
+    if (texture->GetLoadState() != CoreAsset::EAssetLoadState::Loaded)
     {
         assetManager->LoadAssetRawData(texture);
     }
@@ -271,87 +283,6 @@ bool Render::AssetResolver::ResolveTexture(CoreAsset::Texture *texture) const
     // empty flag = true 처리 //보류
 
     // 리턴
-    return true;
-}
-
-bool Render::AssetResolver::ResolveStaticMesh(CoreAsset::StaticMesh *mesh) const
-{
-
-    if (mesh == nullptr)
-        return false;
-
-    // mesh index, vertex
-
-    MeshGpuResourceContext meshGpuResourceContext = GetMeshGpuResourceContext(mesh->GetID());
-    // vertex buffer 가있다는것은 이미 존재한다는것
-    if (meshGpuResourceContext.mVertexBuffer.getResource() == nullptr)
-    {
-        // 없는 경우에만 raw data load, gpuResource 생성 수행
-        CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
-
-        if (mesh->IsEmptyAsset())
-            assetManager->LoadAssetRawData(mesh);
-
-        GRM::IGpuResourceManager *gpuResourceManager = GRM::IGpuResourceManager::GetInstance();
-
-        GRM::BufferDesc vertexBufferDesc;
-        vertexBufferDesc.mBufferUsage = GRM::EBufferUsage::eVertexBuffer;
-        vertexBufferDesc.mElementDataSize = sizeof(CoreAsset::StaticVertex);
-        vertexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eGpuOnly;
-        vertexBufferDesc.mElementDataNum = mesh->GetVertexNum();
-        vertexBufferDesc.mData = mesh->GetVertexVector().data();
-        vertexBufferDesc.mBufferSize = vertexBufferDesc.mElementDataSize * vertexBufferDesc.mElementDataNum;
-
-        GRM::GRMPtr vertexBufferGpuResource = gpuResourceManager->CreateBuffer(vertexBufferDesc);
-
-        if (vertexBufferGpuResource.getResource() == nullptr)
-        {
-            // log
-            // 실패했다는것을 알려야하고, 상위시스템은 렌더링을 막아야할것이다.
-            return false;
-        }
-
-        GRM::BufferDesc indexBufferDesc;
-        indexBufferDesc.mBufferUsage = GRM::EBufferUsage::eIndexBuffer;
-        indexBufferDesc.mElementDataSize = sizeof(CoreAsset::MeshIndexType);
-        indexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eGpuOnly;
-        indexBufferDesc.mElementDataNum = mesh->GetIndexNum();
-        indexBufferDesc.mData = mesh->GetMeshIndexVector().data();
-        indexBufferDesc.mBufferSize = indexBufferDesc.mElementDataSize * indexBufferDesc.mElementDataNum;
-
-        GRM::GRMPtr indexBufferGpuResource = gpuResourceManager->CreateBuffer(indexBufferDesc);
-
-        if (indexBufferGpuResource.getResource() == nullptr)
-        {
-            // log
-            // 실패했다는것을 알려야하고, 상위시스템은 렌더링을 막아야할것이다.
-            return false;
-        }
-
-        meshGpuResourceContext.mVertexBuffer = vertexBufferGpuResource;
-        meshGpuResourceContext.mIndexBuffer = indexBufferGpuResource;
-
-        RegisterMeshGpuResourceContext(mesh->GetID(), meshGpuResourceContext);
-    }
-    // 재귀적으로 submesh에서사용하는 머터리얼 처리
-    // submesh material 재귀적으로
-
-    const std::vector<CoreAsset::SubMesh> &subMeshVector = mesh->GetSubMeshVector();
-    for (const auto &subMesh : subMeshVector)
-    {
-        if (ResolveAsset(subMesh.mMaterialID) == false)
-        {
-            // LOG
-            //  향후 디폴트로 처리하든지 등등 방안필요
-        }
-    }
-
-    return true;
-}
-
-bool ResolveSkinningMesh(CoreAsset::Mesh *mesh)
-{
-
     return true;
 }
 
@@ -415,7 +346,6 @@ void Render::AssetResolver::RegisterBuiltInAsset()
         CoreAsset::Asset *asset = assetPtr.Get();
         ResolveAsset(asset);
     }
-
 }
 
 void Render::AssetResolver::BuildGpuBuffers()
@@ -437,4 +367,86 @@ void Render::AssetResolver::BuildGpuBuffers()
     // billboard structured buffer
 
     gpuBufferContextSystem->CreateStructuredBuffer(mBillboardGpuBufferContextID, sizeof(BillboardData), true);
+
+    gpuBufferContextSystem->CreateStructuredBuffer(mSkinPaletteGpuBufferContextID, sizeof(CoreMath::Matrix4X4), true,
+                                                   16384);
+}
+
+bool Render::AssetResolver::ResolveMesh(CoreAsset::Mesh *mesh) const
+{
+
+    if (mesh == nullptr)
+        return false;
+
+    // mesh index, vertex
+
+    MeshGpuResourceContext meshGpuResourceContext = GetMeshGpuResourceContext(mesh->GetID());
+
+    // vertex buffer 가있다는것은 이미 존재한다는것
+    if (meshGpuResourceContext.mVertexBuffer.getResource() == nullptr)
+    {
+        // 없는 경우에만 raw data load, gpuResource 생성 수행
+        CoreAsset::AssetManager *assetManager = CoreAsset::AssetManager::GetInstance();
+
+        if (mesh->IsEmptyAsset())
+        {
+            bool bLoadRawDataResult = assetManager->LoadAssetRawData(mesh);
+            if (!bLoadRawDataResult)
+                return false;
+        }
+        GRM::IGpuResourceManager *gpuResourceManager = GRM::IGpuResourceManager::GetInstance();
+
+        GRM::BufferDesc vertexBufferDesc;
+        vertexBufferDesc.mBufferUsage = GRM::EBufferUsage::eVertexBuffer;
+        vertexBufferDesc.mElementDataSize = mesh->GetVertexStride();
+        vertexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eGpuOnly;
+        vertexBufferDesc.mElementDataNum = mesh->GetVertexNum();
+        vertexBufferDesc.mData = mesh->GetVertexData();
+        vertexBufferDesc.mBufferSize = vertexBufferDesc.mElementDataSize * vertexBufferDesc.mElementDataNum;
+
+        GRM::GRMPtr vertexBufferGpuResource = gpuResourceManager->CreateBuffer(vertexBufferDesc);
+
+        if (vertexBufferGpuResource.getResource() == nullptr)
+        {
+            // log
+            // 실패했다는것을 알려야하고, 상위시스템은 렌더링을 막아야할것이다.
+            return false;
+        }
+
+        GRM::BufferDesc indexBufferDesc;
+        indexBufferDesc.mBufferUsage = GRM::EBufferUsage::eIndexBuffer;
+        indexBufferDesc.mElementDataSize = sizeof(CoreAsset::MeshIndexType);
+        indexBufferDesc.mBufferMemoryAccess = GRM::EBufferMemoryAccess::eGpuOnly;
+        indexBufferDesc.mElementDataNum = mesh->GetIndexNum();
+        indexBufferDesc.mData = mesh->GetMeshIndexVector().data();
+        indexBufferDesc.mBufferSize = indexBufferDesc.mElementDataSize * indexBufferDesc.mElementDataNum;
+
+        GRM::GRMPtr indexBufferGpuResource = gpuResourceManager->CreateBuffer(indexBufferDesc);
+
+        if (indexBufferGpuResource.getResource() == nullptr)
+        {
+            // log
+            // 실패했다는것을 알려야하고, 상위시스템은 렌더링을 막아야할것이다.
+            return false;
+        }
+
+        meshGpuResourceContext.mVertexBuffer = vertexBufferGpuResource;
+        meshGpuResourceContext.mIndexBuffer = indexBufferGpuResource;
+
+        RegisterMeshGpuResourceContext(mesh->GetID(), meshGpuResourceContext);
+    }
+    // 재귀적으로 submesh에서사용하는 머터리얼 처리
+    // submesh material 재귀적으로
+
+    const std::vector<CoreAsset::SubMesh> &subMeshVector = mesh->GetSubMeshVector();
+    for (const auto &subMesh : subMeshVector)
+    {
+        if (ResolveAsset(subMesh.mMaterialID) == false)
+        {
+            // LOG
+            //  향후 디폴트로 처리하든지 등등 방안필요
+        }
+    }
+
+    return true;
 }

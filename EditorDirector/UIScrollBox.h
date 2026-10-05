@@ -30,6 +30,7 @@ class REFLECT_CLASS(EngineClass) UIScrollBox : public UI::UIElement
     virtual void OnBegin() override;
 
     void SetBackgrounColor(float r, float g, float b);
+    void SetBackgrounColor(UI::UIColor color);
 
     void AddItem(const std::string &str);
     void AddItem(UI::UIElement *itemElement);

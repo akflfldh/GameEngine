@@ -62,11 +62,6 @@ void UI::UIImage::UseTexture(bool flag)
         mImageCom->NotUseTexture();
 }
 
-void UI::UIImage::ApplyLayoutStyle(const UIControlStyle &style)
-{
-
-    SetHeight(style.mHeight);
-}
 
 void UI::UIImage::ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState)
 {

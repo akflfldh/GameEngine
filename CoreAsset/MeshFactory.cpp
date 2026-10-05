@@ -1,6 +1,7 @@
 ﻿#include "MeshFactory.h"
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/IntermediateAsset.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreAsset/StaticMesh.h>
 
 CoreAsset::MeshFactory *CoreAsset::MeshFactory::GetInstance()
@@ -60,7 +61,37 @@ CoreAsset::Asset *CoreAsset::MeshFactory::CreateAssetFromData(const Intermediate
     else if (assetType == EAssetType::eSkinningMesh)
     {
 
-        return nullptr;
+        const IntermediateSkinningMesh &intermediateSkinningMesh =
+            static_cast<const IntermediateSkinningMesh &>(intermediateAsset);
+
+        SkinningMesh *skinningMesh = static_cast<SkinningMesh *>(CreateMesh(assetType));
+
+        skinningMesh->SetIndexVector(std::move(intermediateSkinningMesh.mIndexVector));
+        skinningMesh->SetVertexVector(std::move(intermediateSkinningMesh.mVertexVector));
+        skinningMesh->SetSubMeshVector(std::move(intermediateSkinningMesh.mSubMeshVector));
+
+        auto assetManager = AssetManager::GetInstance();
+
+        for (auto &subMesh : skinningMesh->GetSubMeshVector())
+        {
+            if (subMesh.mMaterialID == NoneAssetID)
+            {
+                subMesh.mMaterialID = assetManager->GetDefaultStaticMeshMaterial().GetAssetID();
+            }
+        }
+
+        skinningMesh->SetEmptyAssetFlag(false);
+
+        SkinBinding skinBinding;
+        skinBinding.mInverseBindMatrices = std::move(intermediateSkinningMesh.mInverseBindMatrices);
+        skinBinding.mPaletteToSkeletonJoint = std::move(intermediateSkinningMesh.mPaletteToSkeletonJoint);
+        skinBinding.mMeshToSkeleton = intermediateSkinningMesh.mMeshToSkeleton;
+
+
+
+        skinningMesh->SetSkinBinding(std::move(skinBinding));
+
+        return skinningMesh;
     }
 
     return nullptr;
@@ -77,8 +108,7 @@ CoreAsset::Mesh *CoreAsset::MeshFactory::CreateMesh(EAssetType type)
 
         break;
     case EAssetType::eSkinningMesh:
-
-        return nullptr;
+        return new SkinningMesh;
         break;
     }
 

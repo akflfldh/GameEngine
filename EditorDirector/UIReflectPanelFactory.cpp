@@ -1,10 +1,15 @@
 ﻿#include "UIReflectPanelFactory.h"
+#include <EditorDirector/EditorUIUtility.h>
+#include <AnimatorComponentUIReflectPanel.h>
+#include <BoxColliderComponentUIReflectPanel.h>
+#include <LightComponentUIReflectPanel.h>
 #include <Core/Component.h>
 #include <EditorDirector/UIReflectFloatPanel.h>
 #include <EditorDirector/UIReflectVectorPanel.h>
 #include <ReflectSystem/ReflectionClassInfo.h>
 #include <ReflectSystem/ReflectionPropertyInfo.h>
 #include <StaticMeshComponentUIReflectPanel.h>
+#include <SkeletalMeshComponentUIReflectPanel.h>
 #include <UIReflectBoolPanel.h>
 #include <UIReflectSinglePrimitivePanel.h>
 #include <UIReflectVector3Panel.h>
@@ -36,7 +41,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         if (mBoolPanelPool.empty())
         {
             // Create
-            boolPanel = parentElement->CreateChildUIElement<UIReflectBoolPanel>("BoolPanel");
+            boolPanel = EditorUIUtility::Create<UIReflectBoolPanel>(parentElement, "BoolPanel");
             // boolPanel->SetColor({0.4f, 0.4f, 0.4f});
             boolPanel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mBoolPanelPool.push_back(static_cast<UIReflectBoolPanel *>(element)); };
@@ -60,7 +65,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         if (mBoolPanelPool.empty())
         {
             // Create
-            floatPanel = parentElement->CreateChildUIElement<UIReflectFloatPanel>("FloatPanel");
+            floatPanel = EditorUIUtility::CreateFloatField(parentElement, "FloatPanel");
             // floatPanel->SetColor({0.4f, 0.4f, 0.4f});
             floatPanel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mFloatPanelPool.push_back(static_cast<UIReflectFloatPanel *>(element)); };
@@ -81,7 +86,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         UIReflectSinglePrimitivePanel *primitivePanel = nullptr;
         if (mSinglePrimitivePanelPool.empty())
         {
-            primitivePanel = parentElement->CreateChildUIElement<UIReflectSinglePrimitivePanel>("SinglePrimtivePanel");
+            primitivePanel = EditorUIUtility::Create<UIReflectSinglePrimitivePanel>(parentElement, "SinglePrimtivePanel");
             // primitivePanel->SetColor({0.4f, 0.4f, 0.4f});
             primitivePanel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mSinglePrimitivePanelPool.push_back(static_cast<UIReflectSinglePrimitivePanel *>(element)); };
@@ -103,7 +108,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         if (mVector3PanelPool.empty())
         {
             // Create
-            vector3Panel = parentElement->CreateChildUIElement<UIReflectVector3Panel>("ReflectVector3Panel");
+            vector3Panel = EditorUIUtility::CreateVector3Field(parentElement, "ReflectVector3Panel");
             // vector3Panel->SetColor({0.4f, 0.4f, 0.4f});
             vector3Panel->mReturnToPoolCallback = [this](UI::UIElement *element)
             { mVector3PanelPool.push_back(static_cast<UIReflectVector3Panel *>(element)); };
@@ -126,7 +131,7 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
             if (mVectorPanelPool.empty())
             {
 
-                vectorPanel = parentElement->CreateChildUIElement<UIReflectVectorPanel>("ReflectVectorPanel");
+                vectorPanel = EditorUIUtility::Create<UIReflectVectorPanel>(parentElement, "ReflectVectorPanel");
                 vectorPanel->SetColor({0.4f, 0.4f, 0.4f});
                 vectorPanel->mReturnToPoolCallback = [this](UI::UIElement *element)
                 { mVectorPanelPool.push_back(static_cast<UIReflectVectorPanel *>(element)); };
@@ -182,7 +187,7 @@ StaticMeshComponentUIReflectPanel *UIReflectPanelFactory::GetStaticMeshPanel(UI:
     if (mStaticMeshPanelPool.empty())
     {
 
-        panel = parentElement->CreateChildUIElement<StaticMeshComponentUIReflectPanel>("StaticMeshPanel");
+        panel = EditorUIUtility::Create<StaticMeshComponentUIReflectPanel>(parentElement, "StaticMeshPanel");
         panel->mReturnToPoolCallback = [this](UI::UIElement *element)
         { mStaticMeshPanelPool.push_back(static_cast<StaticMeshComponentUIReflectPanel *>(element)); };
     }
@@ -193,6 +198,82 @@ StaticMeshComponentUIReflectPanel *UIReflectPanelFactory::GetStaticMeshPanel(UI:
         mStaticMeshPanelPool.pop_back();
     }
 
+    return panel;
+}
+
+SkeletalMeshComponentUIReflectPanel *UIReflectPanelFactory::GetSkeletalMeshPanel(UI::UIElement *parentElement)
+{
+    SkeletalMeshComponentUIReflectPanel *panel = nullptr;
+    if (mSkeletalMeshPanelPool.empty())
+    {
+        panel = EditorUIUtility::Create<SkeletalMeshComponentUIReflectPanel>(parentElement, "SkeletalMeshPanel");
+        panel->mReturnToPoolCallback = [this](UI::UIElement *element)
+        { mSkeletalMeshPanelPool.push_back(static_cast<SkeletalMeshComponentUIReflectPanel *>(element)); };
+    }
+    else
+    {
+        panel = mSkeletalMeshPanelPool.back();
+        ActivatePanel(panel, parentElement);
+        mSkeletalMeshPanelPool.pop_back();
+    }
+
+    return panel;
+}
+
+AnimatorComponentUIReflectPanel *UIReflectPanelFactory::GetAnimatorPanel(UI::UIElement *parentElement)
+{
+    AnimatorComponentUIReflectPanel *panel = nullptr;
+    if (mAnimatorPanelPool.empty())
+    {
+        panel = EditorUIUtility::Create<AnimatorComponentUIReflectPanel>(parentElement, "AnimatorPanel");
+        panel->mReturnToPoolCallback = [this](UI::UIElement *element)
+        { mAnimatorPanelPool.push_back(static_cast<AnimatorComponentUIReflectPanel *>(element)); };
+    }
+    else
+    {
+        panel = mAnimatorPanelPool.back();
+        ActivatePanel(panel, parentElement);
+        mAnimatorPanelPool.pop_back();
+    }
+
+    return panel;
+}
+
+BoxColliderComponentUIReflectPanel *UIReflectPanelFactory::GetBoxColliderPanel(UI::UIElement *parentElement)
+{
+    // 기존 컴포넌트 패널과 같은 pool 경로를 사용하며 Release에서 이전 대상 바인딩을 해제한다.
+    BoxColliderComponentUIReflectPanel *panel = nullptr;
+    if (mBoxColliderPanelPool.empty())
+    {
+        panel = EditorUIUtility::Create<BoxColliderComponentUIReflectPanel>(parentElement, "BoxColliderPanel");
+        panel->mReturnToPoolCallback = [this](UI::UIElement *element)
+        { mBoxColliderPanelPool.push_back(static_cast<BoxColliderComponentUIReflectPanel *>(element)); };
+    }
+    else
+    {
+        panel = mBoxColliderPanelPool.back();
+        ActivatePanel(panel, parentElement);
+        mBoxColliderPanelPool.pop_back();
+    }
+    return panel;
+}
+
+LightComponentUIReflectPanel *UIReflectPanelFactory::GetLightPanel(UI::UIElement *parentElement)
+{
+    // 다른 전용 컴포넌트 패널과 동일하게 Canvas 소유 UI를 pool에서 재사용한다.
+    LightComponentUIReflectPanel *panel = nullptr;
+    if (mLightPanelPool.empty())
+    {
+        panel = EditorUIUtility::Create<LightComponentUIReflectPanel>(parentElement, "LightComponentPanel");
+        panel->mReturnToPoolCallback = [this](UI::UIElement *element)
+        { mLightPanelPool.push_back(static_cast<LightComponentUIReflectPanel *>(element)); };
+    }
+    else
+    {
+        panel = mLightPanelPool.back();
+        ActivatePanel(panel, parentElement);
+        mLightPanelPool.pop_back();
+    }
     return panel;
 }
 

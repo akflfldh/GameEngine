@@ -2,6 +2,7 @@
 #include <CoreAsset/Asset.h>
 #include <CoreAsset/AssetMetaDataType.h>
 #include <CoreAsset/IntermediateAsset.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreAsset/StaticMesh.h>
 
 CoreAsset::MeshStorer *CoreAsset::MeshStorer::GetInstance()
@@ -56,7 +57,11 @@ bool CoreAsset::MeshStorer::StoreAssetRawDataFile(Arch &arch, CoreAsset::Asset *
     break;
 
     case EAssetType::eSkinningMesh:
-
+    {
+        SkinningMesh *skinningMesh = static_cast<SkinningMesh *>(mesh);
+        std::vector<SkinningVertex> &vertexVector = skinningMesh->GetVertexVector();
+        arch << vertexVector;
+    }
         break;
     }
 

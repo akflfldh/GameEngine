@@ -3,6 +3,7 @@
 #include "UiSystem/UISystemDllMacro.h"
 #include <CoreAsset/AssetPtr.h>
 #include <CoreBase/CoreBaseType.h>
+#include <CoreMath/CoreMath.h>
 #include <InputSystem/InputType.h>
 #include <UiSystem/UIType.h>
 #include <glm/glm.hpp>
@@ -56,6 +57,8 @@ struct UIColor
     float mB = 1.0f;
     float mA = 1.0f;
 
+    static const UIColor Red;
+    static const UIColor Blue;
     static const UIColor White;
     static const UIColor LightGray;
     static const UIColor Gray;
@@ -74,6 +77,8 @@ struct UIColor
 };
 
 inline const UIColor UIColor::White = {1.0f, 1.0f, 1.0f, 1.0f};
+inline const UIColor UIColor::Red = {1.0f, 0.0f, 0.0f, 1.0f};
+inline const UIColor UIColor::Blue = {0.0f, 0.0f, 1.0f, 1.0f};
 inline const UIColor UIColor::LightGray = {0.3f, 0.3f, 0.3f, 1.0f};
 inline const UIColor UIColor::Gray = {0.1f, 0.1f, 0.1f, 1.0f};
 inline const UIColor UIColor::DarkGray = {0.05f, 0.05f, 0.05f, 1.0f};
@@ -184,30 +189,21 @@ enum class EUITextInputType
     eInteger // 정수형 (0~9  , '-')
 };
 
-enum class EUIPosPivotHorizontal : uint8_t
+// 부모(최상위 요소는 Canvas) 영역의 비율 기준점과 절대 이동량을 보관한다.
+// 실제 크기와 부모의 수명은 소유하지 않으며, 위치 적용은 UIElement가 담당한다.
+struct UIPosAnchorContext
 {
-    eNone = 0,
-    eLeft,
-    eRight
-};
-
-enum class EUIPosPivotVertical : uint8_t
-{
-    eNone = 0,
-    eTop,
-    eBottom
-};
-
-struct UIPosPivotContext
-{
-    bool mPosPivotActive = false;
+    bool mPosAnchorActive = false;
     bool mUpdateDirty = false; // 업데이트 여부
 
-    EUIPosPivotHorizontal mPivotHorizontal = EUIPosPivotHorizontal::eNone;
-    EUIPosPivotVertical mPivotVertical = EUIPosPivotVertical::eNone;
+    // 한 축만 고정한 기존 UI는 나머지 축의 수동/레이아웃 위치를 유지한다.
+    bool mHorizontalAnchorActive = false;
+    bool mVerticalAnchorActive = false;
 
-    float mHorizontalOffset = 0.0f;
-    float mVerticalOffset = 0.0f;
+    CoreMath::Vector2 mAnchor = {0.0f, 0.0f}; // 부모 영역의 [0, 1] 비율 기준점.
+    CoreMath::Vector2 mOffset = {0.0f, 0.0f}; // +X는 오른쪽, +Y는 아래쪽인 절대 이동량.
+    // 자체 정렬 기준점은 후속 구현 대상이다. 현재는 좌상단 (0, 0)으로 두고 계산에는 사용하지 않는다.
+    CoreMath::Vector2 mPivot = {0.0f, 0.0f};
 };
 
 enum class EUIRenderLayer
@@ -231,26 +227,6 @@ struct UIPalette
     UI::UIColor mDisabledText;
     UI::UIColor mBorder;
     UI::UIColor mAccent;
-};
-
-struct UIMetrics
-{
-    float mPropertyRowHeight = 32.0f;
-    float mControlHeight = 26.0f;
-
-    float mSmallPadding = 4.0f;
-    float mPadding = 8.0f;
-    float mLargePadding = 12.0f;
-
-    float mItemSpacing = 4.0f;
-    float mSectionSpacing = 10.0f;
-
-    float mLabelWidth = 180.0f;
-    float mBorderThickness = 1.0f;
-    //   float CornerRadius = 2.0f;
-
-    float mDefaultFontSize = 15.0f;
-    float mSectionFontSize = 17.0f;
 };
 
 enum class EUIStyleRole : uint8_t
@@ -287,6 +263,7 @@ enum class EUIVisualState : uint8_t
     eDisabled
 };
 
+// 공통 UI가 입력 상태에 따라 적용하는 시각 정보만 보관한다. 크기·폰트·배치는 소유하지 않는다.
 struct UIControlStyle
 {
     UI::UIColor mBackgroundColor;
@@ -297,13 +274,6 @@ struct UIControlStyle
 
     UI::UIColor mTextColor;
     UI::UIColor mBorderColor;
-
-    float mHeight = 0.0f;
-    float mLeftPadding = 0.0f;
-    float mTopPadding = 0.0f;
-    float mPadding = 0.0f;
-    float mBorderThickness = 0.0f;
-    float mFontSize = 0.0f;
 };
 
 struct UIControlStyleOverride
@@ -315,13 +285,7 @@ struct UIControlStyleOverride
     std::optional<UI::UIColor> mSelectedColor;
     std::optional<UI::UIColor> mDisabledColor;
 
-    std::optional<float> mHeight;
-    std::optional<float> mLeftPadding;
-    std::optional<float> mTopPadding;
-    std::optional<float> mFontSize;
-    ;
-
-    void ApplyTo(UIControlStyle &style)
+    void ApplyTo(UIControlStyle &style) const
     {
         if (mBackgroundColor)
             style.mBackgroundColor = *mBackgroundColor;
@@ -337,18 +301,6 @@ struct UIControlStyleOverride
 
         if (mDisabledColor)
             style.mDisabledColor = *mDisabledColor;
-
-        if (mHeight)
-            style.mHeight = *mHeight;
-
-        if (mLeftPadding)
-            style.mLeftPadding = *mLeftPadding;
-
-        if (mTopPadding)
-            style.mTopPadding = *mTopPadding;
-
-        if (mFontSize)
-            style.mFontSize = *mFontSize;
     }
 };
 

@@ -239,6 +239,41 @@ bool Quad::InputSystem::IsVKeyDown(uint8_t vk) const
     return IsScanKeyDown(scanKey);
 }
 
+float Quad::InputSystem::GetInputValue(EKeyCode keycode) const
+{
+
+    if (keycode < EKeyCode::eMouseLeft)
+    {
+        return IsVKeyDown((uint8_t)keycode) ? 1.0f : 0.0f;
+    }
+
+    switch (keycode)
+    {
+    case EKeyCode::eMouseLeft:
+
+        return mMouseContext.bLButtonDown ? 1.0f : 0.0f;
+
+        break;
+    case EKeyCode::eMouseRight:
+        return mMouseContext.bRButtonDown ? 1.0f : 0.0f;
+
+        break;
+
+    case EKeyCode::eMouseMiddle:
+        return 0.0f; // 일단여기는 구현이안되어있음 보류
+        break;
+
+    case EKeyCode::eMouseDeltaX:
+        return mMouseContext.mDeltaX;
+        break;
+    case EKeyCode::eMouseDeltaY:
+        return mMouseContext.mDeltaY;
+        break;
+    }
+
+    return 0.0f;
+}
+
 std::pair<int, int> Quad::InputSystem::GetMouseDelta() const
 {
     return {mMouseContext.mDeltaX, mMouseContext.mDeltaY};

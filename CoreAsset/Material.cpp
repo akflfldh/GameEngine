@@ -45,6 +45,46 @@ CoreAsset::Material::Material(AssetID id) : Asset(EAssetType::eMaterial, id), mU
 
 CoreAsset::Material::~Material() {}
 
+bool CoreAsset::Material::CopyDataFrom(const Asset &source, std::string *failureReason)
+{
+    const Material *sourceMaterial = dynamic_cast<const Material *>(&source);
+    if (!sourceMaterial)
+    {
+        if (failureReason)
+            *failureReason = "Material 에셋이 필요합니다.";
+        return false;
+    }
+    if (this == sourceMaterial)
+        return Asset::CopyDataFrom(source, failureReason);
+    // explicit GPU override는 외부 resolver에 AssetID별로 등록되어 있어 성분 복사만으로 재현할 수 없다.
+    if (sourceMaterial->mUseExplicitGpuMaterial)
+    {
+        if (failureReason)
+            *failureReason = "외부 GPU override를 사용하는 Material은 별도 등록 없이 복제할 수 없습니다.";
+        return false;
+    }
+
+    // texture는 의존 에셋이므로 참조만 복사한다. runtime material handle은 대상의 값을 유지한다.
+    mTexResourceContextList = sourceMaterial->mTexResourceContextList;
+    mAlbedoResourceContextList = sourceMaterial->mAlbedoResourceContextList;
+    mNormalMapResourceContext = sourceMaterial->mNormalMapResourceContext;
+    mHasNormalMap = sourceMaterial->mHasNormalMap;
+    mSamplerResourceContextList = sourceMaterial->mSamplerResourceContextList;
+    mMetallic = sourceMaterial->mMetallic;
+    mRoughness = sourceMaterial->mRoughness;
+    mDiffuseColor = sourceMaterial->mDiffuseColor;
+    mDiffuseFactor = sourceMaterial->mDiffuseFactor;
+    mSpecular = sourceMaterial->mSpecular;
+    mSpecularFactor = sourceMaterial->mSpecularFactor;
+    mAmbient = sourceMaterial->mAmbient;
+    mEmissiveColor = sourceMaterial->mEmissiveColor;
+    mEmissiveIntensity = sourceMaterial->mEmissiveIntensity;
+    mUseExplicitGpuMaterial = sourceMaterial->mUseExplicitGpuMaterial;
+    mShadingModel = sourceMaterial->mShadingModel;
+    mUploadDirty = true;
+    return Asset::CopyDataFrom(source, failureReason);
+}
+
 void CoreAsset::Material::SetMaterialHandle(uint32_t handle)
 {
     mMaterialHandle = handle;

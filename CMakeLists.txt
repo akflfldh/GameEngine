@@ -63,6 +63,7 @@ add_subdirectory(ReflectSystem)
 add_subdirectory(UiSystem)
 add_subdirectory(ImportModule)
 add_subdirectory(RenderFrontend)
+add_subdirectory(NetWork)
 add_subdirectory(Core)
 add_subdirectory(EditorDirector)
 add_subdirectory(GameDirector EXCLUDE_FROM_ALL)
@@ -71,4 +72,10 @@ option(GAMEENGINE_BUILD_PHYSICS_TESTS "Build the standalone Physics test executa
 
 if(GAMEENGINE_BUILD_PHYSICS_TESTS)
     add_subdirectory(PhysicsTests)
+endif()
+
+option(GAMEENGINE_BUILD_ANIMATION_FOUNDATION_TESTS "Build the standalone Animation foundation test executable" OFF)
+
+if(GAMEENGINE_BUILD_ANIMATION_FOUNDATION_TESTS)
+    add_subdirectory(AnimationFoundationTests)
 endif()

@@ -45,7 +45,12 @@ class REFLECT_CLASS(EngineClass) UIFileItem : public UI::UIElement
     OnFileOpenedCallbackSystem mOnFileOpendCallbackSystem;
 
     UI::UIButtonComponent *mFileTextButtonComponent;
+
+    // 우클릭용 버튼 컴포넌트
+    UI::UIButtonComponent *mFileRightButtonComponent;
     UI::UIText *mFileTextElement;
+
+    QuadLF::LogicalNode *GetLogicalFileNode() const;
 
   private:
     void HandleDoubleClick();

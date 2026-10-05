@@ -23,7 +23,8 @@ class CommandContext;
 namespace CoreAsset
 {
 class Texture;
-}
+class Mesh;
+} // namespace CoreAsset
 
 namespace Render
 {
@@ -189,18 +190,34 @@ struct BillboardRenderCommand : public RenderCommand
 struct MeshRenderCommand : public RenderCommand
 {
     uint32_t mMaterialHandle = 0;
-};
 
-struct StaticMeshRenderCommnad : public MeshRenderCommand
-{
     // std::vector<CoreAsset::Material *> mSubMeshMaterialList;
-    CoreAsset::StaticMesh *mStaticMesh = nullptr;
+    CoreAsset::Mesh *mMesh = nullptr;
+    ERenderGeometryType mGeometryType = ERenderGeometryType::eStaticMesh;
     //  CoreAsset::Material *mMaterial = nullptr;
     int mSubMeshIndex = 0;
     CoreMath::Vector4 mCustomShaderData;
-};
 
-struct StaticMeshOutlineRenderCommand : public StaticMeshRenderCommnad
+    // static mesh이면 count == 0
+    uint32_t mSkinPaletteOffset = 0;
+    uint32_t mSkinPaletteCount = 0;
+};
+//
+// struct StaticMeshRenderCommnad : public MeshRenderCommand
+//{
+//    // std::vector<CoreAsset::Material *> mSubMeshMaterialList;
+//    CoreAsset::Mesh *mMesh = nullptr;
+//    ERenderGeometryType mGeometryType = ERenderGeometryType::eStaticMesh;
+//    //  CoreAsset::Material *mMaterial = nullptr;
+//    int mSubMeshIndex = 0;
+//    CoreMath::Vector4 mCustomShaderData;
+//
+//    // static mesh이면 count == 0
+//    uint32_t mSkinPaletteOffset = 0;
+//    uint32_t mSkinPaletteCount = 0;
+//};
+
+struct MeshOutlineRenderCommand : public MeshRenderCommand
 {
     // size_t mStaticMeshRenderCommnadIndex = 0;
     //  StaticMeshRenderCommnad *mStaticMeshRenderCommnadPtr = nullptr;
@@ -225,11 +242,11 @@ struct RenderPassExecuteContext
     class IRenderSystem *renderSystem;
 
     //    std::vector<StaticMeshRenderCommnad> mStaticMeshRenderCommand;
-    std::vector<StaticMeshRenderCommnad> mOpaqueStaticMeshRenderCommandList;
-    std::vector<StaticMeshRenderCommnad> mTransparentStaticMeshRenderCommandList;
-    std::vector<StaticMeshRenderCommnad> mEditorOverlayStaticMeshRenderCommandList;
+    std::vector<MeshRenderCommand> mOpaqueMeshRenderCommandList;
+    std::vector<MeshRenderCommand> mTransparentMeshRenderCommandList;
+    std::vector<MeshRenderCommand> mEditorOverlayMeshRenderCommandList;
     std::vector<BillboardRenderCommand> mBillboardRenderCommandList;
-    std::vector<StaticMeshOutlineRenderCommand> mOutlineStaticMeshRenderCommandIndexList;
+    std::vector<MeshOutlineRenderCommand> mOutlineMeshRenderCommandIndexList;
     std::vector<DebugLineRednerCommand> mDebugLineRenderCommandList;
     std::vector<UIRenderCommand> mUIRenderCommandList;
 
@@ -254,6 +271,9 @@ struct RenderPassExecuteContext
 
     DirectonalShadowRenderData mDirectonalShadowRenderData;
     PostProcessingData mPostProcessingData;
+
+    // 모든 palette들에대한 스냅샷을 연속적으로 저장
+    std::vector<CoreMath::Matrix4X4> mSkinPaletteSnapshot;
 };
 
 struct RenderResourceDesc

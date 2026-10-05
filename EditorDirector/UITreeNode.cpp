@@ -1,4 +1,5 @@
 ﻿#include "UITreeNode.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIDirectoryTree.h>
 #include <LogicalFileSystem/LogicalFolder.h>
 #include <UiSystem/UIButton.h>
@@ -42,8 +43,8 @@ void UITreeNode::CreateHeader()
 
     auto canvas = GetDestCanvas();
 
-    auto Header = canvas->CreateUIElement<UI::UIButton>("Header");
-    Header->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto Header = EditorUIUtility::CreateSectionHeaderButton(canvas, "Header");
+
 
     //  auto headerImageCom = Header->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     Header->mUIImageComponent->NotUseTexture();
@@ -63,7 +64,7 @@ void UITreeNode::CreateHeader()
     mHeader = Header;
 
     // Expand Button
-    auto ExpandButton = canvas->CreateUIElement<UI::UIButton>("ExpandButton");
+    auto ExpandButton = EditorUIUtility::CreateSmallButton(canvas, "ExpandButton");
     ExpandButton->mUIImageComponent->UseTexture();
     ExpandButton->mUIImageComponent->SetTexture("Engine/ArrowRight");
 
@@ -75,9 +76,9 @@ void UITreeNode::CreateHeader()
     mHeaderExpandButton = ExpandButton;
 
     // Folder Icon
-    auto FolderIcon = canvas->CreateUIElement<UI::UIImage>("Icon");
+    auto FolderIcon = EditorUIUtility::CreateIcon(canvas, "Icon");
     //    FolderIcon->mImageCom->NotUseTexture();
-    FolderIcon->SetStyleRole(UI::EUIStyleRole::eIcon);
+
     FolderIcon->mImageCom->UseTexture();
     FolderIcon->mImageCom->SetTexture("Engine/Folder");
 
@@ -92,7 +93,7 @@ void UITreeNode::CreateHeader()
     mHeaderIcon->SetOnlyVisible(true);
 
     // Text
-    auto TextPanel = canvas->CreateUIElement<UI::UIText>("Text");
+    auto TextPanel = EditorUIUtility::CreateLabel(canvas, "Text");
     //  auto TextCom = TextPanel->CreateUIComponent<UI::UITextComponent>("TextCom");
 
     TextPanel->SetWidth(200.0f);
@@ -116,7 +117,7 @@ void UITreeNode::CreateChildrenPanel()
 
     auto canvas = GetDestCanvas();
 
-    mChildrenPanel = canvas->CreateUIElement<UI::UIElement>("ChildrenPanel");
+    mChildrenPanel = EditorUIUtility::Create<UI::UIElement>(canvas, "ChildrenPanel");
 
     // auto bodyImageCom = Header->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     // // headerImageCom->NotUseTexture();

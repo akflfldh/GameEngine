@@ -61,6 +61,7 @@ class CORE_ASSET_API Texture : public Asset
     //     GRM::IGpuResource *GetGpuResource() const;
 
     virtual void Serialize(Arch &arch) override;
+    bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr) override;
 
   private:
     Texture();
@@ -93,7 +94,7 @@ class CORE_ASSET_API Texture : public Asset
     void SetTextureDesc(const GRM::TextureDesc &texDesc);
 
   private:
-    TextureProperties mProperties;
+    TextureProperties mProperties{};
 };
 
 AssetClassName(Texture)

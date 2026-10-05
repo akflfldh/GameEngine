@@ -45,6 +45,7 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
     }
     break;
     case EAssetType::eStaticMesh:
+    case EAssetType::eSkinningMesh:
 
     {
         MeshMetaData *meshMetaData = new MeshMetaData;
@@ -74,6 +75,14 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
         PrefabMetaData *metaData = new PrefabMetaData;
         *metaData = static_cast<const PrefabMetaData &>(assetMetaData);
 
+        mAssetMetaDataTable[assetMetaData.mAssetID] = metaData;
+    }
+    break;
+    case EAssetType::eAnimation:
+    case EAssetType::eSkeleton:
+    {
+        AssetMetaData *metaData = new AssetMetaData;
+        *metaData = assetMetaData;
         mAssetMetaDataTable[assetMetaData.mAssetID] = metaData;
     }
     break;
@@ -138,6 +147,14 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset, bool bEngine)
 
     case EAssetType::eSkinningMesh:
     {
+        MeshMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
+        metaData.mHasRawData = true;
+        SetRawFileName(&metaData);
+        return Register(metaData);
     }
     break;
     case EAssetType::eFont:
@@ -182,6 +199,16 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset, bool bEngine)
     }
 
     break;
+    case EAssetType::eAnimation:
+    case EAssetType::eSkeleton:
+    {
+        AssetMetaData metaData;
+        metaData.mAssetID = asset->GetID();
+        metaData.mAssetName = asset->GetName().c_str();
+        metaData.mAssetType = asset->GetType();
+        metaData.mDomain = assetDomain;
+        return Register(metaData);
+    }
     }
 
     return false;

@@ -1,5 +1,6 @@
 ﻿#include "UIEditorDebugHUD.h"
 #include <CoreAsset/GlobalAssetRegistrySystem.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <UiSystem/UIImageComponent.h>
 #include <UiSystem/UIMovableComponent.h>
 #include <UiSystem/UITextComponent.h>
@@ -12,10 +13,12 @@ UIEditorDebugHUD::UIEditorDebugHUD()
     // mVerticalLayoutComponent = CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
 
     mTextComponent = CreateUIComponent<UI::UITextComponent>("TextCom");
-    mTextComponent->SetFontSize(20.0f);
+    // mTextComponent->SetFontSize(20.0f); // 에디터 공통 규격으로 생성한다.
+    EditorUIUtility::ApplyTextPreset(mTextComponent);
 
     mAddedTextComponent = CreateUIComponent<UI::UITextComponent>("AddedTextCom");
-    mAddedTextComponent->SetFontSize(20.0f);
+    // mAddedTextComponent->SetFontSize(20.0f);
+    EditorUIUtility::ApplyTextPreset(mAddedTextComponent);
 
     CreateUIComponent<UI::UIMovableComponent>("MovableCom");
     SetSize(400, 700);

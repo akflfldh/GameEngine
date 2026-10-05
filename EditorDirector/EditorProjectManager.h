@@ -78,8 +78,9 @@ class EditorProjectManager
 
     void SaveAsset(CoreAsset::Asset *asset);
 
-    // map에 에디터용오브젝트들을 생성한다
-    void CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager);
+    // 카메라는 유지하고, 조명 시각화와 기즈모를 워크스페이스 용도에 따라 각각 선택한다.
+    void CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager, bool bUseLightVisualizer = true,
+                             bool bUseGizmo = true);
     Map *CreateDefaultUserMap();
 
   private:

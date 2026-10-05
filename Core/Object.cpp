@@ -279,7 +279,7 @@ Component *Object::GetComponentFromClassName(const char *componentName)
     for (auto com : mComList)
     {
 
-        if (com != nullptr && std::strcmp(com->GetRunTimeClassName(), componentName) == 0)
+        if (com != nullptr && !com->GetDeadState() && std::strcmp(com->GetRunTimeClassName(), componentName) == 0)
         {
             return com;
         }

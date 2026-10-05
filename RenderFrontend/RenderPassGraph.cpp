@@ -271,6 +271,7 @@ void Render::RenderPassGraph::Execute(const RenderPassExecuteContext &renderPass
     // MaterialUpload
     UploadMaterialData(renderPassExecuteContext);
     UploadLightData(renderPassExecuteContext);
+    UploadPaletteMatrixData(renderPassExecuteContext);
 
     Render::RECT ScreenViewportRect;
     /*ScreenViewportRect.mLeft = renderPassExecuteContext.mGlobalFrameData.mSceneViewport.TopLeftX;
@@ -654,6 +655,25 @@ void Render::RenderPassGraph::UploadLightData(const RenderPassExecuteContext &re
     }
 
     gpuResourceManager->UploadBufferData(buffer, dataList.data(), sizeof(DefaultLightData), dataList.size(), 0);
+}
+
+void Render::RenderPassGraph::UploadPaletteMatrixData(const RenderPassExecuteContext &renderPassExecuteContext)
+{
+
+    if (renderPassExecuteContext.mSkinPaletteSnapshot.size() == 0)
+        return;
+
+    auto gpuResourceManager = GRM::IGpuResourceManager::GetInstance();
+    auto bufferContextSystem = GRM::GpuBufferContextSystem::GetInstance();
+    auto uploadManager = Render::RenderUploadManager::GetInstance();
+    GRM::GpuStructuredBufferContext *bufferContext = static_cast<GRM::GpuStructuredBufferContext *>(
+        bufferContextSystem->GetGpuBufferContext(AssetResolver::GetInstance()->GetSkinPaletteStructuredGpuBufferID()));
+    GRM::GRMPtr buffer = bufferContext->mGpuBuffersPerFrame[bufferContext->mCurrFrameIndex];
+
+    auto &paletteSnapshot = renderPassExecuteContext.mSkinPaletteSnapshot;
+
+    gpuResourceManager->UploadBufferData(buffer, (void *)(paletteSnapshot.data()), sizeof(paletteSnapshot[0]),
+                                         paletteSnapshot.size(), 0);
 }
 
 Render::RenderPassGraphBuilder::RenderPassGraphBuilder(RenderPassGraph *renderPassGraph)

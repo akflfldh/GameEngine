@@ -1,4 +1,5 @@
 ﻿#include "UIReflectVector3Panel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <CoreBase/BaseClass.h>
 #include <EditorInspectorUtility.h>
 #include <ReflectSystem/ReflectionPropertyInfo.h>
@@ -18,20 +19,16 @@ void UIReflectVector3Panel::OnBegin()
 {
     //  SetHeight(100);
 
-    mTagText = CreateChildUIElement<UI::UIText>("TagText");
+    mTagText = EditorUIUtility::CreateLabel(this, "TagText");
 
     //  mTagText->SetTextColor({0, 0, 0});
     mTagText->SetWidth(100.0f);
     // mTagText->SetHeight(30);
     // mTagText->SetPositionLocal(0, 0);
 
-    mEditBoxX = CreateChildUIElement<UI::UIEditBox>("EditBoxX");
-    mEditBoxY = CreateChildUIElement<UI::UIEditBox>("EditBoxY");
-    mEditBoxZ = CreateChildUIElement<UI::UIEditBox>("EditBoxZ");
-
-    mEditBoxX->SetStyleRole(UI::EUIStyleRole::eInputBox);
-    mEditBoxY->SetStyleRole(UI::EUIStyleRole::eInputBox);
-    mEditBoxZ->SetStyleRole(UI::EUIStyleRole::eInputBox);
+    mEditBoxX = EditorUIUtility::CreateNumberInput(this, "EditBoxX");
+    mEditBoxY = EditorUIUtility::CreateNumberInput(this, "EditBoxY");
+    mEditBoxZ = EditorUIUtility::CreateNumberInput(this, "EditBoxZ");
 
     //  mEditBoxX->SetSize(100, 40);
     mEditBoxX->SetWidth(100);
@@ -40,17 +37,13 @@ void UIReflectVector3Panel::OnBegin()
     // mEditBoxZ->SetSize(100, 40);
     mEditBoxZ->SetWidth(100);
 
-    mEditBoxX->SetBackgroundColor(1, 1, 1);
-    mEditBoxY->SetBackgroundColor(1, 1, 1);
-    mEditBoxZ->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxX->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxY->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxZ->SetBackgroundColor(1, 1, 1);
 
-    mEditBoxX->SetTextColor(0, 0, 0);
-    mEditBoxY->SetTextColor(0, 0, 0);
-    mEditBoxZ->SetTextColor(0, 0, 0);
-
-    mEditBoxX->SetTextInputType(UI::EUITextInputType::eNumber);
-    mEditBoxY->SetTextInputType(UI::EUITextInputType::eNumber);
-    mEditBoxZ->SetTextInputType(UI::EUITextInputType::eNumber);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxX->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxY->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 색상 유지: mEditBoxZ->SetTextColor(0, 0, 0);
 
     mEditBoxX->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
     mEditBoxY->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
@@ -297,10 +290,4 @@ void UIReflectVector3Panel::ClearDisplay()
     }
 
     mCurrentValue = {};
-}
-
-void UIReflectVector3Panel::ApplyLayoutStyle(const UI::UIControlStyle &style)
-{
-
-    SetHeight(style.mHeight);
 }

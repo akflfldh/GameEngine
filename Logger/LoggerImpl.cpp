@@ -36,7 +36,7 @@ void QuadLog::LoggerImpl::Log(ELogLevel logLevel, const char *category, const ch
         }
         fout.flush();
 
-        mCallbackSystem.Call(logMessage.c_str());
+        mCallbackSystem.ExecuteCallbacks(logMessage.c_str());
     }
 }
 

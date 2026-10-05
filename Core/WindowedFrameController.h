@@ -83,10 +83,13 @@ class CORE_API_LIB WindowedFrameController : public SuperController, public IWin
     virtual Core::WorkSpace *GetWorkSpace() const;
     virtual void SetWorkSpace(Core::WorkSpace *workspace);
 
+    // 새로운 특정 window로 마우스 입력이 들어갔을때의 콜백
     OnMouseEnterWindowCallbackSystem mOnMouseEnterWindowCallbackSystem;
 
     void ShowWindow();
     void MaximizedWindow();
+
+    void SetMouseMode(Core::MouseMode mode, LogicalWindow *targetLogicalWindow);
 
   protected:
     void InitializeWindow(const WindowCreateDesc &creationDesc);

@@ -1,5 +1,6 @@
 ﻿#include "CoreAsset/GlobalAssetRegistrySystem.h"
 #include "CoreAsset/Asset.h"
+#include <algorithm>
 
 CoreAsset::GlobalAssetRegistrySystem *CoreAsset::GlobalAssetRegistrySystem::GetInstance()
 {
@@ -115,7 +116,10 @@ CoreAsset::AssetID CoreAsset::GlobalAssetRegistrySystem::PeekNextAssetID() const
 
 void CoreAsset::GlobalAssetRegistrySystem::ClearDirtyAssetList()
 {
-    for (auto pAsset : mDirtyAssetList)
+
+    auto dirtyAssetList = std::move(mDirtyAssetList);
+
+    for (auto pAsset : dirtyAssetList)
     {
         Asset *asset = pAsset.Get();
 
@@ -124,11 +128,33 @@ void CoreAsset::GlobalAssetRegistrySystem::ClearDirtyAssetList()
             asset->ClearDirty();
         }
     }
-
-    mDirtyAssetList.clear();
 }
+
+void CoreAsset::GlobalAssetRegistrySystem::ClearDirtyAsset(Asset *asset)
+{
+
+    if (asset == nullptr)
+        return;
+
+    auto it = std::find_if(mDirtyAssetList.begin(), mDirtyAssetList.end(),
+                           [asset](AssetPtr ptr)
+                           {
+                               if (ptr.GetAssetID() == asset->GetID())
+                                   return true;
+                               return false;
+                           });
+    if (it != mDirtyAssetList.end())
+        mDirtyAssetList.erase(it);
+}
+
 size_t CoreAsset::GlobalAssetRegistrySystem::GetAssetNum() const
 {
 
     return mAssetTable.GetAssetNum();
+}
+
+std::string CoreAsset::GlobalAssetRegistrySystem::GetAssetName(AssetID id) const
+{
+
+    return mAssetTable.GetAssetName(id);
 }

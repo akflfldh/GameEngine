@@ -24,13 +24,22 @@ enum class EShaderStage : uint32_t
     eCompute
 };
 
+/// 하나의 shader stage를 컴파일할 때 적용할 전처리기 정의다.
+/// Material variant를 구분하는 key나 GPU resource를 소유하지 않고, 컴파일 입력만 기술한다.
+struct ShaderMacroDefinition
+{
+    std::string mMacro;
+    std::string mValue;
+};
+
 struct ShaderSourceInfo
 {
     uint8_t *mShadeCode;
     size_t mShaderCodeSize;
-    std::string mEntryPoint; // 셰이더 진입함수이름
-    std::string mTarget;     // ex) vs_5_1, ps_5_0
-    EShaderStage mStage;     // 각 셰이더 타입
+    std::string mEntryPoint;                          // 셰이더 진입함수이름
+    std::string mTarget;                              // ex) vs_5_1, ps_5_0
+    EShaderStage mStage;                              // 각 셰이더 타입
+    std::vector<ShaderMacroDefinition> mShaderMacros; // 이 stage에만 적용하며 다른 stage로 암묵적으로 전파하지 않는다.
 };
 
 enum class EShaderResourceType
@@ -48,6 +57,61 @@ enum class EShaderResourceDimension
     eTex2D,
     eSampler
 };
+
+struct ShaderBindingDesc
+{
+    uint32_t mRegisterIndex = 0;
+    uint32_t mRegisterSpace = 0;
+    EShaderResourceType mResourceType = EShaderResourceType::eConstantBuffer;
+};
+
+enum class ERootBindingMode
+{
+    RootCBV,
+    RootSRV,
+    RootUAV,
+    DescriptorTable,
+    RootConstants,
+    StaticSampler
+};
+struct RootBindingLocation
+{
+    uint32_t mRootParameterIndex = 0;
+    uint32_t mDescriptorOffset = 0;
+    ERootBindingMode mBindingMode = ERootBindingMode::RootCBV;
+};
+
+struct MaterialBindingRecord
+{
+    ShaderBindingDesc mShaderBinding;
+    RootBindingLocation mRootBinding;
+};
+
+/// Master Root Signature에서 엔진이 고정적으로 제공하는 GPU resource의 의미를 식별한다.
+/// HLSL register 번호나 D3D12 root parameter index가 아니라, MaterialManager가 실제 binding
+/// 계약으로 변환할 때 사용하는 안정적인 조회 key다.
+enum class EMasterRootBindingSemantic
+{
+    eInvalid,
+    ePassConstantBuffer,
+    eObjectConstantBuffer,
+    eMaterialConstantBuffer,
+    eLightStructuredBuffer,
+    eBillboardObjectStructuredBuffer,
+    eAlbedoTexture,
+    eNormalTexture,
+    eShadowMapTexture,
+    eEditorOverlayTexture,
+    eBillboardTexture,
+    eUITexture,
+    eSkyTexture,
+    ePostProcessInputTexture,
+    ePostProcessSecondaryTexture,
+    eSkinPaletteStructuredBuffer
+};
+
+using MaterialBindingRecordTable =
+    std::unordered_map<EMasterRootBindingSemantic, MaterialBindingRecord>;
 
 struct ShaderResourceInfo
 {

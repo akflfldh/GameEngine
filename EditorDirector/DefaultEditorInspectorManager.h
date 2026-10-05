@@ -12,7 +12,7 @@ enum class EDefaultEditorInspectorType : uint8_t
 };
 
 struct InspectorContext;
-
+class Map;
 class DefaultEditorInspectorManager
 {
 
@@ -28,6 +28,9 @@ class DefaultEditorInspectorManager
     void ActivateInsepctor(EDefaultEditorInspectorType type, const InspectorContext &inspectorContext);
 
     void RegisterInspector(EDefaultEditorInspectorType type, IInspector *Inspector);
+
+  private:
+    void OnOpendNewMap(Map *map);
 
   private:
     EDefaultEditorInspectorType mCurrentInspectorType = EDefaultEditorInspectorType::eNone;

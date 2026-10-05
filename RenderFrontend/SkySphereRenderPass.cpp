@@ -110,6 +110,7 @@ void Render::SkySphereRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     passBufferGpuResource.mOffset = bufferSizeOffset; //
     // bufferIndexOffset;
     passBufferGpuResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    passBufferGpuResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
     // 일반적인 MainPass들은 전체화면이라고생각
     //  최종
@@ -231,6 +232,7 @@ bool Render::SkySphereRenderPass::BuildRenderItemTexGpuResources(
         }
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eSkyTexture;
         bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
     }
 }

@@ -1,4 +1,5 @@
 ﻿#include "UIDropdown.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UIImage.h>
@@ -19,12 +20,20 @@ void UIDropdown::SetItemList(const std::vector<std::string> &list)
 {
 
     mItemTextList = list;
+    if (mSelectedIndex >= list.size())
+        mSelectedIndex = 0;
 
     if (mListPanel == nullptr)
         return;
 
-    // 일단 주석처리
-    //  ClearItemList();
+    // 목록 교체는 추가가 아니다. 이전 항목은 지연 삭제하고 새 항목만 인덱스의 기준으로 삼는다.
+    for (auto *item : mItemList)
+        item->Destroy();
+    mItemList.clear();
+    mIsListOpened = false;
+    mOpenProgress = 0.0f;
+    mListPanel->SetActiveFlag(false);
+    mListPanel->SetHeight(0.0f);
 
     for (size_t i = 0; i < list.size(); ++i)
     {
@@ -32,6 +41,10 @@ void UIDropdown::SetItemList(const std::vector<std::string> &list)
         if (item != nullptr)
             mItemList.push_back(item);
     }
+    if (mItemList.empty())
+        mHeaderText->SetText("");
+    else
+        SetSelectedIndex(mSelectedIndex, false);
 }
 
 void UIDropdown::SetItemHeight(float h)
@@ -67,6 +80,25 @@ void UIDropdown::SetSelectedIndex(size_t index, bool bNotify)
         mOnSelectedItemChangedCallbackSystem.ExecuteCallbacks(index);
 }
 
+size_t UIDropdown::GetSelectedIndex() const
+{
+    return mSelectedIndex;
+}
+
+bool UIDropdown::GetSelectedText(std::string &outText) const
+{
+    // Begin 전에도 조회할 수 있도록 자식 버튼이 아닌 저장된 항목 목록을 기준으로 삼는다.
+    // 실패 시 이전 조회 결과가 남지 않도록 출력 문자열을 비운다.
+    if (mSelectedIndex >= mItemTextList.size())
+    {
+        outText.clear();
+        return false;
+    }
+
+    outText = mItemTextList[mSelectedIndex];
+    return true;
+}
+
 void UIDropdown::SetSelectedItem(UI::UITextButton *item)
 {
 
@@ -81,11 +113,11 @@ void UIDropdown::SetSelectedItem(UI::UITextButton *item)
 void UIDropdown::SetHeaderButtonSize(float d)
 {
 
-    if (mHeaderDropButton)
-    {
-        mHeaderDropButton->SetSize(d, d);
-        mHeaderDropButton->SetPositionLocal(mTransform.GetSize().x - d, 0.0f);
-    }
+    /*  if (mHeaderDropButton)
+      {
+          mHeaderDropButton->SetSize(d, d);
+          mHeaderDropButton->SetPositionLocal(mTransform.GetSize().x - d, 0.0f);
+      }*/
 }
 
 void UIDropdown::SetSize(float w, float h)
@@ -101,9 +133,9 @@ void UIDropdown::SetWidth(float w)
         mHeader->SetWidth(w);
 
         mHeaderText->SetWidth(w - mHeaderDropButton->mTransform.GetSize().x);
-        // mHeaderDropButton->SetPositionLocal(mTransform.GetSize().x - mHeaderDropButton->mTransform.GetSize().x,
-        // 0.0f);
-        //  mHeaderDropButton->SetHorizontalPivotOffset(mHeaderDropButton->mTransform.GetSize().x);
+        //       mHeaderDropButton->SetPositionLocal(mTransform.GetSize().x - mHeaderDropButton->mTransform.GetSize().x,
+        //       0.0f);
+        //  mHeaderDropButton->SetHorizontalOffset(mHeaderDropButton->mTransform.GetSize().x);
     }
 
     if (mListPanel)
@@ -123,15 +155,17 @@ void UIDropdown::SetWidth(float w)
 void UIDropdown::SetHeaderHeight(float h)
 {
 
+    mHeaderHeight = h;
     if (mHeader)
     {
-        mHeaderDropButton->SetSize(h, h);
-        mHeader->SetHeight(h);
-        mHeaderText->SetHeight(h);
+        //   mHeaderDropButton->SetSize(mHeaderHeight, mHeaderHeight);
+        //   mHeader->SetHeight(mHeaderHeight);
+        //  mHeaderText->SetHeight(mHeaderHeight);
+        // mHeaderText->SetFontSize(mHeaderHeight - mHeaderHeight / 2.0f);
 
         // mHeaderDropButton->SetPositionLocal(mTransform.GetSize().x - mHeaderDropButton->mTransform.GetSize().x,
         // 0.0f);
-        //     mHeaderDropButton->SetHorizontalPivotOffset(h);
+        //     mHeaderDropButton->SetHorizontalOffset(h);
     }
 }
 
@@ -231,32 +265,34 @@ UI::UIImage *UIDropdown::CreateHeaderPanel()
     float dropdownWidth = mTransform.GetSize().x;
     float dropdownHeaderHeight = mTransform.GetSize().y;
 
-    mHeader = CreateChildUIElement<UI::UIImage>("Header");
-    mHeader->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    mHeader = EditorUIUtility::CreateSectionHeader(this, "Header");
+
     mHeader->SetWidth(dropdownWidth);
 
-    UI::UIControlStyleOverride headerStyleOverride;
-    headerStyleOverride.mBackgroundColor = UI::UIColor::DimGray;
-    mHeader->SetStyleOverride(headerStyleOverride);
-    //    mHeader->SetSize(dropdownWidth, dropdownHeaderHeight);
+    //     mHeader->SetSize(dropdownWidth, dropdownHeaderHeight);
 
     // mHeader->SetColor(0.7f, 0.18f, 0.18f);
 
-    auto text = mHeader->CreateChildUIElement<UI::UIText>("HeaderText");
+    auto text = EditorUIUtility::CreateLabel(mHeader, "HeaderText");
+
     text->SetClipingMode(UI::EUITextClipingMode::eEllipsis);
     text->SetOverflowMode(UI::EUITextOverflowMode::eEllipsis);
-    text->SetTextColor({1, 1, 1});
+    // EditorUIUtility의 기본 색상 유지: text->SetTextColor({1, 1, 1});
     // text->SetFontSize(20.0f);
     text->SetWidth(dropdownWidth - dropdownHeaderHeight);
 
     //    text->SetSize(dropdownWidth - dropdownHeaderHeight, dropdownHeaderHeight);
 
-    text->SetText("테스트입니다.");
+    // text->SetText("테스트입니다.");
 
     mHeaderText = text;
 
-    auto button = mHeader->CreateChildUIElement<UI::UIButton>("HeaderButton");
-    button->SetSize(dropdownHeaderHeight, dropdownHeaderHeight);
+    auto button = EditorUIUtility::CreateSmallButton(mHeader, "HeaderButton");
+
+    button->SetVerticalAnchor(0.0f);
+    button->SetVerticalOffset((mHeader->GetHeight() - button->GetHeight()) * 0.5f);
+
+    // button->SetSize(dropdownHeaderHeight, dropdownHeaderHeight);
     button->SetPositionLocal(dropdownWidth - button->mTransform.GetSize().x, 0.0f);
     button->mUIImageComponent->UseTexture();
     button->mUIImageComponent->SetTexture("Engine/ExpandArrowDown");
@@ -278,8 +314,15 @@ UI::UIImage *UIDropdown::CreateHeaderPanel()
     button->mUIImageComponent->SetBorderColor(UI::UIColor::LightGray);
 
     mHeaderDropButton = button;
-    mHeaderDropButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    mHeaderDropButton->SetHorizontalPivotOffset(0.0f);
+    mHeaderDropButton->SetHorizontalAnchor(1.0f);
+    mHeaderDropButton->SetHorizontalOffset(-(mHeaderDropButton->GetSize().X + 0.0f));
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    mHeaderDropButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     return mHeader;
 }
@@ -289,8 +332,8 @@ UI::UIImage *UIDropdown::CreateListPanel()
     float dropdownWidth = mTransform.GetSize().x;
     float dropdownHeaderHeight = mTransform.GetSize().y;
 
-    mListPanel = CreateChildUIElement<UI::UIImage>("ListPanel");
-    mListPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mListPanel = EditorUIUtility::CreatePanel(this, "ListPanel");
+
     mListPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalCom");
     mListPanel->SetUseScissorRect(true);
     // mListPanel->SetColor(0.12f, 0.12f, 0.12f);
@@ -316,11 +359,11 @@ UI::UITextButton *UIDropdown::CreateItem(const std::string &text)
     if (mListPanel == nullptr)
         return nullptr;
 
-    auto item = mListPanel->CreateChildUIElement<UI::UITextButton>("Item");
+    auto item = EditorUIUtility::CreateSmallTextButton(mListPanel, "Item");
     item->SetWidth(dropdownWidth);
     // item->SetSize(dropdownWidth, mItemHeight);
     //  item->SetHeight(mItemHeight);
-    item->mTextComponent->SetColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: item->mTextComponent->SetColor(1, 1, 1);
     // item->mTextComponent->SetFontSize(20.0f);
     item->mTextComponent->SetText(text);
     item->mTextComponent->SetClipingMode(UI::EUITextClipingMode::eEllipsis);

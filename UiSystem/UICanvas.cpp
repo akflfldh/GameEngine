@@ -55,6 +55,36 @@ void UI::UICanvas::AddChild(UIElement *uiElement)
     manager->AddUIElement(this, uiElement);
 }
 
+void UI::UICanvas::DestroyAllUIElements()
+{
+
+    for (auto element : mTopChildUIElementList)
+    {
+        element->Destroy();
+    }
+
+    for (auto element : mPendingAddList)
+    {
+        element->Destroy();
+    }
+
+    mTopChildUIElementList.clear();
+    mPendingAddList.clear();
+
+
+}
+
+void UI::UICanvas::UpdateScissorRectRegions()
+{
+    // 마지막 Update 이후 생성된 요소도 이번 렌더에 포함될 수 있으므로 먼저 등록한다.
+    ProcessPendingElements();
+    for (UIElement *element : mTopChildUIElementList)
+    {
+        if (element != nullptr && !element->GetDeadState() && element->GetParent() == nullptr)
+            element->UpdateScissorRectRegion();
+    }
+}
+
 void UI::UICanvas::OnWindowResize(float w, float h)
 {
     SetSize({w, h});
@@ -64,6 +94,23 @@ void UI::UICanvas::OnWindowResize(float w, float h)
         element->OnWindowResize(w, h);
     }
 }
+
+void UI::UICanvas::OnInputActivationChanged(bool active)
+{
+    // 재연결이나 같은 상태의 통지가 UI의 닫기 동작을 중복 실행하지 않도록 실제 전환만 알린다.
+    if (mInputActive == active)
+        return;
+
+    mInputActive = active;
+    mOnInputActivationChangedCallbackSystem.ExecuteCallbacks(active);
+}
+
+void UI::UICanvas::OnPreviewMouseDown(UIElement *hitElement)
+{
+    // 빈 공간 클릭도 팝업을 닫는 입력이므로 nullptr를 걸러내지 않는다.
+    mOnPreviewMouseDownCallbackSystem.ExecuteCallbacks(hitElement);
+}
+
 CoreMath::Vector2 UI::UICanvas::GetWindowSize() const
 {
 
@@ -104,6 +151,12 @@ void UI::UICanvas::SetSize(CoreMath::Vector2 size)
 bool UI::UICanvas::GetActiveFlag() const
 {
     return mActiveFlag;
+}
+
+void UI::UICanvas::SetActiveFlag(bool flag)
+{
+
+    mActiveFlag = flag;
 }
 
 void UI::UICanvas::DestroyUIElement(UIElement *uiElement)
@@ -160,11 +213,13 @@ void UI::UICanvas::ProcessPendingElements()
 
     size_t preNum = mChildUIElement.size();
 
-    std::remove_if(mChildUIElement.begin(), mChildUIElement.end(),
-                   [](UI::UIElement *element) { return element->GetDeadState(); });
+    mChildUIElement.erase(std::remove_if(mChildUIElement.begin(), mChildUIElement.end(),
+                                         [](UI::UIElement *element) { return element->GetDeadState(); }),
+                          mChildUIElement.end());
 
-    std::remove_if(mTopChildUIElementList.begin(), mTopChildUIElementList.end(),
-                   [](UIElement *element) { return element->GetDeadState(); });
+    mTopChildUIElementList.erase(std::remove_if(mTopChildUIElementList.begin(), mTopChildUIElementList.end(),
+                                                [](UIElement *element) { return element->GetDeadState(); }),
+                                 mTopChildUIElementList.end());
 
     if (mPendingAddList.size() > 0 || preNum != mChildUIElement.size())
         MarkDirty();
@@ -245,6 +300,12 @@ void UI::UICanvas::AddChildInternal(UIElement *uiElement)
 
 UI::UIElement *UI::UICanvas::CreateUIElement(const char *className, const char *instanceName)
 {
+    return CreateUIElement(className, instanceName, {});
+}
+
+UI::UIElement *UI::UICanvas::CreateUIElement(const char *className, const char *instanceName,
+                                             const std::function<void(UIElement *)> &initialize)
+{
     UIManager *manager = UIManager::GetInstance();
     UIElement *uiElement = manager->CreateUIElement(className, instanceName);
 
@@ -254,6 +315,10 @@ UI::UIElement *UI::UICanvas::CreateUIElement(const char *className, const char *
     AddChild(uiElement);
     mPendingAddList.push_back(uiElement);
     uiElement->mDestCanvas = this;
+
+    // 크기/폰트가 필요한 복합 UI의 OnBegin보다 먼저 호출한다. 콜백은 보관하지 않는다.
+    if (initialize)
+        initialize(uiElement);
 
     if (mIsBegin)
         uiElement->Begin();
@@ -328,16 +393,24 @@ void UI::UICanvas::RemoveUIElementFromList(UI::UIElement *uiElement)
 {
     auto it = std::find(mChildUIElement.begin(), mChildUIElement.end(), uiElement);
 
-    if (it == mChildUIElement.end())
-        return;
+    if (it != mChildUIElement.end())
+    {
 
-    mChildUIElement.erase(it);
+        mChildUIElement.erase(it);
+    }
 
     auto itTop = std::find(mTopChildUIElementList.begin(), mTopChildUIElementList.end(), uiElement);
 
     if (itTop != mTopChildUIElementList.end())
     {
         mTopChildUIElementList.erase(itTop);
+    }
+
+    auto itPen = std::find(mPendingAddList.begin(), mPendingAddList.end(), uiElement);
+
+    if (itPen != mPendingAddList.end())
+    {
+        mPendingAddList.erase(itPen);
     }
 }
 
@@ -416,13 +489,6 @@ const UI::UIPalette &UI::UITheme::GetPalette() const
 {
     // TODO: 여기에 return 문을 삽입합니다.
     return mPalette;
-}
-
-const UI::UIMetrics &UI::UITheme::GetMetrics() const
-{
-    // TODO: 여기에 return 문을 삽입합니다.
-
-    return mMetrics;
 }
 
 void UI::UITheme::SetStyle(EUIStyleRole role, const UIControlStyle &style)

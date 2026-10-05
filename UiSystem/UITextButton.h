@@ -19,18 +19,13 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UITextButton : public UIButton
     virtual void Update(float deltaTime) override;
     virtual void OnBegin() override;
 
+    void SetText(const std::string &text);
     UITextComponent *mTextComponent;
 
   protected:
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UIControlStyle &style) override;
-
     // style일변화 , hover,등 상태변화 에서 호출
     virtual void ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState) override;
-
-
-
-
+    virtual void OnUpdatedAutoSize(float scale) override;
 
   private:
 };

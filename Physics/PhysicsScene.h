@@ -3,6 +3,7 @@
 #include <Physics/Contact.h>
 #include <Physics/PhysicsDllMacro.h>
 #include <Physics/PhysicsType.h>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,6 +18,36 @@ struct PhysicsBoxCollisionQueryData;
 // 각 shape의 충돌감지,부분을 별도의 세부 모듈로 분리필요
 
 // broad phase , narrow phase 로 충돌 감지 단계를 분리할것
+
+struct PhysicsCollisionPairState
+{
+    void SetHandles(PhysicsBodyHandle a, PhysicsBodyHandle b)
+    {
+        if (a > b)
+            std::swap(a, b);
+
+        mHandleA = a;
+        mHandleB = b;
+    }
+
+    bool isSame(const PhysicsCollisionPairState &lhs) const
+    {
+        if (mHandleA != lhs.mHandleA)
+            return false;
+        if (mHandleB != lhs.mHandleB)
+            return false;
+
+        if (mResponseType != lhs.mResponseType)
+            return false;
+
+        return true;
+    }
+
+    PhysicsBodyHandle mHandleA;
+    PhysicsBodyHandle mHandleB;
+
+    EPhysicsCollisionChannelResponseType mResponseType;
+};
 
 class PHYSICS_API PhysicsScene
 {
@@ -58,6 +89,11 @@ class PHYSICS_API PhysicsScene
 
     KinematicContact BuildKinematicContact(PhysicsBody &bodyA, PhysicsBody &bodyB, PhysicsShape &shapeA,
                                            PhysicsShape &shapeB, const CollisionContact &source);
+
+    void SetCollisionChannelResponseTable(const PhysicsCollisionChannelResponseTable *pTable);
+
+    // 안전하게 마지막에 호출해서 events가져오자
+    void ConsumeCollisionEvents(std::vector<PhysicsCollisionResponseData> &outEvents);
 
   private:
     PhysicsBody *GetPhysicsBody(PhysicsBodyHandle handle) const;
@@ -187,6 +223,18 @@ class PHYSICS_API PhysicsScene
     void FillGroundResult(bool bIsGrounded, const CoreMath::Vector3 &groundNormal, PhysicsBodyHandle groundHandle,
                           PhysicsGroundResult &oResult);
 
+    void MakeCollisionResponseData();
+
+    void PushCollisionResponseData(EPhysicsCollisionChannelResponseType type, EPhysicsCollisionResponseEventType event,
+                                   PhysicsBodyHandle bodyHandle, PhysicsBodyHandle otherBodyHandle,
+                                   PhysicsShapeHandle shapeHandle, PhysicsShapeHandle otherShapeHandle);
+
+    void PushCurrPhysicsCollisionPairState(PhysicsBodyHandle handleA, PhysicsBodyHandle handleB,
+                                           EPhysicsCollisionChannelResponseType mResponseType);
+
+    void BoxBoxFaceClip(int sign, float d, int axisIndex, const std::vector<CoreMath::Vector3> &inVertices,
+                        std::vector<CoreMath::Vector3> &oOutVertices) const;
+
   private:
     PhysicsSceneID mID;
     std::string mName;
@@ -212,4 +260,11 @@ class PHYSICS_API PhysicsScene
     매프레임 초기화
     */
     std::vector<KinematicContact> mKinematicContactList;
+
+    const PhysicsCollisionChannelResponseTable *mCollisionChannelResponseTable;
+
+    std::vector<PhysicsCollisionResponseData> mCollisionResponseEventList;
+
+    std::vector<PhysicsCollisionPairState> mCollisionCurrFrameStateList;
+    std::vector<PhysicsCollisionPairState> mCollisionPreFrameStateList;
 };

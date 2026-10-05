@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <CoreAsset/AssetPtr.h>
+#include <CoreAsset/IntermediateAsset.h>
+#include <CoreBase/CallbackSystem.h>
 
 namespace CoreAsset
 {
@@ -14,7 +16,13 @@ namespace QuadLF
 {
 
 class LogicalFileSystem;
-}
+class LogicalFolder;
+} // namespace QuadLF
+
+class Map;
+
+using OnMapAssetAdded = Core::MultiCallbackSystem<Map *>;
+using OnMapAssetRemoving = Core::MultiCallbackSystem<Map *>;
 
 namespace Quad
 {
@@ -32,9 +40,19 @@ class EditorAssetManager
                     CoreAsset::AssetMetaDataManager *assetMetaDataManager);
 
     CoreAsset::AssetPtr CreateAsset(CoreAsset::EAssetType assetType,
-                                    CoreAsset::IntermediateAsset *intermediateAssetData);
+                                    CoreAsset::IntermediateAsset *intermediateAssetData,
+                                    const CoreAsset::AssetCreationContext &creationContext = {});
+
+    Map *CreateNewMap();
+
+    // 대상 폴더에 복제하고 파일 생성 알림까지 연결한다. 폴더 생략 시 파일시스템의 현재 폴더를 사용한다.
+    // domain은 대상 폴더로 결정하며, 실패 시 nullptr을 반환한다.
+    CoreAsset::AssetPtr DuplicateAsset(CoreAsset::AssetPtr source, QuadLF::LogicalFolder *destFolder = nullptr);
 
     template <typename T> T *GetAsset(CoreAsset::AssetID id);
+
+    OnMapAssetAdded mOnMapAssetAddedCallbackSystem;
+    OnMapAssetRemoving mOnMapAssetRemovingCallbackSystem;
 
   private:
     // Get + 없다면 디폴트로 가져올것

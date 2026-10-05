@@ -144,6 +144,7 @@ struct PhysicsBodyDesc
     CoreMath::Vector3 mForce = {0, 0, 0};
     float mMass = 1.0f;
     bool mGravity = false;
+    uint64_t mCollisionChannelResponseID = 0;
 };
 
 struct PhysicsSceneForces
@@ -217,4 +218,67 @@ enum class ECollisionResponsePath
     eNone = 0,
     eRigidBodySolver,
     eKinematicSolver
+};
+
+enum class EPhysicsCollisionChannelResponseType
+{
+    eIgnore,
+    eOverlap,
+    eBlock
+};
+
+enum class EPhysicsCollisionResponseEventType
+{
+    eBegin = 0,
+    eEnd
+};
+
+struct PhysicsCollisionResponseData
+{
+    EPhysicsCollisionChannelResponseType mResponseType;
+    EPhysicsCollisionResponseEventType mEventType;
+    PhysicsBodyHandle mBodyHandle;
+    PhysicsBodyHandle mOtherBodyHandle;
+
+    PhysicsShapeHandle mShapeHandle;
+    PhysicsShapeHandle mOhterShapeHandle;
+};
+
+struct PhysicsCollisionChannelResponseKeyHash
+{
+    size_t operator()(const std::pair<uint64_t, uint64_t> &key) const
+    {
+
+        size_t h1 = std::hash<uint64_t>{}(key.first);
+        size_t h2 = std::hash<uint64_t>{}(key.second);
+        return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
+    };
+};
+
+struct PhysicsCollisionChannelResponseTable
+{
+
+    std::unordered_map<std::pair<uint64_t, uint64_t>, EPhysicsCollisionChannelResponseType,
+                       PhysicsCollisionChannelResponseKeyHash>
+        mTable;
+
+    EPhysicsCollisionChannelResponseType GetResponseType(uint64_t a, uint64_t b) const
+    {
+        if (a > b)
+            std::swap(a, b);
+
+        auto it = mTable.find({a, b});
+        if (it == mTable.end())
+            return EPhysicsCollisionChannelResponseType::eBlock; // 기본
+
+        return it->second;
+    }
+
+    void SetResponseType(uint64_t a, uint64_t b, EPhysicsCollisionChannelResponseType type)
+    {
+        if (a > b)
+            std::swap(a, b);
+
+        mTable[{a, b}] = type;
+    }
 };

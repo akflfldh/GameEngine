@@ -32,6 +32,25 @@ Core::ELightType LightComponent::GetLightType() const
     return mLightType;
 }
 
+void LightComponent::SetLightEnabled(bool enabled)
+{
+    if (mLightEnabled == enabled)
+        return;
+
+    mLightEnabled = enabled;
+    MarkPropertyDirty();
+
+    // 조명 토글은 등록/해제를 반복하지 않고 프록시의 발광 상태만 바꾼다.
+    // EndTick 이전에도 렌더 명령 생성이 최신 켜짐 상태를 읽을 수 있도록 즉시 전달한다.
+    if (mLightProxy)
+        mLightProxy->mLightEnabled = mLightEnabled;
+}
+
+bool LightComponent::GetLightEnabled() const
+{
+    return mLightEnabled;
+}
+
 CoreMath::Vector3 LightComponent::GetStrength() const
 {
     return mStrength;
@@ -178,6 +197,7 @@ void LightComponent::UpdateProxy()
 {
     if (mLightProxy)
     {
+        mLightProxy->mLightEnabled = mLightEnabled;
         mLightProxy->mPosition = GetPositionWorld();
         mLightProxy->mDirection = GetForwardWorld();
         mLightProxy->mRight = GetRightWorld();

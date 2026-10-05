@@ -137,6 +137,8 @@ class CORE_API_LIB LogicalWindow : public UI::IViewContextInterface
     const CoreMath::Ray &GetWorldRay() const;
     CoreMath::Ray CaculateWorldRay(int clientPosX, int clientPosY) const;
 
+    Core::MouseMode GetMouseMode() const;
+
   private:
     WindowedFrameController *mWindowedFrameController;
 
@@ -153,7 +155,7 @@ class CORE_API_LIB LogicalWindow : public UI::IViewContextInterface
     GlobalFrameData mUIGlobalFrameData;
 
     // 창이 마우스클릭을 받아서 활성화 된상태인지여부
-    bool mActiveState;
+    bool mActiveState = false;
 
     float mBackBufferClearColor[4];
 

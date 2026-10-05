@@ -1,7 +1,11 @@
 ﻿#include "UIHierarchyItem.h"
+#include <EditorDirector/EditorUIUtility.h>
+#include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
+#include <UiSystem/UIHorizontalLayoutComponent.h>
 #include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
+#include <UiSystem/UIText.h>
 #include <UiSystem/UITextButton.h>
 #include <UiSystem/UITextComponent.h>
 #include <UiSystem/UIVerticalLayoutComponent.h>
@@ -19,14 +23,18 @@ void UIHierarchyItem::OnBegin()
     UI::UIImage::OnBegin();
     float itemWidth = mTransform.GetSize().x;
 
+    auto canvas = GetDestCanvas();
+
     // SetColor({0.3, 0.3, 0.3});
 
-    mHeaderPanel = CreateChildUIElement<UI::UITextButton>("HeaderPanel");
-    mHeaderPanel->SetStyleRole(UI::EUIStyleRole::eListItem);
-    // mHeaderPanel->SetSize(itemWidth, mHeaderHeight);
-    mHeaderPanel->SetWidth(itemWidth);
+    mHeaderPanel = CreateChildUIElement<UI::UIButton>("HeaderButton");
+    auto horizontialCom = mHeaderPanel->CreateUIComponent<UI::UIHorizontalLayoutComponent>("HoriCom");
+    horizontialCom->SetItemPaddingTop(5.0f);
 
-    mHeaderHeight = mHeaderPanel->GetHeight();
+    mHeaderPanel->mHoverImageColor = UI::UIColor::DarkGray;
+
+    mHeaderPanel->SetSize(itemWidth, mHeaderHeight);
+    mHeaderPanel->SetWidth(itemWidth);
 
     //  mHeaderPanel->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
     //    mHeaderPanel->mTextComponent->SetFontSize(25.0F);
@@ -34,28 +42,33 @@ void UIHierarchyItem::OnBegin()
     mHeaderPanel->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float) { mOnClickedHeaderPanelCallbackSystem.ExecuteCallbacks(); });
 
-    mExpandButton = mHeaderPanel->CreateChildUIElement<UI::UIButton>("ExpandButton");
+    mExpandButton = EditorUIUtility::CreateSmallButton(mHeaderPanel, "ExpandButton");
     // mExpandButton->SetSize(25, 25);
 
     mExpandButton->mUIImageComponent->UseTexture();
     mExpandButton->mUIImageComponent->SetTexture("Engine/ExpandArrowRight");
-    mExpandButton->SetPositionLocal(5, 5);
+    //  mExpandButton->SetPositionLocal(5, 5);
 
     mExpandButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)
                                                                            { SetExpandFlag(!GetExpandFlag()); });
 
-    mIconImage = mHeaderPanel->CreateChildUIElement<UI::UIImage>("IconImage");
-    mIconImage->SetStyleRole(UI::EUIStyleRole::eIcon);
-    mIconImage->SetWidth(mIconImage->GetHeight());
-    mIconImage->SetPositionLocal(mExpandButton->GetWidth() + 5.0f, 5);
+    mIconImage = EditorUIUtility::CreateIcon(mHeaderPanel, "IconImage");
 
+    mIconImage->SetWidth(mIconImage->GetHeight());
+    // mIconImage->SetPositionLocal(mExpandButton->GetWidth() + 5.0f, 5);
+    mIconImage->SetOnlyVisible(true);
     mIconImage->RefreshStyle();
 
-    mHeaderPanel->mTextComponent->SetPaddingLeft(mIconImage->GetWidth() + mIconImage->mTransform.GetLocalPosition().x +
-                                                 10.0f);
+    //    mHeaderText = mHeaderPanel->CreateChildUIElement<UI::UIText>("HeaderText");
+    mHeaderText = EditorUIUtility::CreateText(mHeaderPanel, "HeaderText", "", itemWidth);
+    mHeaderText->SetOnlyVisible(true);
+    // mHeaderText->SetHeight(30.0f);
 
-    mContentPanel = CreateChildUIElement<UI::UIImage>("ContentPanel");
-    mContentPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    /* mHeaderPanel->mTextComponent->SetPaddingLeft(mIconImage->GetWidth() + mIconImage->mTransform.GetLocalPosition().x
+       + 10.0f);*/
+
+    mContentPanel = EditorUIUtility::CreatePanel(this, "ContentPanel");
+
     mVerticalLayoutComponent = mContentPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
     // mVerticalLayoutComponent->SetItemPaddingX(25);
     mContentPanel->SetWidth(itemWidth);
@@ -64,6 +77,9 @@ void UIHierarchyItem::OnBegin()
     //  mContentPanel->SetColor(0.0, 1.0, 0.0);
 
     mContentPanel->mOnChangedSizeCallbackSystem.Register([this](UI::UIElement *contentPanel) { UpdateHeight(); });
+
+    mHeaderHeight = mHeaderPanel->GetHeight();
+    mItemHeight = mHeaderHeight;
 
     // SetHeight(mHeaderHeight);
 
@@ -95,13 +111,6 @@ void UIHierarchyItem::UpdateHeight()
     SetHeight(h);
 }
 
-void UIHierarchyItem::ApplyLayoutStyle(const UI::UIControlStyle &style)
-{
-
-    SetHeight(style.mHeight);
-    mItemHeight = style.mHeight;
-}
-
 // style일변화 , hover,등 상태변화 에서 호출
 void UIHierarchyItem::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state)
 {
@@ -112,9 +121,9 @@ void UIHierarchyItem::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIV
 void UIHierarchyItem::SetHeaderText(const std::string &text)
 {
 
-    if (mHeaderPanel)
+    if (mHeaderText)
     {
-        mHeaderPanel->mTextComponent->SetText(text);
+        mHeaderText->SetText(text);
     }
 }
 
@@ -144,7 +153,7 @@ float UIHierarchyItem::GetHeaderLineHeight() const
 {
     if (mHeaderPanel)
     {
-        return mHeaderPanel->mTextComponent->GetLineHeight();
+        return mHeaderPanel->GetHeight();
     }
 }
 
@@ -152,7 +161,7 @@ void UIHierarchyItem::SetHeaderColor(float r, float g, float b)
 {
     /*  if (mHeaderPanel)
       {
-          mHeaderPanel->mUIImageComponent->SetColor(r, g, b);
+          // EditorUIUtility의 기본 색상 유지: mHeaderPanel->mUIImageComponent->SetColor(r, g, b);
       }*/
 }
 
@@ -163,6 +172,7 @@ void UIHierarchyItem::SetWidth(float w)
     if (mHeaderPanel)
     {
         mHeaderPanel->SetWidth(w);
+        mHeaderText->SetWidth(std::max(0.0f, GetWidth() - mHeaderText->mTransform.GetLocalPosition().x));
     }
 
     if (mContentPanel)
@@ -206,16 +216,16 @@ bool UIHierarchyItem::GetExpandFlag() const
 std::string UIHierarchyItem::GetHeaderText() const
 {
 
-    if (mHeaderPanel)
+    if (mHeaderText)
     {
-        return mHeaderPanel->mTextComponent->GetText();
+        return mHeaderText->GetText();
     }
 
     return "";
     // TODO: 여기에 return 문을 삽입합니다.
 }
 
-UI::UITextButton *UIHierarchyItem::GetHeaderPanel() const
+UI::UIButton *UIHierarchyItem::GetHeaderPanel() const
 {
     return mHeaderPanel;
 }

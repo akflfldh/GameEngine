@@ -20,6 +20,9 @@ class PHYSICS_API PhysicsWorld
     void DestroyScene(PhysicsSceneID id);
     void DestroyScene(PhysicsScene *scene);
 
+    void SetCollisionChannelResponseTable(const PhysicsCollisionChannelResponseTable &table);
+    void SetCollisionChannelResponseTable(PhysicsCollisionChannelResponseTable &&table);
+
   private:
     void ClearAll();
 
@@ -28,4 +31,6 @@ class PHYSICS_API PhysicsWorld
     std::unordered_map<PhysicsSceneID, PhysicsScene *> mSceneIDTable;
 
     PhysicsSceneID mNextSceneID = 1;
+
+    PhysicsCollisionChannelResponseTable mCollisionChannelResponseTable;
 };

@@ -50,7 +50,7 @@ void CoreAsset::TextureFactory::SetPropertyMetaData(Texture *texture, const Inte
     if (texture == nullptr)
         return;
 
-    texture->SetLoadState(Asset::LoadState::Loaded);
+    texture->SetLoadState(EAssetLoadState::Loaded);
 
     texture->SetTextureDesc(intermediateTexture.mTextureRawData);
     // texture->SetName(intermediateTexture.mAssetName.c_str());

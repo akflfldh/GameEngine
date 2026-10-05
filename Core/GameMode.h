@@ -34,6 +34,7 @@ GameMode의 역할:
 
 class Map;
 class ObjectController;
+class PlayerController;
 class Object;
 class CameraComponent;
 class PlayerStart;
@@ -65,6 +66,11 @@ class CORE_API_LIB GameMode
     //  void SetDefaultPlayerObjectClass(const std::string &className);
     //   void SetDefaultPlayerObjectPrefab(CoreAsset::AssetID prefabID);
     //    void ClearDefaultPlayerObject();
+
+    void ProcessLocalInputActions(Map *map);
+
+    virtual ControllableEntity *SpwanPlayerObject(Map *map);
+    virtual PlayerController *SpwanPlayerController(Map *map);
 
   protected:
     virtual ObjectController *ResolvePlayerController(Map *map);

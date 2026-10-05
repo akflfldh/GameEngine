@@ -7,7 +7,9 @@
 #define LOGGER_API __declspec(dllimport)
 #endif
 
-#include "Include/CallbackSystem.h"
+#include <algorithm>
+#include <CoreBase/CallbackSystem.h>
+#include <string>
 
 #define LogLevelInfo "Info"
 #define LogLevelWarning "Warning"
@@ -49,12 +51,23 @@ class LOGGER_API Logger
     virtual void LogWarning(const char *category, const char *message) = 0;
     virtual void LogError(const char *category, const char *message) = 0;
     virtual void LogCritical(const char *category, const char *message) = 0;
+
+    // 문자열 편의 오버로드는 기존 가상 메서드로 전달하여 파일 출력과 콜백 동작을 유지한다.
+    void Log(ELogLevel logLevel, const char *category, const std::string &message);
+    void Log(const char *logLevel, const char *category, const std::string &message);
+    void LogInfo(const char *category, const std::string &message);
+    void LogWarning(const char *category, const std::string &message);
+    void LogError(const char *category, const std::string &message);
+    void LogCritical(const char *category, const std::string &message);
+
     virtual void OnActive(int filterID) = 0;
     virtual void OffActive(int filterID) = 0;
 
     virtual void SetMinLogLevel(ELogLevel minLogLevel) = 0;
 
-    CallbackSystemOneParam<const char *> mCallbackSystem;
+    // 로그를 발생시킨 스레드에서 동기 호출한다. 전달된 문자열은 콜백 안에서 필요한 만큼 복사한다.
+    // 등록·해제는 로그 호출과 겹치지 않아야 하며, 콜백에서 같은 Logger를 다시 호출하지 않는다.
+    Core::MultiCallbackSystem<const char *> mCallbackSystem;
 
   protected:
     Logger();

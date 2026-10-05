@@ -1,4 +1,5 @@
 ﻿#include "PropertyPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/Entity.h>
 #include <Core/StaticMeshComponent.h>
 #include <CoreAsset/AssetManager.h>
@@ -29,7 +30,7 @@ void PropertyPanel::OnBegin()
     SetLayout(EUIScrollLayout::eVertical);
 
     // User Reflect Panel
-    mReflectPanel = CreateChildUIElement<UIReflectPanel>("ReflectPanel");
+    mReflectPanel = EditorUIUtility::Create<UIReflectPanel>(this, "ReflectPanel");
     mReflectPanel->SetWidth(propertyPanelWidth);
 
     AddItem(mReflectPanel);

@@ -10,6 +10,9 @@
 #include <Core/PrefabLoader.h>
 #include <Core/PrefabStorer.h>
 #include <Core/World.h>
+#include <CoreAsset/AnimationAssetFactory.h>
+#include <CoreAsset/AnimationAssetLoader.h>
+#include <CoreAsset/AnimationAssetStorer.h>
 #include <CoreAsset/AssetFactoryManager.h>
 #include <CoreAsset/AssetIOManager.h>
 #include <CoreAsset/AssetManager.h>
@@ -29,8 +32,11 @@
 #include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
 #include <RenderFrontend/RenderPipelineManager.h>
+#include <UiSystem/UICanvas.h>
+#include <UiSystem/UIManager.h>
 #include <Utility/Utility.h>
 
+#include <Core/CollisionChannelSystem.h>
 #include <Core/Map.h>
 #include <CoreAsset/PakAssetDataSource.h>
 #include <CoreAsset/UIMaterialManager.h>
@@ -71,6 +77,11 @@ void Quad::GameDirector::Initialize()
         return;
     }
 
+    if (!LoadProjectCollisionCfg())
+    {
+        return;
+    }
+
     // game window create, init
     // window not visible
     mApp = Quad::Application::GetInstance();
@@ -101,7 +112,9 @@ void Quad::GameDirector::Initialize()
     // LoadAssets();
 
     CreateWorkSpace();
+
     mWorld->SetEngineMode(mGameRuntimeMode.get());
+    mGameRuntimeMode->SetWorld(mWorld.get());
 
     CoreAsset ::AssetPtr pFirstMap = assetManager->GetAsset<Map>(mGameBuildManifest.mStartupMapAssetID);
     Map *firstMap = pFirstMap.As<Map>();
@@ -110,7 +123,7 @@ void Quad::GameDirector::Initialize()
         return;
     }
 
-    mWorld->Register(firstMap);
+    //   mWorld->Register(firstMap);
     mWorld->SetCurrentMap(firstMap);
 
     // map asset들 world에 모두 등록
@@ -124,8 +137,9 @@ void Quad::GameDirector::Initialize()
 void Quad::GameDirector::Begin()
 {
 
-    // world StartMap
-    mWorld->StartMap();
+    // 세션 초기화는 한 번만 수행하고, 맵 시작은 별도 진입점으로 전달한다.
+    mWorld->StartPlay();
+    mWorld->BeginMap();
 }
 
 void Quad::GameDirector::PreUpdate(float deltaTime)
@@ -136,6 +150,9 @@ void Quad::GameDirector::PreUpdate(float deltaTime)
 
 void Quad::GameDirector::Update(float deltaTime)
 {
+    // 독립 실행도 Canvas의 대기 요소 및 레이아웃을 갱신한 뒤 입력과 게임 로직을 처리한다.
+    UI::UIManager::GetInstance()->Update(deltaTime);
+
     mGameWindowController->Update(deltaTime);
 
     mWorld->Update(deltaTime);
@@ -147,6 +164,8 @@ void Quad::GameDirector::Update(float deltaTime)
 
 void Quad::GameDirector::EndUpdate(float deltaTime)
 {
+    UI::UIManager::GetInstance()->EndUpdate(deltaTime);
+
     mWorld->EndUpdate(deltaTime);
 
     mGameWindowController->EndUpdate();
@@ -162,16 +181,27 @@ void Quad::GameDirector::Draw()
 void Quad::GameDirector::CleanUp()
 {
     mWorld->CleanUp();
+    UI::UIManager::GetInstance()->CleanUp();
     // world->cleanUp();
 }
 
-void Quad::GameDirector::EndFrame() {}
+void Quad::GameDirector::EndFrame()
+{
+
+    mWorld->EndFrame();
+}
 
 void Quad::GameDirector::EndSystem()
 {
+    // CleanUp은 매 프레임 실행되므로 세션 종료는 프로그램 종료 경로에서만 전달한다.
+    if (mWorld)
+        mWorld->EndPlay();
 
     Render::RenderPipelineManager::GetInstance()->EndRenderThread();
     Render::AssetResolver::GetInstance()->EndResourceResolveThread();
+
+    // 마지막 프레임 이후의 Shutdown이 요청한 FPS 텍스트 지연 삭제도 렌더 스레드 종료 후 완료한다.
+    UI::UIManager::GetInstance()->CleanUp();
 }
 
 Quad::GameRuntimeConfig *Quad::GameDirector::GetGameRuntimeConfig() const
@@ -193,6 +223,14 @@ void Quad::GameDirector::CreateMainLogicalWindow()
 {
 
     mMainLogicalWindow = std::make_unique<Core::LogicalWindow>();
+
+    // Application의 Begin 전에 활성화하므로 Canvas는 기존 UIManager::Begin 경로에서 시작된다.
+    // 이후 SetWorkSpace가 창 크기를 Canvas에 전달하여 StartPlay 전에 표시 영역이 준비된다.
+    UI::UIManager *uiManager = UI::UIManager::GetInstance();
+    const UI::UICanvasID canvasID = uiManager->CreateCanvas("MainPlayCanvas", UI::ECanvasSizeMode::eFixSize);
+    UI::UICanvas *canvas = uiManager->GetCanvas(canvasID);
+    mMainLogicalWindow->SetActiveCanvas(canvas);
+    mGameRuntimeMode->SetCanvas(canvas);
 
     mMainLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
 
@@ -254,6 +292,10 @@ void Quad::GameDirector::RegisterAssetFactory()
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkinningMesh,
                                               CoreAsset::MeshFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkeleton,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimation,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
 
@@ -270,6 +312,10 @@ void Quad::GameDirector::RegisterAssetLoader()
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkeleton,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
 }
@@ -284,6 +330,10 @@ void Quad::GameDirector::RegisterAssetStorer()
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkeleton,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());
 }
@@ -378,7 +428,16 @@ void Quad::GameDirector::LoadAssets()
 
     for (const auto &record : records)
     {
-        assetManager->LoadAsset(record.mAssetID, record.mRegistryPath, executionContext);
+        CoreAsset::AssetLoadResult result =
+            assetManager->LoadAsset(record.mAssetID, record.mRegistryPath, executionContext);
+
+        if (result.mResultFlag == CoreAsset::EAssetLoadResultFlag::eSuccess)
+        {
+            if (result.mAssetType == CoreAsset::EAssetType::eMap)
+            {
+                mWorld->Register(static_cast<Map *>(result.pAsset));
+            }
+        }
     }
 
     mObjectRenderItemBuilder = std::make_unique<Render::ObjectRenderItemBuilder>(
@@ -389,6 +448,25 @@ void Quad::GameDirector::LoadAssets()
     mUIRenderItemBuilder = std::make_unique<Render::UIRenderItemBuilder>(
         Render::IRenderSystem::GetInstance(), UI::UIManager::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
         Render::AssetResolver::GetInstance());
+}
+
+bool Quad::GameDirector::LoadProjectCollisionCfg()
+{
+
+    const std::filesystem::path &path = mGameRuntimeConfig->GetGameRootDirectory() / "ProjectCollision.cfg";
+
+    BinaryArch collisionArch(true);
+    collisionArch.SetFile(path);
+    collisionArch.Start();
+
+    if (collisionArch.IsFail())
+    {
+        return false;
+    }
+    Core::CollisionChannelSystem::GetInstance()->Serialize(collisionArch);
+    collisionArch.End();
+
+    return true;
 }
 
 void Quad::GameDirector::LoadBootstrapAssets() {}

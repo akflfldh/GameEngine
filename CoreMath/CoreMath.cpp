@@ -63,11 +63,15 @@ Vector3 CoreMath::Quaternion::ToEulerAngles() const
 {
 
     glm::quat qa = glm::make_quat(&X);
+    glm::mat4 rotation = glm::mat4_cast(qa);
 
-    const glm::vec3 vec1 = glm::degrees(glm::eulerAngles(qa));
+    float yaw, pitch, roll;
+    glm::extractEulerAngleYXZ(rotation, yaw, pitch, roll);
+
+    glm::vec3 euler = glm::degrees(glm::vec3(pitch, yaw, roll));
 
     Vector3 result;
-    memcpy(&result.X, glm::value_ptr(vec1), sizeof(float) * 3);
+    memcpy(&result.X, glm::value_ptr(euler), sizeof(float) * 3);
 
     return result;
 }
@@ -479,8 +483,10 @@ Matrix4X4 Matrix4X4::MakeRotationDegreeZ(float z) // Z축 회전 (도)
 
 Matrix4X4 Matrix4X4::MakeRotationYawPitchRollRad(float yaw, float pitch, float roll)
 {
-    glm::quat q = glm::angleAxis(yaw, glm::vec3(0, 0, 1)) * glm::angleAxis(pitch, glm::vec3(1, 0, 0)) *
-                  glm::angleAxis(roll, glm::vec3(0, 1, 0));
+    // Foundation Contract에 따라 pitch=X, yaw=Y, roll=Z를 사용한다. 열벡터에서는 우측 항부터 적용되므로
+    // Y*X*Z 합성은 roll(Z) -> pitch(X) -> yaw(Y) 순서이며 Quaternion::MakeFromEuler와 일치한다.
+    glm::quat q = glm::angleAxis(yaw, glm::vec3(0, 1, 0)) * glm::angleAxis(pitch, glm::vec3(1, 0, 0)) *
+                  glm::angleAxis(roll, glm::vec3(0, 0, 1));
 
     glm::mat4 mat = glm::mat4_cast(q);
 

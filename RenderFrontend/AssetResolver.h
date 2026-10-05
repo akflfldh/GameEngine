@@ -57,6 +57,7 @@ class RENDER_FRONTEND_API AssetResolver
     void EndResourceResolveThread();
 
     int GetLightStructuredGpuBufferID() const;
+    int GetSkinPaletteStructuredGpuBufferID() const;
     int GetBillboardStructuredGpuBufferID() const;
 
     GRM::GRMPtr GetDefaultTexture() const;
@@ -70,8 +71,7 @@ class RENDER_FRONTEND_API AssetResolver
     // void ResolveMesh(CoreAsset::Mesh *mesh);
     bool ResolveMaterial(CoreAsset::Material *material) const;
     bool ResolveTexture(CoreAsset::Texture *texture) const;
-    bool ResolveStaticMesh(CoreAsset::StaticMesh *staticMesh) const;
-    bool ResolveSkinningMesh(CoreAsset::Mesh *mesh) const;
+    bool ResolveMesh(CoreAsset::Mesh *mesh) const;
 
     void RegisterGpuReosurce(CoreAsset::AssetID assetID, GRM::GRMPtr ptr) const;
     void RegisterMeshGpuResourceContext(CoreAsset::AssetID, MeshGpuResourceContext context) const;
@@ -104,5 +104,6 @@ class RENDER_FRONTEND_API AssetResolver
 
     int mLightGpuBufferContextID = 4;
     int mBillboardGpuBufferContextID = 5;
+    int mSkinPaletteGpuBufferContextID = 6;
 };
 } // namespace Render

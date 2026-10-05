@@ -170,6 +170,7 @@ class RenderPassGraph
 
     void UploadMaterialData(const RenderPassExecuteContext &renderPassExecuteContext);
     void UploadLightData(const RenderPassExecuteContext &renderPassExecuteContext);
+    void UploadPaletteMatrixData(const RenderPassExecuteContext &renderPassExecuteContext);
 
   private:
     // 렌더 pass들에서 렌더타켓,셰이더리소스로 사용되는 텍스처테이블

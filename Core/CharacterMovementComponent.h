@@ -18,9 +18,13 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) CharacterMovementComponent : publi
 
     virtual void Serialize(Arch &arch) override;
 
+    void ApplyVelocity(const CoreMath::Vector3 v);
+
   protected:
     virtual void Tick(float deltaTime) override;
     void SyncPrefabComponentFrom(Component *prefabComponent) override;
+
+    SceneComponent *GetPhysicsComponent() const;
 
   private:
     CoreMath::Vector3 mInputWorldDir;
@@ -35,4 +39,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) CharacterMovementComponent : publi
 
     REFLECT_PROPERTY()
     float mJumpVelocity;
+
+    // 다음프레임에 더해지는 속도
+    CoreMath::Vector3 mAddVelocity;
 };

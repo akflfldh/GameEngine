@@ -1,8 +1,12 @@
 ﻿#pragma once
 
 #include "Core/CoreDllExport.h"
+#include <CoreAsset/AssetType.h>
 #include <filesystem>
 #include <string>
+
+class Arch;
+
 namespace Quad
 {
 class CORE_API_LIB ProjectConfig
@@ -19,11 +23,16 @@ class CORE_API_LIB ProjectConfig
 
     void Load();
     void Save();
+    void Serialize(Arch &arch);
+
+    void SetStartMapID(CoreAsset::AssetID id);
+    CoreAsset::AssetID GetStartMapID() const;
 
   private:
     std::filesystem::path mProjectPath;
     std::filesystem::path mProjectConfigFilePath;
     std::string mProjectName;
+    CoreAsset::AssetID mStartMapID = NoneAssetID;
 
   private:
     ProjectConfig();

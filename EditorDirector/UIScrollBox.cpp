@@ -1,4 +1,5 @@
 ﻿#include "UIScrollBox.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIGridLayoutComponent.h>
 #include <EditorDirector/UIScrollControlComponent.h>
 #include <UiSystem/UIButtonComponent.h>
@@ -35,9 +36,9 @@ void UIScrollBox::OnBegin()
 
     auto canvas = GetDestCanvas();
 
-    mViewportPanel = CreateChildUIElement<UI::UIElement>("ViewportPanel");
+    mViewportPanel = EditorUIUtility::Create<UI::UIElement>(this, "ViewportPanel");
 
-    mContentPanel = mViewportPanel->CreateChildUIElement<UI::UIElement>("ContentPanel");
+    mContentPanel = EditorUIUtility::Create<UI::UIElement>(mViewportPanel, "ContentPanel");
     // UI::UIImageComponent *contentPanelImageCom = mContentPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
     auto contentPanelButtonCom = mContentPanel->CreateUIComponent<UI::UIButtonComponent>("ButtonCom");
@@ -66,7 +67,7 @@ void UIScrollBox::OnBegin()
     // contentPanelImageCom->NotUseTexture();
     // contentPanelImageCom->SetColor(0.2f, 0.2, 0.2f);
 
-    mScrollControlPanel = GetDestCanvas()->CreateUIElement<UI::UIElement>("mScrollControlPanel");
+    mScrollControlPanel = EditorUIUtility::Create<UI::UIElement>(GetDestCanvas(), "mScrollControlPanel");
     UI::UIImageComponent *scrollboxImageCom = mScrollControlPanel->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     UIScrollControlComponent *scrollControlCom =
         mScrollControlPanel->CreateUIComponent<UIScrollControlComponent>("ControlCom");
@@ -102,6 +103,14 @@ void UIScrollBox::SetBackgrounColor(float r, float g, float b)
     if (mImageComponent)
     {
         mImageComponent->SetColor(r, g, b);
+    }
+}
+
+void UIScrollBox::SetBackgrounColor(UI::UIColor color)
+{
+    if (mImageComponent)
+    {
+        mImageComponent->SetColor(color);
     }
 }
 

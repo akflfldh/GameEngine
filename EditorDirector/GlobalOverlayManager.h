@@ -4,6 +4,7 @@
 #include <EditorDirector/GlobalOverlayType.h>
 #include <functional>
 #include <memory>
+#include <queue>
 #include <string>
 
 namespace UI
@@ -41,6 +42,7 @@ class Prefab;
 class UIEditorDebugHUD;
 class MapPlaySettingPanel;
 class MaterialCreationManager;
+class BottomPanel;
 
 class DefaultEditUIContext
 {
@@ -78,6 +80,12 @@ enum class EDefault3DObjectType
     eSphere
 };
 
+struct LogUIContext
+{
+    std::mutex mMutex;
+    std::queue<std::string> mMessageQueue;
+};
+
 class GlobalOverlayManager
 {
   public:
@@ -90,8 +98,11 @@ class GlobalOverlayManager
     void ChangeToDefaultEdit();
     void ChangeToPrefabEdit();
     void ChangeToMaterialEdit();
+    void ChangeToAnimationClipEdit();
+    void ChangeToProjectSetting();
 
     void Initialize(UI::UICanvas *overlayCanvas, Core::LogicalWindow *overlayWindow);
+    BottomPanel *GetBottomPanel() const;
 
     void ShowMessageBox(const std::string &str);
     void CloseMessageBox();
@@ -113,6 +124,8 @@ class GlobalOverlayManager
     void OnScenePlayEndButtonDown();
 
     void ShowPrefabEditWindow(Prefab *prefab);
+
+    void OnOpnedNewMap(Map *map);
 
   private:
     void CreateMessageBox();
@@ -188,6 +201,8 @@ class GlobalOverlayManager
     Core::LogicalWindow *mMainWindow = nullptr;
 
     UIEditorDebugHUD *mDebugHUD = nullptr;
+    // UIManager가 수명을 관리하는 하단 컨테이너의 비소유 참조다.
+    BottomPanel *mBottomPanel = nullptr;
     UI::UIImage *mMessageBox;
     UI::UITextComponent *mMessageBoxTextCom;
 
@@ -236,4 +251,6 @@ class GlobalOverlayManager
     PrefabEditUIContext mPrefabEditUIContext;
 
     MaterialCreationManager *mMaterialCreationManager = nullptr;
+
+    LogUIContext mLogUIContext;
 };

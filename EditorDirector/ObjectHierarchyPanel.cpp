@@ -1,4 +1,5 @@
 ﻿#include "ObjectHierarchyPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/Map.h>
 #include <Core/Object.h>
 #include <EditorDirector/EditorProjectManager.h>
@@ -79,7 +80,7 @@ void ObjectHierarchyPanel::OnBegin()
 
     const glm::vec2 size = mTransform.GetSize();
 
-    auto titleElement = GetDestCanvas()->CreateUIElement<UI::UIElement>("Title");
+    auto titleElement = EditorUIUtility::Create<UI::UIElement>(GetDestCanvas(), "Title");
 
     auto titleImageCom = titleElement->CreateUIComponent<UI::UIImageComponent>("ImageCom");
 
@@ -90,8 +91,8 @@ void ObjectHierarchyPanel::OnBegin()
 
     titleElement->SetParent(this);
 
-    mScrollPanel = GetDestCanvas()->CreateUIElement<UIScrollBox>("ScrollBox");
-    mScrollPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mScrollPanel = EditorUIUtility::Create<UIScrollBox>(GetDestCanvas(), "ScrollBox");
+    EditorUIUtility::ApplyPreset(mScrollPanel, UI::EUIStyleRole::ePanel);
     mScrollPanel->SetUseBorder(true);
     mScrollPanel->SetBorderColor(UI::UIColor::LightGray);
     int a = 2;
@@ -194,7 +195,7 @@ void ObjectHierarchyPanel::OnAddedObjectToMap(Object *object)
 
     auto canvas = GetDestCanvas();
     ObjectHierarchyItem *item = GetObjectHierarchyItem();
-    // UI::UIElement *item =  canvas->CreateUIElement<UI::UIElement>("item");
+    // UI::UIElement *item =  EditorUIUtility::Create<UI::UIElement>(canvas, "item");
 
     //  auto imageCom = item->CreateUIComponent<UI::UIImageComponent>("ImageCom");
     //  imageCom->NotUseTexture();
@@ -395,7 +396,7 @@ ObjectHierarchyItem *ObjectHierarchyPanel::GetObjectHierarchyItem()
         return item;
     }
 
-    ObjectHierarchyItem *item = GetDestCanvas()->CreateUIElement<ObjectHierarchyItem>("item");
+    ObjectHierarchyItem *item = EditorUIUtility::Create<ObjectHierarchyItem>(GetDestCanvas(), "item");
     item->mOnClickedHeaderPanelCallbackSystem.Register([this, item]() { OnSelectedItem(item); });
     // item->SetHeaderColor(0.3f, 0.2f, 0.7f);
     item->mOnDroppedObjectItemCallbackSystem.Register(
@@ -549,7 +550,6 @@ ObjectHierarchyItem *ObjectHierarchyPanel::FindObjectItem(Object *object)
     return parentObjItem;
 }
 
-void ObjectHierarchyPanel::ApplyLayoutStyle(const UI::UIControlStyle &style) {}
 
 // style일변화 , hover,등 상태변화 에서 호출
 void ObjectHierarchyPanel::ApplyVisualStyle(const UI::UIControlStyle &style, UI::EUIVisualState state)

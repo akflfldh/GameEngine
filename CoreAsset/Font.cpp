@@ -4,6 +4,24 @@ CoreAsset::Font::Font() : Asset(CoreAsset::EAssetType::eFont) {}
 
 CoreAsset::Font::~Font() {}
 
+bool CoreAsset::Font::CopyDataFrom(const Asset &source, std::string *failureReason)
+{
+    const Font *sourceFont = dynamic_cast<const Font *>(&source);
+    if (!sourceFont)
+    {
+        if (failureReason)
+            *failureReason = "Font 에셋이 필요합니다.";
+        return false;
+    }
+
+    // glyph/metrics는 독립 복사하지만 atlas texture는 별도 에셋이므로 동일 참조를 유지한다.
+    mFontGlyphTable = sourceFont->mFontGlyphTable;
+    mFontMatrix = sourceFont->mFontMatrix;
+    mFontAltas = sourceFont->mFontAltas;
+    mGlyphAltas = sourceFont->mGlyphAltas;
+    return Asset::CopyDataFrom(source, failureReason);
+}
+
 void CoreAsset::Font::RegisterFontGlyph(uint32_t unicode, const FontGlyph &glyph)
 {
 

@@ -169,8 +169,20 @@ Quad::TransformGizmo &EditorMode::GetTransformGizmo()
 }
 void EditorMode::InitializeGizmo(Map *map)
 {
-
+    // 미사용 작업 공간에서는 축 엔티티와 렌더 프록시 자체를 생성하지 않는다.
+    if (!mUseGizmo)
+        return;
     mTransformGizmo.Initialize(map);
+}
+
+void EditorMode::SetUseGizmo(bool state)
+{
+    mUseGizmo = state;
+}
+
+bool EditorMode::GetUseGizmo() const
+{
+    return mUseGizmo;
 }
 
 void EditorMode::InitializeVisualizerManager(Map *map)
@@ -179,10 +191,16 @@ void EditorMode::InitializeVisualizerManager(Map *map)
     mEditorVisualizerManager.Initialize(map);
 }
 
-void EditorMode::BindSourceMapToVisualizerManager(Map *map)
+void EditorMode::BindSourceMapToVisualizerManager(Map *map, bool bUseLightVisualizer)
 {
 
-    mEditorVisualizerManager.BindMap(map);
+    mEditorVisualizerManager.BindMap(map, bUseLightVisualizer);
+}
+
+Core::MouseMode EditorMode::GetMouseMode(Map *map) const
+{
+
+    return Core::MouseMode::Free;
 }
 
 void EditorMode::UpdateEditorVisualizerManager(CameraComponent *com)

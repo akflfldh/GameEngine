@@ -7,6 +7,7 @@
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Font.h>
 #include <CoreAsset/Material.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreBase/CoreAssert.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
@@ -35,6 +36,7 @@
 #include <UiSystem/UIRenderableComponent.h>
 #include <UiSystem/UITextComponent.h>
 #include <sstream>
+#include <algorithm>
 
 bool Render::PooledRenderResource::isMatch(const RenderResourceDesc &rhs) const
 {
@@ -197,18 +199,19 @@ Render::PooledRenderResource *Render::RenderResourcePool::Create(const RenderRes
 void Render::RenderContext::Reset()
 {
     mRenderPassGraph->Reset();
-    mRenderPassExecuteContext.mOpaqueStaticMeshRenderCommandList.clear();
-    mRenderPassExecuteContext.mTransparentStaticMeshRenderCommandList.clear();
-    mRenderPassExecuteContext.mEditorOverlayStaticMeshRenderCommandList.clear();
+    mRenderPassExecuteContext.mOpaqueMeshRenderCommandList.clear();
+    mRenderPassExecuteContext.mTransparentMeshRenderCommandList.clear();
+    mRenderPassExecuteContext.mEditorOverlayMeshRenderCommandList.clear();
     mRenderPassExecuteContext.mUIRenderCommandList.clear();
     mRenderPassExecuteContext.mUIIndexBuffer->clear();
-    mRenderPassExecuteContext.mOutlineStaticMeshRenderCommandIndexList.clear();
+    mRenderPassExecuteContext.mOutlineMeshRenderCommandIndexList.clear();
     mRenderPassExecuteContext.mUIVertexBuffer->clear();
     mRenderPassExecuteContext.mLightRenderCommandList.clear();
     mRenderPassExecuteContext.mBillboardRenderCommandList.clear();
     mRenderPassExecuteContext.mDebugLineRenderCommandList.clear();
     mRenderPassExecuteContext.mMaterialRenderSnapshotTable.clear();
     mRenderPassExecuteContext.mUIMaterialRenderSnapshotTable.clear();
+    mRenderPassExecuteContext.mSkinPaletteSnapshot.clear();
 
     mRenderPassExecuteContext.mDirectonalShadowRenderData.mEnabled = false;
     mRenderPassExecuteContext.mDirectonalShadowRenderData.mLightIndex = -1;
@@ -455,12 +458,18 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
         renderPassGraph->RegisterRenderPass(std::move(toneMappingPass), toneMappingPass->GetName(),
                                             renderPassSetUpData);
 
-        if (window->GetMap())
+        if (window->GetWorld())
         {
-
-            if (ObjectRenderItemBuilder::GetInstance()
-                    ->GetOutlineRenderProxyList(window->GetWorld()->GetRenderID())
-                    .size() != 0)
+            // 패스 생성도 명령 생성과 동일한 맵 목록을 사용해야 비참여 맵의 outline이 섞이지 않는다.
+            const auto &renderingMaps = window->GetWorld()->GetRenderingMaps();
+            const bool hasOutline = std::any_of(renderingMaps.begin(), renderingMaps.end(),
+                                                [](const Map *map)
+                                                {
+                                                    return map != nullptr &&
+                                                        !ObjectRenderItemBuilder::GetInstance()
+                                                             ->GetOutlineRenderProxyList(map->GetRenderID()).empty();
+                                                });
+            if (hasOutline)
             {
                 std::unique_ptr<IRenderPass> outlinePass = std::make_unique<RenderOutlinePass>();
                 outlinePass->SetOutputTarget(renderTargetBackBuffer);
@@ -671,46 +680,19 @@ void Render::RenderPipelineManager::ExcuteRenderPassGraph(Core::LogicalWindow *w
 
 void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPassExecuteContext &executeContext)
 {
-
     if (world == nullptr)
         return;
 
-    uint32_t renderID = world->GetRenderID();
+    // 환경 설정은 현재 맵이 기준이며, 추가 렌더링 맵마다 하늘/노출을 덮어쓰지 않는다.
+    BuildSkysphereSnapshot(world, executeContext);
+    BuildPostProcessingSnapshot(world, executeContext);
 
-    // TODO 렌더
-    //
-    // 커맨드를 분류하는 단계로 수정해야한다.
+    // Map별 프록시 그룹을 한 뷰의 snapshot에 누적한다. 메모리에 남아 있는 비참여 맵은 조회하지 않는다.
+    for (const Map *map : world->GetRenderingMaps())
+        CreateMapRenderCommands(map, executeContext);
 
-    // 정적불투명 렌더커맨드
-    // 정적투명
-    // 정적에디터오버레이커맨드
-    //  ... .
-    const auto &proxyVec = ObjectRenderItemBuilder::GetInstance()->GetRenderProxyList(renderID);
-
-    auto *proxyContext = ObjectRenderItemBuilder::GetInstance()->GetRenderProxyContext(renderID);
-
-    if (proxyContext == nullptr)
-        return;
-
-    const auto &lightProxyVec = proxyContext->mLightProxyList;
-    // light Command 생성
-    for (const auto proxy : lightProxyVec)
-    {
-        LightRenderCommand cmd;
-        cmd.mDirection = proxy->mDirection;
-        cmd.mRight = proxy->mRight;
-        cmd.mUp = proxy->mUp;
-        cmd.mFalloffEnd = proxy->mFalloffEnd;
-        cmd.mFalloffStart = proxy->mFalloffStart;
-        cmd.mLightType = proxy->mLightType;
-        cmd.mPosition = proxy->mPosition;
-        cmd.mSpotPower = proxy->mSpotPower;
-        cmd.mStrength = proxy->mStrength;
-        cmd.mSpotPower = proxy->mSpotPower;
-
-        executeContext.mLightRenderCommandList.push_back(cmd);
-    }
-
+    // 모든 맵의 광원을 모은 뒤 한 번만 선택해야 light index가 최종 조명 목록을 가리킨다.
+    executeContext.mDirectonalShadowRenderData.mEnabled = false;
     // directonal shadow light data 생성
     /*
         평행광의 위치는 카메라의 위치로부터 계산하다.
@@ -728,14 +710,14 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
             executeContext.mDirectonalShadowRenderData.mEnabled = true;
             executeContext.mDirectonalShadowRenderData.mLightIndex = i;
             const CoreMath::Vector3 shadowCenter = executeContext.mGlobalFrameData.mCameraPositionWorld;
-            const float shadowDistance = 300.0f;
+            const float shadowDistance = 1000.0f;
             CoreMath::Vector3 lightPosition =
                 shadowCenter - executeContext.mLightRenderCommandList[i].mDirection * shadowDistance;
 
             CoreMath::Matrix4X4 view = CoreMath::Matrix4X4::MakeLookAtLH(lightPosition, shadowCenter,
                                                                          executeContext.mLightRenderCommandList[i].mUp);
 
-            CoreMath::Matrix4X4 proj = CoreMath::Matrix4X4::MakeOrthographicLH(-100, 100, -100, 100, 1.0, 1000);
+            CoreMath::Matrix4X4 proj = CoreMath::Matrix4X4::MakeOrthographicLH(-1000, 1000, -1000, 1000, 1.0, 10000);
 
             CoreMath::Matrix4X4 viewProj = proj * view;
 
@@ -743,6 +725,53 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
 
             break;
         }
+    }
+
+}
+
+void Render::RenderPipelineManager::CreateMapRenderCommands(const Map *map, RenderPassExecuteContext &executeContext)
+{
+
+    if (map == nullptr)
+        return;
+
+    uint32_t renderID = map->GetRenderID();
+
+    // TODO 렌더
+    //
+    // 커맨드를 분류하는 단계로 수정해야한다.
+
+    // 정적불투명 렌더커맨드
+    // 정적투명
+    // 정적에디터오버레이커맨드
+    //  ... .
+    auto *proxyContext = ObjectRenderItemBuilder::GetInstance()->GetRenderProxyContext(renderID);
+
+    if (proxyContext == nullptr)
+        return;
+
+    const auto &lightProxyVec = proxyContext->mLightProxyList;
+    // light Command 생성
+    for (const auto proxy : lightProxyVec)
+    {
+        // 꺼진 조명은 GPU 업로드와 광원 개수, 평행광 그림자 선택에서 함께 제외한다.
+        // 프록시 등록은 Owner의 active가, 발광 여부는 LightComponent가 각각 담당한다.
+        if (proxy == nullptr || !proxy->mLightEnabled)
+            continue;
+
+        LightRenderCommand cmd;
+        cmd.mDirection = proxy->mDirection;
+        cmd.mRight = proxy->mRight;
+        cmd.mUp = proxy->mUp;
+        cmd.mFalloffEnd = proxy->mFalloffEnd;
+        cmd.mFalloffStart = proxy->mFalloffStart;
+        cmd.mLightType = proxy->mLightType;
+        cmd.mPosition = proxy->mPosition;
+        cmd.mSpotPower = proxy->mSpotPower;
+        cmd.mStrength = proxy->mStrength;
+        cmd.mSpotPower = proxy->mSpotPower;
+
+        executeContext.mLightRenderCommandList.push_back(cmd);
     }
 
     // outline
@@ -765,17 +794,12 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
     }
 
     // debug line command 생성(복사)
-    executeContext.mDebugLineRenderCommandList = proxyContext->mDebugLineRenderCommandList;
+    // 추가 맵의 debug line도 누적한다. 대입하면 앞서 수집한 맵의 선이 사라진다.
+    executeContext.mDebugLineRenderCommandList.insert(executeContext.mDebugLineRenderCommandList.end(),
+                                                     proxyContext->mDebugLineRenderCommandList.begin(),
+                                                     proxyContext->mDebugLineRenderCommandList.end());
 
-    // SkySphere snapShot
-    BuildSkysphereSnapshot(world, executeContext);
-    BuildPostProcessingSnapshot(world, executeContext);
     // 분류된 Command 생성
-
-    //<material handle, material >
-    // std::unordered_map<uint32_t, CoreAsset::Material *> materialHandleTable;
-    std::unordered_map<uint32_t, MaterialRenderSnapshot> &materialSnapshotTable =
-        executeContext.mMaterialRenderSnapshotTable;
 
     for (size_t i = 0; i < proxyContext->mRenderProxyList.size(); ++i)
     {
@@ -785,127 +809,200 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
         {
         case Core::ERenderProxyType::eStaticMesh:
         {
-            // TODO staticRenderItem 생성
+            std::vector<MeshRenderCommand> renderCommandList;
+            // 공통만 처리
+
             Core::StaticMeshRenderProxy *staticMeshRenderProxy =
                 static_cast<Core::StaticMeshRenderProxy *>(renderProxy);
+            BuildMeshRenderCommands(renderCommandList, staticMeshRenderProxy, staticMeshRenderProxy->mStaticMesh,
+                                    executeContext);
 
-            for (int matIndex = 0; matIndex < staticMeshRenderProxy->mSubMeshMaterialList.size(); ++matIndex)
+            for (size_t i = 0; i < staticMeshRenderProxy->mSubMeshMaterialList.size(); ++i)
             {
-                StaticMeshRenderCommnad renderCommand;
-                renderCommand.mStaticMesh = staticMeshRenderProxy->mStaticMesh;
-
-                CoreAsset::Material *material = staticMeshRenderProxy->mSubMeshMaterialList[matIndex];
-                // renderCommand.mMaterial = staticMeshRenderProxy->mSubMeshMaterialList[matIndex];
-                renderCommand.mTransform = staticMeshRenderProxy->mTransform;
-                renderCommand.mDrawOutline = staticMeshRenderProxy->mDrawOutline;
-                renderCommand.mCustomShaderData = staticMeshRenderProxy->mCustomShaderData;
-                renderCommand.mSubMeshIndex = matIndex;
-
-                // auto material = renderCommand.mMaterial;
-                uint32_t materialHandle = material->GetMaterialHandle();
-                renderCommand.mMaterialHandle = materialHandle;
-
-                // 머터리얼 수집
-
-                //  materialHandleTable[materialHandle] = material;
-
-                if (materialSnapshotTable.find(materialHandle) == materialSnapshotTable.end())
+                if (staticMeshRenderProxy->mSubMeshOutlineFlagList[i])
                 {
+                    MeshOutlineRenderCommand outlineCommand;
+                    outlineCommand.mGeometryType = renderCommandList[i].mGeometryType;
+                    outlineCommand.mMaterialHandle = renderCommandList[i].mMaterialHandle;
+                    outlineCommand.mMesh = renderCommandList[i].mMesh;
+                    outlineCommand.mTransform = renderCommandList[i].mTransform;
+                    outlineCommand.mSubMeshIndex = renderCommandList[i].mSubMeshIndex;
 
-                    materialSnapshotTable[materialHandle] = GetMaterialSnapshot(material);
-
-                    material->ClearUploadDirty();
-                }
-
-                if (staticMeshRenderProxy->mSubMeshOutlineFlagList[matIndex])
-                {
-                    StaticMeshOutlineRenderCommand outlineCommand;
-                    outlineCommand.mMaterialHandle = renderCommand.mMaterialHandle;
-                    outlineCommand.mStaticMesh = renderCommand.mStaticMesh;
-                    outlineCommand.mTransform = renderCommand.mTransform;
-                    outlineCommand.mSubMeshIndex = renderCommand.mSubMeshIndex;
-
-                    executeContext.mOutlineStaticMeshRenderCommandIndexList.push_back(outlineCommand);
-                }
-
-                // 분류해서 넣어야한다.
-
-                if (staticMeshRenderProxy->mIsEditorOverlay)
-                {
-                    executeContext.mEditorOverlayStaticMeshRenderCommandList.push_back(std::move(renderCommand));
-                }
-                else
-                {
-                    executeContext.mOpaqueStaticMeshRenderCommandList.push_back(std::move(renderCommand));
+                    executeContext.mOutlineMeshRenderCommandIndexList.push_back(outlineCommand);
                 }
             }
-            break;
+
+            if (staticMeshRenderProxy->mIsEditorOverlay)
+            {
+                executeContext.mEditorOverlayMeshRenderCommandList.insert(
+                    executeContext.mEditorOverlayMeshRenderCommandList.end(), renderCommandList.begin(),
+                    renderCommandList.end());
+            }
+            else
+            {
+
+                executeContext.mOpaqueMeshRenderCommandList.insert(executeContext.mOpaqueMeshRenderCommandList.end(),
+                                                                   renderCommandList.begin(), renderCommandList.end());
+            }
         }
+        break;
         case Core::ERenderProxyType::eSkinningMesh:
         {
+
+            // palette snapshot
+            Core::SkeletalMeshRenderProxy *skeletalMeshRenderProxy =
+                static_cast<Core::SkeletalMeshRenderProxy *>(renderProxy);
+            // rendercommand  palette offset 설정
+            uint32_t skinPaletteOffset = executeContext.mSkinPaletteSnapshot.size();
+            uint32_t skinPaletteCount = skeletalMeshRenderProxy->mFinalMatrixList.size();
+
+            if (skinPaletteCount == 0)
+            { // renderCommand생성하지않는다.
+                break;
+            }
+            // palette snapshot
+            executeContext.mSkinPaletteSnapshot.insert(executeContext.mSkinPaletteSnapshot.end(),
+                                                       skeletalMeshRenderProxy->mFinalMatrixList.begin(),
+                                                       skeletalMeshRenderProxy->mFinalMatrixList.end());
+
+            std::vector<MeshRenderCommand> renderCommandList;
+            // 공통만 처리
+
+            BuildMeshRenderCommands(renderCommandList, skeletalMeshRenderProxy, skeletalMeshRenderProxy->mSkinningMesh,
+                                    executeContext);
+
+            // palette snapshot
+            for (auto &renderCommand : renderCommandList)
+            {
+                renderCommand.mSkinPaletteOffset = skinPaletteOffset;
+                renderCommand.mSkinPaletteCount = skinPaletteCount;
+            }
+
+            // 분류해서 넣어야한다.
+            for (size_t i = 0;
+                 i < renderCommandList.size() && i < skeletalMeshRenderProxy->mSubMeshOutlineFlagList.size(); ++i)
+            {
+                if (skeletalMeshRenderProxy->mSubMeshOutlineFlagList[i])
+                {
+                    MeshOutlineRenderCommand outlineCommand;
+                    // 기반 커맨드를 통째로 복사해 이 submesh의 palette offset/count도 outline에 보존한다.
+                    static_cast<MeshRenderCommand &>(outlineCommand) = renderCommandList[i];
+
+                    executeContext.mOutlineMeshRenderCommandIndexList.push_back(outlineCommand);
+                }
+            }
+
+            if (skeletalMeshRenderProxy->mIsEditorOverlay)
+            {
+                executeContext.mEditorOverlayMeshRenderCommandList.insert(
+                    executeContext.mEditorOverlayMeshRenderCommandList.end(), renderCommandList.begin(),
+                    renderCommandList.end());
+            }
+            else
+            {
+                executeContext.mOpaqueMeshRenderCommandList.insert(executeContext.mOpaqueMeshRenderCommandList.end(),
+                                                                   renderCommandList.begin(), renderCommandList.end());
+            }
         }
         break;
         }
     }
-
-    for (size_t i = 0; i < proxyContext->mTempRenderProxyList.size(); ++i)
+    // DrawAABB처럼 한 프레임만 존재하는 디버그 메시도 일반 메시와 동일한 command snapshot 경로를 사용한다.
+    // 일반 proxy 반복문과 분리해야 persistent proxy 개수와 무관하게 temp proxy를 정확히 한 번 처리할 수 있다.
+    for (Core::RenderProxy *renderProxy : proxyContext->mTempRenderProxyList)
     {
-        auto renderProxy = proxyContext->mTempRenderProxyList[i];
+        if (renderProxy == nullptr)
+            continue;
 
         switch (renderProxy->mRenderProxyType)
         {
         case Core::ERenderProxyType::eStaticMesh:
         {
-            // TODO staticRenderItem 생성
             Core::StaticMeshRenderProxy *staticMeshRenderProxy =
                 static_cast<Core::StaticMeshRenderProxy *>(renderProxy);
 
-            for (int matIndex = 0; matIndex < staticMeshRenderProxy->mSubMeshMaterialList.size(); ++matIndex)
+            std::vector<MeshRenderCommand> renderCommandList;
+            BuildMeshRenderCommands(renderCommandList, staticMeshRenderProxy, staticMeshRenderProxy->mStaticMesh,
+                                    executeContext);
+
+            for (size_t subMeshIndex = 0; subMeshIndex < renderCommandList.size() &&
+                                          subMeshIndex < staticMeshRenderProxy->mSubMeshOutlineFlagList.size();
+                 ++subMeshIndex)
             {
-                StaticMeshRenderCommnad renderCommand;
-                renderCommand.mStaticMesh = staticMeshRenderProxy->mStaticMesh;
-
-                CoreAsset::Material *material = staticMeshRenderProxy->mSubMeshMaterialList[matIndex];
-
-                renderCommand.mMaterialHandle = material->GetMaterialHandle();
-                renderCommand.mTransform = staticMeshRenderProxy->mTransform;
-                renderCommand.mDrawOutline = staticMeshRenderProxy->mDrawOutline;
-                renderCommand.mCustomShaderData = staticMeshRenderProxy->mCustomShaderData;
-
-                if (materialSnapshotTable.find(renderCommand.mMaterialHandle) == materialSnapshotTable.end())
+                if (staticMeshRenderProxy->mSubMeshOutlineFlagList[subMeshIndex])
                 {
-
-                    materialSnapshotTable[renderCommand.mMaterialHandle] = GetMaterialSnapshot(material);
-
-                    material->ClearUploadDirty();
-                }
-
-                if (staticMeshRenderProxy->mSubMeshOutlineFlagList[matIndex])
-                {
-                    StaticMeshOutlineRenderCommand outlineCommand;
+                    const MeshRenderCommand &renderCommand = renderCommandList[subMeshIndex];
+                    MeshOutlineRenderCommand outlineCommand;
+                    outlineCommand.mGeometryType = renderCommand.mGeometryType;
                     outlineCommand.mMaterialHandle = renderCommand.mMaterialHandle;
-                    outlineCommand.mStaticMesh = renderCommand.mStaticMesh;
+                    outlineCommand.mMesh = renderCommand.mMesh;
                     outlineCommand.mTransform = renderCommand.mTransform;
                     outlineCommand.mSubMeshIndex = renderCommand.mSubMeshIndex;
 
-                    executeContext.mOutlineStaticMeshRenderCommandIndexList.push_back(outlineCommand);
-                }
-
-                // 분류해서 넣어야한다.
-
-                if (staticMeshRenderProxy->mIsEditorOverlay)
-                {
-                    executeContext.mEditorOverlayStaticMeshRenderCommandList.push_back(std::move(renderCommand));
-                }
-                else
-                {
-                    executeContext.mOpaqueStaticMeshRenderCommandList.push_back(std::move(renderCommand));
+                    executeContext.mOutlineMeshRenderCommandIndexList.push_back(std::move(outlineCommand));
                 }
             }
-            break;
+
+            if (staticMeshRenderProxy->mIsEditorOverlay)
+            {
+                executeContext.mEditorOverlayMeshRenderCommandList.insert(
+                    executeContext.mEditorOverlayMeshRenderCommandList.end(), renderCommandList.begin(),
+                    renderCommandList.end());
+            }
+            else
+            {
+                executeContext.mOpaqueMeshRenderCommandList.insert(executeContext.mOpaqueMeshRenderCommandList.end(),
+                                                                   renderCommandList.begin(), renderCommandList.end());
+            }
         }
+        break;
         case Core::ERenderProxyType::eSkinningMesh:
         {
+            Core::SkeletalMeshRenderProxy *skeletalMeshRenderProxy =
+                static_cast<Core::SkeletalMeshRenderProxy *>(renderProxy);
+
+            const uint32_t skinPaletteCount = static_cast<uint32_t>(skeletalMeshRenderProxy->mFinalMatrixList.size());
+            if (skinPaletteCount == 0)
+                break;
+
+            const uint32_t skinPaletteOffset = static_cast<uint32_t>(executeContext.mSkinPaletteSnapshot.size());
+            executeContext.mSkinPaletteSnapshot.insert(executeContext.mSkinPaletteSnapshot.end(),
+                                                       skeletalMeshRenderProxy->mFinalMatrixList.begin(),
+                                                       skeletalMeshRenderProxy->mFinalMatrixList.end());
+
+            std::vector<MeshRenderCommand> renderCommandList;
+            BuildMeshRenderCommands(renderCommandList, skeletalMeshRenderProxy, skeletalMeshRenderProxy->mSkinningMesh,
+                                    executeContext);
+
+            for (MeshRenderCommand &renderCommand : renderCommandList)
+            {
+                renderCommand.mSkinPaletteOffset = skinPaletteOffset;
+                renderCommand.mSkinPaletteCount = skinPaletteCount;
+            }
+
+            for (size_t subMeshIndex = 0; subMeshIndex < renderCommandList.size() &&
+                                          subMeshIndex < skeletalMeshRenderProxy->mSubMeshOutlineFlagList.size();
+                 ++subMeshIndex)
+            {
+                if (!skeletalMeshRenderProxy->mSubMeshOutlineFlagList[subMeshIndex])
+                    continue;
+
+                MeshOutlineRenderCommand outlineCommand;
+                static_cast<MeshRenderCommand &>(outlineCommand) = renderCommandList[subMeshIndex];
+                executeContext.mOutlineMeshRenderCommandIndexList.push_back(std::move(outlineCommand));
+            }
+
+            if (skeletalMeshRenderProxy->mIsEditorOverlay)
+            {
+                executeContext.mEditorOverlayMeshRenderCommandList.insert(
+                    executeContext.mEditorOverlayMeshRenderCommandList.end(), renderCommandList.begin(),
+                    renderCommandList.end());
+            }
+            else
+            {
+                executeContext.mOpaqueMeshRenderCommandList.insert(executeContext.mOpaqueMeshRenderCommandList.end(),
+                                                                   renderCommandList.begin(), renderCommandList.end());
+            }
         }
         break;
         }
@@ -962,6 +1059,52 @@ void Render::RenderPipelineManager::BuildPostProcessingSnapshot(World *world, Re
 
     const Core::PostProcessingSettings &postProcessingSettings = map->GetPostProcessingSettings();
     executeContext.mPostProcessingData.mExposure = postProcessingSettings.mExposure;
+}
+
+void Render::RenderPipelineManager::BuildMeshRenderCommands(std::vector<MeshRenderCommand> &oMeshRenderCommands,
+                                                            Core::MeshRenderProxy *meshRenderProxy,
+                                                            CoreAsset::Mesh *mesh,
+                                                            RenderPassExecuteContext &executeContext)
+{
+
+    std::unordered_map<uint32_t, MaterialRenderSnapshot> &materialSnapshotTable =
+        executeContext.mMaterialRenderSnapshotTable;
+
+    for (int matIndex = 0; matIndex < meshRenderProxy->mSubMeshMaterialList.size(); ++matIndex)
+    {
+        MeshRenderCommand renderCommand;
+        renderCommand.mMesh = mesh;
+
+        if (meshRenderProxy->mRenderProxyType == Core::ERenderProxyType::eStaticMesh)
+            renderCommand.mGeometryType = Render::ERenderGeometryType::eStaticMesh;
+        else if (meshRenderProxy->mRenderProxyType == Core::ERenderProxyType::eSkinningMesh)
+            renderCommand.mGeometryType = Render::ERenderGeometryType::eSkinnedMesh;
+
+        CoreAsset::Material *material = meshRenderProxy->mSubMeshMaterialList[matIndex];
+        // renderCommand.mMaterial = staticMeshRenderProxy->mSubMeshMaterialList[matIndex];
+        renderCommand.mTransform = meshRenderProxy->mTransform;
+        renderCommand.mDrawOutline = meshRenderProxy->mDrawOutline;
+        renderCommand.mCustomShaderData = meshRenderProxy->mCustomShaderData;
+        renderCommand.mSubMeshIndex = matIndex;
+
+        // auto material = renderCommand.mMaterial;
+        uint32_t materialHandle = material->GetMaterialHandle();
+        renderCommand.mMaterialHandle = materialHandle;
+
+        // 머터리얼 수집
+
+        //  materialHandleTable[materialHandle] = material;
+
+        if (materialSnapshotTable.find(materialHandle) == materialSnapshotTable.end())
+        {
+
+            materialSnapshotTable[materialHandle] = GetMaterialSnapshot(material);
+
+            material->ClearUploadDirty();
+        }
+
+        oMeshRenderCommands.push_back(std::move(renderCommand));
+    }
 }
 
 Render::MaterialRenderSnapshot Render::RenderPipelineManager::GetMaterialSnapshot(CoreAsset::Material *material) const

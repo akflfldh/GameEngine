@@ -16,6 +16,13 @@ namespace UI
 
 class UIElement;
 
+// 클릭을 시작할 마우스 버튼을 지정한다. hover 판정에는 영향을 주지 않는다.
+enum class EUIMouseButton
+{
+    eLeft,
+    eRight
+};
+
 class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComponent
 {
     GENERATED_BODY(UIButtonComponent)
@@ -37,6 +44,7 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComp
     // void RegisterOnClickCallback(void *data, void (*onClickCallback)(void *));
 
     ButtonComponentCallbackSystem mButtonClickCallbackSystem;
+
 
     // TO DO 컴포넌트들, Input 구현
 #pragma region Input
@@ -62,6 +70,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComp
     // 외부에서호출로 버튼컴포넌트의 상태를 동기화하기위해 사용
     void SetSelected(bool state);
 
+    void SetTriggerButton(EUIMouseButton button);
+    EUIMouseButton GetTriggerButton() const;
+
   protected:
     void OnClick();
     void SetCaptureAvailable(bool flag);
@@ -80,5 +91,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButtonComponent : public IUIComp
     bool mHover;
     bool mPress; // 짧게 눌렀을떄
     bool mSelected;
+
+    EUIMouseButton mTriggerButton = EUIMouseButton::eLeft;
+    // 누르는 도중 설정을 바꾸더라도 해당 Down과 같은 버튼의 Up으로만 클릭을 종료한다.
+    EUIMouseButton mPressedButton = EUIMouseButton::eLeft;
 };
 } // namespace UI

@@ -32,6 +32,8 @@ void PhysicsScene::Update(float deltaTime)
     // 외부로 동기화(물리-> 외부 동기화)
     // 1 .Dynamic body는 물리 시뮬레이션이 Transform을 외부로 동기화 (요청등등)
     SyncBodiesToExternal();
+
+    MakeCollisionResponseData();
 }
 
 void PhysicsScene::SetID(PhysicsSceneID id)
@@ -266,6 +268,18 @@ KinematicContact PhysicsScene::BuildKinematicContact(PhysicsBody &bodyA, Physics
     return contact;
 }
 
+void PhysicsScene::SetCollisionChannelResponseTable(const PhysicsCollisionChannelResponseTable *pTable)
+{
+
+    mCollisionChannelResponseTable = pTable;
+}
+
+void PhysicsScene::ConsumeCollisionEvents(std::vector<PhysicsCollisionResponseData> &outEvents)
+{
+
+    outEvents = std::move(mCollisionResponseEventList);
+}
+
 PhysicsBody *PhysicsScene::GetPhysicsBody(PhysicsBodyHandle handle) const
 {
 
@@ -319,6 +333,7 @@ void PhysicsScene::BuildPhysicsBody(const PhysicsBodyDesc &bodyDesc, PhysicsBody
     oBody.mBodyType = bodyDesc.mBodyType;
     oBody.mForce = bodyDesc.mForce;
     oBody.mGravity = bodyDesc.mGravity;
+    oBody.mCollisionChannelResponseID = bodyDesc.mCollisionChannelResponseID;
 
     CalcInertia(oBody);
     if (oBody.mBodyType == EPhysicsBodyType::eStatic)
@@ -539,23 +554,6 @@ void PhysicsScene::Step(float deltaTime)
     // manifold - contact list에서 이전충돌들을 갱신
     RefreshManifold();
 
-    // 새로운 충돌감지
-    // for (int i = 0; i < mPhysicsBodyList.size(); ++i)
-    //{
-    //    for (int j = i + 1; j < mPhysicsBodyList.size(); ++j)
-    //    {
-
-    //        PhysicsBody *bodyA = mPhysicsBodyList[i];
-    //        PhysicsBody *bodyB = mPhysicsBodyList[j];
-
-    //        // 루프 - 관통하면 이전 시간으로 위치를 되돌린후 ,  시간을 더 작게 쪼개서 해야하는데 그거는나중에 하자
-    //        // 일단 관통하면 그냥 노멀방향으로 약간씩 밀어내는정도로 1차 구현 시도
-    //        // 충돌검사
-    //        // (충돌데이터 생성 (충돌지점, 충돌법선벡터))
-    //        CheckBodyCollision(*bodyA, *bodyB);
-    //    }
-    //}
-
     // 충돌반응
     //    // 1 .충돌처리 데이터 준비
     //    // 2.관통처리  - 반복
@@ -586,6 +584,18 @@ void PhysicsScene::Step(float deltaTime)
 
 bool PhysicsScene::CheckBodyCollision(PhysicsBody &bodyA, PhysicsBody &bodyB)
 {
+
+    EPhysicsCollisionChannelResponseType responseType = mCollisionChannelResponseTable->GetResponseType(
+        bodyA.mCollisionChannelResponseID, bodyB.mCollisionChannelResponseID);
+
+    if (responseType == EPhysicsCollisionChannelResponseType::eIgnore)
+        return false;
+
+    if (responseType == EPhysicsCollisionChannelResponseType::eOverlap)
+    {
+        int a = 2;
+    }
+
     // 충돌검출
 
     // 일단 box - box aabb 로 충돌검사
@@ -593,7 +603,7 @@ bool PhysicsScene::CheckBodyCollision(PhysicsBody &bodyA, PhysicsBody &bodyB)
     // 여러 하위 shape들에서 충돌이 감지될수있는데 관통의 깊이가 가장 작은 경우가 선발되어야한다.
 
     // 두물체 모두 sleep상태임으로
-    if (!bodyA.mIsAwake && !bodyB.mIsAwake)
+    if (!bodyA.mIsAwake && !bodyB.mIsAwake && responseType != EPhysicsCollisionChannelResponseType::eOverlap)
     {
         return false;
     }
@@ -620,6 +630,12 @@ bool PhysicsScene::CheckBodyCollision(PhysicsBody &bodyA, PhysicsBody &bodyB)
             bool bRepeat = false;
             if (DectectCollision(*pShapeA, *pShapeB, manifold, bodySwap))
             {
+                if (responseType == EPhysicsCollisionChannelResponseType::eOverlap)
+                {
+                    PushCurrPhysicsCollisionPairState(bodyA.mHandle, bodyB.mHandle,
+                                                      EPhysicsCollisionChannelResponseType::eOverlap);
+                    return false;
+                }
 
                 PhysicsBody *orderedBodyA = &bodyA;
                 PhysicsBody *orderedBodyB = &bodyB;
@@ -855,17 +871,52 @@ void PhysicsScene::RefreshManifold()
 
 void PhysicsScene::KinematicCollisionResolution(float deltaTime)
 {
-
-    for (int i = 0; i < mKinematicContactList.size(); ++i)
+    int loop = 20;
+    for (int i = 0; i < mKinematicContactList.size() * loop; ++i)
     {
 
-        KinematicContact &contact = mKinematicContactList[i];
+        float bestPenetration = 0.000001f;
+        int bestContactIndex = -1;
 
-        contact.ResolvePenetration();
+        // 관통깊이가 가장깊은 접촉을 찾는다
+        for (int i = 0; i < mKinematicContactList.size(); ++i)
+        {
 
-        contact.mKinematicBody->mTransformSyncDirty = true;
+            if (mKinematicContactList[i].mPenetration > bestPenetration)
+            {
+                bestPenetration = mKinematicContactList[i].mPenetration;
+                bestContactIndex = i;
+            }
+        }
 
-        UpdateGroundResult(contact);
+        if (bestContactIndex == -1)
+            break;
+
+        CoreMath::Vector3 linearChange;
+        CoreMath::Vector3 angularChange;
+        mKinematicContactList[bestContactIndex].ResolvePenetration(linearChange, angularChange);
+
+        PhysicsBody *bestcontactBodies[2] = {mKinematicContactList[bestContactIndex].mKinematicBody,
+                                             mKinematicContactList[bestContactIndex].mOtherBody};
+
+        for (int i = 0; i < mKinematicContactList.size(); ++i)
+        {
+            KinematicContact &contact = mKinematicContactList[i];
+
+            if (contact.mKinematicBody == mKinematicContactList[bestContactIndex].mKinematicBody)
+            {
+
+                CoreMath::Vector3 r = contact.mPoint - contact.mKinematicBody->mPosition;
+                CoreMath::Vector3 deltaPosition = linearChange + angularChange.Cross(r);
+
+                contact.mPenetration -= deltaPosition.Dot(contact.mNormalTowardKinematic);
+                // contact.mPoint += deltaPosition;
+            }
+        }
+
+        mKinematicContactList[bestContactIndex].mKinematicBody->mTransformSyncDirty = true;
+
+        UpdateGroundResult(mKinematicContactList[bestContactIndex]);
     }
 }
 
@@ -1286,8 +1337,86 @@ void PhysicsScene::FillContactDataFaceBoxBox(const PhysicsBoxCollisionQueryData 
 
     CoreMath::Vector3 normal = collisionDataA.GetAxis(axisIndex);
 
+    int aAxisSign = -1;
     if (normal.Dot(toCentre) > 0)
+    {
+        aAxisSign *= -1;
         normal *= -1.0f; //->이러면 반대쪽 박스가 다가오는방향이자 ,기존박스가 튕겨나가는방향(접촉법선)
+    }
+    // a의 기준면이 z+인 공간좌표
+    CoreMath::Vector3 faceABasicPoint[4];
+    int otherAxisIndexA0 = (axisIndex + 1) % 3;
+    int otherAxisIndexA1 = (axisIndex + 2) % 3;
+
+    // A의 halfExtent ;
+    CoreMath::Vector3 eA = collisionDataA.mHalfExtent;
+
+    // a로컬공간 -> 기준면 이 z+ 공간 변환행렬
+    CoreMath::Matrix4X4 basicsMatrix = CoreMath::Matrix4X4::Identity;
+    if (axisIndex == 0)
+    {
+        // x축
+        if (aAxisSign == 1)
+        {
+            // Y축 기준 -90도회전
+            basicsMatrix.SetColComponet(0, {0, 0, 1, 0});
+            basicsMatrix.SetColComponet(2, {-1, 0, 0, 0});
+            std::swap(eA.X, eA.Z);
+        }
+        else
+        {
+            // Y축 기준 + 90도 회전
+            basicsMatrix.SetColComponet(0, {0, 0, -1, 0});
+            basicsMatrix.SetColComponet(2, {1, 0, 0, 0});
+            std::swap(eA.X, eA.Z);
+        }
+    }
+    else if (axisIndex == 1)
+    {
+        // y축
+        if (aAxisSign == 1)
+        {
+            // X축 기준 90도 회전
+            basicsMatrix.SetColComponet(1, {0, 0, 1, 0});
+            basicsMatrix.SetColComponet(2, {0, -1, 0, 0});
+            std::swap(eA.Y, eA.Z);
+        }
+        else
+        { // X축 기준 -90도회전
+            basicsMatrix.SetColComponet(1, {0, 0, -1, 0});
+            basicsMatrix.SetColComponet(2, {0, 1, 0, 0});
+            std::swap(eA.Y, eA.Z);
+        }
+    }
+    else if (axisIndex == 2)
+    {
+        // z축
+        if (aAxisSign == 1)
+        {
+            // 아무것도 할게없다 .
+        }
+        else
+        {
+            basicsMatrix.mat[0].X = -1.0F;
+            basicsMatrix.mat[2].Z = -1.0F;
+        }
+    }
+
+    // world- > a 로 변환행렬
+    CoreMath::Matrix4X4 toATransformMatrix = basicsMatrix * collisionDataA.mWorldTransform.GetInversed();
+
+    // A로컬 기준 좌표
+    int tangentAxisSign[4][2] = {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}};
+    for (int i = 0; i < 4; ++i)
+    {
+        faceABasicPoint[i][otherAxisIndexA0] = collisionDataA.mHalfExtent[otherAxisIndexA0] * tangentAxisSign[i][0];
+        faceABasicPoint[i][otherAxisIndexA1] = collisionDataA.mHalfExtent[otherAxisIndexA1] * tangentAxisSign[i][1];
+        faceABasicPoint[i][axisIndex] = collisionDataA.mHalfExtent[axisIndex] * aAxisSign;
+
+        faceABasicPoint[i] = basicsMatrix.TransformPoint(faceABasicPoint[i]);
+    }
+
+    // B의 로컬기준 좌표  구하고 - > 월드공간 - > A의 로컬공간으로 변환
 
     // find shapeB face axis index
 
@@ -1312,8 +1441,6 @@ void PhysicsScene::FillContactDataFaceBoxBox(const PhysicsBoxCollisionQueryData 
     int tangentAxis0 = (shapeBBestIndex + 1) % 3;
     int tangentAxis1 = (shapeBBestIndex + 2) % 3;
 
-    int tangentAxisSign[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-
     for (int i = 0; i < 4; ++i)
     {
         localVertices[i][tangentAxis0] = collisionDataB.mHalfExtent[tangentAxis0] * tangentAxisSign[i][0];
@@ -1324,109 +1451,209 @@ void PhysicsScene::FillContactDataFaceBoxBox(const PhysicsBoxCollisionQueryData 
         worldVertices[i] = collisionDataB.mWorldTransform.TransformPoint(localVertices[i]);
     }
 
-    CoreMath::Vector3 contactPoints;
+    // B 의 충돌면 꼭짓점들의 로컬좌표,월드좌표  구했고
+    //  A의 로컬공간으로 변환
 
+    // A로컬공간 기준 b의 입사면의 꼭짓점 좌표
+    CoreMath::Vector3 incidentFaceVertices[4];
     for (int i = 0; i < 4; ++i)
     {
-
-        // 후보 점들의 접촉 판단
-        CoreMath::Vector3 r = worldVertices[i] - collisionDataA.mPosition;
-        bool pass = true;
-        for (int j = 0; j < 3; ++j)
-        {
-            if (collisionDataA.mHalfExtent[j] + contactTolerance < std::abs(collisionDataA.GetAxis(j).Dot(r)))
-            {
-                pass = false;
-                break;
-            }
-        }
-
-        if (pass)
-        {
-            CollisionContact contact;
-            // PhysicsContact contact;
-            contact.mPoint = worldVertices[i];
-            contact.mNormal = normal;
-            contact.mPenetration = penetration;
-            // contact.mShapeAHandle = shapeA.mHandle;
-            // contact.mShapeBHandle = shapeB.mHandle;
-            contact.mFeature.mFaceIndex = axisIndex;
-            contact.mFeature.mType = EContactFeatureType::eFaceA;
-
-            oManifold.mContacts.push_back(contact);
-        }
+        incidentFaceVertices[i] = toATransformMatrix.TransformPoint(worldVertices[i]);
     }
 
-    // 접촉점이 4개미만이면 A의 꼭짓점도 검사를 수행한다.
-    if (oManifold.mContacts.size() < 4)
+    //+x축평면으로  incidentFace의 점을 clipping
+    // 처음에는 그 입사면의 점이 각꼭짓점으로 4개 - >edge가 4개  그 edge들에대해서 기준면의 +x축 사이드평면으로
+    // clipping수행
+    std::vector<CoreMath::Vector3> inVertices = {incidentFaceVertices[0], incidentFaceVertices[1],
+                                                 incidentFaceVertices[2], incidentFaceVertices[3]};
+    std::vector<CoreMath::Vector3> outVertices;
+
+    // axis 0 - >x , 1 -> y
+    // sgin 1 , -1
+    // d - >extent
+
+    BoxBoxFaceClip(1, eA.X, 0, inVertices, outVertices);
+
+    BoxBoxFaceClip(-1, eA.X, 0, outVertices, inVertices);
+
+    BoxBoxFaceClip(1, eA.Y, 1, inVertices, outVertices);
+
+    BoxBoxFaceClip(-1, eA.Y, 1, outVertices, inVertices);
+
+    outVertices.clear();
+    for (int i = 0; i < inVertices.size(); ++i)
     {
-        int aFaceSign = collisionDataA.GetAxis(axisIndex).Dot(normal) > 0 ? -1 : 1;
 
-        CoreMath::Vector3 localVertices[4] = {};
-        CoreMath::Vector3 worldVertices[4] = {};
-
-        int tangentAxis0 = (axisIndex + 1) % 3;
-        int tangentAxis1 = (axisIndex + 2) % 3;
-        int tangentAxisSign[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-        for (int i = 0; i < 4; ++i)
+        if ((inVertices[i].Z - eA.Z) <= 0.0f)
         {
-            localVertices[i][tangentAxis0] = collisionDataA.mHalfExtent[tangentAxis0] * tangentAxisSign[i][0];
-            localVertices[i][tangentAxis1] = collisionDataA.mHalfExtent[tangentAxis1] * tangentAxisSign[i][1];
-
-            localVertices[i][axisIndex] = collisionDataA.mHalfExtent[axisIndex] * aFaceSign;
-
-            worldVertices[i] = collisionDataA.mWorldTransform.TransformPoint(localVertices[i]);
-        }
-
-        for (int i = 0; i < 4; ++i)
-        {
-
-            // 후보 점들의 접촉 판단
-            CoreMath::Vector3 r = worldVertices[i] - collisionDataB.mPosition;
-            bool pass = true;
-            for (int j = 0; j < 3; ++j)
-            {
-
-                if (collisionDataB.mHalfExtent[j] + contactTolerance < std::abs(collisionDataB.GetAxis(j).Dot(r)))
-                {
-                    pass = false;
-                    break;
-                }
-            }
-
-            if (pass)
-            {
-                // 중복체크
-                bool duplicate = std::find_if(oManifold.mContacts.begin(), oManifold.mContacts.end(),
-                                              [pos = worldVertices[i]](const CollisionContact &contact)
-                                              {
-                                                  const float dis = 0.000001f;
-                                                  if ((contact.mPoint - pos).LengthSquared() < dis)
-                                                      return true;
-
-                                                  return false;
-                                              }) != oManifold.mContacts.end();
-                if (!duplicate)
-
-                {
-                    CollisionContact contact;
-                    // PhysicsContact contact;
-                    contact.mPoint = worldVertices[i];
-                    contact.mNormal = normal;
-                    contact.mPenetration = penetration;
-                    // contact.mShapeAHandle = shapeA.mHandle;
-                    // contact.mShapeBHandle = shapeB.mHandle;
-                    contact.mFeature.mFaceIndex = axisIndex;
-                    contact.mFeature.mType = EContactFeatureType::eFaceA;
-
-                    oManifold.mContacts.push_back(contact);
-                }
-            }
-
-            if (oManifold.mContacts.size() >= 4)
-                break;
+            outVertices.push_back(inVertices[i]);
         }
     }
+
+    // 해당점들에대해서 world 좌표로 이동
+    auto toWorldMatrix = toATransformMatrix.GetInversed();
+
+    for (const auto &point : outVertices)
+    {
+        if (oManifold.mContacts.size() >= 4)
+            break;
+
+        float depth = eA.Z - point.Z; // 정렬 공간에서 먼저 계산
+        auto worldPoint = toWorldMatrix.TransformPoint(point);
+
+        CollisionContact contact;
+        // PhysicsContact contact;
+        contact.mPoint = worldPoint;
+        contact.mNormal = normal;
+        // contact.mPenetration = penetration;
+        contact.mPenetration = depth;
+        contact.mFeature.mFaceIndex = axisIndex;
+        contact.mFeature.mType = EContactFeatureType::eFaceA;
+
+        oManifold.mContacts.push_back(contact);
+    }
+
+    // int inCount = 4;
+    // float d = eA.X; // x축 사이드평면까지의 거리
+
+    // int a = inCount - 1; // 시작점
+    //// edge들에대해 한정
+    // for (int i = 0; i < inCount; ++i)
+    //{
+    //     int b = i; // edge의 끝점
+
+    //    float da = incidentFaceVertices[a].X - d;
+    //    float db = incidentFaceVertices[b].X - d;
+
+    //    // a는 밖, b는 안에있을때
+    //    if ((da > 0.0f && db <= 0.0f))
+    //    {
+
+    //        // clip되어 새로운점 계산
+    //        CoreMath::Vector3 cv =
+    //            (incidentFaceVertices[b] - incidentFaceVertices[a]) * (da / (da - db)) + incidentFaceVertices[a];
+
+    //        outVertices.push_back(cv);
+    //        outVertices.push_back(incidentFaceVertices[b]);
+    //    }
+    //    else if ((da <= 0.0f && db <= 0.0f))
+    //    {
+    //        // b만추가 (a,b둘다 추가하면  모서리들이 모두 안쪽일때 중복되어 넣게 되는 문제발생하기에  )
+    //        outVertices.push_back(incidentFaceVertices[b]);
+    //    }
+    //    else if ((da <= 0.0f) && (db > 0.0f))
+    //    {
+    //        CoreMath::Vector3 cv =
+    //            (incidentFaceVertices[b] - incidentFaceVertices[a]) * (da / (da - db)) + incidentFaceVertices[a];
+    //        outVertices.push_back(cv);
+    //    }
+
+    //    a = b;
+    //}
+
+    // CoreMath::Vector3 contactPoints;
+
+    // for (int i = 0; i < 4; ++i)
+    //{
+
+    //    // 후보 점들의 접촉 판단
+    //    CoreMath::Vector3 r = worldVertices[i] - collisionDataA.mPosition;
+    //    bool pass = true;
+    //    for (int j = 0; j < 3; ++j)
+    //    {
+    //        if (collisionDataA.mHalfExtent[j] + contactTolerance < std::abs(collisionDataA.GetAxis(j).Dot(r)))
+    //        {
+    //            pass = false;
+    //            break;
+    //        }
+    //    }
+
+    //    if (pass)
+    //    {
+    //        CollisionContact contact;
+    //        // PhysicsContact contact;
+    //        contact.mPoint = worldVertices[i];
+    //        contact.mNormal = normal;
+    //        contact.mPenetration = penetration;
+    //        // contact.mShapeAHandle = shapeA.mHandle;
+    //        // contact.mShapeBHandle = shapeB.mHandle;
+    //        contact.mFeature.mFaceIndex = axisIndex;
+    //        contact.mFeature.mType = EContactFeatureType::eFaceA;
+
+    //        oManifold.mContacts.push_back(contact);
+    //    }
+    //}
+
+    //// 접촉점이 4개미만이면 A의 꼭짓점도 검사를 수행한다.
+    // if (oManifold.mContacts.size() < 4)
+    //{
+    //     int aFaceSign = collisionDataA.GetAxis(axisIndex).Dot(normal) > 0 ? -1 : 1;
+
+    //    CoreMath::Vector3 localVertices[4] = {};
+    //    CoreMath::Vector3 worldVertices[4] = {};
+
+    //    int tangentAxis0 = (axisIndex + 1) % 3;
+    //    int tangentAxis1 = (axisIndex + 2) % 3;
+    //    int tangentAxisSign[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    //    for (int i = 0; i < 4; ++i)
+    //    {
+    //        localVertices[i][tangentAxis0] = collisionDataA.mHalfExtent[tangentAxis0] * tangentAxisSign[i][0];
+    //        localVertices[i][tangentAxis1] = collisionDataA.mHalfExtent[tangentAxis1] * tangentAxisSign[i][1];
+
+    //        localVertices[i][axisIndex] = collisionDataA.mHalfExtent[axisIndex] * aFaceSign;
+
+    //        worldVertices[i] = collisionDataA.mWorldTransform.TransformPoint(localVertices[i]);
+    //    }
+
+    //    for (int i = 0; i < 4; ++i)
+    //    {
+
+    //        // 후보 점들의 접촉 판단
+    //        CoreMath::Vector3 r = worldVertices[i] - collisionDataB.mPosition;
+    //        bool pass = true;
+    //        for (int j = 0; j < 3; ++j)
+    //        {
+
+    //            if (collisionDataB.mHalfExtent[j] + contactTolerance < std::abs(collisionDataB.GetAxis(j).Dot(r)))
+    //            {
+    //                pass = false;
+    //                break;
+    //            }
+    //        }
+
+    //        if (pass)
+    //        {
+    //            // 중복체크
+    //            bool duplicate = std::find_if(oManifold.mContacts.begin(), oManifold.mContacts.end(),
+    //                                          [pos = worldVertices[i]](const CollisionContact &contact)
+    //                                          {
+    //                                              const float dis = 0.000001f;
+    //                                              if ((contact.mPoint - pos).LengthSquared() < dis)
+    //                                                  return true;
+
+    //                                              return false;
+    //                                          }) != oManifold.mContacts.end();
+    //            if (!duplicate)
+
+    //            {
+    //                CollisionContact contact;
+    //                // PhysicsContact contact;
+    //                contact.mPoint = worldVertices[i];
+    //                contact.mNormal = normal;
+    //                contact.mPenetration = penetration;
+    //                // contact.mShapeAHandle = shapeA.mHandle;
+    //                // contact.mShapeBHandle = shapeB.mHandle;
+    //                contact.mFeature.mFaceIndex = axisIndex;
+    //                contact.mFeature.mType = EContactFeatureType::eFaceA;
+
+    //                oManifold.mContacts.push_back(contact);
+    //            }
+    //        }
+
+    //        if (oManifold.mContacts.size() >= 4)
+    //            break;
+    //    }
+    //}
 }
 
 // 선과선 사이의 중앙점을 반환한다 .
@@ -1727,7 +1954,7 @@ void PhysicsScene::CalcForces(PhysicsBody &body)
 
     if (body.mBodyType == EPhysicsBodyType::eDynamic && body.mGravity)
     {
-        body.mForce += {0, -9.8F * body.mMass, 0};
+        body.mForce += {0, -980.0F * body.mMass, 0};
         body.mLastFrameAcceleration = {0, -9.8F, 0};
     }
 
@@ -2157,6 +2384,69 @@ bool PhysicsScene::CheckGroundNormal(const CoreMath::Vector3 &normal)
     return false;
 }
 
+void PhysicsScene::MakeCollisionResponseData()
+{
+
+    // curr list
+
+    // pre list
+    std::vector<bool> preCheckList(mCollisionPreFrameStateList.size(), false);
+
+    for (size_t i = 0; i < mCollisionCurrFrameStateList.size(); ++i)
+    {
+        bool bCurrStateBegin = true; // 처음 시작의 경우인가? 즉 currFrame에만존재하는가.
+        for (size_t j = 0; j < mCollisionPreFrameStateList.size(); ++j)
+        {
+            if (mCollisionCurrFrameStateList[i].isSame(mCollisionPreFrameStateList[j]))
+            {
+
+                if (mCollisionCurrFrameStateList[i].mResponseType == EPhysicsCollisionChannelResponseType::eOverlap)
+                {
+                    // overlap 유지
+                }
+                preCheckList[j] = true;
+                bCurrStateBegin = false;
+                break;
+            }
+        }
+
+        if (bCurrStateBegin)
+        {
+            if (mCollisionCurrFrameStateList[i].mResponseType == EPhysicsCollisionChannelResponseType::eOverlap)
+            {
+                // overlap begin
+                // Body 쌍당 하나만 저장하며 양쪽 컴포넌트 전달은 Bridge가 담당한다.
+                // 현재 Body 기준 이벤트에는 Shape 식별자를 제공하지 않는다.
+                const PhysicsCollisionPairState &state = mCollisionCurrFrameStateList[i];
+                PushCollisionResponseData(state.mResponseType, EPhysicsCollisionResponseEventType::eBegin,
+                                          state.mHandleA, state.mHandleB, PhysicsShapeHandleInValid,
+                                          PhysicsShapeHandleInValid);
+            }
+        }
+    }
+
+    for (int i = 0; i < preCheckList.size(); ++i)
+    {
+        if (preCheckList[i] == false)
+        { // curr에는 없던 state들 - >end
+
+            if (mCollisionPreFrameStateList[i].mResponseType == EPhysicsCollisionChannelResponseType::eOverlap)
+            {
+                // overlap end
+                // 사라진 관계의 식별자는 이전 상태에서 얻는다. Body가 이미 제거됐어도
+                // 포인터 대신 Handle을 전달하고 생존 여부는 Bridge에서 확인한다.
+                const PhysicsCollisionPairState &state = mCollisionPreFrameStateList[i];
+                PushCollisionResponseData(state.mResponseType, EPhysicsCollisionResponseEventType::eEnd, state.mHandleA,
+                                          state.mHandleB, PhysicsShapeHandleInValid, PhysicsShapeHandleInValid);
+            }
+        }
+    }
+    // 비교 완료 후 현재 관계를 다음 갱신의 기준으로 보관한다. 현재 목록을 비워
+    // 다음 수집에서 이전 관계가 누적되지 않도록 한다.
+    mCollisionPreFrameStateList.swap(mCollisionCurrFrameStateList);
+    mCollisionCurrFrameStateList.clear();
+}
+
 void PhysicsScene::FillGroundResult(bool bIsGrounded, const CoreMath::Vector3 &groundNormal,
                                     PhysicsBodyHandle groundHandle, PhysicsGroundResult &oResult)
 {
@@ -2164,6 +2454,74 @@ void PhysicsScene::FillGroundResult(bool bIsGrounded, const CoreMath::Vector3 &g
     oResult.mGroundNormal = groundNormal;
     oResult.mGroundBodyHandle = groundHandle;
 }
+
+void PhysicsScene::PushCollisionResponseData(EPhysicsCollisionChannelResponseType type,
+                                             EPhysicsCollisionResponseEventType event, PhysicsBodyHandle bodyHandle,
+                                             PhysicsBodyHandle otherBodyHandle, PhysicsShapeHandle shapeHandle,
+                                             PhysicsShapeHandle otherShapeHandle)
+{
+
+    PhysicsCollisionResponseData data;
+    data.mResponseType = type;
+    data.mEventType = event;
+    data.mBodyHandle = bodyHandle;
+    data.mOtherBodyHandle = otherBodyHandle;
+    data.mShapeHandle = shapeHandle;
+    data.mOhterShapeHandle = otherShapeHandle;
+
+    mCollisionResponseEventList.push_back(data);
+}
+
+void PhysicsScene::PushCurrPhysicsCollisionPairState(PhysicsBodyHandle handleA, PhysicsBodyHandle handleB,
+                                                     EPhysicsCollisionChannelResponseType responseType)
+{
+
+    PhysicsCollisionPairState state;
+    state.SetHandles(handleA, handleB);
+    state.mResponseType = responseType;
+    mCollisionCurrFrameStateList.push_back(state);
+}
+
+void PhysicsScene::BoxBoxFaceClip(int sign, float d, int axisIndex, const std::vector<CoreMath::Vector3> &inVertices,
+                                  std::vector<CoreMath::Vector3> &oOutVertices) const
+{
+    oOutVertices.clear();
+    int inCount = inVertices.size();
+
+    int a = inCount - 1; // 시작점
+    // edge들에대해 한정
+    for (int i = 0; i < inCount; ++i)
+    {
+        int b = i; // edge의 끝점
+
+        float da = sign * inVertices[a][axisIndex] - d;
+        float db = sign * inVertices[b][axisIndex] - d;
+
+        // a는 밖, b는 안에있을때
+        if ((da > 0.0f && db <= 0.0f))
+        {
+
+            // clip되어 새로운점 계산
+            CoreMath::Vector3 cv = (inVertices[b] - inVertices[a]) * (da / (da - db)) + inVertices[a];
+
+            oOutVertices.push_back(cv);
+            oOutVertices.push_back(inVertices[b]);
+        }
+        else if ((da <= 0.0f && db <= 0.0f))
+        {
+            // b만추가 (a,b둘다 추가하면  모서리들이 모두 안쪽일때 중복되어 넣게 되는 문제발생하기에  )
+            oOutVertices.push_back(inVertices[b]);
+        }
+        else if ((da <= 0.0f) && (db > 0.0f))
+        {
+            CoreMath::Vector3 cv = (inVertices[b] - inVertices[a]) * (da / (da - db)) + inVertices[a];
+            oOutVertices.push_back(cv);
+        }
+
+        a = b;
+    }
+}
+
 //
 //// 충돌 처리
 // void PhysicsScene::ResolveContact(const PhysicsContact &contact) {}

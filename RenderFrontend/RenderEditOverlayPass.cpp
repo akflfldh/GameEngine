@@ -90,13 +90,13 @@ void Render::RenderEditOverlayPass::SetGlobalData(const RenderPassExecuteContext
     mPassConstantBufferResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     mPassConstantBufferResource.mOffset = bufferSizeOffset;
     mPassConstantBufferResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    mPassConstantBufferResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
-    // 일반적인 MainPass들은 전체화면이라고생각
-    //  최종
-
-    mPassData.mViewport = renderPassExecuteContext.mGlobalSceneViewport;
-    // mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    // mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    // 카메라 투영과 같은 3D 영역을 사용한다. 백버퍼에 직접 그리므로 창 내부의
+    // 3D 좌상단에 논리적 창의 위치를 더하고, 너비/높이는 3D 영역 그대로 유지한다.
+    mPassData.mViewport = renderPassExecuteContext.mGlobalFrameData.mSceneViewport;
+    mPassData.mViewport.TopLeftX += renderPassExecuteContext.mGlobalSceneViewport.TopLeftX;
+    mPassData.mViewport.TopLeftY += renderPassExecuteContext.mGlobalSceneViewport.TopLeftY;
 
     mPassData.mGlobalPassBufferResouce = mPassConstantBufferResource;
     mPassData.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
@@ -115,11 +115,11 @@ std::vector<Render::RenderItem> Render::RenderEditOverlayPass::BuildRenderItem(
 
     std::vector<Render::RenderItem> renderItemVec;
 
-    for (auto command : executeContext.mEditorOverlayStaticMeshRenderCommandList)
+    for (auto command : executeContext.mEditorOverlayMeshRenderCommandList)
     {
 
         // staticMesh가 지정되지않아서 무시
-        if (command.mStaticMesh == nullptr)
+        if (command.mMesh == nullptr)
             continue;
         Render::RenderItem renderItem;
         renderItem.mScissor = mPassData.mScissorRect;
@@ -163,11 +163,11 @@ void Render::RenderEditOverlayPass::Execute(const RenderPassExecuteContext &rend
     renderSystem->Draw(renderPassExecuteContext.mCommandContext, BuildRenderItem(renderPassExecuteContext));
 }
 
-void Render::RenderEditOverlayPass::BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command,
+void Render::RenderEditOverlayPass::BuildRenderItemMeshData(const Render::MeshRenderCommand &command,
                                                             Render::RenderItem &renderItem)
 {
 
-    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mStaticMesh->GetSubMeshVector();
+    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mMesh->GetSubMeshVector();
     const CoreAsset::SubMesh subMesh = subMeshVector[command.mSubMeshIndex];
 
     // instance
@@ -182,12 +182,12 @@ void Render::RenderEditOverlayPass::BuildRenderItemMeshData(const Render::Static
     renderItem.mMeshItem.mIndexOffset = subMesh.mIndexOffset;
     renderItem.mMeshItem.mVertexOffset = subMesh.mVertexOffset;
 
-    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
 
     if (meshGpuContext.mVertexBuffer.getResource() == nullptr)
     {
-        bool ret = mAssetResolver->RequestResolveAsset(command.mStaticMesh);
-        meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+        bool ret = mAssetResolver->RequestResolveAsset(command.mMesh);
+        meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
     }
 
     renderItem.mMeshItem.mIndexBuffer = meshGpuContext.mIndexBuffer.getResource();
@@ -195,7 +195,7 @@ void Render::RenderEditOverlayPass::BuildRenderItemMeshData(const Render::Static
 }
 
 void Render::RenderEditOverlayPass::BuildRenderItemBufferGpuResources(
-    const Render::StaticMeshRenderCommnad &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
+    const Render::MeshRenderCommand &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
 {
     // buffer
 
@@ -218,6 +218,7 @@ void Render::RenderEditOverlayPass::BuildRenderItemBufferGpuResources(
     bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingGpuResource.mOffset = bufferOffset;
     bindingGpuResource.mType = EShaderResourceType::eConstantBuffer;
+    bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eObjectConstantBuffer;
 
     bindingGpuResourceVector.push_back(bindingGpuResource);
     // material buffer ...
@@ -253,6 +254,7 @@ void Render::RenderEditOverlayPass::BuildRenderItemTexGpuResources(
         }
 
         bindingGpuResource.mType = EShaderResourceType::eTexture;
+        bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eEditorOverlayTexture;
         bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
     }
 }

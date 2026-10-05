@@ -10,6 +10,7 @@
 
 #include <Core/CameraComponent.h>
 #include <Core/CameraObject.h>
+#include <Core/CollisionChannelSystem.h>
 #include <Core/Entity.h>
 #include <Core/IRenderProxyManager.h>
 #include <Core/Map.h>
@@ -29,6 +30,7 @@
 #include <CoreAsset/Texture.h>
 #include <CoreAsset/TextureManager.h>
 #include <CoreAsset/UIMaterialManager.h>
+#include <CoreBase/BinaryArch.h>
 #include <CoreBase/CoreAssert.h>
 #include <D3DGpuResourceManager/IGpuResourceManager.h>
 #include <EditorDirector/EditorConfig.h>
@@ -37,6 +39,7 @@
 #include <EditorDirector/EditorSelectionManager.h>
 #include <EditorEditMode.h>
 #include <EditorSceneController.h>
+#include <EditorSceneManager.h>
 #include <GlobalOverlayManager.h>
 #include <ImportModule/TextureImporter.h>
 #include <Logger/Logger.h>
@@ -69,7 +72,9 @@ Quad::EditorProjectManager::EditorProjectManager() : mUserProjectDLLHandle(nullp
 {
 
     mEditorMode = std::make_unique<EditorEditMode>();
-    Quad::EditorSceneManager::GetInstance()->GetUserWorld()->Register(mEditorMode->GetEditorMap());
+    auto *sceneManager = Quad::EditorSceneManager::GetInstance();
+    sceneManager->SetEditorMap(mEditorMode->GetEditorMap());
+    sceneManager->GetUserWorld()->Register(mEditorMode->GetEditorMap());
     mEditorMode->SetShowDebugCollider(true);
 }
 
@@ -81,6 +86,20 @@ bool Quad::EditorProjectManager::Initialize()
 
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
     projectConfig->Load();
+
+    Core::CollisionChannelSystem *collisionChannelSystem = Core::CollisionChannelSystem::GetInstance();
+
+    BinaryArch arch(true);
+
+    arch.SetFile(projectConfig->GetProjectPath() / "ProjectCollision.cfg");
+    arch.Start();
+    if (arch.IsFail())
+    {
+        return false;
+    }
+
+    collisionChannelSystem->Serialize(arch);
+    arch.End();
 
     mAssetRawFolderPath = ProjectConfig::GetInstance()->GetProjectPath();
     mAssetRawFolderPath = mAssetRawFolderPath / "RawAsset";
@@ -119,6 +138,14 @@ void Quad::EditorProjectManager::SaveProject()
 
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
     projectConfig->Save();
+
+    BinaryArch arch(false);
+    arch.SetFile(projectConfig->GetProjectPath() / "ProjectCollision.cfg");
+    arch.Start();
+
+    auto collisionChannelSystem = Core::CollisionChannelSystem::GetInstance();
+    collisionChannelSystem->Serialize(arch);
+    arch.End();
 }
 
 void Quad::EditorProjectManager::OpenMap(Map *map, bool bShowPreMapSaveMessageBox)
@@ -129,13 +156,20 @@ void Quad::EditorProjectManager::OpenMap(Map *map, bool bShowPreMapSaveMessageBo
 
     Map *currentMap = userWorld->GetCurrentMap();
 
+    if (currentMap != nullptr && currentMap == map)
+        return;
+
     auto loadNextMapNextCallback = [this, userWorld, map]()
     {
         auto assetManager = CoreAsset::AssetManager::GetInstance();
 
         // 이건 동기가 필요하니 , 메인스레드에서 그냥 수행
-        bool bLoadedMapRawData = assetManager->LoadAssetRawData(map);
 
+        if (map->GetLoadState() != CoreAsset::EAssetLoadState::Loaded)
+            bool bLoadedMapRawData = assetManager->LoadAssetRawData(map);
+
+        EditorSelectionManager::GetInstance()->ClearSelection();
+        userWorld->EndMap();
         userWorld->SetCurrentMap(map);
 
         // 에디터에서 새맵을 열면은반응해야하는 작업들이 많이있다.
@@ -167,7 +201,17 @@ void Quad::EditorProjectManager::SaveMap(Map *map)
         return;
 
     // 맵 저장
-    InternalSaveSingleAsset(map);
+    bool saved = InternalSaveSingleAsset(map);
+    const std::string message = std::string(saved ? "맵 저장 완료: " : "맵 저장 실패: ") + map->GetName().c_str();
+
+    if (saved)
+    {
+        LOG_MESSAGE_INFO("EditorProjectManager", message);
+    }
+    else
+    {
+        LOG_MESSAGE_ERROR("EditorProjectManager", message);
+    }
 }
 
 void Quad::EditorProjectManager::InitSystems()
@@ -352,8 +396,7 @@ void Quad::EditorProjectManager::LoadProjectAsset()
         if (asset->GetType() == CoreAsset::EAssetType::eMap)
         {
             Map *map = static_cast<Map *>(asset);
-            userWorld->Register(map);
-
+            EditorSceneManager::GetInstance()->AddUserMap(map);
             if (*loadedDefaultMap == nullptr)
             {
                 *loadedDefaultMap = map;
@@ -637,8 +680,12 @@ Map *Quad::EditorProjectManager::CreateDefaultUserMap()
     return defaultMap;
 }
 
-void Quad::EditorProjectManager::CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager)
+void Quad::EditorProjectManager::CreateEditorObjects(Map *map, BaseSelectionManager *selectionManager,
+                                                     bool bUseLightVisualizer, bool bUseGizmo)
 {
+    // BeginMap에서 기즈모를 생성하므로, 컨트롤러/맵 시작보다 먼저 사용 정책을 전달한다.
+    EditorEditMode *editorMode = static_cast<EditorEditMode *>(map->GetWorld()->GetEngineMode());
+    editorMode->SetUseGizmo(bUseGizmo);
 
     // 그것을 다해줘야함 콜백으로 등록하게끔
     CameraObject *camObject = static_cast<CameraObject *>(map->CreateEngineEntity<CameraObject>("EdtorCamera"));
@@ -656,19 +703,17 @@ void Quad::EditorProjectManager::CreateEditorObjects(Map *map, BaseSelectionMana
     }
     editorCameraController->Intialize(selectionManager);
 
-    // userWorld->StartMap();
-    map->GetWorld()->StartMap();
+    map->GetWorld()->BeginMap();
 
-    EditorEditMode *editorMode = static_cast<EditorEditMode *>(map->GetWorld()->GetEngineMode());
     editorMode->SetEditorController(editorCameraController);
 
     if (camObject)
         editorMode->SetEditorCameraComponent(camObject->GetCameraComponent());
 
-    editorMode->BindSourceMapToVisualizerManager(map);
+    editorMode->BindSourceMapToVisualizerManager(map, bUseLightVisualizer);
 
-    map->ClearDirty();
-    map->SetRawDataDirty(false);
+    //  map->ClearDirty();
+    // map->SetRawDataDirty(false);
 }
 
 void Quad::EditorProjectManager::SetDrawDebugColliderFlag(bool flag)

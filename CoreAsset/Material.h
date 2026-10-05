@@ -44,6 +44,7 @@ class CORE_ASSET_API Material : public Asset
     void SetSamplerResource(int index, uint32_t samplerID);
 
     virtual void Serialize(Arch &arch) override;
+    bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr) override;
 
     std::vector<AssetMaterialTexResourceContext> &GetAlbedoTexResourceList();
     const std::vector<AssetMaterialTexResourceContext> &GetAlbedoTexResourceList() const;

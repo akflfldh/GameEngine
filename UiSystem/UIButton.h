@@ -41,9 +41,6 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIButton : public UIElement
     void SetUseHoverImageColor(bool flag);
 
   protected:
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UIControlStyle &style) override;
-
     // style일변화 , hover,등 상태변화 에서 호출
     virtual void ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState) override;
 

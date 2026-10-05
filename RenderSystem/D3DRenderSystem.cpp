@@ -21,6 +21,7 @@
 #include <D3DGpuResourceManager/D3DGpuVertexBuffer.h>
 // #include <Pix/WinPixEventRuntime/pix3.h>
 #include <algorithm>
+#include <cassert>
 #include <d3dx12.h>
 #include <wrl.h>
 
@@ -634,97 +635,76 @@ void D3DRender::D3DRenderSystem::BindMeshBufferIfNeeded(ID3D12GraphicsCommandLis
 void D3DRender::D3DRenderSystem::BindShaderResources(ID3D12GraphicsCommandList *commandList,
                                                      const Render::RenderItem *currRenderItem)
 {
-    // resourceBinding
-    // 일단동일한 패스버퍼라도 루트파라미터의 인덱스가 달라지면 다시바인딩해야하니
-    // 일단은 리소스는 항상 다시 바인딩
-
-    // 1. buffer (일반상수버퍼)
-    // 순서대로 1번파라미터 부터 바인딩 수행
-    int rootParameterIndex = 1;
     for (const auto &bufferResource : currRenderItem->mBindingGpuBufferResourceVector)
     {
-        if (bufferResource.mType != Render::EShaderResourceType::eConstantBuffer)
-            continue;
-
-        D3DGRM::D3DGpuConstantBuffer *d3dConstantBuffer = (D3DGRM::D3DGpuConstantBuffer *)bufferResource.gpuResource;
-
-        D3D12_GPU_VIRTUAL_ADDRESS addr =
-            d3dConstantBuffer->GetResource()->GetGPUVirtualAddress() + bufferResource.mOffset;
-        commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, addr);
-
-        rootParameterIndex++;
+        if (!BindGraphicsShaderResource(commandList, bufferResource))
+            return;
     }
 
-    rootParameterIndex = 4;
-    // 4 . tex
     for (const auto &texResource : currRenderItem->mBindingGpuTexResourceVector)
     {
-        D3DGRM::D3DDescriptorHandle handle;
-        D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)texResource.gpuResource;
-        d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
-        commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle.mGpuDescriptorHandle);
-        rootParameterIndex++;
+        if (!BindGraphicsShaderResource(commandList, texResource))
+            return;
     }
+}
 
-    // 오브젝트용 구조적버퍼 루트파라미터 8번부터 시작 최대 10번까지
-    rootParameterIndex = 8;
-    for (const auto &bufferResource : currRenderItem->mBindingGpuBufferResourceVector)
+bool D3DRender::D3DRenderSystem::BindGraphicsShaderResource(ID3D12GraphicsCommandList *commandList,
+                                                            const Render::BindingGpuResource &bindingResource)
+{
+    // RenderItem의 벡터 순서는 binding 계약이 아니다. semantic을 MaterialManager의 Master Root Signature
+    // 테이블로 변환해야 pass별 리소스 추가·생략에도 기존 root parameter가 밀리지 않는다.
+    if (bindingResource.gpuResource == nullptr ||
+        bindingResource.mSemantic == Render::EMasterRootBindingSemantic::eInvalid)
     {
-        if (bufferResource.mType != Render::EShaderResourceType::eStructuredBuffer)
-            continue;
-
-        // 2 .structured buffer;
-        D3DGRM::D3DGpuStructuredBuffer *structuredBuffer =
-            static_cast<D3DGRM::D3DGpuStructuredBuffer *>(bufferResource.gpuResource);
-
-        D3D12_GPU_VIRTUAL_ADDRESS addr =
-            structuredBuffer->GetResource()->GetGPUVirtualAddress() + bufferResource.mOffset;
-
-        commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, addr);
-
-        rootParameterIndex++;
+        assert(false);
+        return false;
     }
 
-    // for (const auto &resourceElement : currRenderItem->mBindingGpuResourceVector)
-    //{
+    const Render::MaterialBindingRecord *bindingRecord =
+        mMaterialManager->FindMasterBindingRecord(bindingResource.mSemantic);
+    if (bindingRecord == nullptr || bindingRecord->mShaderBinding.mResourceType != bindingResource.mType)
+    {
+        assert(false);
+        return false;
+    }
 
-    //    std::unordered_map<std::string, int>::const_iterator rootParameterIt =
-    //        currMatMainPass->mShaderResourceRootParameterBindingInfo.find(resourceElement.mName);
+    const uint32_t rootParameterIndex = bindingRecord->mRootBinding.mRootParameterIndex;
+    switch (bindingRecord->mRootBinding.mBindingMode)
+    {
+    case Render::ERootBindingMode::RootCBV:
+    {
+        D3DGRM::D3DGpuConstantBuffer *constantBuffer =
+            static_cast<D3DGRM::D3DGpuConstantBuffer *>(bindingResource.gpuResource);
+        const D3D12_GPU_VIRTUAL_ADDRESS address =
+            constantBuffer->GetResource()->GetGPUVirtualAddress() + bindingResource.mOffset;
+        commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, address);
+        return true;
+    }
+    case Render::ERootBindingMode::RootSRV:
+    {
+        D3DGRM::D3DGpuStructuredBuffer *structuredBuffer =
+            static_cast<D3DGRM::D3DGpuStructuredBuffer *>(bindingResource.gpuResource);
+        const D3D12_GPU_VIRTUAL_ADDRESS address =
+            structuredBuffer->GetResource()->GetGPUVirtualAddress() + bindingResource.mOffset;
+        commandList->SetGraphicsRootShaderResourceView(rootParameterIndex, address);
+        return true;
+    }
+    case Render::ERootBindingMode::DescriptorTable:
+    {
+        D3DGRM::D3DGpuResource *resource = static_cast<D3DGRM::D3DGpuResource *>(bindingResource.gpuResource);
+        D3DGRM::D3DDescriptorHandle handle;
+        resource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
+        commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle.mGpuDescriptorHandle);
+        return true;
+    }
+    case Render::ERootBindingMode::RootUAV:
+    case Render::ERootBindingMode::RootConstants:
+    case Render::ERootBindingMode::StaticSampler:
+        break;
+    }
 
-    //    int rootParameterIndex = rootParameterIt->second;
-
-    //    D3DGRM::D3DDescriptorHandle handle;
-    //    switch (resourceElement.mType)
-    //    {
-    //    case Render::EShaderResourceType::eConstantBuffer:
-    //    {
-
-    //        D3DGRM::D3DGpuConstantBuffer *d3dConstantBuffer =
-    //            (D3DGRM::D3DGpuConstantBuffer *)resourceElement.gpuResource;
-    //        // d3dConstantBuffer->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eCBV, handle);
-    //        handle = d3dConstantBuffer->GetConstantDescriptorHandle(resourceElement.mOffset);
-    //    }
-    //    break;
-    //    case Render::EShaderResourceType::eStructuredBuffer:
-    //    case Render::EShaderResourceType::eTexture:
-    //    {
-    //        D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
-    //        d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, handle);
-    //    }
-    //    break;
-    //    case Render::EShaderResourceType::eSampler:
-
-    //    {
-
-    //        D3DGRM::D3DGpuResource *d3dResource = (D3DGRM::D3DGpuResource *)resourceElement.gpuResource;
-    //        d3dResource->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSMP, handle);
-    //    }
-
-    //    break;
-    //    }
-
-    //    commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, handle.mGpuDescriptorHandle);
-    //}
+    assert(false);
+    return false;
 }
 
 void D3DRender::D3DRenderSystem::DrawRenderItem(ID3D12GraphicsCommandList *commandList,
@@ -750,42 +730,28 @@ void D3DRender::D3DRenderSystem::DrawRenderItem(ID3D12GraphicsCommandList *comma
 
 void D3DRender::D3DRenderSystem::BindGlobalShaderResource(ID3D12GraphicsCommandList *commandList)
 {
-
-    // 전역버퍼 바인딩 . 무조건 0번 슬롯 (루트파라미터)
     if (mCurrPassFrameContext.mGlobalPassBufferResouce.gpuResource != nullptr)
     {
-
-        D3DGRM::D3DGpuConstantBuffer *passBuffer =
-            static_cast<D3DGRM::D3DGpuConstantBuffer *>(mCurrPassFrameContext.mGlobalPassBufferResouce.gpuResource);
-
-        D3D12_GPU_VIRTUAL_ADDRESS passBufferGpuAddr =
-            passBuffer->GetResource()->GetGPUVirtualAddress() + mCurrPassFrameContext.mGlobalPassBufferResouce.mOffset;
-
-        commandList->SetGraphicsRootConstantBufferView(0, passBufferGpuAddr);
+        if (!BindGraphicsShaderResource(commandList, mCurrPassFrameContext.mGlobalPassBufferResouce))
+            return;
     }
 
     if (mCurrPassFrameContext.mGlobalStructuredBufferResource.gpuResource)
     {
-        // 2 .structured buffer;
-        D3DGRM::D3DGpuStructuredBuffer *structuredBuffer = static_cast<D3DGRM::D3DGpuStructuredBuffer *>(
-            mCurrPassFrameContext.mGlobalStructuredBufferResource.gpuResource);
-
-        D3D12_GPU_VIRTUAL_ADDRESS addr = structuredBuffer->GetResource()->GetGPUVirtualAddress() +
-                                         mCurrPassFrameContext.mGlobalStructuredBufferResource.mOffset;
-
-        commandList->SetGraphicsRootShaderResourceView(3, addr);
+        if (!BindGraphicsShaderResource(commandList, mCurrPassFrameContext.mGlobalStructuredBufferResource))
+            return;
     }
-    // 혹시나 전역 텍스처 리소스가 있다면 바인딩.
 
-    for (auto &element : mCurrPassFrameContext.mGlobalPassTexResourceVector)
+    if (mCurrPassFrameContext.mGlobalStructuredBufferResource2.gpuResource)
     {
-        uint32_t slotIndex = element.first;
+        if (!BindGraphicsShaderResource(commandList, mCurrPassFrameContext.mGlobalStructuredBufferResource2))
+            return;
+    }
 
-        D3DGRM::D3DGpuTexture *tex = static_cast<D3DGRM::D3DGpuTexture *>(element.second.gpuResource);
-
-        D3DGRM::D3DDescriptorHandle gpuHandle;
-        tex->GetDescriptorHandle(D3DGRM::ED3DResourceDescriptorType::eSRV, gpuHandle);
-        commandList->SetGraphicsRootDescriptorTable(slotIndex, gpuHandle.mGpuDescriptorHandle);
+    for (const auto &textureResource : mCurrPassFrameContext.mGlobalPassTexResourceVector)
+    {
+        if (!BindGraphicsShaderResource(commandList, textureResource))
+            return;
     }
 }
 

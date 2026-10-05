@@ -26,6 +26,7 @@ void UI::UIEditBox::OnBegin()
     mCursorElement = CreateChildUIElement<UI::UIImage>("CursorElement");
     mCursorElement->SetSize(2.0f, mTextCom->GetLineHeight());
     mCursorElement->SetActiveFlag(true);
+    mCursorElement->SetOnlyVisible(true);
 
     mTextInputCom->mOnEnterInputCallbackSystem.Register([this](const std::string &str)
                                                         { mOnFinishInputCallbackSystem.ExecuteCallbacks(str); });
@@ -144,20 +145,5 @@ void UI::UIEditBox::SetCursorPosByWorldPos(float worldPosX, float worldPosY)
     {
         glm::vec2 localPos = mTransform.WorldToLocal(worldPosX, worldPosY);
         mTextInputCom->SetCursorPos(localPos.r, localPos.g);
-    }
-}
-
-void UI::UIEditBox::ApplyLayoutStyle(const UIControlStyle &style)
-{
-
-    SetHeight(style.mHeight);
-
-    auto pos = mTransform.GetLocalPosition();
-    pos.y += style.mTopPadding;
-    SetPositionLocal(pos);
-
-    if (mTextInputCom)
-    {
-        mTextCom->SetFontSize(style.mFontSize);
     }
 }

@@ -1,4 +1,5 @@
 ﻿#include "PrefabWorkSpaceManager.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/LogicalWindow.h>
 #include <Core/Map.h>
 #include <Core/Prefab.h>
@@ -69,7 +70,7 @@ void PrefabWorkSpaceManager::Initialize(UI::UICanvas *canvas, Core::LogicalWindo
     map->SetAmbientLightColor({1.0f, 1.0f, 1.0f});
     map->SetAmbientLightIntensity(1.3f);
     mLogicalWindow->SetWorld(mWorld.get());
-    Quad::EditorSceneManager::GetInstance()->RegisterWorld("PrefabWorld", mWorld.get());
+    Quad::EditorSceneManager::GetInstance()->RegisterWorld("PrefabWorld", mWorld.get());    
     mWorld->SetActiveState(false);
 
     mWorld->Register(map);
@@ -456,7 +457,7 @@ void PrefabWorkSpaceManager::InitUI(UI::UICanvas *canvas)
 void PrefabWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
 {
 
-    auto toolbar = canvas->CreateUIElement<UI::UIImage>("Toolbar");
+    auto toolbar = EditorUIUtility::Create<UI::UIImage>(canvas, "Toolbar");
     toolbar->SetSize(3000, mToolbarHeight);
     toolbar->SetColor(0.4f, 0.4f, 0.4f);
     toolbar->SetPositionLocal(0, 0);
@@ -468,8 +469,9 @@ void PrefabWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
     float posY = 0.0f;
 
     // ToDefaultEditButton
-    auto toDefaultEditButton = toolbar->CreateChildUIElement<UI::UIButton>("toDefaultEditButton");
-    toDefaultEditButton->SetSize(80, 40);
+    auto toDefaultEditButton = EditorUIUtility::CreateSmallButton(toolbar, "toDefaultEditButton");
+    // EditorUIUtility의 기본 높이 유지: toDefaultEditButton->SetSize(80, 40);
+    toDefaultEditButton->SetWidth(80);
     posX += marginX;
     posY += marginY;
     toDefaultEditButton->SetPositionLocal(posX, posY);
@@ -480,8 +482,9 @@ void PrefabWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
 
     ShiftPosX(posX, toDefaultEditButton, marginX);
 
-    auto SaveButton = toolbar->CreateChildUIElement<UI::UIButton>("SaveButton");
-    SaveButton->SetSize(60, 40);
+    auto SaveButton = EditorUIUtility::CreateSmallButton(toolbar, "SaveButton");
+    // EditorUIUtility의 기본 높이 유지: SaveButton->SetSize(60, 40);
+    SaveButton->SetWidth(60);
     SaveButton->SetPositionLocal(posX, posY);
     SaveButton->mUIImageComponent->UseTexture();
     SaveButton->mUIImageComponent->SetTexture("Engine/Save");

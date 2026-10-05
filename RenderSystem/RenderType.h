@@ -114,8 +114,13 @@ struct Viewport
 using ScissorRect = SRECT;
 using RECT = ScissorRect;
 
+/// Frontend가 한 개의 graphics resource binding 요청을 RenderSystem에 전달하는 값 객체다.
+/// GPU resource를 소유하지 않으며, 물리 root parameter 번호 대신 semantic과 buffer offset만 보관한다.
 struct BindingGpuResource
 {
+    // Frontend는 resource의 의미만 기록하고 실제 register/root parameter 위치는
+    // MaterialManager가 소유한 Master Root Signature 계약에서 조회한다.
+    EMasterRootBindingSemantic mSemantic = EMasterRootBindingSemantic::eInvalid;
     std::string mName;
     Render::EShaderResourceType mType = EShaderResourceType::eConstantBuffer;
     uint32_t mOffset = 0; // 상수, 구조적 버퍼일떄 유효 , 구조적버퍼의 baseOffset
@@ -130,11 +135,11 @@ struct FrameContext
     ScissorRect mScissorRect;
     float mBackGroundColor[4];
     BindingGpuResource mGlobalPassBufferResouce;
-    BindingGpuResource mGlobalStructuredBufferResource;
+    BindingGpuResource mGlobalStructuredBufferResource;  ///< 현재 pass의 Light structured buffer다.
+    BindingGpuResource mGlobalStructuredBufferResource2; ///< 전체 skin palette structured buffer다.
     // UINT mGlobalPassConstantsRootParameterIndex; 이것도 아마 엔진에서 고정한대로 나오지않을까?
 
-    //<binding index, resource>
-    std::vector<std::pair<uint32_t, BindingGpuResource>> mGlobalPassTexResourceVector;
+    std::vector<BindingGpuResource> mGlobalPassTexResourceVector;
 
     // 렌더타켓은  일단 단일, 향후에 렌더타켓이 여러개여서, vector로 표현될수있을듯.
     // nullptr이면 후면버퍼

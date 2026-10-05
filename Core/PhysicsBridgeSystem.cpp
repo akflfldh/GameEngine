@@ -1,5 +1,6 @@
 ﻿#include "PhysicsBridgeSystem.h"
 
+#include <Core/CollisionChannelSystem.h>
 #include <Core/CorePhysicsType.h>
 #include <Core/Entity.h>
 #include <Core/IPhysicsBodyComponent.h>
@@ -16,7 +17,17 @@ PhysicsBridgeSystem *PhysicsBridgeSystem::GetInstance()
     return &instance;
 }
 
-PhysicsBridgeSystem::PhysicsBridgeSystem() : mPhysicsWorld(std::make_unique<PhysicsWorld>()) {}
+PhysicsBridgeSystem::PhysicsBridgeSystem() : mPhysicsWorld(std::make_unique<PhysicsWorld>())
+{
+
+    auto collisionSystem = Core::CollisionChannelSystem::GetInstance();
+    collisionSystem->mOnChannelListChanged.Register(
+        [this]()
+        {
+            // 채널 다시구축
+            BuildColliisonChannelResponseTable();
+        });
+}
 
 PhysicsBridgeSystem::~PhysicsBridgeSystem() {}
 
@@ -101,6 +112,7 @@ PhysicsBodyHandle PhysicsBridgeSystem::RegisterPhysicsBodyComponent(SceneCompone
     physicsBodyDesc.mGravity = bodyComponent->IsPhysicsGravityEnabled();
     physicsBodyDesc.mPosition = sceneComponent->GetPositionWorld();
     physicsBodyDesc.mRotation = sceneComponent->GetQuaternionWorld();
+    physicsBodyDesc.mCollisionChannelResponseID = bodyComponent->GetCollisionChannelID();
 
     // 즉각적으로생성하는데 만약 물리시스템이 UPDATE중이라면?
     // 1. 생성후 일단 임시리스트로 들어가고 물리시스템 UPDATE시작에서 메인리스트로 옮기기
@@ -342,6 +354,8 @@ void PhysicsBridgeSystem::PostPhysicsUpdate(Map *map, std::unordered_map<Map *, 
     SyncTransformToComponent(physicsFrameResult, it);
 
     SyncGroundResultToComponent(physicsFrameResult, it);
+
+    ConsumeCollisionEvents(physicsScene);
 }
 
 void PhysicsBridgeSystem::SyncTransformToComponent(const PhysicsFrameResult &physicsFrameResult,
@@ -602,4 +616,151 @@ const PhysicsSceneComponentBinding *PhysicsBridgeSystem::FindBinding(SceneCompon
         return nullptr;
 
     return &(*bindingIt);
+}
+
+void PhysicsBridgeSystem::BuildColliisonChannelResponseTable()
+{
+
+    auto collisionChannelSystem = Core::CollisionChannelSystem::GetInstance();
+
+    PhysicsCollisionChannelResponseTable phyiscsTable;
+
+    std::vector<Core::CollisionChannelID> collisionChannelIDList = collisionChannelSystem->GetAllChannelD();
+
+    for (int i = 0; i < collisionChannelIDList.size(); ++i)
+    {
+
+        Core::CollisionChannelID id = collisionChannelIDList[i];
+        Core::CollisionChannelInfo info;
+        bool ret = collisionChannelSystem->GetCollisionChannelInfo(id, info);
+
+        if (ret == false)
+        {
+        }
+
+        for (auto &entry : info.mResponseTypeTable)
+        {
+
+            EPhysicsCollisionChannelResponseType newType = ConvertPhysicsCollisionResponseType(entry.second);
+            // 없으면 생성시키기 위해 작은경우 뿐만 아니라 같은경우도 통과
+            if (phyiscsTable.GetResponseType(id, entry.first) >= newType)
+            {
+                phyiscsTable.SetResponseType(id, entry.first, newType);
+            }
+        }
+    }
+
+    mPhysicsWorld->SetCollisionChannelResponseTable(phyiscsTable);
+}
+
+EPhysicsCollisionChannelResponseType PhysicsBridgeSystem::ConvertPhysicsCollisionResponseType(
+    ECollisionResponseType type) const
+{
+
+    switch (type)
+    {
+    case ECollisionResponseType::eIgnore:
+        return EPhysicsCollisionChannelResponseType::eIgnore;
+
+    case ECollisionResponseType::eOverlap:
+
+        return EPhysicsCollisionChannelResponseType::eOverlap;
+    case ECollisionResponseType::eBlock:
+
+        return EPhysicsCollisionChannelResponseType::eBlock;
+    }
+}
+
+void PhysicsBridgeSystem::ConsumeCollisionEvents(PhysicsScene *physicsScene)
+{
+
+    if (physicsScene == nullptr)
+        return;
+
+    std::vector<PhysicsCollisionResponseData> responseDataList;
+    physicsScene->ConsumeCollisionEvents(responseDataList);
+
+    for (const auto &entry : responseDataList)
+    {
+        CollisionResponseData responseData{};
+        // Physics와 Core의 enum 값 배치에 의존하지 않고 이벤트 의미를 변환한다.
+        switch (entry.mResponseType)
+        {
+        case decltype(entry.mResponseType)::eOverlap:
+            responseData.responseType = ECollisionResponseType::eOverlap;
+            break;
+        case decltype(entry.mResponseType)::eBlock:
+            responseData.responseType = ECollisionResponseType::eBlock;
+            break;
+        default:
+            continue;
+        }
+
+        switch (entry.mEventType)
+        {
+        case EPhysicsCollisionResponseEventType::eBegin:
+            responseData.eventType = ECollisionResponseEventType::eBegin;
+            break;
+        case EPhysicsCollisionResponseEventType::eEnd:
+            responseData.eventType = ECollisionResponseEventType::eEnd;
+            break;
+        default:
+            continue;
+        }
+
+        // 이벤트 하나는 Body 쌍 하나다. Shape는 무시하고 양쪽에 자기 기준 상대를 전달한다.
+        // 콜백이 등록 해제나 DEAD 처리를 할 수 있으므로, 전달마다 매핑을 새로 찾고
+        // 컨테이너 iterator나 binding 참조를 콜백 이후에 재사용하지 않는다.
+        auto dispatch = [&](PhysicsBodyHandle bodyHandle, PhysicsBodyHandle otherHandle)
+        {
+            for (auto &contextEntry : mMapContextTable)
+            {
+                PhysicsBridgeMapContext &context = contextEntry.second;
+                if (context.mPhysicsScene != physicsScene)
+                    continue;
+
+                auto findComponent = [&](PhysicsBodyHandle handle) -> SceneComponent *
+                {
+                    auto componentIt = context.mBodyHandleSceneComponentTable.find(handle);
+                    if (componentIt == context.mBodyHandleSceneComponentTable.end())
+                        return nullptr;
+
+                    SceneComponent *component = componentIt->second;
+                    if (component == nullptr || component->GetDeadState())
+                        return nullptr;
+
+                    Object *owner = component->GetOwnerObject();
+                    if (owner == nullptr || owner->GetKillState())
+                        return nullptr;
+                    return component;
+                };
+
+                SceneComponent *component = findComponent(bodyHandle);
+                if (component == nullptr)
+                    return;
+
+                auto bindingIt =
+                    std::find_if(context.mSceneComponentBindingList.begin(), context.mSceneComponentBindingList.end(),
+                                 [bodyHandle](const PhysicsSceneComponentBinding &binding)
+                                 { return binding.mPhysicsBodyHandle == bodyHandle; });
+                if (bindingIt == context.mSceneComponentBindingList.end() ||
+                    bindingIt->mPhysicsBodyComponent == nullptr)
+                    return;
+
+                CollisionResponseData data = responseData;
+                data.otherComponent = findComponent(otherHandle);
+                // 제거된 상대의 포인터는 전달하지 않는다. End는 상대가 없어도 종료를 알린다.
+                if (data.otherComponent == nullptr && data.eventType == ECollisionResponseEventType::eBegin)
+                    return;
+
+                IPhysicsBodyComponent *bodyComponent = bindingIt->mPhysicsBodyComponent;
+                bodyComponent->OnCollisionResponse(data);
+                return;
+            }
+        };
+
+        dispatch(entry.mBodyHandle, entry.mOtherBodyHandle);
+        if (entry.mBodyHandle != entry.mOtherBodyHandle)
+            dispatch(entry.mOtherBodyHandle, entry.mBodyHandle);
+    }
 }

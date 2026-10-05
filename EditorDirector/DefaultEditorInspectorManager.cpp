@@ -1,4 +1,5 @@
 ﻿#include "DefaultEditorInspectorManager.h"
+#include <EditorDirector/EditorProjectManager.h>
 #include <IInspector.h>
 
 DefaultEditorInspectorManager *DefaultEditorInspectorManager::GetInstance()
@@ -7,7 +8,13 @@ DefaultEditorInspectorManager *DefaultEditorInspectorManager::GetInstance()
     return &instance;
 }
 
-DefaultEditorInspectorManager::DefaultEditorInspectorManager() {}
+DefaultEditorInspectorManager::DefaultEditorInspectorManager()
+{
+
+    auto editorProjectManager = Quad::EditorProjectManager::GetInstance();
+
+    editorProjectManager->mOnOpendMapCallbackSystem.Register([this](Map *map) { OnOpendNewMap(map); });
+}
 
 DefaultEditorInspectorManager::~DefaultEditorInspectorManager() {}
 
@@ -56,4 +63,15 @@ void DefaultEditorInspectorManager::RegisterInspector(EDefaultEditorInspectorTyp
 {
 
     mInsepctorTable[type] = inspector;
+}
+
+void DefaultEditorInspectorManager::OnOpendNewMap(Map *map)
+{
+
+    for (auto &entry : mInsepctorTable)
+    {
+        InspectorContext context;
+        context.mTargetMap = map;
+        entry.second->SetInspectorContext(context);
+    }
 }

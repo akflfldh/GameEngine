@@ -64,14 +64,7 @@ class CORE_ASSET_API Asset
         return EAssetType::eUnknown;
     }
 
-    enum class LoadState
-    {
-        Unloaded,
-        Loading,
-        Loaded,
-        Failed
-    };
-    LoadState GetLoadState() const
+    EAssetLoadState GetLoadState() const
     {
         return mLoadState;
     }
@@ -97,13 +90,17 @@ class CORE_ASSET_API Asset
     void SetRawDataDirty(bool flag);
     bool GetRawDataDirty() const;
 
+    // 메모리에 준비된 성분만 복사한다. ID/이름/등록/dirty 처리는 AssetManager의 책임이다.
+    // 의존 에셋은 복제하지 않으며, 실패하면 false와 선택적인 사유를 반환한다.
+    virtual bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr);
+
   protected:
     // 생성자를 protected로 두어 파생 클래스만 생성 가능하도록 제한하는 것이 일반적
     Asset(EAssetType type, AssetID id = NoneAssetID);
 
     // Loader나 AssetManager에서 이 값들을 설정할 수 있도록 setter 제공
     // 또는 friend 클래스로 접근 허용
-    void SetLoadState(LoadState state)
+    void SetLoadState(EAssetLoadState state)
     {
         mLoadState = state;
     }
@@ -117,7 +114,7 @@ class CORE_ASSET_API Asset
     std::string mTag;
 
     EAssetType mType;
-    LoadState mLoadState = LoadState::Unloaded;
+    EAssetLoadState mLoadState = EAssetLoadState::Unloaded;
 
     // Dirty flag가 켜졌다면 저장시 write될것이다.
     bool mDirtyFlag;

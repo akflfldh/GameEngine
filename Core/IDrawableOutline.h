@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <cstddef>
+
 namespace Core
 {
 class IDrawableOutline
@@ -11,6 +13,6 @@ class IDrawableOutline
     virtual void SetDrawOutline(bool bDraw) = 0;
 
     // 서브메시 단일 적용
-    virtual void SetDrawOutline(size_t subMeshIndex, bool bDraw) = 0;
+    virtual void SetDrawOutline(std::size_t subMeshIndex, bool bDraw) = 0;
 };
 } // namespace Core

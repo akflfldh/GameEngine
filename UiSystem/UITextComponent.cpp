@@ -7,7 +7,7 @@
 
 UI::UITextComponent::UITextComponent()
     : mFont(2), mFontSize(21.0f), mPaddingLeft(0), mPaddingRight(0), mPaddingTop(0), mPaddingBottom(0),
-      mAlignmentMode(EUITextAlignment::eLeft), mOverflowMode(EUITextOverflowMode::eOverflow)
+      mReferenceFontSize(21.0F), mAlignmentMode(EUITextAlignment::eLeft), mOverflowMode(EUITextOverflowMode::eOverflow)
 {
     CoreAsset::UIMaterialManager *uiMaterialManager = CoreAsset::UIMaterialManager::GetInstance();
 
@@ -42,8 +42,9 @@ const std::string &UI::UITextComponent::GetText() const
 
 void UI::UITextComponent::SetFontSize(float fontSize)
 {
+    mReferenceFontSize = fontSize;
+    mFontSize = mReferenceFontSize * mFontScale;
 
-    mFontSize = fontSize;
     //    UpdateTextVertices();
     MarkDirty();
 }
@@ -51,6 +52,12 @@ void UI::UITextComponent::SetFontSize(float fontSize)
 float UI::UITextComponent::GetFontSize() const
 {
     return mFontSize;
+}
+
+void UI::UITextComponent::SetFontScale(float scale)
+{
+    mFontScale = scale;
+    SetFontSize(mReferenceFontSize);
 }
 
 size_t UI::UITextComponent::GetVertexNum() const
@@ -407,10 +414,22 @@ int UI::UITextComponent::GetCursorIndexFromPos(const glm::vec2 &localPos)
         // index 글자 뒤에 커서위치
 
         cursorX += fontGlyph->mAdvance * mFontSize;
-
-        if ((cursorX >= localPos.x) && ((cursorY + decender) >= localPos.y))
+        if (cursorX >= localPos.x)
         {
-            return i;
+
+            if (mOverflowMode == EUITextOverflowMode::eOverflow || mOverflowMode == EUITextOverflowMode::eEllipsis ||
+                mOverflowMode == EUITextOverflowMode::eScrollHorizontal)
+            {
+                return i;
+            }
+            else if (mOverflowMode == EUITextOverflowMode::eMultiLine ||
+                     mOverflowMode == EUITextOverflowMode::eWordWrap)
+            {
+                if (((cursorY + decender) >= localPos.y))
+                {
+                    return i;
+                }
+            }
         }
     }
 

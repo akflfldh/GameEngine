@@ -1,4 +1,5 @@
 ﻿#include "MaterialWorkSpaceManager.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <Core/LightObject.h>
 #include <Core/LogicalWindow.h>
 #include <Core/Map.h>
@@ -149,7 +150,7 @@ void MaterialWorkSpaceManager::InitWorld()
     auto map = new Map;
     map->SetName("PlayMap");
 
-    // mWorld->Register(engineMode->GetEditorMap());
+    mWorld->Register(engineMode->GetEditorMap());
     mWorld->SetEngineMode(engineMode);
 
     mLogicalWindow->SetWorld(mWorld.get());
@@ -159,7 +160,9 @@ void MaterialWorkSpaceManager::InitWorld()
     mWorld->Register(map);
     mWorld->SetCurrentMap(map);
 
-    Quad::EditorProjectManager::GetInstance()->CreateEditorObjects(map, EditorMaterialSelectionManager::GetInstance());
+    // 실제 광원/카메라는 유지하되, 편집용 조명 시각화와 기즈모는 생성하지 않는다.
+    Quad::EditorProjectManager::GetInstance()->CreateEditorObjects(map, EditorMaterialSelectionManager::GetInstance(),
+                                                                 false, false);
 
     // Sphere Object
     mSphereElement = mWorld->CreateEntity<Core::StaticMeshObject>("SphereElement");
@@ -188,7 +191,7 @@ void MaterialWorkSpaceManager::InitUI(UI::UICanvas *canvas)
 void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
 {
 
-    auto toolbar = canvas->CreateUIElement<UI::UIImage>("Toolbar");
+    auto toolbar = EditorUIUtility::Create<UI::UIImage>(canvas, "Toolbar");
     toolbar->SetSize(3000, mToolbarHeight);
     toolbar->SetColor(UI::UIColor::DarkGray);
     toolbar->SetPositionLocal(0, 0);
@@ -201,8 +204,9 @@ void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
 
     // ToDefaultEditButton
 
-    auto toDefaultEditButton = toolbar->CreateChildUIElement<UI::UIButton>("toDefaultEditButton");
-    toDefaultEditButton->SetSize(80, 40);
+    auto toDefaultEditButton = EditorUIUtility::CreateSmallButton(toolbar, "toDefaultEditButton");
+    // EditorUIUtility의 기본 높이 유지: toDefaultEditButton->SetSize(80, 40);
+    toDefaultEditButton->SetWidth(80);
     posX += marginX;
     posY += marginY;
     toDefaultEditButton->SetPositionLocal(posX, posY);
@@ -212,17 +216,15 @@ void MaterialWorkSpaceManager::CreateToolbar(UI::UICanvas *canvas)
         [](float, float) { Quad::EditorDirector::GetInstance()->ChangeToDefaultEditWorkSpace(); });
 
     posX = UI::UIUtility::ShiftPosX(posX, toDefaultEditButton, marginX);
-    UI::UIControlStyleOverride buttonStyleOverride;
-    buttonStyleOverride.mHeight = 40.0f;
-    auto ApplyButton = toolbar->CreateChildUIElement<UI::UITextButton>("ApplyButton");
-    ApplyButton->SetStyleOverride(buttonStyleOverride);
+    auto ApplyButton = EditorUIUtility::CreateSmallTextButton(toolbar, "ApplyButton");
     ApplyButton->mUIImageComponent->SetUseBorderFlag(true);
 
-    ApplyButton->SetSize(80, 40);
+    // EditorUIUtility의 기본 높이 유지: ApplyButton->SetSize(80, 40);
+    ApplyButton->SetWidth(80);
     ApplyButton->SetPositionLocal(posX, posY);
     ApplyButton->mUIImageComponent->NotUseTexture();
     ApplyButton->mTextComponent->SetText("적용");
-    ApplyButton->mTextComponent->SetFontSize(30.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: ApplyButton->mTextComponent->SetFontSize(30.0f);
     ApplyButton->mTextComponent->SetPaddingLeft(10.0f);
     ApplyButton->mTextComponent->SetPaddingTop(5.0f);
     ApplyButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)

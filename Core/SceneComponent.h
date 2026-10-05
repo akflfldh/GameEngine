@@ -74,6 +74,9 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) SceneComponent : public Component
 
     unsigned long long GetTransformVersion() const;
 
+  protected:
+    virtual void OnDestoryRequested() override;
+
   private:
     // dirty이거나, 부모의 version num와 일치하지않는다면 update한다.
     void UpdateIfDirty() const;
@@ -89,8 +92,6 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) SceneComponent : public Component
 
     void NotifyTransformPropertyChanged();
     void MarkOwnerMapAssetDirty();
-
-    virtual void OnDestoryRequested() override;
 
   private:
     REFLECT_PROPERTY()

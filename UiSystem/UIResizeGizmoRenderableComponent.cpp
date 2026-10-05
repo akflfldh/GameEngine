@@ -270,7 +270,7 @@ void UI::UIResizeGizmoRenderableComponent::OnMouseMove(const Quad::RawInputData 
             size.y += distance;
         }
 
-        uiElement->SetSize(size);
+        uiElement->SetSize({size.x, size.y});
         uiElement->SetPositionLocal(centerLocal);
     }
 }
@@ -287,8 +287,8 @@ void UI::UIResizeGizmoRenderableComponent::OnMouseDown(const Quad::RawInputData 
     }
 }
 
-void UI::UIResizeGizmoRenderableComponent::OnMouseUp(const Quad::RawInputData &inputData, float worldPosX, float worldPosY,
-                                                     bool &bConsume)
+void UI::UIResizeGizmoRenderableComponent::OnMouseUp(const Quad::RawInputData &inputData, float worldPosX,
+                                                     float worldPosY, bool &bConsume)
 {
     if (bPress)
     {

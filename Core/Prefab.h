@@ -20,6 +20,7 @@ class CORE_API_LIB Prefab : public CoreAsset::Asset
     }
     Object *mDefaultObject;
     virtual void Serialize(Arch &arch) override;
+    bool CopyDataFrom(const CoreAsset::Asset &source, std::string *failureReason = nullptr) override;
 
     Object *Instantiate(Map *map, const char *instanceName = "");
 

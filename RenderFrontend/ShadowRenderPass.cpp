@@ -17,7 +17,10 @@ Render::ShadowRenderPass::ShadowRenderPass()
     RenderMaterialContext rmc;
     rmc.mGeometryType = ERenderGeometryType::eStaticMesh;
     rmc.mTransparent = false;
-    mGpuMaterialID = RenderMaterialResolver::GetInstance()->Resolve(rmc, ERenderPassType::eShadow);
+    mStaticGpuMaterialID = RenderMaterialResolver::GetInstance()->Resolve(rmc, ERenderPassType::eShadow);
+
+    rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+    mSkinningGpuMaterialID = RenderMaterialResolver::GetInstance()->Resolve(rmc, ERenderPassType::eShadow);
 }
 
 Render::ShadowRenderPass::~ShadowRenderPass() {}
@@ -83,6 +86,11 @@ void Render::ShadowRenderPass ::SetGlobalData(const RenderPassExecuteContext &ex
 
     auto renderSystem = executeContext.renderSystem;
 
+    // pass 객체가 프레임 간 재사용되므로 선택적 global resource를 먼저 비운다.
+    mPassData.mGlobalStructuredBufferResource = {};
+    mPassData.mGlobalStructuredBufferResource2 = {};
+    mPassData.mGlobalPassTexResourceVector.clear();
+
     // pass buffer
     ShadowPassBuffer passConstantData;
     passConstantData.mViewProj = executeContext.mDirectonalShadowRenderData.mViewProj;
@@ -108,6 +116,7 @@ void Render::ShadowRenderPass ::SetGlobalData(const RenderPassExecuteContext &ex
     bindingPassBufferGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingPassBufferGpuResource.mOffset = bufferSizeOffset;
     bindingPassBufferGpuResource.mType = EShaderResourceType::eConstantBuffer;
+    bindingPassBufferGpuResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
     mPassData.mGlobalPassBufferResouce = bindingPassBufferGpuResource;
     mPassData.mViewport.TopLeftX = GetViewport().mLeft;
@@ -120,6 +129,19 @@ void Render::ShadowRenderPass ::SetGlobalData(const RenderPassExecuteContext &ex
     mPassData.mScissorRect.mRight = mPassData.mViewport.TopLeftX + mPassData.mViewport.Width;
     mPassData.mScissorRect.mTop = mPassData.mViewport.TopLeftY;
     mPassData.mScissorRect.mBottom = mPassData.mViewport.TopLeftY + mPassData.mViewport.Height;
+
+    if (!executeContext.mSkinPaletteSnapshot.empty())
+    {
+        GRM::GpuStructuredBufferContext *skinPaletteBufferContext =
+            static_cast<GRM::GpuStructuredBufferContext *>(gpuBufferContextSystem->GetGpuBufferContext(
+                AssetResolver::GetInstance()->GetSkinPaletteStructuredGpuBufferID()));
+        mPassData.mGlobalStructuredBufferResource2.gpuResource =
+            skinPaletteBufferContext->mGpuBuffersPerFrame[skinPaletteBufferContext->mCurrFrameIndex].getResource();
+        mPassData.mGlobalStructuredBufferResource2.mOffset = 0;
+        mPassData.mGlobalStructuredBufferResource2.mType = EShaderResourceType::eStructuredBuffer;
+        mPassData.mGlobalStructuredBufferResource2.mSemantic =
+            EMasterRootBindingSemantic::eSkinPaletteStructuredBuffer;
+    }
 
     renderSystem->SetUpPassData(executeContext.mCommandContext,
                                 mPassData); // target binding , 전역 pass buffer binding 등등이
@@ -135,11 +157,11 @@ std::vector<Render::RenderItem> Render::ShadowRenderPass::BuildRenderItem(
 
     std::vector<Render::RenderItem> renderItemVec;
 
-    for (const auto &command : executeContext.mOpaqueStaticMeshRenderCommandList)
+    for (const auto &command : executeContext.mOpaqueMeshRenderCommandList)
     {
 
         // staticMesh가 지정되지않아서 무시
-        if (command.mStaticMesh == nullptr)
+        if (command.mMesh == nullptr)
             continue;
 
         Render::RenderItem renderItem;
@@ -161,7 +183,10 @@ std::vector<Render::RenderItem> Render::ShadowRenderPass::BuildRenderItem(
               rmc.mTransparent = false;
               rmc.mShadingModel = materialRenderSnapshot.mShadingModel;*/
 
-        renderItem.mMaterialID = mGpuMaterialID;
+        if (command.mGeometryType == Render::ERenderGeometryType::eStaticMesh)
+            renderItem.mMaterialID = mStaticGpuMaterialID;
+        else if (command.mGeometryType == Render::ERenderGeometryType::eSkinnedMesh)
+            renderItem.mMaterialID = mSkinningGpuMaterialID;
 
         renderItem.mScissor = mPassData.mScissorRect;
 
@@ -177,11 +202,11 @@ std::vector<Render::RenderItem> Render::ShadowRenderPass::BuildRenderItem(
     return renderItemVec;
 }
 
-bool Render::ShadowRenderPass::BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command,
+bool Render::ShadowRenderPass::BuildRenderItemMeshData(const Render::MeshRenderCommand &command,
                                                        Render::RenderItem &renderItem)
 {
 
-    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mStaticMesh->GetSubMeshVector();
+    const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mMesh->GetSubMeshVector();
     const CoreAsset::SubMesh subMesh = subMeshVector[command.mSubMeshIndex];
 
     // instance
@@ -196,17 +221,17 @@ bool Render::ShadowRenderPass::BuildRenderItemMeshData(const Render::StaticMeshR
     renderItem.mMeshItem.mIndexOffset = subMesh.mIndexOffset;
     renderItem.mMeshItem.mVertexOffset = subMesh.mVertexOffset;
 
-    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+    Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
 
     if (meshGpuContext.mVertexBuffer.getResource() == nullptr)
     {
-        mAssetResolver->RequestResolveAsset(command.mStaticMesh);
+        mAssetResolver->RequestResolveAsset(command.mMesh);
         return false;
     }
 
     if (meshGpuContext.mIndexBuffer.getResource() == nullptr)
     {
-        mAssetResolver->RequestResolveAsset(command.mStaticMesh);
+        mAssetResolver->RequestResolveAsset(command.mMesh);
         return false;
     }
 
@@ -217,7 +242,7 @@ bool Render::ShadowRenderPass::BuildRenderItemMeshData(const Render::StaticMeshR
 }
 
 void Render::ShadowRenderPass::BuildRenderItemBufferGpuResources(
-    const Render::StaticMeshRenderCommnad &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
+    const Render::MeshRenderCommand &command, std::vector<BindingGpuResource> &bindingGpuResourceVector)
 {
     // buffer
 
@@ -232,7 +257,7 @@ void Render::ShadowRenderPass::BuildRenderItemBufferGpuResources(
 
     uint32_t bufferOffset = bufferIndexOffset * gpuBufferContext->mBufferDesc.mElementDataSize;
 
-    StaticMeshObjectData objectData;
+    MeshObjectData objectData;
     mRenderUploadManager->UploadStaticMeshObjectBuffer(command, objectData);
 
     // upload
@@ -241,6 +266,7 @@ void Render::ShadowRenderPass::BuildRenderItemBufferGpuResources(
     bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingGpuResource.mOffset = bufferOffset;
     bindingGpuResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eObjectConstantBuffer;
 
     bindingGpuResourceVector.push_back(bindingGpuResource);
 }

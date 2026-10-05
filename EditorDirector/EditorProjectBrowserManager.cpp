@@ -1,4 +1,5 @@
 ﻿#include "EditorProjectBrowserManager.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include "TaskUIController.h"
 #include <CoreBase/TextArch.h>
 #include <EditorDirector/EditorConfig.h>
@@ -20,7 +21,7 @@ EditorProjectBrowserManager::~EditorProjectBrowserManager() {}
 
 void EditorProjectBrowserManager::Initialize(UI::UICanvas *uiCanvas)
 {
-    mUIProjectBrowser = uiCanvas->CreateUIElement<UIProjectBrowser>("UIProjectBrowser");
+    mUIProjectBrowser = EditorUIUtility::Create<UIProjectBrowser>(uiCanvas, "UIProjectBrowser");
     mUIProjectBrowser->SetSize(1000, 1000);
 
     InitProjectList();

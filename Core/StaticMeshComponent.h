@@ -100,6 +100,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) StaticMeshComponent : public Scene
     virtual EPhysicsBodyType GetPhysicsBodyType() const override;
     virtual bool IsPhysicsGravityEnabled() const override;
     virtual float GetPhysicsMass() const override;
+    virtual Core::CollisionChannelID GetCollisionChannelID() const override;
 
     //  virtual EPhysicsShapeType GetPhysicsCollisionShapeType() const override;
     CoreMath::Vector3 GetPhysicsBoxHalfExtent() const;
@@ -110,7 +111,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) StaticMeshComponent : public Scene
 
     // 물리 에딧시에 사용하게될거다.(일단 기본적으로 싱글 box shape를설정하기위해 사용)
     void AddPhysicsShapeBuildData(const PhysicsShapeBuildData &oData);
-
+    virtual void OnCollisionResponse(const CollisionResponseData &data) override;
 #pragma endregion
 
   protected:
@@ -144,4 +145,6 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) StaticMeshComponent : public Scene
     bool mAABBDirty;
 
     PhysicsComponentSettings mPhysicsContext;
+    // 이 컴포넌트가 제공하는 Body의 채널이며, 모든 Shape가 같은 채널을 공유한다.
+    Core::CollisionChannelID mCollisionChannelID = Core::DefaultCollisionChannelID;
 };

@@ -5,14 +5,19 @@
 #include <CoreBase/Arch.h>
 
 CoreAsset::Asset::Asset(CoreAsset::EAssetType assetType, AssetID id)
-    : mID(id), mName(""), mTag(""), mType(assetType), mLoadState(LoadState::Unloaded), mDirtyFlag(false),
+    : mID(id), mName(""), mTag(""), mType(assetType), mLoadState(EAssetLoadState::Unloaded), mDirtyFlag(false),
       mIsEmpty(true), mRawDirtyFlag(false)
 {
 }
 
 void CoreAsset::Asset::ClearDirty()
 {
+    if (mDirtyFlag == false)
+        return;
+
     mDirtyFlag = false;
+    GlobalAssetRegistrySystem *assetRegistrySystem = GlobalAssetRegistrySystem::GetInstance();
+    assetRegistrySystem->ClearDirtyAsset(this);
 }
 
 void CoreAsset::AssetHeaderContext::Serialize(QuadRW::BinaryWriter &binaryWriter)
@@ -134,4 +139,25 @@ bool CoreAsset::Asset::GetRawDataDirty() const
 {
 
     return mRawDirtyFlag;
+}
+
+bool CoreAsset::Asset::CopyDataFrom(const Asset &source, std::string *failureReason)
+{
+    if (mType != source.mType)
+    {
+        if (failureReason)
+            *failureReason = "서로 다른 타입의 에셋 성분은 복사할 수 없습니다.";
+        return false;
+    }
+    if (failureReason)
+        failureReason->clear();
+    if (this == &source)
+        return true;
+
+    // 파생 타입이 성분 복사를 마친 뒤 호출한다. 원본의 identity나 저장 대기 상태는 가져오지 않는다.
+    // 등록 전에는 ID가 없으므로 여기서 SetDirty()를 호출하지 않는다.
+    mTag = source.mTag;
+    mIsEmpty = source.mIsEmpty;
+    mLoadState = EAssetLoadState::Loaded;
+    return true;
 }

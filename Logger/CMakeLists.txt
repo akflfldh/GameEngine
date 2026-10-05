@@ -8,26 +8,8 @@ LoggerImpl.h
 target_compile_definitions(Logger PRIVATE QUAD_LOG_EXPORT)
 
 
-target_include_directories(Logger PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Include"  "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(Logger PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-get_filename_component(PARENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
-
-add_library(CallbackLib SHARED IMPORTED)
-
-
-set_target_properties(CallbackLib PROPERTIES
-IMPORTED_IMPLIB_DEBUG "${PARENT_DIR}/QuadCallbackSystemDLL/QuadCallbackSystem.lib"
-IMPORTED_IMPLIB_RELEASE "${PARENT_DIR}/QuadCallbackSystemDLL/QuadCallbackSystem.lib"
-IMPORTED_LOCATION "${PARENT_DIR}/QuadCallbackSystemDLL/QuadCallbackSystem.dll")
-
-
-target_link_libraries(Logger PUBLIC compiler_flags headerDir PRIVATE CallbackLib)
-
-
-# DLL을 bin 폴더로 자동 복사
-add_custom_command(TARGET Logger POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PARENT_DIR}/QuadCallbackSystemDLL/QuadCallbackSystem.dll"
-        "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/"
-    COMMENT "Copying CallbackLib DLL to output directory"
-)
+# MultiCallbackSystem은 헤더 전용이다. CoreBase를 링크하면 PhysicalFileSystem을 거쳐 Logger로 순환한다.
+# 기존 headerDir가 제공하는 소스 루트 경로로 공통 콜백 헤더를 사용한다.
+target_link_libraries(Logger PUBLIC compiler_flags headerDir)

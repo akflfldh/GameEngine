@@ -11,12 +11,13 @@ namespace CoreAsset
 class StaticMesh;
 class Material;
 class Texture;
+class SkinningMesh;
 } // namespace CoreAsset
 
+class Map;
 namespace Core
 {
 
-class Map;
 enum class ERenderProxyType : uint8_t
 {
     eStaticMesh = 0,
@@ -24,10 +25,13 @@ enum class ERenderProxyType : uint8_t
     eBillboard
 };
 
+/// LightComponent가 소유하고 RenderFrontend가 비소유 포인터로 참조하는 CPU 조명 데이터다.
+/// 발광 상태는 렌더 명령 생성에만 사용하며 GPU 조명 버퍼의 레이아웃에는 포함하지 않는다.
 struct LightProxy
 {
     uint32_t mRenderID = 0;
     Core::ELightType mLightType;
+    bool mLightEnabled = true;
     CoreMath::Vector3 mStrength;
     CoreMath::Vector3 mDirection;
     CoreMath::Vector3 mRight;
@@ -52,6 +56,8 @@ struct MeshRenderProxy : public RenderProxy
 {
     std::vector<CoreAsset::Material *> mSubMeshMaterialList;
     std::vector<bool> mSubMeshOutlineFlagList;
+    CoreMath::Vector4 mCustomShaderData;
+    bool mIsEditorOverlay = false;
 };
 
 struct StaticMeshRenderProxy : public MeshRenderProxy
@@ -61,10 +67,23 @@ struct StaticMeshRenderProxy : public MeshRenderProxy
     {
         mRenderProxyType = ERenderProxyType::eStaticMesh;
     }
-    CoreMath::Vector4 mCustomShaderData;
 
-    bool mIsEditorOverlay = false;
     virtual ~StaticMeshRenderProxy() = default;
+};
+
+/// SkeletalMeshComponent가 RenderFrontend에 전달하는 CPU 측 렌더 경계 데이터다.
+/// SkinningMesh와 Material 에셋의 수명은 소유하지 않으며, 인스턴스별 최종 행렬은 컴포넌트의
+/// mutable buffer를 직접 참조하지 않도록 값으로 복사해 보관한다.
+struct SkeletalMeshRenderProxy : public MeshRenderProxy
+{
+    CoreAsset::SkinningMesh *mSkinningMesh = nullptr;
+    std::vector<CoreMath::Matrix4X4> mFinalMatrixList;
+
+    SkeletalMeshRenderProxy()
+    {
+        mRenderProxyType = ERenderProxyType::eSkinningMesh;
+    }
+    virtual ~SkeletalMeshRenderProxy() = default;
 };
 
 struct BillboardRenderProxy : public RenderProxy

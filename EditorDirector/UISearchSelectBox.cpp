@@ -1,4 +1,5 @@
 ﻿#include "UISearchSelectBox.h"
+#include <EditorDirector/EditorUIUtility.h>
 
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UICanvas.h>
@@ -136,9 +137,9 @@ void UISearchSelectBox::CreateEditBox()
 
     float width = mTransform.GetSize().x;
 
-    mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
+    mEditBox = EditorUIUtility::CreateTextInput(this, "EditBox");
     // mEditBox->SetTextColor(0, 0, 0);
-    mEditBox->SetBackgroundColor(0.2f, 0.2F, 0.2F);
+    // EditorUIUtility의 기본 색상 유지: mEditBox->SetBackgroundColor(0.2f, 0.2F, 0.2F);
     // mEditBox->SetSize(width, 30.0f);
     mEditBox->SetWidth(width);
     // mEditBox->SetFontSize(20.0f);
@@ -163,7 +164,7 @@ void UISearchSelectBox::CreateListPanel()
 
     float width = mTransform.GetSize().x;
 
-    mListViewportPanel = CreateChildUIElement<UI::UIImage>("ListPanel");
+    mListViewportPanel = EditorUIUtility::Create<UI::UIImage>(this, "ListPanel");
     mListViewportPanel->SetWidth(width);
     mListViewportPanel->SetHeight(100.0f);
     mListViewportPanel->SetUseScissorRect(true);
@@ -174,7 +175,7 @@ void UISearchSelectBox::CreateListPanel()
         mListViewportPanel->CreateUIComponent<UI::UIMouseWheelComponent>("MouseWheelCom");
     wheelCom->mOnMouseWheelCallbackSystem.Register([this](int wheelDelta) { ScrollListByWheel(wheelDelta); });
 
-    mListContentPanel = mListViewportPanel->CreateChildUIElement<UI::UIImage>("ListContentPanel");
+    mListContentPanel = EditorUIUtility::Create<UI::UIImage>(mListViewportPanel, "ListContentPanel");
     mListContentPanel->SetWidth(width);
     mListContentPanel->SetUseScissorRect(true);
     mListContentPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
@@ -212,7 +213,7 @@ UI::UITextButton *UISearchSelectBox::GetItemButton(const SearchSelectItem &item,
     if (mItemButtonPool.empty())
     {
         auto canvas = GetDestCanvas();
-        itemButton = canvas->CreateUIElement<UI::UITextButton>("ItemButton");
+        itemButton = EditorUIUtility::CreateSmallTextButton(canvas, "ItemButton");
         itemButton->SetUseScissorRect(true);
         itemButton->SetKeyboardCaptureScope(this);
     }
@@ -226,7 +227,7 @@ UI::UITextButton *UISearchSelectBox::GetItemButton(const SearchSelectItem &item,
     //   itemButton->SetSize(itemWidth, 30.0f);
     itemButton->SetWidth(itemWidth);
     // itemButton->mTextComponent->SetFontSize(20.0f);
-    itemButton->mTextComponent->SetColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: itemButton->mTextComponent->SetColor(1, 1, 1);
     itemButton->mTextComponent->SetText(item.mLabel);
     itemButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this, itemIndex](float, float)
                                                                         { OnSelectedItem(itemIndex); });

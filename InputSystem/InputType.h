@@ -69,6 +69,8 @@ enum class EKeyCode : uint32_t
     eMouseLeft = 350,
     eMouseRight,
     eMouseMiddle,
+    eMouseDeltaX,
+    eMouseDeltaY
 };
 
 enum EMouseState

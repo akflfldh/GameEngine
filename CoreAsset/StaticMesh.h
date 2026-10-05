@@ -15,6 +15,7 @@ class CORE_ASSET_API StaticMesh : public Mesh
     static CoreAsset::EAssetType GetAssetType();
 
     virtual void Serialize(Arch &arch) override;
+    bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr) override;
 
     const std::vector<StaticVertex> &GetVertexVector() const;
     std::vector<StaticVertex> &GetVertexVector();
@@ -22,10 +23,16 @@ class CORE_ASSET_API StaticMesh : public Mesh
     void SetVertexVector(std::vector<StaticVertex> &&vec, bool bCaculateAABB = true);
     void SetVertexVector(const std::vector<StaticVertex> &vec, bool bCaculateAABB = true);
 
-    uint64_t GetVertexNum() const;
+    virtual void *GetVertexData() override;
+    virtual uint64_t GetVertexNum() const override;
+    virtual uint32_t GetVertexStride() const override;
 
     void SetPhysicsCollisionPreset(const PhysicsCollisionPreset &preset);
     const PhysicsCollisionPreset &GetPhysicsCollisionPreset() const;
+
+
+
+
 
   private:
     void CaculateAABB();
@@ -33,7 +40,7 @@ class CORE_ASSET_API StaticMesh : public Mesh
   private:
     // vector <staticVertex> // 리스트 ,  gpu버퍼 리소스는 renderFrontend가 관리.
     std::vector<StaticVertex> mVertexVector; // raw data
-    uint64_t mVertexNum;
+    uint64_t mVertexNum = 0;
 
     // 머터리얼
 

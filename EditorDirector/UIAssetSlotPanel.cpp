@@ -1,4 +1,5 @@
 ﻿#include "UIAssetSlotPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIDropTargetComponent.h>
 #include <UiSystem/UIImage.h>
 #include <UiSystem/UIImageComponent.h>
@@ -17,13 +18,13 @@ void UIAssetSlotPanel::OnBegin()
     float height = 300.0f;
     SetSize(width, height);
 
-    mBackgroundPanel = CreateChildUIElement<UI::UIImage>("BackgroundImagePanel");
+    mBackgroundPanel = EditorUIUtility::Create<UI::UIImage>(this, "BackgroundImagePanel");
     mBackgroundPanel->SetSize(width, height);
 
     float posX = 20.0f;
     float posY = 10.0f;
 
-    mTagText = CreateChildUIElement<UI::UIText>("TagText");
+    mTagText = EditorUIUtility::CreateLabel(this, "TagText");
     // mTagText->SetFontSize(25.0f);
     mTagText->SetPositionLocal(posX, posY);
     // mTagText->SetSize(150.0f, 30.0f);
@@ -35,7 +36,7 @@ void UIAssetSlotPanel::OnBegin()
     // asset slot image panel
     posY = UI::UIUtility::ShiftPosY(posY, mTagText, 10.0f);
 
-    mAssetSlotImagePanel = CreateChildUIElement<UI::UIImage>("AssetSlotImagePanel");
+    mAssetSlotImagePanel = EditorUIUtility::Create<UI::UIImage>(this, "AssetSlotImagePanel");
     mAssetSlotImagePanel->SetSize(100.0f, 100.0f);
     mAssetSlotImagePanel->SetPositionLocal(posX, posY);
     mAssetSlotImagePanel->SetColor(0.4f, 0.4f, 0.4f);

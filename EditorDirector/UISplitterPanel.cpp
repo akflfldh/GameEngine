@@ -1,4 +1,5 @@
 ﻿#include "UISplitterPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UISplitterComponent.h>
 #include <UiSystem/UICanvas.h>
 #include <UiSystem/UIImageComponent.h>
@@ -71,7 +72,7 @@ void UISplitterPanel::UpdateLayout()
 
     if (mHandleElement == nullptr)
     {
-        mHandleElement = GetDestCanvas()->CreateUIElement<UI::UIElement>("handle");
+        mHandleElement = EditorUIUtility::Create<UI::UIElement>(GetDestCanvas(), "handle");
         auto splitterCom = mHandleElement->CreateUIComponent<UISplitterComponent>("SplitterCom");
         splitterCom->SetSplitterPanel(this);
 

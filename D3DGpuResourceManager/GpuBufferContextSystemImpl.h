@@ -40,7 +40,11 @@ class GPURESOURCE_MANAGER_API GpuBufferContextSystemImpl : public GpuBufferConte
 
     virtual bool CreateBuffer(uint32_t bufferID, GRM::EBufferUsage mBufferUsage, uint32_t uploadType,
                               uint32_t size) override;
-    bool CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame);
+
+    /*
+    element num이 0 이면 기본개수 (256) 사용
+    */
+    bool CreateStructuredBuffer(uint32_t bufferID, uint32_t size, bool isBuffersPerFrame, uint32_t elementNum = 0);
 
   private:
     uint32_t CacluateConstantBufferSize(uint32_t size) const;

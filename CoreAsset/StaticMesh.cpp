@@ -4,6 +4,31 @@ CoreAsset::StaticMesh::StaticMesh() : Mesh(EAssetType::eStaticMesh) {}
 
 CoreAsset::StaticMesh::~StaticMesh() {}
 
+bool CoreAsset::StaticMesh::CopyDataFrom(const Asset &source, std::string *failureReason)
+{
+    const StaticMesh *sourceMesh = dynamic_cast<const StaticMesh *>(&source);
+    if (!sourceMesh)
+    {
+        if (failureReason)
+            *failureReason = "StaticMesh 에셋이 필요합니다.";
+        return false;
+    }
+    if (sourceMesh->mVertexVector.size() != sourceMesh->mVertexNum)
+    {
+        if (failureReason)
+            *failureReason = "StaticMesh의 vertex raw data를 먼저 로드해야 합니다.";
+        return false;
+    }
+    if (!Mesh::CopyDataFrom(source, failureReason))
+        return false;
+
+    // geometry와 충돌 설정은 독립 소유하며, AABB는 Mesh가 복사한 원본 값을 보존한다.
+    mVertexVector = sourceMesh->mVertexVector;
+    mVertexNum = sourceMesh->mVertexNum;
+    mPhysicsCollisionPreset = sourceMesh->mPhysicsCollisionPreset;
+    return true;
+}
+
 CoreAsset::EAssetType CoreAsset::StaticMesh::GetAssetType()
 {
 
@@ -49,10 +74,21 @@ void CoreAsset::StaticMesh::SetVertexVector(const std::vector<StaticVertex> &vec
     if (bCaculateAABB)
         CaculateAABB();
 }
+
+void *CoreAsset::StaticMesh::GetVertexData()
+{
+    return mVertexVector.data();
+}
+
 uint64_t CoreAsset::StaticMesh::GetVertexNum() const
 {
 
     return mVertexVector.size();
+}
+uint32_t CoreAsset::StaticMesh ::GetVertexStride() const
+{
+
+    return sizeof(StaticVertex);
 }
 
 void CoreAsset::StaticMesh::SetPhysicsCollisionPreset(const PhysicsCollisionPreset &preset)

@@ -10,6 +10,9 @@
 namespace Core
 {
 
+using CollisionChannelID = uint64_t;
+inline const CollisionChannelID DefaultCollisionChannelID = 1;
+
 // 플레이어 오브젝트 타입이  c++클래스타입인지 아니면 프리팹인지여부
 enum class ESpawnObjectSourceType
 {
@@ -27,6 +30,12 @@ struct ObjectSourceCandidate
     CoreAsset::AssetID mPrefabID = NoneAssetID;
 };
 
+enum class MouseMode
+{
+    Free,     // 커서 보임 + 자유 이동
+    Captured, // 커서 숨김 + 게임 입력으로 사용
+};
+
 struct GameModeSetting
 {
     Core::ESpawnObjectSourceType mDefaultPlayerObjectSource = ESpawnObjectSourceType::eNone;
@@ -34,6 +43,8 @@ struct GameModeSetting
     CoreAsset::AssetID mDefaultPlayerObjectPrefabID = NoneAssetID;
 
     std::string mDefaultPlayerControllerClassName = "PlayerController";
+
+    MouseMode mMouseMode = MouseMode::Free;
 };
 
 struct SpawnRequestContext
@@ -172,6 +183,13 @@ struct SkySphereSettings
 struct PostProcessingSettings
 {
     float mExposure = 1.0f;
+};
+
+enum class EActionValueType : uint8_t
+{
+    eBool,
+    eFloat,
+    eVector2
 };
 
 } // namespace Core

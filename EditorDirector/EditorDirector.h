@@ -41,6 +41,7 @@ class UIMaterialManager;
 class AssetMetaDataManager;
 class AssetManager;
 class Material;
+class AnimationClip;
 } // namespace CoreAsset
 
 namespace Render
@@ -117,7 +118,9 @@ class EditorDirector : public IProgramDirector
 
     void ChangeToPrefabEditWorkSpace();
     void ChangeToMaterialEditWorkSpace(CoreAsset::Material *targetMaterial);
+    bool ChangeToAnimationClipEditWorkSpace(CoreAsset::AnimationClip *targetClip);
     void ChangeToDefaultEditWorkSpace();
+    void ChangeToProjectSettingWorkSpace();
 
     void ChangeWorkSpace(Core::WorkSpace *workspace);
 
@@ -145,6 +148,8 @@ class EditorDirector : public IProgramDirector
     void CreateDefaultEditWorkSpace();
     void CreatePrefabEditWorkSpace();
     void CreateMaterialEditWorkSpace();
+    void CreateAnimationClipWorkSpace();
+    void CreateProjectSettingWorkSpace();
 
     void InitEditorWindows();
     void InitMainSceneWindow();

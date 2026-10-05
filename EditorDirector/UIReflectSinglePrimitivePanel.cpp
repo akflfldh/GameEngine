@@ -1,4 +1,5 @@
 ﻿#include "UIReflectSinglePrimitivePanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 
 #include "UIReflectVector3Panel.h"
 #include <EditorInspectorUtility.h>
@@ -20,12 +21,13 @@ void UIReflectSinglePrimitivePanel::OnBegin()
 
     // SetColor({0.4f, 0.4f, 0.4f});
 
-    mTagText = CreateChildUIElement<UI::UIText>("TagText");
+    mTagText = EditorUIUtility::CreateLabel(this, "TagText");
     //   mTagText->SetTextColor({0, 0, 0});
     mTagText->SetPositionLocal({20, 20});
-    mEditBox = CreateChildUIElement<UI::UIEditBox>("EditBox");
+    mEditBox = EditorUIUtility::CreateTextInput(this, "EditBox");
 
-    mEditBox->SetSize(300, 40);
+    // EditorUIUtility의 기본 높이 유지: mEditBox->SetSize(300, 40);
+    mEditBox->SetWidth(300);
     // mEditBox->SetTextColor({0, 0, 0});
 
     // mEditBox->SetBackgroundColor(1.0f, 1.0f, 1.0f);
@@ -58,7 +60,8 @@ void UIReflectSinglePrimitivePanel::SetTagText(const std::string &tag)
     {
         mTagText->SetText(tag);
         int tagBoxWidth = tag.size() * 10;
-        mTagText->SetSize(tagBoxWidth, 40);
+        // EditorUIUtility의 기본 높이 유지: mTagText->SetSize(tagBoxWidth, 40);
+        mTagText->SetWidth(tagBoxWidth);
         mEditBox->SetPositionLocal({tagBoxWidth + 30 + mTagText->mTransform.GetLocalPosition().x, 20});
     }
 }

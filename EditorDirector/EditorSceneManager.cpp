@@ -27,6 +27,8 @@ Quad::EditorSceneManager::EditorSceneManager() : mUserPlayWorld(nullptr)
     mUserPlayWorld = new World;
     mUserPlayWorld->SetActiveState(false);
     mUserPlayWorld->SetEngineMode(&mEditorPlayMode);
+    mEditorPlayMode.SetWorld(mUserPlayWorld);
+    mUserPlayWorld->mOnMapChangedCallbackSystem.Register([this](Map *map) { OnUserPlayMapChanged(map); });
 
     RegisterWorld("UserPlayWorld", mUserPlayWorld);
 }
@@ -106,9 +108,21 @@ void Quad::EditorSceneManager::CleanUp()
     }
 }
 
+void Quad::EditorSceneManager::EndFrame()
+{
+    for (const auto &element : mWorldTable)
+    {
+        World *world = element.second;
+        if (world->GetActiveState())
+            world->EndFrame();
+    }
+}
+
 void Quad::EditorSceneManager::AddUserMap(Map *map)
 {
     mWorldTable[mUserWorldName]->Register(map);
+
+    mOnUserMapAddedCallbackSystem.ExecuteCallbacks(map);
 }
 
 World *Quad::EditorSceneManager::GetUserWorld() const
@@ -118,6 +132,44 @@ World *Quad::EditorSceneManager::GetUserWorld() const
     if (it != mWorldTable.cend())
         return it->second;
     return nullptr;
+}
+
+void Quad::EditorSceneManager::SetEditorMap(Map *map)
+{
+    mEditorMap = map;
+}
+
+std::vector<Map *> Quad::EditorSceneManager::GetUserMapList() const
+{
+    World *userWorld = GetUserWorld();
+    if (userWorld == nullptr)
+        return {};
+
+    std::vector<Map *> userMaps;
+    const auto registeredMaps = userWorld->GetMapList();
+    userMaps.reserve(registeredMaps.size());
+
+    // EditorMap은 기즈모 등의 동작을 위해 월드에 유지하되, 사용자에게 선택할 프로젝트 맵으로 노출하지 않는다.
+    // 이름이나 AssetID 대신 등록된 보조 맵의 객체 identity로 구분한다.
+    for (Map *map : registeredMaps)
+    {
+        if (map != nullptr && map != mEditorMap)
+            userMaps.push_back(map);
+    }
+
+    return userMaps;
+}
+
+std::vector<std::string> Quad::EditorSceneManager::GetUserMapNameList() const
+{
+    const auto userMaps = GetUserMapList();
+    std::vector<std::string> mapNames;
+    mapNames.reserve(userMaps.size());
+
+    for (Map *map : userMaps)
+        mapNames.push_back(map->GetName().c_str());
+
+    return mapNames;
 }
 
 void Quad::EditorSceneManager::PlayUserWorld()
@@ -130,57 +182,101 @@ void Quad::EditorSceneManager::PlayUserWorld()
 
     // UserWorld 직렬화
     World *userWorld = GetUserWorld();
-    Map *map = userWorld->GetCurrentMap();
 
-    // Write
-    BinaryArch archWrite(false);
+    auto mapList = GetUserMapList();
+    Map *currentMap = userWorld->GetCurrentMap();
+    Map *mCurrentPlayMap = nullptr;
+    for (int mapIndex = 0; mapIndex < mapList.size(); ++mapIndex)
+    {
+        Map *map = mapList[mapIndex];
+        BinaryArch archWrite(false);
 
-    archWrite.Start();
-    map->Serialize(archWrite);
-    map->SerilaizeRawData(archWrite);
+        archWrite.Start();
+        map->Serialize(archWrite);
+        if (currentMap == map)
+            map->SerilaizeRawData(archWrite);
 
-    uint8_t *pData = archWrite.GetBufferFromMemory();
-    size_t bufferSize = archWrite.GetBufferSize();
+        uint8_t *pData = archWrite.GetBufferFromMemory();
+        size_t bufferSize = archWrite.GetBufferSize();
 
-    // Load
-    BinaryArch archLoad(true);
-    archLoad.StartRead(pData, bufferSize);
-    // 생성한 world에서 역직렬화
+        BinaryArch archLoad(true);
+        archLoad.StartRead(pData, bufferSize);
 
-    Map *playMap = new Map;
-    mUserPlayWorld->Register(playMap);
-    mUserPlayWorld->SetCurrentMap(playMap);
-    playMap->SetAssetDirtyActive(false);
+        Map *playMap = new Map;
 
-    playMap->Serialize(archLoad);
-    playMap->SerilaizeRawData(archLoad);
+        playMap->SetAssetDirtyActive(false);
 
-    mUserPlayMapList.push_back(playMap);
-    // 생성한월드 play
-    archWrite.End();
-    archLoad.End();
+        playMap->Serialize(archLoad);
+        if (currentMap == map)
+            playMap->SerilaizeRawData(archLoad);
 
-    mUserMapCameraComponent = userWorld->GetCurrentCameraCom();
-    mUserMapObjectController = userWorld->GetCurrentObjectController();
+        mUserPlayWorld->Register(playMap);
+        if (currentMap == map)
+            mUserPlayWorld->SetCurrentMap(playMap);
 
-    CameraObject *camObject = static_cast<CameraObject *>(playMap->CreateEngineEntity<CameraObject>("EdtorCamera"));
+        mUserPlayMapList.push_back(playMap);
+        // 생성한월드 play
+        archWrite.End();
+        archLoad.End();
+    }
 
-    camObject->GetCameraComponent()->SetPositionLocal({0, 0, -10});
-    camObject->GetCameraComponent()->SetFar(10025.5f);
-    auto editorCameraController = playMap->CreateEngineEntity<EditorSceneController>("EditorCameraController");
-    editorCameraController->Possess(camObject);
-    playMap->SetActiveCameraIndex(0);
+    EditorDirector::GetInstance()->GetMainSceneWindow()->SetDebugGridRender(false);
+    // Map *map = userWorld->GetCurrentMap();
 
-    editorCameraController->Intialize(EditorSelectionManager::GetInstance());
+    //// Write
+    // BinaryArch archWrite(false);
 
+    // archWrite.Start();
+    // map->Serialize(archWrite);
+    // map->SerilaizeRawData(archWrite);
+
+    // uint8_t *pData = archWrite.GetBufferFromMemory();
+    // size_t bufferSize = archWrite.GetBufferSize();
+
+    //// Load
+    // BinaryArch archLoad(true);
+    // archLoad.StartRead(pData, bufferSize);
+    //// 생성한 world에서 역직렬화
+
+    // Map *playMap = new Map;
+    // mUserPlayWorld->Register(playMap);
+    // mUserPlayWorld->SetCurrentMap(playMap);
+    // playMap->SetAssetDirtyActive(false);
+
+    // playMap->Serialize(archLoad);
+    // playMap->SerilaizeRawData(archLoad);
+
+    // mUserPlayMapList.push_back(playMap);
+    //// 생성한월드 play
+    // archWrite.End();
+    // archLoad.End();
+
+    // mUserMapCameraComponent = userWorld->GetCurrentCameraCom();
+    // mUserMapObjectController = userWorld->GetCurrentObjectController();
     userWorld->SetActiveState(false);
     mUserPlayWorld->SetActiveState(true);
     EditorDirector::GetInstance()->GetMainSceneWindow()->SetWorld(mUserPlayWorld);
 
-    mEditorPlayMode.SetEditorController(editorCameraController);
-    mEditorPlayMode.SetEditorCameraComponent(camObject->GetCameraComponent());
-    // world begin
-    mUserPlayWorld->StartMap();
+    // CameraObject *camObject =
+    //     static_cast<CameraObject *>(mCurrentPlayMap->CreateEngineEntity<CameraObject>("EdtorCamera"));
+
+    // camObject->GetCameraComponent()->SetPositionLocal({0, 0, -10});
+    // camObject->GetCameraComponent()->SetFar(10025.5f);
+    // auto editorCameraController =
+    // mCurrentPlayMap->CreateEngineEntity<EditorSceneController>("EditorCameraController");
+    // editorCameraController->Possess(camObject);
+    // mCurrentPlayMap->SetActiveCameraIndex(0);
+
+    // editorCameraController->Intialize(EditorSelectionManager::GetInstance());
+
+    // mEditorPlayMode.SetEditorController(editorCameraController);
+    // mEditorPlayMode.SetEditorCameraComponent(camObject->GetCameraComponent());
+
+    OnUserPlayMapChanged(mUserPlayWorld->GetCurrentMap());
+
+    // 세션 상태를 먼저 만들고 현재 맵의 객체와 GameMode를 시작한다.
+    mUserPlayWorld->StartPlay();
+    mUserPlayWorld->BeginMap();
 
     mPlaySessionState = EPlaySessionState::ePlaying;
 }
@@ -215,10 +311,8 @@ void Quad::EditorSceneManager::EndUserWorld()
 
     EditorSelectionManager::GetInstance()->ClearSelection();
 
-    if (Map *map = mUserPlayWorld->GetCurrentMap())
-    {
-        map->EndPlay();
-    }
+    // GameInstance를 먼저 정리한 뒤 플레이 맵을 종료한다. 실제 맵 삭제는 아래 기존 경로에서 수행한다.
+    mUserPlayWorld->EndPlay();
 
     mEditorPlayMode.ReleasePause();
     mPlaySessionState = EPlaySessionState::eStopped;
@@ -242,4 +336,29 @@ void Quad::EditorSceneManager::EndUserWorld()
         delete map;
     }
     mUserPlayMapList.clear();
+
+    EditorDirector::GetInstance()->GetMainSceneWindow()->SetDebugGridRender(true);
+}
+
+void Quad::EditorSceneManager::SetUserCanvas(UI::UICanvas *canvas)
+{
+
+    mEditorPlayMode.SetCanvas(canvas);
+}
+
+void Quad::EditorSceneManager::OnUserPlayMapChanged(Map *map)
+{
+
+    CameraObject *camObject = static_cast<CameraObject *>(map->CreateEngineEntity<CameraObject>("EdtorCamera"));
+
+    camObject->GetCameraComponent()->SetPositionLocal({0, 0, -10});
+    camObject->GetCameraComponent()->SetFar(10025.5f);
+    auto editorCameraController = map->CreateEngineEntity<EditorSceneController>("EditorCameraController");
+    editorCameraController->Possess(camObject);
+    //  map->SetActiveCameraIndex(0);
+
+    editorCameraController->Intialize(EditorSelectionManager::GetInstance());
+
+    mEditorPlayMode.SetEditorController(editorCameraController);
+    mEditorPlayMode.SetEditorCameraComponent(camObject->GetCameraComponent());
 }

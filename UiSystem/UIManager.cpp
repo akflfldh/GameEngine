@@ -90,6 +90,15 @@ void UI::UIManager::CleanUp()
     DestroyDeadUIElement();
 }
 
+void UI::UIManager::UpdateScissorRectRegions()
+{
+    for (UICanvas *canvas : mActiveCanvasList)
+    {
+        if (canvas != nullptr && canvas->GetActiveFlag())
+            canvas->UpdateScissorRectRegions();
+    }
+}
+
 void UI::UIManager::EndFrame()
 {
 
@@ -372,10 +381,13 @@ void UI::UIManager::DestroyDeadUIElement()
 {
     for (auto element : mDeadUIElementList)
     {
-        for (auto child : element->GetChildVector())
+        std::vector<UI::UIElement *> childVec = element->GetChildVector();
+
+        for (auto child : childVec)
         {
             child->SetParent(nullptr);
         }
+
         element->mChildVector.clear();
 
         if (element->GetParent())
@@ -388,6 +400,12 @@ void UI::UIManager::DestroyDeadUIElement()
             {
                 childVec.erase(it);
             }
+        }
+
+        auto canvas = element->GetDestCanvas();
+        if (canvas)
+        {
+            canvas->RemoveUIElementFromList(element);
         }
 
         Quad::ReflectionSystem *reflectionSystem = Quad::ReflectionSystem::GetInstance();
@@ -438,12 +456,44 @@ void UI::UIManager::PopMouseInputScope(UI::UIElement *root)
     mInputStateContext.mMouseInputScopeStack.pop_back();
 }
 
+void UI::UIManager::PopMouseInputScope(int index)
+{
+
+    if (index < 0 || index >= mInputStateContext.mMouseInputScopeStack.size())
+        return;
+
+    mInputStateContext.mMouseInputScopeStack.erase(mInputStateContext.mMouseInputScopeStack.begin() + index,
+                                                   mInputStateContext.mMouseInputScopeStack.end());
+}
+
 UI::UIElement *UI::UIManager::GetCurrentMouseInputScope() const
 {
     if (mInputStateContext.mMouseInputScopeStack.empty())
         return nullptr;
 
     return mInputStateContext.mMouseInputScopeStack.back().mRoot;
+}
+
+int UI::UIManager::CheckMouseInputScope(UIElement *element)
+{
+    if (element == nullptr)
+        return -1;
+
+    auto it =
+        std::find_if(mInputStateContext.mMouseInputScopeStack.begin(), mInputStateContext.mMouseInputScopeStack.end(),
+                     [element](const UIMouseInputScopeContext &context)
+                     {
+                         if (context.mRoot == element)
+                             return true;
+                         return false;
+                     });
+
+    if (it != mInputStateContext.mMouseInputScopeStack.end())
+    {
+        return it - mInputStateContext.mMouseInputScopeStack.begin();
+    }
+
+    return -1;
 }
 
 bool UI::UIManager::IsCurrentMouseInputScope(UIElement *element) const
@@ -483,12 +533,36 @@ UI::UIElement *UI::UIManager::CreateUIElement(const char *uiElementClassName, co
 void UI::UIManager::DestoryUIElement(UIElement *element)
 {
 
+    // mouse, keyboard capture ,hover 해제
+
+    if (mInputStateContext.mCurrHoverUIElement == element)
+    {
+        mInputStateContext.mCurrHoverUIElement = nullptr;
+    }
+
+    if (mInputStateContext.mCurrKeyboardCapturedUIElement == element)
+    {
+        ReleaseKeyboardCapture();
+    }
+
+    if (mInputStateContext.mPreHoverUIElement == element)
+    {
+        mInputStateContext.mPreHoverUIElement = nullptr;
+    }
+
+    ReleaseMouseCapture(element, false);
+
     UnRegisterToSlotPool(element->GetHandle().mPoolSlotIndex);
 
-    mUIElementNameTable.erase(element->mName);
+    auto it = std::find(mUIElementNameTable[element->GetName()].begin(), mUIElementNameTable[element->GetName()].end(),
+                        element);
+    if (it != mUIElementNameTable[element->GetName()].end())
+    {
+        mUIElementNameTable[element->GetName()].erase(it);
+    }
+
     mUIElementTable.erase(element->GetID());
     mFreeUIElementIDVector.push_back(element->GetID());
-
     mDeadUIElementList.push_back(element);
 
     // delete[] (void *)element;
@@ -516,6 +590,16 @@ void UI::UIManager::HandleInput(const Quad::RawInputData &inputData, const IView
     if (inputData.IsMouseEvent())
     {
         UIElement *newHoverElement = EvaulateHoverElement(mouseWorldPosX, mouseWorldPosY, canvas);
+
+        if (canvas && ((inputData.mInputState & EInputState::eMouseLButtonDown) ||
+                       (inputData.mInputState & EInputState::eMouseRButtonDown)))
+        {
+            // 캡처 대상 대신 실제 클릭 위치를 알린다. 빈 공간도 알림 후에 조기 반환을 판단한다.
+            canvas->OnPreviewMouseDown(newHoverElement);
+
+            // 콜백이 팝업을 숨길 수 있으므로 기존 hit/capture 대상을 그대로 사용하지 않는다.
+            newHoverElement = EvaulateHoverElement(mouseWorldPosX, mouseWorldPosY, canvas);
+        }
         UIElement *targetElement = ResolveMouseInputTarget(newHoverElement);
 
         if (targetElement == nullptr)
@@ -736,15 +820,34 @@ void UI::UIManager::SetMouseCapture(UIElement *element)
 
     // 내부적으로는 입력시스템에 바로 ,또는 외부로 요청 -> 논리적윈도우의 캡처컨트롤러로 설정 ? -> 입력시스템
 }
-void UI::UIManager::ReleaseMouseCapture(UI::UIElement *element)
+void UI::UIManager::ReleaseMouseCapture(UI::UIElement *element, bool bLastElement)
 {
 
-    UIElement *scope = GetCurrentMouseInputScope();
-    if (scope == nullptr || scope != element)
-        return;
+    UIElement *scope = nullptr;
 
-    scope->OnLostMouseFocus();
-    PopMouseInputScope(scope);
+    if (bLastElement)
+    {
+        scope = GetCurrentMouseInputScope();
+        if (scope == nullptr || scope != element)
+            return;
+
+        scope->OnLostMouseFocus();
+        PopMouseInputScope(scope);
+    }
+    else
+    {
+        int index = CheckMouseInputScope(element);
+        if (index == -1)
+            return;
+
+        for (int i = mInputStateContext.mMouseInputScopeStack.size() - 1; i >= index; --i)
+        {
+            if (mInputStateContext.mMouseInputScopeStack[i].mRoot)
+                mInputStateContext.mMouseInputScopeStack[i].mRoot->OnLostMouseFocus();
+        }
+
+        PopMouseInputScope(index);
+    }
 
     // capture 복원
     UIElement *restoredScope = GetCurrentMouseInputScope();
@@ -752,8 +855,11 @@ void UI::UIManager::ReleaseMouseCapture(UI::UIElement *element)
     {
         restoredScope->OnSetMouseFocus();
     }
+    else
+    {
 
-    mMouseReleaseCaptureCallbackSystem.ExecuteCallbacks();
+        mMouseReleaseCaptureCallbackSystem.ExecuteCallbacks();
+    }
 }
 
 void UI::UIManager::SetKeyboardCapture(UIElement *element)

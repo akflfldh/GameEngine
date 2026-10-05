@@ -39,6 +39,8 @@ class UISYSTEM_API UIManager
     void BeginCanvas(UICanvasID canvasID);
     void Update(float deltaTime);
     void EndUpdate(float deltaTime);
+    // 모든 프레임 갱신과 정리가 끝난 뒤, Draw 시작 전에 호출하는 렌더 준비 단계다.
+    void UpdateScissorRectRegions();
     void CleanUp();
     void EndFrame();
 
@@ -89,7 +91,7 @@ class UISYSTEM_API UIManager
 
     // uiElement들이 마우스 캡처요청
     void SetMouseCapture(UIElement *element);
-    void ReleaseMouseCapture(UI::UIElement *element);
+    void ReleaseMouseCapture(UI::UIElement *element, bool bLastElement = true);
 
     // 키보드 캡처요청
     void SetKeyboardCapture(UIElement *element);
@@ -116,6 +118,7 @@ class UISYSTEM_API UIManager
 
     bool HiTest(UICanvas *canvas, float worldPosX, float worldPosY);
     UI::UIElement *GetHittedElement(UICanvas *canvas, float worldPosX, float worldPosY);
+    bool IsSameOrDescendant(UIElement *target, UIElement *ancestor) const;
 
   private:
     UIManager();
@@ -137,11 +140,12 @@ class UISYSTEM_API UIManager
 
     void DestroyDeadUIElement();
 
-    bool IsSameOrDescendant(UIElement *target, UIElement *ancestor) const;
-
     void PushMouseInputScope(UIElement *root);
     void PopMouseInputScope(UIElement *root);
+    void PopMouseInputScope(int index);
     UIElement *GetCurrentMouseInputScope() const;
+    // 해당 element에 해당하는 scope가 스택에있는지 여부  반환값은 index , -1은 false
+    int CheckMouseInputScope(UIElement *element);
     bool IsCurrentMouseInputScope(UIElement *element) const;
 
   private:

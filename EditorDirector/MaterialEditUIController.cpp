@@ -1,4 +1,5 @@
 ﻿#include "MaterialEditUIController.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
 #include <EditorDirector/UIAssetSlotPanel.h>
@@ -29,30 +30,45 @@ void MaterialEditUIController::BeginUI(float panelPosY)
 
     mBegun = true;
 
-    auto ApplyPreviewButton = mCanvas->CreateUIElement<UI::UITextButton>("ApplyPreviewButton");
-    ApplyPreviewButton->SetSize(200, 40);
-    ApplyPreviewButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    ApplyPreviewButton->SetHorizontalPivotOffset(0.0f);
+    auto ApplyPreviewButton = EditorUIUtility::CreateSmallTextButton(mCanvas, "ApplyPreviewButton");
+    // EditorUIUtility의 기본 높이 유지: ApplyPreviewButton->SetSize(200, 40);
+    ApplyPreviewButton->SetWidth(200);
+    ApplyPreviewButton->SetHorizontalAnchor(1.0f);
+    ApplyPreviewButton->SetHorizontalOffset(-(ApplyPreviewButton->GetSize().X + 0.0f));
 
-    ApplyPreviewButton->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
-    ApplyPreviewButton->SetVerticalPivotOffset(panelPosY);
+    ApplyPreviewButton->SetVerticalAnchor(0.0f);
+    ApplyPreviewButton->SetVerticalOffset(panelPosY);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    ApplyPreviewButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     ApplyPreviewButton->mUIImageComponent->NotUseTexture();
     ApplyPreviewButton->mTextComponent->SetText("프리뷰 적용");
-    ApplyPreviewButton->mTextComponent->SetFontSize(30.0f);
-    ApplyPreviewButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
+    // EditorUIUtility의 공통 폰트 규격 유지: ApplyPreviewButton->mTextComponent->SetFontSize(30.0f);
+    // EditorUIUtility의 기본 색상 유지: ApplyPreviewButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
     ApplyPreviewButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float)
                                                                                 { OnClickedApplyEditDataButton(); });
 
-    UIScrollBox *scrollProperetyBox = mCanvas->CreateUIElement<UIScrollBox>("PropertyPanel");
+    UIScrollBox *scrollProperetyBox = EditorUIUtility::Create<UIScrollBox>(mCanvas, "PropertyPanel");
     scrollProperetyBox->SetLayout(EUIScrollLayout::eVertical);
     scrollProperetyBox->SetSize(600, 1500);
 
-    scrollProperetyBox->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    scrollProperetyBox->SetHorizontalPivotOffset(0.0f);
+    scrollProperetyBox->SetHorizontalAnchor(1.0f);
+    scrollProperetyBox->SetHorizontalOffset(-(scrollProperetyBox->GetSize().X + 0.0f));
 
-    scrollProperetyBox->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
-    scrollProperetyBox->SetVerticalPivotOffset(panelPosY + 40);
+    scrollProperetyBox->SetVerticalAnchor(0.0f);
+    scrollProperetyBox->SetVerticalOffset(panelPosY + 40);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    scrollProperetyBox->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     mScrollBox = scrollProperetyBox;
 
@@ -85,7 +101,7 @@ void MaterialEditUIController::BeginUI(float panelPosY)
     mScrollBox->AddItem(mEmissiveColorReflectPanel);
     mScrollBox->AddItem(mEmissiveIntensityReflectPanel);
 
-    mDiffuseMapListSlotPanel = mCanvas->CreateUIElement<UIAssetSlotListPanel>("DiffuseSlotListPanel");
+    mDiffuseMapListSlotPanel = EditorUIUtility::Create<UIAssetSlotListPanel>(mCanvas, "DiffuseSlotListPanel");
     mDiffuseMapListSlotPanel->mOnClickedAddButtonCallbackSystem.Register([this]() { OnClickedDiffuseMapAddButtotn(); });
     mDiffuseMapListSlotPanel->mOnDroppedAssetCallbackSystem.Register([this](CoreAsset::AssetID id, int index)
                                                                      { OnDiffuseMapDropped(id, index); });
@@ -96,7 +112,7 @@ void MaterialEditUIController::BeginUI(float panelPosY)
 
     mScrollBox->AddItem(mDiffuseMapListSlotPanel);
 
-    mNormalMapSlotPanel = mCanvas->CreateUIElement<UIAssetSlotPanel>("NormalMapPanel");
+    mNormalMapSlotPanel = EditorUIUtility::Create<UIAssetSlotPanel>(mCanvas, "NormalMapPanel");
 
     mNormalMapSlotPanel->mOnDroppedAssetCallbackSystem.Register([this](CoreAsset::AssetID assetID)
                                                                 { OnNormalMapDropped(assetID); });
@@ -340,7 +356,7 @@ UIReflectVector3Panel *MaterialEditUIController::CreateVector3ReflectPanel(
     std::function<void(const CoreMath::Vector3 &)> setter)
 {
 
-    UIReflectVector3Panel *vectorReflectPanel = mCanvas->CreateUIElement<UIReflectVector3Panel>("Vector3ReflectPanel");
+    UIReflectVector3Panel *vectorReflectPanel = EditorUIUtility::CreateVector3Field(mCanvas, "Vector3ReflectPanel");
     vectorReflectPanel->SetTagText(tagText);
     vectorReflectPanel->SetWidth(600.0f);
     // vectorReflectPanel->SetColor(0.3f, 0.3f, 0.3f);
@@ -354,7 +370,7 @@ UIReflectFloatPanel *MaterialEditUIController::CreateFloatReflectPanel(const std
                                                                        std::function<void(float)> setter)
 {
 
-    UIReflectFloatPanel *floatReflectPanel = mCanvas->CreateUIElement<UIReflectFloatPanel>("FloatReflectPanel");
+    UIReflectFloatPanel *floatReflectPanel = EditorUIUtility::CreateFloatField(mCanvas, "FloatReflectPanel");
     floatReflectPanel->SetTagText(tagText);
     floatReflectPanel->SetWidth(600.0f);
     //  floatReflectPanel->SetColor(0.3f, 0.3f, 0.3f);

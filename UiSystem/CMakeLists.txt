@@ -19,10 +19,14 @@ UIImage.cpp
 UIManager.cpp
 UIRectTransform.cpp
 UIRenderableComponent.cpp   
-  
+   
 "UIResizeGizmoRenderableComponent.h" "UIResizeGizmoRenderableComponent.cpp" "UIImageComponent.h" "UIImageComponent.cpp" "UIResizeComponent.h" "UIResizeComponent.cpp" "UIMovableComponent.h" "UIMovableComponent.cpp" "UIButtonComponent.h" "UIButtonComponent.cpp" "UIButton.h" "UIButton.cpp" "UIElementPtr.h" "UIElementPtr.cpp" "UIComponentPtr.h" "UIComponentPtr.cpp" "UIElementTyprDef.h" "IViewContextInterface.h" "IUIRenderProxyManager.h" "IUIRenderProxyManager.cpp" "UITextComponent.h" "UITextComponent.cpp" "UILayoutComponent.h" "UILayoutComponent.cpp" "UIVerticalLayoutComponent.h" "UIVerticalLayoutComponent.cpp" "UIText.h" "UIText.cpp" "UIDoubleClickComponent.h" "UIDoubleClickComponent.cpp" "UITextInputComponent.h" "UITextInputComponent.cpp" "UIEditBox.h" "UIEditBox.cpp" "UIMultiRectComponent.h" "UIMultiRectComponent.cpp" "UITextButton.h" "UITextButton.cpp" "UIDragAndDropComponent.h" "UIDragAndDropComponent.cpp" "UIMouseWheelComponent.h" "UIMouseWheelComponent.cpp" "UIUtility.h" "UIUtility.cpp" "UIMouseDragComponent.h" "UIMouseDragComponent.cpp" "UIPopupManager.h" "UIPopupManager.cpp")
  
  
+
+target_sources(UiSystem PRIVATE
+    UIHorizontalLayoutComponent.h
+    UIHorizontalLayoutComponent.cpp)
 
 target_compile_definitions(UiSystem PRIVATE UISYSTEM_LIB)
 

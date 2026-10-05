@@ -1,4 +1,5 @@
 ﻿#include "UIBoolPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
 #include <UiSystem/UIImageComponent.h>
@@ -15,13 +16,13 @@ void UIBoolPanel::OnBegin()
 
     UI::UIImage::OnBegin();
 
-    SetHeight(40.0f);
+    SetHeight(EditorUIUtility::PropertyRowHeight);
 
-    mTagText = CreateChildUIElement<UI::UIText>("TagText");
+    mTagText = EditorUIUtility::CreateLabel(this, "TagText");
     // mTagText->SetHeight(30.0f);
     //    mTagText->SetPositionLocal(0, 0);
     //  mTagText->SetTextColor({0, 0, 0});
-    mCheckButton = CreateChildUIElement<UI::UIButton>("CheckButton");
+    mCheckButton = EditorUIUtility::CreateSmallButton(this, "CheckButton");
 
     //  mCheckButton->SetSize(20, 20);
     mCheckButton->mUIImageComponent->SetTexture("Engine/CheckBox");

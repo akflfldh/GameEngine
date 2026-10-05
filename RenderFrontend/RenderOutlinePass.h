@@ -27,7 +27,7 @@ class RenderOutlinePass : public IRenderPass
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &executeContext);
 
     void ChangeMaterial(std::vector<RenderItem> &renderItemVec);
-    void BuildRenderItemBufferGpuResources(const Render::StaticMeshOutlineRenderCommand &command,
+    void BuildRenderItemBufferGpuResources(const Render::MeshOutlineRenderCommand &command,
                                            std::vector<BindingGpuResource> &bindingGpuResourceVector);
 
   private:
@@ -35,6 +35,8 @@ class RenderOutlinePass : public IRenderPass
     Render::FrameContext mPassData;
     Render::MaterialID mStaticMeshStencilMaterialID;
     Render::MaterialID mStaticMeshOutlineMaterialID;
+    Render::MaterialID mSkinningMeshStencilMaterialID;
+    Render::MaterialID mSkinningMeshOutlineMaterialID;
 
     uint32_t mObjectBufferID;
 };

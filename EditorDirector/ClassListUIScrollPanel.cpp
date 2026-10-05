@@ -1,4 +1,5 @@
 ﻿#include "ClassListUIScrollPanel.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <ReflectSystem/ReflectionClassInfo.h>
 #include <ReflectSystem/ReflectionSystem.h>
 #include <UIHierarchyItem.h>
@@ -15,7 +16,7 @@ void ClassListUIScrollPanel::OnBegin()
     float width = mTransform.GetSize().x;
     float height = mTransform.GetSize().y;
 
-    mScrollBox = CreateChildUIElement<UIScrollBox>("ScrollBox");
+    mScrollBox = EditorUIUtility::Create<UIScrollBox>(this, "ScrollBox");
     mScrollBox->SetSize(width, height);
     mScrollBox->SetBackgrounColor(mScrollPanelColor.mR, mScrollPanelColor.mG, mScrollPanelColor.mB);
 
@@ -57,6 +58,9 @@ void ClassListUIScrollPanel::OnBegin()
     {
         const auto &parentList = classInfo->GetParentClassList();
 
+        if (classInfo == nullptr || !classInfo->IsAncestorClass("Object"))
+            continue;
+
         if (parentList.empty() == false)
         {
             const char *parentClassName = parentList[0].c_str();
@@ -90,9 +94,9 @@ UIHierarchyItem *ClassListUIScrollPanel::GetItem()
 {
 
     auto canvas = GetDestCanvas();
-    UIHierarchyItem *item = canvas->CreateUIElement<UIHierarchyItem>("Item");
+    UIHierarchyItem *item = EditorUIUtility::Create<UIHierarchyItem>(canvas, "Item");
 
-    item->SetHeaderFontSize(20.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: item->SetHeaderFontSize(20.0f);
     item->SetHeaderHeight(30.0f);
     item->mOnClickedHeaderPanelCallbackSystem.Register(
         [this, item]() { mOnClickedClassItemCallbackSystem.ExecuteCallbacks(item->GetHeaderText()); });

@@ -99,6 +99,9 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
     ID3D12RootSignature *GetMasterRootSignature() const;
     ID3D12RootSignature *GetMasterComputeRootSignature() const;
 
+    const Render::MaterialBindingRecord *FindMasterBindingRecord(
+        Render::EMasterRootBindingSemantic semantic) const override;
+
 #pragma endregion
   private:
     bool BuildMainPass(const Render::CreationMaterialInfo &creationMaterialInfo, D3DMainRenderPassInfo &oMaterialItem,
@@ -199,6 +202,9 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
 
     Microsoft::WRL::ComPtr<ID3D12RootSignature> mMasterRootSignature = nullptr;
     Microsoft::WRL::ComPtr<ID3D12RootSignature> mMasterComputeRootSignature = nullptr;
+
+    /// Master Root Signature와 함께 생성되며 semantic을 실제 root 위치로 변환할 때 사용한다.
+    Render::MaterialBindingRecordTable mMasterBindingRecordTable;
 
     // GRM::GRMPtr mDefaultSampler;		//테이블로 확장가능
 };

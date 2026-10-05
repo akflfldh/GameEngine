@@ -452,6 +452,11 @@ EPhysicsBodyType StaticMeshComponent::GetPhysicsBodyType() const
     return mPhysicsContext.mPhysicsBodyType;
 }
 
+Core::CollisionChannelID StaticMeshComponent::GetCollisionChannelID() const
+{
+    return mCollisionChannelID;
+}
+
 bool StaticMeshComponent::IsPhysicsGravityEnabled() const
 {
     return mPhysicsContext.mUseGravity;
@@ -552,6 +557,8 @@ void StaticMeshComponent::AddPhysicsShapeBuildData(const PhysicsShapeBuildData &
 
     //  mPhysicsContext.mShapeBuildDataList.push_back(data);
 }
+
+void StaticMeshComponent::OnCollisionResponse(const CollisionResponseData &data) {}
 
 const PhysicsCollisionPreset &StaticMeshComponent::GetPhysicsCollisionPreset() const
 {

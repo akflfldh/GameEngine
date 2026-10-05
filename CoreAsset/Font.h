@@ -21,6 +21,7 @@ class CORE_ASSET_API Font : public Asset
     }
 
     const FontGlyph *GetGlyph(uint32_t unicode) const;
+    bool CopyDataFrom(const Asset &source, std::string *failureReason = nullptr) override;
 
     AssetPtr GetGlyphAltas() const;
 
@@ -37,8 +38,8 @@ class CORE_ASSET_API Font : public Asset
 
     //<unicode value , FontGlyph>
     std::unordered_map<uint32_t, FontGlyph> mFontGlyphTable;
-    FontMatrix mFontMatrix;
-    FontAltas mFontAltas;
+    FontMatrix mFontMatrix{};
+    FontAltas mFontAltas{};
     AssetPtr mGlyphAltas;
 };
 

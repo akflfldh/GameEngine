@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <Core/CoreDllExport.h>
+#include <Core/CorePhysicsType.h>
 #include <Physics/PhysicsType.h>
 #include <memory>
 #include <unordered_map>
@@ -103,6 +104,12 @@ class CORE_API_LIB PhysicsBridgeSystem
     PhysicsScene *GetPhysicsScene(SceneComponent *bodyComponent) const;
 
     const PhysicsSceneComponentBinding *FindBinding(SceneComponent *bodyComponent) const;
+
+    void BuildColliisonChannelResponseTable();
+
+    EPhysicsCollisionChannelResponseType ConvertPhysicsCollisionResponseType(ECollisionResponseType type) const;
+
+    void ConsumeCollisionEvents(PhysicsScene *physicsScene);
 
   private:
     std::unique_ptr<PhysicsWorld> mPhysicsWorld;

@@ -1,4 +1,5 @@
 ﻿#include "UIDirectoryTree.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include "UITreeNode.h"
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
@@ -144,7 +145,7 @@ void UIDirectoryTree::OnAddedFolder(QuadLF::LogicalFolder *newFolderNode, QuadLF
 
     // 관계 설정
     auto canvas = GetDestCanvas();
-    auto childTreeNode = canvas->CreateUIElement<UITreeNode>(newFolderNode->GetName().c_str());
+    auto childTreeNode = EditorUIUtility::Create<UITreeNode>(canvas, newFolderNode->GetName().c_str());
     childTreeNode->SetParent(parentFolderNode);
     childTreeNode->SetDestDirectoryTree(this);
     // childTreeNode->SetSize(600, 50);
@@ -175,7 +176,7 @@ void UIDirectoryTree::RebuildTree()
 
     for (auto folder : rootFolderList)
     {
-        auto treeNode = canvas->CreateUIElement<UITreeNode>(folder->GetName().c_str());
+        auto treeNode = EditorUIUtility::Create<UITreeNode>(canvas, folder->GetName().c_str());
         queue.push(folder);
         treeNodeQueue.push(treeNode);
 
@@ -199,7 +200,7 @@ void UIDirectoryTree::RebuildTree()
 
         for (auto childFolder : childFolderList)
         {
-            auto childTreeNode = canvas->CreateUIElement<UITreeNode>(childFolder->GetName().c_str());
+            auto childTreeNode = EditorUIUtility::Create<UITreeNode>(canvas, childFolder->GetName().c_str());
             //  childTreeNode->SetItemHeight(50.0f);
             childTreeNode->SetLogicalFolder(childFolder);
             childTreeNode->SetDestDirectoryTree(this);

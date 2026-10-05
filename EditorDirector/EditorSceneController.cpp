@@ -20,18 +20,20 @@ Quad::EditorSceneController::EditorSceneController() : mMoveSpeed(30), mCurrentP
 }
 Quad::EditorSceneController::~EditorSceneController()
 {
-    //  auto selectionManager = EditorSelectionManager::GetInstance();
-    mSelectionManager->mOnSelectedObjectCallbackSystem.UnRegister(mSelectionCallbackID);
-    mSelectionManager->mOnSelectedComponentCallbackSystem.UnRegister(mSelectionComponentCallbackID);
-    if (mSelectedObject)
+    if (mSelectionManager != nullptr)
     {
-        mSelectionManager->SetSelectedObject(nullptr);
+        mSelectionManager->mOnSelectedObjectCallbackSystem.UnRegister(mSelectionCallbackID);
+        mSelectionManager->mOnSelectedComponentCallbackSystem.UnRegister(mSelectionComponentCallbackID);
+        if (mSelectedObject)
+            mSelectionManager->SetSelectedObject(nullptr);
     }
 }
 void Quad::EditorSceneController::Intialize(BaseSelectionManager *selectionManager)
 {
-
     mSelectionManager = selectionManager;
+    if (mSelectionManager == nullptr)
+        return;
+
     mSelectionCallbackID = mSelectionManager->mOnSelectedObjectCallbackSystem.Register([this](Object *object)
                                                                                        { OnSelectedObject(object); });
 
@@ -104,10 +106,17 @@ bool Quad::EditorSceneController::HandleInput(const Quad::RawInputData &inputDat
 
 bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
 {
-    auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
-
     if (TryAdjustMoveSpeed(inputData.mRawInputData))
         return true;
+
+    // Selection이 없는 미리보기 작업 공간에서는 선택·기즈모·삭제 입력만 건너뛴다.
+    // 카메라 회전은 RawInputData, 이동은 Tick에서 별도로 처리한다.
+    if (mSelectionManager == nullptr)
+        return false;
+
+    auto *editorMode = static_cast<EditorMode *>(GetWorld()->GetEngineMode());
+    const bool bUseGizmo = editorMode->GetUseGizmo();
+    auto &transformGizmo = editorMode->GetTransformGizmo();
 
     if (inputData.mRawInputData.mInputState & EInputState::eMouseLButtonDown)
     {
@@ -122,7 +131,7 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
         // 기즈모 먼저 Ray hit
 
         // 기즈모가 활성화되어있다면
-        if (transformGizmo.GetActiveState())
+        if (bUseGizmo && transformGizmo.GetActiveState())
         {
             Core::HitResult gizmoHitResult;
             if (transformGizmo.RayHit(inputData.mWorldRay, gizmoHitResult))
@@ -209,7 +218,7 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
                     // 아무것도 피킹되지않았다.?
                     // 만약 gizmo가 활성화된상태여서보인다면
                     // 비활성화한다.
-                    if (transformGizmo.GetActiveState())
+                    if (bUseGizmo && transformGizmo.GetActiveState())
                     {
                         transformGizmo.SetActive(false);
                         transformGizmo.SetTargetObject(nullptr);
@@ -221,7 +230,7 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
     else if (inputData.mRawInputData.mInputState & EInputState::eMouseMove)
     {
 
-        if (transformGizmo.GetSelectState())
+        if (bUseGizmo && transformGizmo.GetSelectState())
         {
 
             // Ctrl키 눌린상태인지?
@@ -238,7 +247,7 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
     {
         // 만약 기즈모가 선택된 상태였다면 기즈모 선택해제
 
-        if (transformGizmo.GetSelectState())
+        if (bUseGizmo && transformGizmo.GetSelectState())
         {
             transformGizmo.SetSelectState(false, inputData.mWorldRay);
         }
@@ -250,17 +259,20 @@ bool Quad::EditorSceneController::HandleInput(const Core::InputData &inputData)
         {
         case Quad::EKeyCode::eT:
         {
-            transformGizmo.SetMode(EGizmoMode::eTranslation);
+            if (bUseGizmo)
+                transformGizmo.SetMode(EGizmoMode::eTranslation);
         }
         break;
         case Quad::EKeyCode::eR:
         {
-            transformGizmo.SetMode(EGizmoMode::eRotation);
+            if (bUseGizmo)
+                transformGizmo.SetMode(EGizmoMode::eRotation);
         }
         break;
         case Quad::EKeyCode::eE:
         {
-            transformGizmo.SetMode(EGizmoMode::eScale);
+            if (bUseGizmo)
+                transformGizmo.SetMode(EGizmoMode::eScale);
         }
         break;
         case Quad::EKeyCode::eDel:
@@ -352,6 +364,10 @@ void Quad::EditorSceneController::OnUnPossess()
 
 void Quad::EditorSceneController::UpdateGizmoSize()
 {
+    // 카메라 이동은 계속 처리하지만, 생성하지 않은 기즈모에는 크기 갱신을 요청하지 않는다.
+    auto *editorMode = static_cast<EditorMode *>(GetWorld()->GetEngineMode());
+    if (!editorMode->GetUseGizmo())
+        return;
     CameraObject *cameraObject = static_cast<CameraObject *>(GetPossessObject());
 
     if (cameraObject == nullptr)
@@ -361,7 +377,7 @@ void Quad::EditorSceneController::UpdateGizmoSize()
     if (cameraCom)
     {
         // Editor Mode를 중간단계로 기즈모 공통으로  기존 EditorMode를 EditorEditMode, EditorPlayMode로
-        auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
+        auto &transformGizmo = editorMode->GetTransformGizmo();
 
         // 카메라와 기즈모사이의 길이
         transformGizmo.UpdateGizmoSize(cameraCom->GetPositionWorld());
@@ -369,7 +385,12 @@ void Quad::EditorSceneController::UpdateGizmoSize()
 }
 void Quad::EditorSceneController::OnSelectedObject(Object *object)
 {
-    auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
+    // 선택 상태 자체는 유지하고, 미리보기의 선택 콜백이 미생성 기즈모를 활성화하지 않게 한다.
+    mSelectedObject = object;
+    auto *editorMode = static_cast<EditorMode *>(GetWorld()->GetEngineMode());
+    if (!editorMode->GetUseGizmo())
+        return;
+    auto &transformGizmo = editorMode->GetTransformGizmo();
 
     if (object)
     {
@@ -385,14 +406,14 @@ void Quad::EditorSceneController::OnSelectedObject(Object *object)
         transformGizmo.SetActive(false);
         transformGizmo.SetTargetObject(nullptr);
     }
-
-    mSelectedObject = object;
 }
 
 void Quad::EditorSceneController::OnSelectedComponent(Component *com)
 {
-
-    auto &transformGizmo = static_cast<EditorMode *>(GetWorld()->GetEngineMode())->GetTransformGizmo();
+    auto *editorMode = static_cast<EditorMode *>(GetWorld()->GetEngineMode());
+    if (!editorMode->GetUseGizmo())
+        return;
+    auto &transformGizmo = editorMode->GetTransformGizmo();
     transformGizmo.SetTargetComponent(com);
 }
 
@@ -426,6 +447,8 @@ void Quad::EditorSceneController::SetEditorMap(Map *editorMap)
 
 void Quad::EditorSceneController::OnDeleteInput()
 {
+    if (mSelectionManager == nullptr)
+        return;
 
     if (EditorDeleteCommand::Execute(mSelectionManager))
     {

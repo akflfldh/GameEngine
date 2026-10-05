@@ -90,22 +90,21 @@ void Render::DebugLineRenderPass::SetGlobalData(const Core::GlobalFrameData &glo
     mPassConstantBufferResouce.mOffset = bufferSizeOffset; //
     // bufferIndexOffset;
     mPassConstantBufferResouce.mType = Render::EShaderResourceType::eConstantBuffer;
+    mPassConstantBufferResouce.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
     // viewport설정
 
     oFrameContext.mGlobalPassBufferResouce = mPassConstantBufferResouce;
+    // 창 내부 3D 영역을 백버퍼 좌표로 옮긴다. UI 창 위치로 덮어쓰면
+    // 프리팹 에디터의 내부 여백이 사라지므로 기존 좌상단에 더해야 한다.
     oFrameContext.mViewport = globalFrameData.mSceneViewport;
-    oFrameContext.mViewport.TopLeftX = executeContext.mGlobalSceneViewport.TopLeftX;
-   
-    oFrameContext.mViewport.TopLeftY = executeContext.mGlobalSceneViewport.TopLeftY;
-
-    globalFrameData.mSceneViewport.TopLeftY;
+    oFrameContext.mViewport.TopLeftX += executeContext.mGlobalSceneViewport.TopLeftX;
+    oFrameContext.mViewport.TopLeftY += executeContext.mGlobalSceneViewport.TopLeftY;
 
     oFrameContext.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
     oFrameContext.mScissorRect.mLeft = oFrameContext.mViewport.TopLeftX;
-    ; //  globalFrameData.mSceneViewport.TopLeftX;
-    oFrameContext.mScissorRect.mRight = oFrameContext.mScissorRect.mLeft + globalFrameData.mSceneViewport.Width;
-    oFrameContext.mScissorRect.mTop = oFrameContext.mViewport.TopLeftY; // globalFrameData.mSceneViewport.TopLeftY;
-    oFrameContext.mScissorRect.mBottom = oFrameContext.mScissorRect.mTop + globalFrameData.mSceneViewport.Height;
+    oFrameContext.mScissorRect.mRight = oFrameContext.mScissorRect.mLeft + oFrameContext.mViewport.Width;
+    oFrameContext.mScissorRect.mTop = oFrameContext.mViewport.TopLeftY;
+    oFrameContext.mScissorRect.mBottom = oFrameContext.mScissorRect.mTop + oFrameContext.mViewport.Height;
 }
 
 std::vector<Render::RenderItem> Render::DebugLineRenderPass::BuildRenderItem(

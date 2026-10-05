@@ -78,20 +78,19 @@ void UI::UIText::SetTextColor(const UI::UIColor &color)
     }
 }
 
-void UI::UIText ::ApplyLayoutStyle(const UIControlStyle &style)
+std::string UI::UIText::GetText() const
 {
 
     if (mTextComponent)
     {
-        mTextComponent->SetFontSize(style.mFontSize);
-        mTextComponent->SetColor(style.mTextColor);
+        return mTextComponent->GetText();
     }
 
-    auto pos = mTransform.GetLocalPosition();
+    return "";
+}
 
-    pos.x += style.mLeftPadding;
-    pos.y += style.mTopPadding;
-    SetHeight(style.mHeight);
+void UI::UIText::OnUpdatedAutoSize(float scale)
+{
 
-    SetPositionLocal(pos);
+    mTextComponent->SetFontScale(scale);
 }

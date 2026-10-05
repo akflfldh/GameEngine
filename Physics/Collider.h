@@ -60,6 +60,14 @@ class PhysicsBody
 
 #pragma endregion
 
+    uint64_t mCollisionChannelResponseID = 1;
+
+
+
+
+
+
+
   public:
     float GetInverseMass() const;
 

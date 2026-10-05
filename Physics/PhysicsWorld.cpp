@@ -22,6 +22,8 @@ PhysicsSceneID PhysicsWorld::CreateNewScene()
     mSceneList.push_back(scene);
     mSceneIDTable[scene->GetID()] = scene;
 
+    scene->SetCollisionChannelResponseTable(&mCollisionChannelResponseTable);
+
     return scene->GetID();
 }
 
@@ -71,6 +73,17 @@ void PhysicsWorld::DestroyScene(PhysicsScene *scene)
     mSceneIDTable.erase(scene->GetID());
 
     delete scene;
+}
+
+void PhysicsWorld::SetCollisionChannelResponseTable(const PhysicsCollisionChannelResponseTable &table)
+{
+
+    mCollisionChannelResponseTable = table;
+}
+
+void PhysicsWorld::SetCollisionChannelResponseTable(PhysicsCollisionChannelResponseTable &&table)
+{
+    mCollisionChannelResponseTable = std::move(table);
 }
 
 void PhysicsWorld::ClearAll()

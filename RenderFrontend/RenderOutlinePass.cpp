@@ -22,6 +22,12 @@ Render::RenderOutlinePass::RenderOutlinePass()
     mStaticMeshOutlineMaterialID =
         RenderMaterialResolver::GetInstance()->Resolve(rmc, Render::ERenderPassType::eOutlineDraw);
 
+    rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
+    mSkinningMeshStencilMaterialID =
+        RenderMaterialResolver::GetInstance()->Resolve(rmc, Render::ERenderPassType::eOutlineStencil);
+    mSkinningMeshOutlineMaterialID =
+        RenderMaterialResolver::GetInstance()->Resolve(rmc, Render::ERenderPassType::eOutlineDraw);
+
     mObjectBufferID = 2;
 }
 
@@ -64,6 +70,7 @@ void Render::RenderOutlinePass::AddToGraph(RenderPassGraph &renderPassGraph, con
 void Render::RenderOutlinePass::SetPassConstantBufferResource(Render::BindingGpuResource bindingConstnatBuffer) {}
 void Render::RenderOutlinePass::SetGlobalData(const RenderPassExecuteContext &executeContext)
 {
+    mPassData.mGlobalStructuredBufferResource2 = {};
 
     OutlineConstantData constantData;
     // 필요한 pass 데이터
@@ -91,15 +98,26 @@ void Render::RenderOutlinePass::SetGlobalData(const RenderPassExecuteContext &ex
     mPassConstantBufferResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     mPassConstantBufferResource.mOffset = bufferSizeOffset;
     mPassConstantBufferResource.mType = Render::EShaderResourceType::eConstantBuffer;
+    mPassConstantBufferResource.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
 
-    // 일반적인 MainPass들은 전체화면이라고생각
-    //  최종
-
-    mPassData.mViewport = executeContext.mGlobalSceneViewport;
-    // mPassData.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
-    //   mPassData.mViewport.TopLeftY = globalFrameData.mSceneViewport.TopLeftY;
+    // 스텐실 기록과 외곽선 모두 카메라 투영에 대응하는 3D 영역을 사용한다.
+    // 백버퍼에 직접 그리므로 창 내부 3D 좌상단에 논리적 창 위치만 더한다.
+    mPassData.mViewport = executeContext.mGlobalFrameData.mSceneViewport;
+    mPassData.mViewport.TopLeftX += executeContext.mGlobalSceneViewport.TopLeftX;
+    mPassData.mViewport.TopLeftY += executeContext.mGlobalSceneViewport.TopLeftY;
 
     mPassData.mGlobalPassBufferResouce = mPassConstantBufferResource;
+    if (!executeContext.mSkinPaletteSnapshot.empty())
+    {
+        GRM::GpuStructuredBufferContext *skinPaletteBufferContext =
+            static_cast<GRM::GpuStructuredBufferContext *>(gpuBufferContextSystem->GetGpuBufferContext(
+                AssetResolver::GetInstance()->GetSkinPaletteStructuredGpuBufferID()));
+        mPassData.mGlobalStructuredBufferResource2.gpuResource =
+            skinPaletteBufferContext->mGpuBuffersPerFrame[skinPaletteBufferContext->mCurrFrameIndex].getResource();
+        mPassData.mGlobalStructuredBufferResource2.mOffset = 0;
+        mPassData.mGlobalStructuredBufferResource2.mType = EShaderResourceType::eStructuredBuffer;
+        mPassData.mGlobalStructuredBufferResource2.mSemantic = EMasterRootBindingSemantic::eSkinPaletteStructuredBuffer;
+    }
     mPassData.mRenderTarget = nullptr; // 기본적으로 후면버퍼를 사용하겠다 라는 의미.
     mPassData.mScissorRect.mLeft = mPassData.mViewport.TopLeftX;
     mPassData.mScissorRect.mRight = mPassData.mScissorRect.mLeft + mPassData.mViewport.Width;
@@ -112,17 +130,17 @@ std::vector<Render::RenderItem> Render::RenderOutlinePass::BuildRenderItem(
 {
     std::vector<Render::RenderItem> renderItemVec;
 
-    for (size_t i = 0; i < executeContext.mOutlineStaticMeshRenderCommandIndexList.size(); ++i)
+    for (size_t i = 0; i < executeContext.mOutlineMeshRenderCommandIndexList.size(); ++i)
     {
-        const Render::StaticMeshOutlineRenderCommand &command =
-            executeContext.mOutlineStaticMeshRenderCommandIndexList[i];
+        const Render::MeshOutlineRenderCommand &command = executeContext.mOutlineMeshRenderCommandIndexList[i];
         // auto command = executeContext.mStaticMeshRenderCommand[outlineCommand.mStaticMeshRenderCommnadIndex];
 
         // staticMesh가 지정되지않아서 무시
-        if (command.mStaticMesh == nullptr)
+        if (command.mMesh == nullptr || command.mSubMeshIndex < 0 ||
+            static_cast<size_t>(command.mSubMeshIndex) >= command.mMesh->GetSubMeshVector().size())
             continue;
 
-        const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mStaticMesh->GetSubMeshVector();
+        const std::vector<CoreAsset::SubMesh> &subMeshVector = command.mMesh->GetSubMeshVector();
         const CoreAsset::SubMesh &subMesh = subMeshVector[command.mSubMeshIndex];
         Render::RenderItem renderItem;
 
@@ -135,24 +153,21 @@ std::vector<Render::RenderItem> Render::RenderOutlinePass::BuildRenderItem(
         // draw type
         renderItem.mDrawType = EDrawType::eIndex;
 
-        // gpu material
-        // renderItem.mMaterialID = material->GetGpuMaterialID();
-
-        // TODO
-        //  static mesh 버전의 고정된 gpuMaterial을 사용하게한다.
-        renderItem.mMaterialID = mStaticMeshStencilMaterialID;
+        renderItem.mMaterialID = command.mGeometryType == ERenderGeometryType::eSkinnedMesh
+                                     ? mSkinningMeshStencilMaterialID
+                                     : mStaticMeshStencilMaterialID;
 
         // mesh
         renderItem.mMeshItem.mIndexNum = subMeshVector[command.mSubMeshIndex].mIndexNum;
         renderItem.mMeshItem.mIndexOffset = subMeshVector[command.mSubMeshIndex].mIndexOffset;
         renderItem.mMeshItem.mVertexOffset = subMeshVector[command.mSubMeshIndex].mVertexOffset;
 
-        Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+        Render::MeshGpuResourceContext meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
 
         if (meshGpuContext.mVertexBuffer.getResource() == nullptr)
         {
-            bool ret = mAssetResolver->RequestResolveAsset(command.mStaticMesh);
-            meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mStaticMesh);
+            bool ret = mAssetResolver->RequestResolveAsset(command.mMesh);
+            meshGpuContext = mAssetResolver->GetMeshGpuResourceContext(command.mMesh);
         }
 
         renderItem.mMeshItem.mIndexBuffer = meshGpuContext.mIndexBuffer.getResource();
@@ -186,12 +201,15 @@ void Render::RenderOutlinePass::ChangeMaterial(std::vector<RenderItem> &renderIt
         {
             renderItem.mMaterialID = mStaticMeshOutlineMaterialID;
         }
+        else if (renderItem.mMaterialID == mSkinningMeshStencilMaterialID)
+        {
+            renderItem.mMaterialID = mSkinningMeshOutlineMaterialID;
+        }
     }
 }
 
 void Render::RenderOutlinePass::BuildRenderItemBufferGpuResources(
-    const Render::StaticMeshOutlineRenderCommand &command,
-    std::vector<Render::BindingGpuResource> &bindingGpuResourceVector)
+    const Render::MeshOutlineRenderCommand &command, std::vector<Render::BindingGpuResource> &bindingGpuResourceVector)
 {
 
     // object buffer
@@ -214,6 +232,7 @@ void Render::RenderOutlinePass::BuildRenderItemBufferGpuResources(
     bindingGpuResource.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     bindingGpuResource.mOffset = bufferOffset;
     bindingGpuResource.mType = EShaderResourceType::eConstantBuffer;
+    bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eObjectConstantBuffer;
 
     bindingGpuResourceVector.push_back(bindingGpuResource);
 }

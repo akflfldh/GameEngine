@@ -1,5 +1,6 @@
 ﻿#include "EditorBuildManager.h"
 #include "PhysicalFileSystem/PhysicalFileSystem.h"
+#include <Core/CollisionChannelSystem.h>
 #include <Core/GameBuildManifest.h>
 #include <Core/Map.h>
 #include <Core/ProjectConfig.h>
@@ -10,6 +11,7 @@
 #include <CoreAsset/PakWriter.h>
 #include <CoreAsset/Texture.h>
 #include <CoreBase/AsyncThreadPool.h>
+#include <CoreBase/BinaryArch.h>
 #include <EditorDirector/CMakeProjectBuilder.h>
 #include <EditorDirector/EditorConfig.h>
 #include <EditorDirector/EditorProjectManager.h>
@@ -123,7 +125,7 @@ bool Quad::EditorBuildManager::BuildRequestSnapshot(const std::filesystem::path 
     oRequest.mProjectName = projectConfig->GetProjectName();
     oRequest.mEngineDirectory = editorConfig->GetEditorRootPath();
 
-    oRequest.mStartUpMapID = editorSceneManager->GetUserWorld()->GetCurrentMap()->GetID();
+    oRequest.mStartUpMapID = projectConfig->GetStartMapID();
 
     // asset list
 
@@ -315,9 +317,23 @@ void Quad::EditorBuildManager::ExecuteBuild(ProjectBuildJobContext jobContext,
     }
     // 복사성공
 
+    // 프로젝트 저장 파일을 복사하지 않고 현재 채널 설정을 배포한다.
+    // 빌드 작업이 완료될 때까지 채널 데이터의 편집과 프로젝트 전환이 차단되어야 한다.
+    BinaryArch collisionArch(false);
+    collisionArch.SetFile(projectBuildRequest.mOutputDirectory / "ProjectCollision.cfg");
+    collisionArch.Start();
+    Core::CollisionChannelSystem::GetInstance()->Serialize(collisionArch);
+    collisionArch.End();
+
+    if (collisionArch.IsFail())
+    {
+        jobContext.ReportFailed("충돌 채널 설정 저장 실패");
+        return;
+    }
+
     /*
       에셋 패키징
-    */
+     */
     PakWriter pakWriter;
     bool ret = pakWriter.StorePak(projectBuildRequest.mOutputDirectory / "Asset.pak",
                                   projectBuildRequest.mPakWriteAssetRecordList);

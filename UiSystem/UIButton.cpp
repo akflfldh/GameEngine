@@ -66,18 +66,6 @@ UI::EUIVisualState UI::UIButton::ResolveVisualState() const
     return EUIVisualState::eNormal;
 }
 
-void UI::UIButton::ApplyLayoutStyle(const UI::UIControlStyle &style)
-{
-
-    //    SetHeight(style.mHeight);
-    SetSize(style.mHeight, style.mHeight);
-
-    auto pos = mTransform.GetLocalPosition();
-
-    pos.x += style.mLeftPadding;
-    pos.y += style.mTopPadding;
-    SetPositionLocal(pos);
-}
 
 void UI::UIButton::ApplyVisualStyle(const UI::UIControlStyle &style, EUIVisualState visualState)
 {

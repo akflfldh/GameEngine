@@ -18,6 +18,12 @@ class LoggerImpl : public Logger
     // Initialize이다.
     virtual bool SetLoggerFile(const std::filesystem::path &outputFile) override;
 
+    using Logger::Log;
+    using Logger::LogInfo;
+    using Logger::LogWarning;
+    using Logger::LogError;
+    using Logger::LogCritical;
+
     virtual void Log(ELogLevel logLevel, const char *category, const char *message) override;
     virtual void Log(const char *logLevel, const char *category, const char *message) override;
     virtual void LogInfo(const char *category, const char *message) override;

@@ -9,6 +9,7 @@
 #include "UiSystem/UIType.h"
 #include <CoreBase/BaseClass.h>
 #include <CoreBase/CallbackSystem.h>
+#include <CoreMath/CoreMath.h>
 #include <UiSystem/UIElementTyprDef.h>
 #include <memory>
 #include <stdint.h>
@@ -88,6 +89,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     UIRectTransform mTransform;
 
     SRECT GetScissorRectRegion() const;
+    // 최종 UI 갱신 후 Canvas 루트에서 시작한다. 부모의 최종 영역을 전달받아
+    // 자손의 캐시까지 갱신하며, parentRect == nullptr인 루트는 자신의 영역을 사용한다.
+    void UpdateScissorRectRegion(const SRECT *parentRect = nullptr);
 
     void AddChildInternal(UIElement *child);
     void RemoveChildInternal(UIElement *child); // 단순히 child목록에서 뺴기만한다.
@@ -173,6 +177,7 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
 
     void TranslateLocal(const glm::vec2 &shift);
 
+    // virtual void SetSize(const CoreMath::Vector2 &size);
     virtual void SetSize(const glm::vec2 &size);
     virtual void SetSize(float w, float h);
     virtual void SetHeight(float h);
@@ -181,6 +186,7 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     int GetWidth() const;
     int GetHeight() const;
     CoreMath::Vector2 GetSize() const;
+    CoreMath::Vector2 GetReferenceSize() const;
 
     void NotifyTransformChanged(ETransformChangeType type);
     virtual void OnTransformChanged(ETransformChangeType type) {};
@@ -188,18 +194,26 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     void BroadCastChangedSize();
     Core::MultiCallbackSystem<UI::UIElement *> mOnChangedSizeCallbackSystem;
 
-    void SetPosPivotActive(bool flag);
-    bool GetPosPivotActive() const;
+    void SetPosAnchorActive(bool flag);
+    bool GetPosAnchorActive() const;
 
-    void SetHorizontalPivotSide(EUIPosPivotHorizontal pivotSide);
-    void SetVerticalPivotSide(EUIPosPivotVertical pivotSide);
+    // 부모 영역의 [0, 1] 비율 기준점이다. 한 축만 설정하면 나머지 축의 위치는 유지한다.
+    void SetAnchor(const CoreMath::Vector2 &anchor);
+    void SetHorizontalAnchor(float anchor);
+    void SetVerticalAnchor(float anchor);
 
-    void SetHorizontalPivotOffset(float offset);
-    void SetVerticalPivotOffset(float offset);
+    void SetPivot(const CoreMath::Vector2 &pivot);
+    void SetHorizontalPivot(float pivot);
+    void SetVerticalPivot(float pivot);
+
+    // Anchor에서 더할 절대 이동량이다. 우측/하단에서 안쪽으로 이동하려면 음수를 사용한다.
+    void SetOffset(const CoreMath::Vector2 &offset);
+    void SetHorizontalOffset(float offset);
+    void SetVerticalOffset(float offset);
 
     void OnParentSizeChanged();
-    void UpdatePosPivot();
-    void ApplyPosPivotInParent(const CoreMath::Vector2 &parentSize);
+    void UpdatePosAnchor();
+    void ApplyPosAnchorInParent(const CoreMath::Vector2 &parentSize);
 #pragma endregion
 
     OnAddedChildElementCallbackSystem mOnAddedChildElementCallbackSystem;
@@ -213,26 +227,31 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     void SetStyleRole(EUIStyleRole role);
     EUIStyleRole GetStyleRole() const;
 
+    // 입력 상태별 시각 정보만 갱신한다. 크기·위치·폰트는 호출부/레이아웃에서 관리한다.
     void RefreshStyle();
 
     void DirtyVisualStyle();
-    void DirtyLayoutStyle();
 
     void SetStyleOverride(const UIControlStyleOverride &styleOverride);
     void ClearStyleOverride();
+
+    void SetAutoSizeFlag(bool flag);
+    bool GetAutoSizeFlag() const;
 
   protected:
     bool mIsBegun;
     virtual void OnBegin() {};
     virtual bool IsPointInsideDefault(float x, float y) const;
 
-    // style 변화에서 호출
-    virtual void ApplyLayoutStyle(const UIControlStyle &style);
-
     // style일변화 , hover,등 상태변화 에서 호출
     virtual void ApplyVisualStyle(const UIControlStyle &style, EUIVisualState visualState);
 
     virtual EUIVisualState ResolveVisualState() const;
+
+    /*
+    AutoSize가 수행된 UIElement의 Hook, 오버라이드해서 각 파생에맞게 작성
+    */
+    virtual void OnUpdatedAutoSize(float scale);
 
   private:
     size_t GetComponentsNum(const char *className) const;
@@ -263,6 +282,12 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
 
     void SetDeadState();
 
+    /*
+    자동으로 스크린사이즈에 따라 사이즈조절
+    //자동 사이즈조절이 된다면 true
+    */
+    bool UpdateAutoScaledSize();
+
   private:
     std::string mName;
     UIElementID mID;
@@ -291,12 +316,14 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     // 깊이값(ui요소들사이에서 깊이값이 작을수록 위에올라오는 ui가 된다. 최소는 1)
     uint32_t mDepthValue;
     bool mUseScissorRECT;
+    // 렌더 명령 생성 전 갱신하는 월드 UI 영역 캐시다. 적용 여부와 부모 소유권은 저장하지 않는다.
+    SRECT mScissorRectRegion = {0, 0, 0, 0};
     bool mDeadState;
 
     bool mChangedSizeDirty = false;
 
     // 현재  Top ui들만 유효하다
-    UIPosPivotContext mPosPviotContext;
+    UIPosAnchorContext mPosAnchorContext;
 
     UIElement *mKeyboardCaptureScope = nullptr;
 
@@ -306,7 +333,11 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIElement : public BaseClass
     UIControlStyleOverride mControlStyleOverride;
 
     bool mVisualStyleDirty = false;
-    bool mLayoutStyleDirty = false;
+
+    // 스크린 크기에따른 자동 사이즈 flag
+    bool mAutoSizeFlag = false;
+    // 기준 사이즈
+    CoreMath::Vector2 mReferenceElementSize;
 };
 
 template <typename T> inline T *UIElement::CreateChildUIElement(const char *instanceName)

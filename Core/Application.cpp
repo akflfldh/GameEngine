@@ -6,6 +6,7 @@
 
 #include "Core/ProjectConfig.h"
 #include <Core/Component.h>
+#include <Core/GameNetworkSystem.h>
 #include <Core/IProgramDirector.h>
 #include <Core/IRenderProxyManager.h>
 #include <Core/LogicalWindow.h>
@@ -70,6 +71,8 @@ bool Application::Initialize(AppInitData &appInitData)
         [globalAppHelper]() { globalAppHelper->NotifyKeyboardReleaseCapture(); });
 
     mProgramDirector = appInitData.programDirector;
+
+    bool ret = Core::GameNetworkSystem::GetInstance()->Initialize();
 
     // rojectConfig::GetInstance();
 
@@ -331,6 +334,9 @@ void Application::CleanUp()
 
 void Application::Draw(float deltaTime)
 {
+    // Editor/Game의 EndUpdate와 지연 삭제가 끝난 공통 지점에서 UI 클리핑을 확정한다.
+    // 이후 렌더 명령은 캐시를 복사하므로 부모를 반복 조회하거나 캐시를 렌더 스레드에서 갱신하지 않는다.
+    UI::UIManager::GetInstance()->UpdateScissorRectRegions();
     mProgramDirector->Draw();
 }
 

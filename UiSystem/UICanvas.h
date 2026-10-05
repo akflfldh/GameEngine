@@ -1,8 +1,10 @@
 ﻿#pragma once
 
 #include "UiSystem/UIType.h"
+#include <CoreBase/CallbackSystem.h>
 #include <CoreMath/CoreMath.h>
 #include <array>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -13,17 +15,18 @@ namespace UI
 class UIRenderProxy;
 class UIElement;
 
+using OnInputActivationChangedCallbackSystem = Core::MultiCallbackSystem<bool>;
+using OnPreviewMouseDownCallbackSystem = Core::MultiCallbackSystem<UIElement *>;
+
 class UISYSTEM_API UITheme
 {
   public:
     const UIControlStyle &GetStyle(EUIStyleRole role) const;
     const UIPalette &GetPalette() const;
-    const UIMetrics &GetMetrics() const;
     void SetStyle(EUIStyleRole role, const UIControlStyle &style);
 
   private:
     UIPalette mPalette;
-    UIMetrics mMetrics;
     std::array<UIControlStyle, StyleRoleCount> mStyles;
 };
 
@@ -47,11 +50,22 @@ class UISYSTEM_API UICanvas
     void Begin();
     void Update(float deltaTime);
     void EndUpdate(float deltaTime);
+    // 렌더 스냅샷 생성 전에 최상위 요소부터 최종 Scissor 영역을 계산한다.
+    void UpdateScissorRectRegions();
 
     void AddChild(UIElement *uiElement);
+    void DestroyAllUIElements();
 
     void OnWindowResize(float w, float h);
     CoreMath::Vector2 GetWindowSize() const;
+
+    // 소유 논리 윈도우의 입력 활성 상태를 UI에 알린다. 캔버스의 표시/갱신 여부는 변경하지 않는다.
+    void OnInputActivationChanged(bool active);
+    OnInputActivationChangedCallbackSystem mOnInputActivationChangedCallbackSystem;
+
+    // 캡처 적용 전 hit 요소를 전달하며 빈 공간이면 nullptr이다. 포인터는 동기 알림 중에만 사용한다.
+    void OnPreviewMouseDown(UIElement *hitElement);
+    OnPreviewMouseDownCallbackSystem mOnPreviewMouseDownCallbackSystem;
 
     void MarkDirty();
 
@@ -64,6 +78,7 @@ class UISYSTEM_API UICanvas
 
     void SetSize(CoreMath::Vector2 size);
     bool GetActiveFlag() const;
+    void SetActiveFlag(bool flag);
     const std::vector<UIElement *> &GetChildUIElementAll() const;
     const std::vector<UIElement *> &GetTopChildUIElement() const;
 
@@ -76,6 +91,9 @@ class UISYSTEM_API UICanvas
 
     template <typename T> T *CreateUIElement(const char *instanceName);
     UIElement *CreateUIElement(const char *className, const char *instanceName);
+    // 생성 정책은 호출자가 제공한다. 활성 Canvas에서도 Begin 전에 초기 속성을 적용한다.
+    UIElement *CreateUIElement(const char *className, const char *instanceName,
+                               const std::function<void(UIElement *)> &initialize);
 
     // Destory한다해서 바로 제거되면안됨 그럼 이 함수로 돌아왔을때 무슨일이 발생? -> 심각한 문제
     void DestroyUIElement(UIElement *uiElement);
@@ -106,6 +124,7 @@ class UISYSTEM_API UICanvas
     std::string mName;
     bool mActiveFlag;
     bool mIsBegin;
+    bool mInputActive = false; // 표시 상태인 mActiveFlag와 별개인 논리 윈도우의 입력 활성 상태다.
 
     ECanvasSizeMode mCanvasSizeMode;
 

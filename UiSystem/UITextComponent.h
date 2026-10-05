@@ -37,6 +37,9 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UITextComponent : public UIRendera
     void SetFontSize(float fontSize);
     float GetFontSize() const;
 
+    void SetFontScale(float scale);
+    
+
     virtual size_t GetVertexNum() const override;
     virtual uint32_t GetVertices(UIVertex *oUIVertices) const override;
 
@@ -84,9 +87,10 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UITextComponent : public UIRendera
     CoreAsset::Font *GetFont() const;
     UI::UIColor GetColor() const;
 
+    void MarkDirty();
+
   protected:
     virtual void OnBegin() override;
-    void MarkDirty();
 
   private:
     void UpdateIfNeed() const;
@@ -102,6 +106,10 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UITextComponent : public UIRendera
     std::string mText;
     uint32_t mSize;
     float mFontSize;
+
+    // 기준 폰트사이즈
+    float mReferenceFontSize;
+    float mFontScale = 1.0f;
 
     mutable std::vector<UI::UIVertex> mVertexVec;
     mutable std::vector<uint32_t> mIndexVec;

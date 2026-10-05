@@ -1,4 +1,5 @@
 ﻿#include "UIProjectBrowser.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <UIScrollBox.h>
 #include <UiSystem/UIButton.h>
 
@@ -27,7 +28,7 @@ void UIProjectBrowser::OnBegin()
     auto canvas = GetDestCanvas();
     //    SetUseScissorRect(true);
 
-    mProjectContentScrollBox = canvas->CreateUIElement<UIScrollBox>("ProjectContentScrollBox");
+    mProjectContentScrollBox = EditorUIUtility::Create<UIScrollBox>(canvas, "ProjectContentScrollBox");
     mProjectContentScrollBox->SetLayout(EUIScrollLayout::eGrid);
     // mProjectContentScrollBox->SetItemHeight(20.0f);
     mProjectContentScrollBox->SetParent(this);
@@ -46,7 +47,7 @@ void UIProjectBrowser::CreateProjectGenerationBar()
 {
 
     auto canvas = GetDestCanvas();
-    auto bar = canvas->CreateUIElement<UI::UIImage>("ProjectGenerationBar");
+    auto bar = EditorUIUtility::Create<UI::UIImage>(canvas, "ProjectGenerationBar");
 
     bar->SetUseScissorRect(false);
     bar->SetParent(this);
@@ -58,60 +59,62 @@ void UIProjectBrowser::CreateProjectGenerationBar()
     float xMargin = 20.0f;
     float yMargin = 10.0f;
 
-    auto projectPathTag = bar->CreateChildUIElement<UI::UIText>("ProjectPathTagText");
-    projectPathTag->SetHeight(40.0f);
-    projectPathTag->SetFontSize(35.0f);
-    projectPathTag->SetTextColor({1, 1, 1});
+    auto projectPathTag = EditorUIUtility::CreateLabel(bar, "ProjectPathTagText");
+    // EditorUIUtility의 기본 높이 유지: projectPathTag->SetHeight(40.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: projectPathTag->SetFontSize(35.0f);
+    // EditorUIUtility의 기본 색상 유지: projectPathTag->SetTextColor({1, 1, 1});
     projectPathTag->SetText("프로젝트 경로 : ");
     projectPathTag->SetPositionLocal(xMargin, yMargin);
 
-    auto projectPathEditBox = bar->CreateChildUIElement<UI::UIEditBox>("ProjectPathEditBox");
+    auto projectPathEditBox = EditorUIUtility::CreateTextInput(bar, "ProjectPathEditBox");
     projectPathEditBox->SetWidth(600.0F);
-    projectPathEditBox->SetHeight(50.0f);
-    projectPathEditBox->SetBackgroundColor(1.0f, 1.0F, 1.0f);
-    projectPathEditBox->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 높이 유지: projectPathEditBox->SetHeight(50.0f);
+    // EditorUIUtility의 기본 색상 유지: projectPathEditBox->SetBackgroundColor(1.0f, 1.0F, 1.0f);
+    // EditorUIUtility의 기본 색상 유지: projectPathEditBox->SetTextColor(0, 0, 0);
     projectPathEditBox->SetPositionLocal(xMargin + 250.0f, yMargin);
-    projectPathEditBox->SetFontSize(35.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: projectPathEditBox->SetFontSize(35.0f);
     projectPathEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
     projectPathEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
 
-    mProjectPathButton = bar->CreateChildUIElement<UI::UIButton>("ProjectPathButton");
-    mProjectPathButton->SetSize(70, 50);
-    mProjectPathButton->mUIImageComponent->SetColor(0.3F, 0.3F, 0.3F);
+    mProjectPathButton = EditorUIUtility::CreateSmallButton(bar, "ProjectPathButton");
+    // EditorUIUtility의 기본 높이 유지: mProjectPathButton->SetSize(70, 50);
+    mProjectPathButton->SetWidth(70);
+    // EditorUIUtility의 기본 색상 유지: mProjectPathButton->mUIImageComponent->SetColor(0.3F, 0.3F, 0.3F);
     mProjectPathButton->SetPositionLocal(projectPathEditBox->mTransform.GetLocalPosition().x +
                                              projectPathEditBox->mTransform.GetSize().x + xMargin,
                                          yMargin);
 
-    auto projectNameTag = bar->CreateChildUIElement<UI::UIText>("ProjectNameTagText");
-    projectNameTag->SetHeight(40.0f);
-    projectNameTag->SetFontSize(35.0f);
-    projectNameTag->SetTextColor({1, 1, 1});
+    auto projectNameTag = EditorUIUtility::CreateLabel(bar, "ProjectNameTagText");
+    // EditorUIUtility의 기본 높이 유지: projectNameTag->SetHeight(40.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: projectNameTag->SetFontSize(35.0f);
+    // EditorUIUtility의 기본 색상 유지: projectNameTag->SetTextColor({1, 1, 1});
     projectNameTag->SetText("프로젝트 이름 : ");
     projectNameTag->SetPositionLocal(xMargin, 75.0f + yMargin);
 
-    auto projectNameEditBox = bar->CreateChildUIElement<UI::UIEditBox>("ProjectNameEditBox");
+    auto projectNameEditBox = EditorUIUtility::CreateTextInput(bar, "ProjectNameEditBox");
     projectNameEditBox->SetWidth(600.0F);
-    projectNameEditBox->SetHeight(50.0f);
-    projectNameEditBox->SetBackgroundColor(1.0f, 1.0F, 1.0f);
-    projectNameEditBox->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 높이 유지: projectNameEditBox->SetHeight(50.0f);
+    // EditorUIUtility의 기본 색상 유지: projectNameEditBox->SetBackgroundColor(1.0f, 1.0F, 1.0f);
+    // EditorUIUtility의 기본 색상 유지: projectNameEditBox->SetTextColor(0, 0, 0);
     projectNameEditBox->SetPositionLocal(xMargin + 250.0f, 75.0f + yMargin);
-    projectNameEditBox->SetFontSize(35.0f);
+    // EditorUIUtility의 공통 폰트 규격 유지: projectNameEditBox->SetFontSize(35.0f);
     projectNameEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);
     projectNameEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
 
-    mProjectGenerationButton = bar->CreateChildUIElement<UI::UITextButton>("ProjectGenerationButton");
-    mProjectGenerationButton->SetSize(70, 50);
+    mProjectGenerationButton = EditorUIUtility::CreateSmallTextButton(bar, "ProjectGenerationButton");
+    // EditorUIUtility의 기본 높이 유지: mProjectGenerationButton->SetSize(70, 50);
+    mProjectGenerationButton->SetWidth(70);
     mProjectGenerationButton->SetPositionLocal(projectNameEditBox->mTransform.GetLocalPosition().x +
                                                    projectNameEditBox->mTransform.GetSize().x + xMargin,
                                                75.0F + yMargin);
-    mProjectGenerationButton->mTextComponent->SetFontSize(30.0F);
+    // EditorUIUtility의 공통 폰트 규격 유지: mProjectGenerationButton->mTextComponent->SetFontSize(30.0F);
     mProjectGenerationButton->mTextComponent->SetPaddingLeft(5.0f);
     mProjectGenerationButton->mTextComponent->SetText("생성");
 
     mProjectGenerationButton->mTextComponent->SetClipingMode(UI::EUITextClipingMode::eScissor);
     mProjectGenerationButton->mTextComponent->SetOverflowMode(UI::EUITextOverflowMode::eOverflow);
-    mProjectGenerationButton->mTextComponent->SetColor({1, 1, 1});
-    mProjectGenerationButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
+    // EditorUIUtility의 기본 색상 유지: mProjectGenerationButton->mTextComponent->SetColor({1, 1, 1});
+    // EditorUIUtility의 기본 색상 유지: mProjectGenerationButton->mUIImageComponent->SetColor(0.3f, 0.3f, 0.3f);
 
     mProjectGenerationButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
 
@@ -145,9 +148,9 @@ void UIProjectBrowser::InitProjectList()
 UI::UIButton *UIProjectBrowser ::CreateUIProjectItem(const std::string &projectName)
 {
     auto canvas = GetDestCanvas();
-    auto item = canvas->CreateUIElement<UI::UIButton>("projectItem");
+    auto item = EditorUIUtility::CreateSmallButton(canvas, "projectItem");
     item->SetSize({400, 250});
-    item->mUIImageComponent->SetColor(0.4f, 0.4f, 0.4f);
+    // EditorUIUtility의 기본 색상 유지: item->mUIImageComponent->SetColor(0.4f, 0.4f, 0.4f);
     item->mHoverImageColor = {0.3f, 0.3f, 0.3f, 1.0f};
     item->mReleaseHoverImageColor = {0.4f, 0.4f, 0.4f};
     item->SetUseHoverImageColor(true);
@@ -174,7 +177,7 @@ void UIProjectBrowser::ExitMessageBox()
 void UIProjectBrowser::CreateMessageBox()
 {
     auto canvas = GetDestCanvas();
-    mMessageBox = canvas->CreateUIElement<UI::UIImage>("MessageBox");
+    mMessageBox = EditorUIUtility::Create<UI::UIImage>(canvas, "MessageBox");
     float width = 400;
     float height = 250;
 
@@ -184,8 +187,9 @@ void UIProjectBrowser::CreateMessageBox()
 
     mMessageBox->SetActiveFlag(false);
 
-    UI::UIButton *exitButton = mMessageBox->CreateChildUIElement<UI::UIButton>("ExitButton");
-    exitButton->SetSize(40, 40);
+    UI::UIButton *exitButton = EditorUIUtility::CreateSmallButton(mMessageBox, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: exitButton->SetSize(40, 40);
+    exitButton->SetWidth(40);
     exitButton->SetPositionLocal(width - 40, 0);
     exitButton->mUIImageComponent->UseTexture();
     exitButton->mUIImageComponent->SetTexture("Engine/Exit");
@@ -193,10 +197,10 @@ void UIProjectBrowser::CreateMessageBox()
 
     mMessageBoxExitButton = exitButton;
 
-    mMessageText = mMessageBox->CreateChildUIElement<UI::UIText>("Text");
+    mMessageText = EditorUIUtility::CreateLabel(mMessageBox, "Text");
     mMessageText->SetPositionLocal(20, height * 0.6f);
-    mMessageText->SetFontSize(15.0f);
-    mMessageText->SetTextColor({1, 1, 1});
+    // EditorUIUtility의 공통 폰트 규격 유지: mMessageText->SetFontSize(15.0f);
+    // EditorUIUtility의 기본 색상 유지: mMessageText->SetTextColor({1, 1, 1});
 }
 
 void UIProjectBrowser::OnSelectedProjectItem(const std::string &projectName)

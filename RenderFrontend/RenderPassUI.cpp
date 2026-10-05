@@ -109,6 +109,7 @@ void Render::RenderPassUI::SetGlobalData(const Core::GlobalFrameData &globalFram
     oFrameContext.mGlobalPassBufferResouce.gpuResource = gpuBufferContext->mGpuBuffer.getResource();
     oFrameContext.mGlobalPassBufferResouce.mOffset = bufferSizeOffset;
     oFrameContext.mGlobalPassBufferResouce.mType = Render::EShaderResourceType::eConstantBuffer;
+    oFrameContext.mGlobalPassBufferResouce.mSemantic = EMasterRootBindingSemantic::ePassConstantBuffer;
     oFrameContext.mViewport = globalFrameData.mSceneViewport;
 
     oFrameContext.mViewport.TopLeftX = globalFrameData.mSceneViewport.TopLeftX;
@@ -363,5 +364,6 @@ void Render::RenderPassUI::BuildRenderItemTexGpuResources(CoreAsset::AssetID tex
     Render::BindingGpuResource bindingGpuResource;
     bindingGpuResource.gpuResource = mAssetResolver->GetGpuResource(texture).getResource();
     bindingGpuResource.mType = EShaderResourceType::eTexture;
+    bindingGpuResource.mSemantic = EMasterRootBindingSemantic::eUITexture;
     bindingGpuResourceVector.push_back(std::move(bindingGpuResource));
 }

@@ -1,6 +1,7 @@
 ﻿#include "MeshLoader.h"
 #include <CoreAsset/AssetFactoryManager.h>
 #include <CoreAsset/AssetMetaDataType.h>
+#include <CoreAsset/SkinningMesh.h>
 #include <CoreAsset/StaticMesh.h>
 
 CoreAsset::MeshLoader *CoreAsset::MeshLoader::GetInstance()
@@ -60,7 +61,12 @@ bool CoreAsset::MeshLoader::LoadAssetRawFile(Arch &arch, Asset *asset)
     break;
 
     case EAssetType::eSkinningMesh:
-
+    {
+        SkinningMesh *skinningMesh = static_cast<SkinningMesh *>(mesh);
+        std::vector<SkinningVertex> vertexVector;
+        arch << vertexVector;
+        skinningMesh->SetVertexVector(std::move(vertexVector));
+    }
         break;
     }
 

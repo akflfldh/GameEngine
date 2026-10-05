@@ -90,13 +90,12 @@ class PrefabWorkSpaceManager
     Prefab *mDestPrefab = nullptr;
     std::unique_ptr<Core::WorkSpace> mWorkSpace;
     std::unique_ptr<Core::LogicalWindow> mLogicalWindow;
+    std::unique_ptr<World> mWorld;
 
     Quad::PrefabComponentPanel mPrefabComponentPanel;
     Quad::PrefabPropertyPanel mPrefabPropertyPanel;
 
     float mToolbarHeight;
-
-    std::unique_ptr<World> mWorld;
 
     BaseSelectionManager *mSelectionManager = nullptr;
 

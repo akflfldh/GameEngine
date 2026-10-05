@@ -105,6 +105,9 @@ class RENDER_SYSTEM_API D3DRenderSystem : public Render::IRenderSystem
     // 무조건 새롭게 바인딩 수행
     void BindShaderResources(ID3D12GraphicsCommandList *commandList, const Render::RenderItem *currRenderItem);
 
+    bool BindGraphicsShaderResource(ID3D12GraphicsCommandList *commandList,
+                                    const Render::BindingGpuResource &bindingResource);
+
     void DrawRenderItem(ID3D12GraphicsCommandList *commandList, const Render::RenderItem *currRenderItem);
 
     void BindGlobalShaderResource(ID3D12GraphicsCommandList *commandList);

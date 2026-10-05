@@ -18,6 +18,10 @@ class UIReflectVector3Panel;
 class UIReflectBoolPanel;
 class UIReflectVectorPanel;
 class StaticMeshComponentUIReflectPanel;
+class SkeletalMeshComponentUIReflectPanel;
+class AnimatorComponentUIReflectPanel;
+class BoxColliderComponentUIReflectPanel;
+class LightComponentUIReflectPanel;
 class UIReflectFloatPanel;
 
 class UIReflectPanelFactory
@@ -32,6 +36,10 @@ class UIReflectPanelFactory
     void ReleaseReflectPanel(UI::UIElement *element);
 
     StaticMeshComponentUIReflectPanel *GetStaticMeshPanel(UI::UIElement *parentElement);
+    SkeletalMeshComponentUIReflectPanel *GetSkeletalMeshPanel(UI::UIElement *parentElement);
+    AnimatorComponentUIReflectPanel *GetAnimatorPanel(UI::UIElement *parentElement);
+    BoxColliderComponentUIReflectPanel *GetBoxColliderPanel(UI::UIElement *parentElement);
+    LightComponentUIReflectPanel *GetLightPanel(UI::UIElement *parentElement);
 
   private:
     void ActivatePanel(UI::UIElement *element, UI::UIElement *parentElement);
@@ -43,4 +51,8 @@ class UIReflectPanelFactory
     std::vector<UIReflectBoolPanel *> mBoolPanelPool;
     std::vector<UIReflectVectorPanel *> mVectorPanelPool;
     std::vector<StaticMeshComponentUIReflectPanel *> mStaticMeshPanelPool;
+    std::vector<SkeletalMeshComponentUIReflectPanel *> mSkeletalMeshPanelPool;
+    std::vector<AnimatorComponentUIReflectPanel *> mAnimatorPanelPool;
+    std::vector<BoxColliderComponentUIReflectPanel *> mBoxColliderPanelPool;
+    std::vector<LightComponentUIReflectPanel *> mLightPanelPool;
 };

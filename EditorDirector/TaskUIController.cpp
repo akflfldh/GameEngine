@@ -1,4 +1,5 @@
 ﻿#include "TaskUIController.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIBoolPanel.H>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
@@ -27,15 +28,16 @@ ClassGenerationTaskUIController::~ClassGenerationTaskUIController() {}
 
 void ClassGenerationTaskUIController::Initialize(UI::UICanvas *canvas)
 {
-    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("Background");
-    mProgressText = mBackgroundUI->CreateChildUIElement<UI::UIText>("ProgressText");
+    mBackgroundUI = EditorUIUtility::Create<UI::UIImage>(canvas, "Background");
+    mProgressText = EditorUIUtility::CreateLabel(mBackgroundUI, "ProgressText");
 
     mBackgroundUI->SetSize(400, 250);
     mBackgroundUI->SetColor(0.4f, 0.4f, 0.4f);
 
-    mProgressText->SetFontSize(16.0f);
-    mProgressText->SetTextColor({1, 1, 1});
-    mProgressText->SetSize(300, 25);
+    // EditorUIUtility의 공통 폰트 규격 유지: mProgressText->SetFontSize(16.0f);
+    // EditorUIUtility의 기본 색상 유지: mProgressText->SetTextColor({1, 1, 1});
+    // EditorUIUtility의 기본 높이 유지: mProgressText->SetSize(300, 25);
+    mProgressText->SetWidth(300);
     mProgressText->SetPositionLocal(20, 200);
     mProgressText->SetText("파일 생성 중");
 
@@ -109,14 +111,22 @@ void ClassGenerationTaskUIController::ReleaseMouseCapture()
 
 void ClassGenerationTaskUIController::CreateExitButton(UI::UIElement *parentElement)
 {
-    mExitButton = parentElement->CreateChildUIElement<UI::UIButton>("ExitButton");
-    mExitButton->SetSize(50, 50);
+    mExitButton = EditorUIUtility::CreateSmallButton(parentElement, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: mExitButton->SetSize(50, 50);
+    mExitButton->SetWidth(50);
     mExitButton->mUIImageComponent->UseTexture();
     mExitButton->mUIImageComponent->SetTexture("Engine/Exit");
-    mExitButton->SetHorizontalPivotOffset(0.0f);
-    mExitButton->SetVerticalPivotOffset(0.0f);
-    mExitButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    mExitButton->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
+    mExitButton->SetHorizontalOffset(-(mExitButton->GetSize().X + 0.0f));
+    mExitButton->SetVerticalOffset(0.0f);
+    mExitButton->SetHorizontalAnchor(1.0f);
+    mExitButton->SetVerticalAnchor(0.0f);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    mExitButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     mExitButton->mHoverCallbackSystem.Register([this](float, float) { OnClickedExitButton(); });
 }
@@ -144,15 +154,16 @@ void ImportTaskUIController::Initialize(UI::UICanvas *canvas)
     if (canvas == nullptr)
         return;
 
-    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("BackgroundImage");
+    mBackgroundUI = EditorUIUtility::Create<UI::UIImage>(canvas, "BackgroundImage");
     mBackgroundUI->SetSize(400, 250);
     mBackgroundUI->SetColor(0.4f, 0.4f, 0.4f);
     mBackgroundUI->SetPositionLocal(300, 300);
 
-    mProgressText = mBackgroundUI->CreateChildUIElement<UI::UIText>("ProgressText");
-    mProgressText->SetSize(300, 30);
-    mProgressText->SetFontSize(20.0f);
-    mProgressText->SetTextColor({0, 0, 0});
+    mProgressText = EditorUIUtility::CreateLabel(mBackgroundUI, "ProgressText");
+    // EditorUIUtility의 기본 높이 유지: mProgressText->SetSize(300, 30);
+    mProgressText->SetWidth(300);
+    // EditorUIUtility의 공통 폰트 규격 유지: mProgressText->SetFontSize(20.0f);
+    // EditorUIUtility의 기본 색상 유지: mProgressText->SetTextColor({0, 0, 0});
 
     mProgressText->SetPositionLocal(20, 20);
 
@@ -224,14 +235,22 @@ void ImportTaskUIController::SetProgress(float progress)
 void ImportTaskUIController::CreateExitButton(UI::UIElement *parent)
 {
 
-    mExitButton = parent->CreateChildUIElement<UI::UIButton>("ExitButton");
-    mExitButton->SetSize(50, 50);
+    mExitButton = EditorUIUtility::CreateSmallButton(parent, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: mExitButton->SetSize(50, 50);
+    mExitButton->SetWidth(50);
     mExitButton->mUIImageComponent->UseTexture();
     mExitButton->mUIImageComponent->SetTexture("Engine/Exit");
-    mExitButton->SetHorizontalPivotOffset(0.0f);
-    mExitButton->SetVerticalPivotOffset(0.0f);
-    mExitButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    mExitButton->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
+    mExitButton->SetHorizontalOffset(-(mExitButton->GetSize().X + 0.0f));
+    mExitButton->SetVerticalOffset(0.0f);
+    mExitButton->SetHorizontalAnchor(1.0f);
+    mExitButton->SetVerticalAnchor(0.0f);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    mExitButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     mExitButton->SetPositionLocal(mBackgroundUI->mTransform.GetSize().x - mExitButton->mTransform.GetSize().x, 0.0f);
 
@@ -261,8 +280,8 @@ void ProjectBuildTaskUIController::Initialize(UI::UICanvas *canvas)
     if (canvas == nullptr)
         return;
 
-    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("Background");
-    mProgressText = mBackgroundUI->CreateChildUIElement<UI::UIText>("ProgressText");
+    mBackgroundUI = EditorUIUtility::Create<UI::UIImage>(canvas, "Background");
+    mProgressText = EditorUIUtility::CreateLabel(mBackgroundUI, "ProgressText");
 
     mBackgroundUI->SetSize(400, 250);
     mBackgroundUI->SetColor(0.4f, 0.4f, 0.4f);
@@ -319,11 +338,9 @@ void ImportTaskSettingUIController::Initialize(UI::UICanvas *canvas)
     if (canvas == nullptr)
         return;
 
-    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("Background");
-    mBackgroundUI->SetStyleRole(UI::EUIStyleRole::ePanel);
-    UI::UIControlStyleOverride backgroundStyleOverride;
-    backgroundStyleOverride.mHeight = 1000;
-    mBackgroundUI->SetStyleOverride(backgroundStyleOverride);
+    mBackgroundUI = EditorUIUtility::CreatePanel(canvas, "Background");
+
+    mBackgroundUI->SetHeight(1000.0f);
     float backgroundWidth = 600.0f;
     mBackgroundUI->SetWidth(backgroundWidth);
 
@@ -331,32 +348,39 @@ void ImportTaskSettingUIController::Initialize(UI::UICanvas *canvas)
 
     mBackgroundUI->SetPositionLocal(200, 100);
 
-    mContentUIPanel = mBackgroundUI->CreateChildUIElement<UI::UIImage>("ContentPanel");
+    mContentUIPanel = EditorUIUtility::CreatePanel(mBackgroundUI, "ContentPanel");
     mContentUIPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayout");
-    mContentUIPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
-    backgroundStyleOverride.mHeight = 1000;
-    mContentUIPanel->SetStyleOverride(backgroundStyleOverride);
+
+    mContentUIPanel->SetHeight(1000.0f);
     mContentUIPanel->SetWidth(backgroundWidth);
     mContentUIPanel->SetActiveFlag(true);
 
-    auto headerBarPanel = mContentUIPanel->CreateChildUIElement<UI::UIImage>("HeaderBarPanel");
-    headerBarPanel->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto headerBarPanel = EditorUIUtility::CreateSectionHeader(mContentUIPanel, "HeaderBarPanel");
+
     headerBarPanel->SetWidth(backgroundWidth);
 
-    mExitButton = headerBarPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
-    mExitButton->SetSize(50, 50);
+    mExitButton = EditorUIUtility::CreateSmallButton(headerBarPanel, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: mExitButton->SetSize(50, 50);
+    mExitButton->SetWidth(50);
     mExitButton->mUIImageComponent->UseTexture();
     mExitButton->mUIImageComponent->SetTexture("Engine/Exit");
-    mExitButton->SetHorizontalPivotOffset(0.0f);
-    mExitButton->SetVerticalPivotOffset(0.0f);
-    mExitButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    mExitButton->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
+    mExitButton->SetHorizontalOffset(-(mExitButton->GetSize().X + 0.0f));
+    mExitButton->SetVerticalOffset(0.0f);
+    mExitButton->SetHorizontalAnchor(1.0f);
+    mExitButton->SetVerticalAnchor(0.0f);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    mExitButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     mExitButton->SetPositionLocal(mContentUIPanel->mTransform.GetSize().x - mExitButton->mTransform.GetSize().x, 0.0f);
 
     mExitButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float) { SetActive(false); });
 
-    mImportButton = headerBarPanel->CreateChildUIElement<UI::UITextButton>("ImportButton");
+    mImportButton = EditorUIUtility::CreateSmallTextButton(headerBarPanel, "ImportButton");
     mImportButton->mTextComponent->SetText("임포트");
     mImportButton->SetWidth(60.0f);
     mImportButton->SetPositionLocal(mExitButton->mTransform.GetLocalPosition().x - mImportButton->GetWidth() - 10.0f,
@@ -439,19 +463,15 @@ void ImportTaskSettingUIController::CreateTextureSettingPanel()
 {
 
     float width = mBackgroundUI->GetWidth();
-    float height = mBackgroundUI->GetHeight();
 
-    mTextureSettingPanelUI = mContentUIPanel->CreateChildUIElement<UI::UIImage>("TextureSettingPanel");
-    UI::UIControlStyleOverride texturePanelStyleOverride;
-    mTextureSettingPanelUI->SetStyleRole(UI::EUIStyleRole::ePanel);
-    mTextureSettingPanelUI->SetStyleOverride(texturePanelStyleOverride);
+    mTextureSettingPanelUI = EditorUIUtility::CreatePanel(mContentUIPanel, "TextureSettingPanel");
+
     mTextureSettingPanelUI->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayout");
-    texturePanelStyleOverride.mHeight = height;
 
     mTextureSettingPanelUI->SetWidth(width);
 
-    auto sRGBBoolPanel = mTextureSettingPanelUI->CreateChildUIElement<UIBoolPanel>("SRGB_Panel");
-    sRGBBoolPanel->SetStyleRole(UI::EUIStyleRole::ePropertyRow);
+    auto sRGBBoolPanel = EditorUIUtility::CreateBoolField(mTextureSettingPanelUI, "SRGB_Panel");
+
     sRGBBoolPanel->SetWidth(width);
     sRGBBoolPanel->SetTagText("SRGB");
 
@@ -490,11 +510,9 @@ void MaterialCreationUIController::Initialize(UI::UICanvas *canvas)
     if (canvas == nullptr)
         return;
 
-    mBackgroundUI = canvas->CreateUIElement<UI::UIImage>("Background");
-    mBackgroundUI->SetStyleRole(UI::EUIStyleRole::ePanel);
-    UI::UIControlStyleOverride backgroundStyleOverride;
-    backgroundStyleOverride.mHeight = 1000;
-    mBackgroundUI->SetStyleOverride(backgroundStyleOverride);
+    mBackgroundUI = EditorUIUtility::CreatePanel(canvas, "Background");
+
+    mBackgroundUI->SetHeight(1000.0f);
     float backgroundWidth = 600.0f;
     mBackgroundUI->SetWidth(backgroundWidth);
 
@@ -502,32 +520,39 @@ void MaterialCreationUIController::Initialize(UI::UICanvas *canvas)
 
     mBackgroundUI->SetPositionLocal(200, 100);
 
-    mContentUIPanel = mBackgroundUI->CreateChildUIElement<UI::UIImage>("ContentPanel");
+    mContentUIPanel = EditorUIUtility::CreatePanel(mBackgroundUI, "ContentPanel");
     mContentUIPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayout");
-    mContentUIPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
-    backgroundStyleOverride.mHeight = 1000;
-    mContentUIPanel->SetStyleOverride(backgroundStyleOverride);
+
+    mContentUIPanel->SetHeight(1000.0f);
     mContentUIPanel->SetWidth(backgroundWidth);
     mContentUIPanel->SetActiveFlag(true);
 
-    auto headerBarPanel = mContentUIPanel->CreateChildUIElement<UI::UIImage>("HeaderBarPanel");
-    headerBarPanel->SetStyleRole(UI::EUIStyleRole::eSectionHeader);
+    auto headerBarPanel = EditorUIUtility::CreateSectionHeader(mContentUIPanel, "HeaderBarPanel");
+
     headerBarPanel->SetWidth(backgroundWidth);
 
-    mExitButton = headerBarPanel->CreateChildUIElement<UI::UIButton>("ExitButton");
-    mExitButton->SetSize(50, 50);
+    mExitButton = EditorUIUtility::CreateSmallButton(headerBarPanel, "ExitButton");
+    // EditorUIUtility의 기본 높이 유지: mExitButton->SetSize(50, 50);
+    mExitButton->SetWidth(50);
     mExitButton->mUIImageComponent->UseTexture();
     mExitButton->mUIImageComponent->SetTexture("Engine/Exit");
-    mExitButton->SetHorizontalPivotOffset(0.0f);
-    mExitButton->SetVerticalPivotOffset(0.0f);
-    mExitButton->SetHorizontalPivotSide(UI::EUIPosPivotHorizontal::eRight);
-    mExitButton->SetVerticalPivotSide(UI::EUIPosPivotVertical::eTop);
+    mExitButton->SetHorizontalOffset(-(mExitButton->GetSize().X + 0.0f));
+    mExitButton->SetVerticalOffset(0.0f);
+    mExitButton->SetHorizontalAnchor(1.0f);
+    mExitButton->SetVerticalAnchor(0.0f);
+    // 자체 Pivot이 (0, 0)이므로 기존 우측/하단 정렬은 크기를 포함한 음수 Offset으로 보존한다.
+    mExitButton->mOnChangedSizeCallbackSystem.Register(
+        [](UI::UIElement *element)
+        {
+            element->SetHorizontalOffset(-(element->GetSize().X + 0.0f));
+            element->UpdatePosAnchor();
+        });
 
     mExitButton->SetPositionLocal(mContentUIPanel->mTransform.GetSize().x - mExitButton->mTransform.GetSize().x, 0.0f);
 
     mExitButton->mUIButtonComponent->mButtonClickCallbackSystem.Register([this](float, float) { SetActive(false); });
 
-    mCreationButton = headerBarPanel->CreateChildUIElement<UI::UITextButton>("CreationButton");
+    mCreationButton = EditorUIUtility::CreateSmallTextButton(headerBarPanel, "CreationButton");
     mCreationButton->mTextComponent->SetText("생성");
     mCreationButton->SetWidth(60.0f);
     mCreationButton->SetPositionLocal(
@@ -537,17 +562,17 @@ void MaterialCreationUIController::Initialize(UI::UICanvas *canvas)
     mCreationButton->mUIButtonComponent->mButtonClickCallbackSystem.Register(
         [this](float, float) { OnClickedCreationMaterialRequestsButton(); });
 
-    auto materialNameBar = mContentUIPanel->CreateChildUIElement<UI::UIImage>("MaterialNameBar");
-    materialNameBar->SetStyleRole(UI::EUIStyleRole::ePropertyRow);
+    auto materialNameBar = EditorUIUtility::CreatePropertyRow(mContentUIPanel, "MaterialNameBar");
+
     materialNameBar->SetWidth(backgroundWidth);
 
-    auto materialNameTagPanel = materialNameBar->CreateChildUIElement<UI::UIText>("MaterialNameTag");
+    auto materialNameTagPanel = EditorUIUtility::CreateLabel(materialNameBar, "MaterialNameTag");
     materialNameTagPanel->SetText("머터리얼 이름");
 
-    mMaterialNameEditBox = materialNameBar->CreateChildUIElement<UI::UIEditBox>("MaterialNameEditBox");
+    mMaterialNameEditBox = EditorUIUtility::CreateTextInput(materialNameBar, "MaterialNameEditBox");
     mMaterialNameEditBox->SetWidth(300.0f);
-    mMaterialNameEditBox->SetBackgroundColor(1, 1, 1);
-    mMaterialNameEditBox->SetTextColor(0, 0, 0);
+    // EditorUIUtility의 기본 색상 유지: mMaterialNameEditBox->SetBackgroundColor(1, 1, 1);
+    // EditorUIUtility의 기본 색상 유지: mMaterialNameEditBox->SetTextColor(0, 0, 0);
     mMaterialNameEditBox->SetTextInputType(UI::EUITextInputType::eString);
     mMaterialNameEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
     mMaterialNameEditBox->SetClipingMode(UI::EUITextClipingMode::eScissor);

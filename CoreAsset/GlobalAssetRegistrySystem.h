@@ -37,8 +37,11 @@ class CORE_ASSET_API GlobalAssetRegistrySystem
     AssetID PeekNextAssetID() const;
 
     void ClearDirtyAssetList();
+    void ClearDirtyAsset(Asset *asset);
 
     size_t GetAssetNum() const;
+
+    std::string GetAssetName(AssetID id) const;
 
   private:
     AssetIDTable mAssetTable;

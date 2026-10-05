@@ -8,7 +8,10 @@ class EditorEditMode : public EditorMode
     EditorEditMode();
     ~EditorEditMode();
 
-    virtual void Start(::Map *map) override;
+    virtual void StartPlay() override;
+    virtual void BeginMap(::Map *map) override;
+    virtual void EndMap(::Map *map) override;
+    virtual void EndPlay(::Map *map) override;
     virtual void Update(::Map *map, float DeltaTime) override;
     virtual void EndUpdate(::Map *map, float DeltaTime) override;
     virtual void CleanUp(::Map *map) override;
@@ -32,6 +35,7 @@ class EditorEditMode : public EditorMode
     Map *mEditorMap;
     bool mShowDebugCollider;
     bool mPlayState = false;
+    bool mIsBegunEditorMap = false;
 
     ObjectController *mEditorController = nullptr;
     size_t mEditorCameraIndex = 0;

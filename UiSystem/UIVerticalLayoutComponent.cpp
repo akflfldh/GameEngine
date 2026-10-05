@@ -9,8 +9,13 @@ void UI::UIVerticalLayoutComponent::Update(float deltaTime) {}
 void UI::UIVerticalLayoutComponent::OnTransformChanged(ETransformChangeType type)
 {
 
-    /*   if (type == ETransformChangeType::eSize && !mIsCalculating)
-           CalculateLayout();*/
+    if (type == ETransformChangeType::eSize)
+    {
+        if (!mIsCalculating)
+        {
+            CalculateLayout();
+        }
+    }
 }
 
 void UI::UIVerticalLayoutComponent::OnRemoved()
@@ -111,9 +116,13 @@ void UI::UIVerticalLayoutComponent::OnBegin()
 void UI::UIVerticalLayoutComponent::CalculateLayout()
 {
 
+    if (mIsCalculating)
+        return;
+
     mIsCalculating = true;
 
     UIElement *ownerElement = GetOwnerUIElement();
+    float ownerWidth = ownerElement->GetWidth();
 
     float currentY = 0.0f;
 
@@ -121,6 +130,9 @@ void UI::UIVerticalLayoutComponent::CalculateLayout()
     {
         if (!child || child->GetDeadState() || !child->GetActiveFlag())
             continue;
+
+        if (mSyncWidthFlag && (child->GetWidth() != ownerWidth))
+            child->SetWidth(ownerWidth);
 
         float h = child->mTransform.GetSize().g;
 
@@ -132,7 +144,8 @@ void UI::UIVerticalLayoutComponent::CalculateLayout()
         currentY = glm::round(currentY);
     }
 
-    ownerElement->SetHeight(currentY);
+    if (ownerElement->GetHeight() != currentY)
+        ownerElement->SetHeight(currentY);
 
     mIsCalculating = false;
 }
@@ -144,4 +157,31 @@ void UI::UIVerticalLayoutComponent::SetItemPaddingX(float x)
 
     mPaddingX = x;
     CalculateLayout();
+}
+void UI::UIVerticalLayoutComponent::SetSyncWidthFlag(bool flag)
+{
+    mSyncWidthFlag = flag;
+    if (flag)
+    {
+        SyncChildWidth();
+    }
+}
+
+void UI::UIVerticalLayoutComponent::SyncChildWidth()
+{
+
+    if (!mSyncWidthFlag)
+        return;
+
+    auto owner = GetOwnerUIElement();
+    if (owner)
+    {
+        float width = owner->GetWidth();
+        for (auto child : owner->GetChildVector())
+        {
+
+            if (child->GetWidth() != width)
+                child->SetWidth(width);
+        }
+    }
 }

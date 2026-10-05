@@ -48,6 +48,9 @@ class REFLECT_CLASS(EngineClass) UIDropdown : public UI::UIElement
 
     void SetSelectedIndex(size_t index, bool bNotify = true);
     void SetSelectedItem(UI::UITextButton *item);
+    // 저장된 인덱스를 반환한다. 빈 목록에서는 유효한 선택을 의미하지 않는다.
+    size_t GetSelectedIndex() const;
+    bool GetSelectedText(std::string &outText) const;
 
     OnSelectedItemChangedCallbackSystem mOnSelectedItemChangedCallbackSystem;
 
@@ -86,4 +89,7 @@ class REFLECT_CLASS(EngineClass) UIDropdown : public UI::UIElement
     size_t mSelectedIndex = 0;
 
     float mItemHeight = 30.0f;
+
+    float mHeaderHeight = 0.0f;
+
 };

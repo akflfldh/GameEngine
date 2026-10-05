@@ -48,6 +48,7 @@ class INPUT_SYSTEM_API InputSystem
 
     bool IsScanKeyDown(uint8_t scanKey) const;
     bool IsVKeyDown(uint8_t vk) const;
+    float GetInputValue(EKeyCode keycode) const;
 
     // 프레임에 마우스의 이동량
     std::pair<int, int> GetMouseDelta() const;

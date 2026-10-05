@@ -1,6 +1,7 @@
 ﻿#ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
+#include <EditorDirector/EditorUIUtility.h>
 #endif
 
 #include "EditorDirector/EditorDirector.h"
@@ -15,6 +16,7 @@
 #include "EditorDirector/SerializedAssetContainer.h"
 #include "EditorDirector/SuperAssetBrowerController.h"
 #include "EditorDirector/SuperFrameController.h"
+#include <AnimationClipWorkSpaceManager.h>
 #include <BinaryReaderWriter/BinaryReader.h>
 #include <ClassGenerationManager.h>
 #include <Core/MapFactory.h>
@@ -24,6 +26,10 @@
 #include <Core/PrefabLoader.h>
 #include <Core/RuntimeServices.h>
 #include <Core/SceneManager.h>
+#include <CoreAsset/AnimationAssetFactory.h>
+#include <CoreAsset/AnimationAssetLoader.h>
+#include <CoreAsset/AnimationAssetStorer.h>
+#include <CoreAsset/AnimationClip.h>
 #include <CoreAsset/AssetCommon.h>
 #include <CoreAsset/AssetFactoryManager.h>
 #include <CoreAsset/AssetIOManager.h>
@@ -42,6 +48,7 @@
 #include <CoreAsset/MeshFactory.h>
 #include <CoreAsset/MeshLoader.h>
 #include <CoreAsset/MeshStorer.h>
+#include <CoreAsset/Skeleton.h>
 #include <CoreAsset/StaticMesh.h>
 #include <CoreAsset/Texture.h>
 #include <CoreAsset/TextureFactory.h>
@@ -83,6 +90,7 @@
 #include <MaterialWorkSpaceManager.h>
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
 #include <PrefabWorkSpaceManager.h>
+#include <ProjectSettingWorkSpaceManager.h>
 #include <PropertyPanel.H>
 #include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
@@ -178,9 +186,10 @@ void Quad::EditorDirector::Begin()
     if (Quad::EditorConfig::GetInstance()->GetEditorMode() == EEditorMode::eEditProject)
     {
 
-        mProjectInitializer->InitProject();
-
+        // 프로젝트 로드 중 맵 열림 콜백이 인스펙터를 갱신하므로 UI를 먼저 준비한다.
         DefaultEditorInspectorManager::GetInstance()->BeginInspectorUI();
+
+        mProjectInitializer->InitProject();
     }
 }
 
@@ -209,6 +218,10 @@ void Quad::EditorDirector::Update(float deltaTime)
     PrefabWorkSpaceManager::GetInstance()->Update(deltaTime);
 
     Quad::EditorSceneManager::GetInstance()->Update(deltaTime);
+
+    AnimationClipWorkSpaceManager::GetInstance()->Update(deltaTime);
+
+    ProjectSettingWorkSpaceManager::GetInstance()->Update();
 
     GlobalOverlayManager::GetInstance()->Update(deltaTime);
 }
@@ -249,6 +262,8 @@ void Quad::EditorDirector::EndFrame()
 {
     Render::UIRenderItemBuilder::GetInstance()->EndFrame();
     Render::RenderPipelineManager::GetInstance()->EndFrame();
+
+    EditorSceneManager::GetInstance()->EndFrame();
 }
 
 void Quad::EditorDirector::ShutDownWindow()
@@ -258,6 +273,9 @@ void Quad::EditorDirector::ShutDownWindow()
 
 void Quad::EditorDirector::EndSystem()
 {
+    // 플레이 중 에디터를 닫는 경우에도 맵과 UI 시스템이 유효할 때 GameInstance를 정리한다.
+    EditorSceneManager::GetInstance()->EndUserWorld();
+
     Render::RenderPipelineManager::GetInstance()->EndRenderThread();
     Render::AssetResolver::GetInstance()->EndResourceResolveThread();
 }
@@ -297,10 +315,50 @@ void Quad::EditorDirector::ChangeToMaterialEditWorkSpace(CoreAsset::Material *ta
     materialWorkSpaceManager->SetMaterial(targetMaterial);
 }
 
+bool Quad::EditorDirector::ChangeToAnimationClipEditWorkSpace(CoreAsset::AnimationClip *targetClip)
+{
+    if (targetClip == nullptr)
+    {
+        GlobalOverlayManager::GetInstance()->ShowMessageBox("AnimationClip 에셋을 불러올 수 없습니다.");
+        return false;
+    }
+
+    if (targetClip->GetSkeletonAssetID() == NoneAssetID)
+    {
+        GlobalOverlayManager::GetInstance()->ShowMessageBox("클립에 연결된 Skeleton이 없습니다.");
+        return false;
+    }
+
+    CoreAsset::AssetPtr skeletonAsset = mAssetManager->GetAsset<CoreAsset::Skeleton>(targetClip->GetSkeletonAssetID());
+    auto *skeleton = skeletonAsset.As<CoreAsset::Skeleton>();
+    if (skeleton == nullptr || !skeleton->Validate() || !targetClip->IsCompatible(*skeleton))
+    {
+        GlobalOverlayManager::GetInstance()->ShowMessageBox(
+            "클립의 Skeleton을 찾을 수 없거나 구조가 일치하지 않습니다.");
+        return false;
+    }
+
+    // 전환 전에 의존 에셋을 확인해야 실패 시 기존 작업 공간과 선택 상태를 유지할 수 있다.
+    GlobalOverlayManager::GetInstance()->ChangeToAnimationClipEdit();
+    auto *workspaceManager = AnimationClipWorkSpaceManager::GetInstance();
+    ChangeWorkSpace(workspaceManager->GetWorkSpace());
+    workspaceManager->OnWorkSpaceActive();
+    workspaceManager->SetClip(*targetClip, *skeleton);
+    return true;
+}
+
 void Quad::EditorDirector::ChangeToDefaultEditWorkSpace()
 {
     GlobalOverlayManager::GetInstance()->ChangeToDefaultEdit();
     ChangeWorkSpace(mDefaultEditWorkSpace.get());
+}
+
+void Quad::EditorDirector::ChangeToProjectSettingWorkSpace()
+{
+    GlobalOverlayManager::GetInstance()->ChangeToProjectSetting();
+    auto *manager = ProjectSettingWorkSpaceManager::GetInstance();
+    ChangeWorkSpace(manager->GetWorkSpace());
+    manager->OnWorkSpaceActive();
 }
 
 void Quad::EditorDirector::ChangeWorkSpace(Core::WorkSpace *workspace)
@@ -315,6 +373,14 @@ void Quad::EditorDirector::ChangeWorkSpace(Core::WorkSpace *workspace)
     else if (currentWorkSpace == MaterialWorkSpaceManager::GetInstance()->GetWorkSpace())
     {
         MaterialWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
+    }
+    else if (currentWorkSpace == AnimationClipWorkSpaceManager::GetInstance()->GetWorkSpace())
+    {
+        AnimationClipWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
+    }
+    else if (currentWorkSpace == ProjectSettingWorkSpaceManager::GetInstance()->GetWorkSpace())
+    {
+        ProjectSettingWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
     }
 
     mSuperFrameController->SetWorkSpace(workspace);
@@ -369,7 +435,7 @@ void Quad::EditorDirector::InitProjectBrowserWindow()
 
     UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
 
-    auto projectBrowserPanel = canvas->CreateUIElement<UI::UIImage>("ProjectBrowserBackground");
+    auto projectBrowserPanel = EditorUIUtility::Create<UI::UIImage>(canvas, "ProjectBrowserBackground");
     projectBrowserPanel->SetSize(1700, 1000);
     projectBrowserPanel->SetPositionLocal(0, 0);
     mProjectBrowserLogicalWindow->SetActiveCanvas(canvas);
@@ -419,92 +485,10 @@ void Quad::EditorDirector::InitEngineAssetLogicalFile()
     mLogicalFileSystem->MakeFile(cylinderInfo, "Cylinder", mLogicalFileSystem->GetEngineFolder());
 }
 
+
 void Quad::EditorDirector::CreateCommonUITheme()
 {
-    UI::UITheme &theme = *mCommonUITheme;
-    const UI::UIMetrics &metrics = theme.GetMetrics();
-
-    float commonHeight = 28.0f;
-    float commonButtonSize = 18.0f;
-    float commonButtonLargeSize = 24.0f;
-    float commonListHeight = 34.0f;
-    float commonFontSize = 18.0f;
-    float commonLeftPadding = 10.0f;
-    float commonTopPadding = 5.0f;
-    float commonSectionHeight = commonHeight + 3.0f;
-    float propertyRowHeight = commonHeight + 10.0f;
-
-    UI::UIControlStyle iconStyle;
-    iconStyle.mBackgroundColor = UI::UIColor::White;
-    iconStyle.mHeight = commonHeight;
-
-    theme.SetStyle(UI::EUIStyleRole::eIcon, iconStyle);
-
-    UI::UIControlStyle buttonStyle;
-    buttonStyle.mBackgroundColor = UI::UIColor::Gray;
-    buttonStyle.mFontSize = commonFontSize;
-    buttonStyle.mHeight = commonButtonSize;
-    buttonStyle.mLeftPadding = commonLeftPadding;
-    buttonStyle.mTopPadding = commonTopPadding;
-
-    theme.SetStyle(UI::EUIStyleRole::eButton, buttonStyle);
-
-    UI::UIControlStyle textButtonStyle;
-    textButtonStyle.mBackgroundColor = UI::UIColor::DarkGray;
-    textButtonStyle.mFontSize = commonFontSize;
-    textButtonStyle.mHeight = commonHeight;
-    textButtonStyle.mHoverColor = UI::UIColor::Gray;
-    textButtonStyle.mSelectedColor = UI::UIColor::DimGray;
-    textButtonStyle.mLeftPadding = commonLeftPadding;
-
-    theme.SetStyle(UI::EUIStyleRole::eTextButton, textButtonStyle);
-
-    UI::UIControlStyle sectionHeaderStyle;
-    sectionHeaderStyle.mBackgroundColor = UI::UIColor::DarkGray;
-    sectionHeaderStyle.mSelectedColor = UI::UIColor::DimGray;
-    sectionHeaderStyle.mHoverColor = UI::UIColor::Gray;
-    sectionHeaderStyle.mHeight = commonSectionHeight;
-
-    theme.SetStyle(UI::EUIStyleRole::eSectionHeader, sectionHeaderStyle);
-
-    UI::UIControlStyle listItemStyle;
-    listItemStyle.mHeight = commonListHeight;
-    listItemStyle.mBackgroundColor = UI::UIColor::DarkGray;
-    listItemStyle.mFontSize = commonFontSize;
-    listItemStyle.mHeight = commonListHeight;
-    listItemStyle.mHoverColor = UI::UIColor::Gray;
-    listItemStyle.mSelectedColor = UI::UIColor::DimGray;
-
-    theme.SetStyle(UI::EUIStyleRole::eListItem, listItemStyle);
-
-    UI::UIControlStyle panelStyle;
-    panelStyle.mBackgroundColor = UI::UIColor::DarkGray;
-
-    theme.SetStyle(UI::EUIStyleRole::ePanel, panelStyle);
-
-    UI::UIControlStyle textStyle;
-    textStyle.mFontSize = commonFontSize;
-    textStyle.mTextColor = UI::UIColor::White;
-    textStyle.mLeftPadding = commonLeftPadding;
-    textStyle.mTopPadding = commonTopPadding;
-    textStyle.mHeight = commonHeight;
-
-    theme.SetStyle(UI::EUIStyleRole::eText, textStyle);
-
-    UI::UIControlStyle inputStyle;
-    inputStyle.mHeight = commonHeight;
-    inputStyle.mFontSize = commonFontSize;
-    inputStyle.mTopPadding = commonTopPadding;
-
-    theme.SetStyle(UI::EUIStyleRole::eInputBox, inputStyle);
-
-    UI::UIControlStyle propertyRpwStyle;
-    propertyRpwStyle.mHeight = propertyRowHeight;
-    propertyRpwStyle.mFontSize = commonFontSize;
-    propertyRpwStyle.mTopPadding = commonTopPadding;
-    propertyRpwStyle.mBackgroundColor = UI::UIColor::DarkGray;
-
-    theme.SetStyle(UI::EUIStyleRole::ePropertyRow, propertyRpwStyle);
+    *mCommonUITheme = EditorUIUtility::CreateVisualTheme();
 }
 
 void Quad::EditorDirector::CreateEditWorkSpace()
@@ -517,6 +501,10 @@ void Quad::EditorDirector::CreateEditWorkSpace()
     CreatePrefabEditWorkSpace();
 
     CreateMaterialEditWorkSpace();
+
+    CreateAnimationClipWorkSpace();
+
+    CreateProjectSettingWorkSpace();
 
     InitEditorTaskManagerList();
 }
@@ -553,6 +541,16 @@ void Quad::EditorDirector::CreateMaterialEditWorkSpace()
                                              EditorMaterialSelectionManager::GetInstance(), *mCommonUITheme);
 }
 
+void Quad::EditorDirector::CreateAnimationClipWorkSpace()
+{
+    AnimationClipWorkSpaceManager::GetInstance()->Initialize(mGlobalOverlayLogicalWindow.get(), *mCommonUITheme);
+}
+
+void Quad::EditorDirector::CreateProjectSettingWorkSpace()
+{
+    ProjectSettingWorkSpaceManager::GetInstance()->Initialize(mGlobalOverlayLogicalWindow.get(), *mCommonUITheme);
+}
+
 void Quad::EditorDirector::InitEditorWindows()
 {
 
@@ -577,6 +575,11 @@ void Quad::EditorDirector::InitEditorWindows()
 
 void Quad::EditorDirector::InitMainSceneWindow()
 {
+
+    UI::UICanvasID canvasID = mUIManager->CreateCanvas("MainPlayCanvas", UI::ECanvasSizeMode::eFixSize);
+
+    UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
+
     mMainSceneLogicalWindow = std::make_unique<Core::LogicalWindow>();
 
     mMainSceneLogicalWindow->mViewportController.SetViewportMode(Core::EViewportMode::eAnchored);
@@ -625,7 +628,8 @@ void Quad::EditorDirector::InitMainSceneWindow()
 
     EditorSceneManager::GetInstance()->GetUserWorld()->mOnMapObjectRemovedCallbackSystem.Register(
         [](Object *object) { EditorSelectionManager::GetInstance()->OnMapObjectRemoved(object); });
-
+    mMainSceneLogicalWindow->SetActiveCanvas(canvas);
+    EditorSceneManager::GetInstance()->SetUserCanvas(canvas);
     // mSuperFrameController->AddLogicalWindow(mMainSceneLogicalWindow.get());
 }
 
@@ -638,7 +642,7 @@ void Quad::EditorDirector::InitAssetBrowerWindow()
 
     UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
 
-    // auto uiAssetBrowser = canvas->CreateUIElement<UIAssetBrowser>("UIAssetBrowser");
+    // auto uiAssetBrowser = EditorUIUtility::Create<UIAssetBrowser>(canvas, "UIAssetBrowser");
     // uiAssetBrowser->SetSize(1700, 500);
     // uiAssetBrowser->SetPositionLocal(0, 0);
 
@@ -721,7 +725,7 @@ void Quad::EditorDirector::InitPropertyWindow()
 
     UI::UICanvas *canvas = mUIManager->GetCanvas(canvasID);
 
-    ObjectHierarchyPanel *ohpanel = canvas->CreateUIElement<ObjectHierarchyPanel>("asds");
+    ObjectHierarchyPanel *ohpanel = EditorUIUtility::Create<ObjectHierarchyPanel>(canvas, "asds");
     ohpanel->Initialize(EditorSelectionManager::GetInstance());
 
     //  float borderThickness = 3.0f;
@@ -734,7 +738,7 @@ void Quad::EditorDirector::InitPropertyWindow()
     //  ohpanel->SetUseBorder(true);
     //  ohpanel->SetBorderColor(UI::UIColor::Gray);
 
-    /* PropertyPanel *propertyPanel = canvas->CreateUIElement<PropertyPanel>("PropertyPanel");
+    /* PropertyPanel *propertyPanel = EditorUIUtility::Create<PropertyPanel>(canvas, "PropertyPanel");
      propertyPanel->Initialize(EditorSelectionManager::GetInstance());
      propertyPanel->SetSize(700, 800);
      propertyPanel->SetPositionLocal(0, 500);
@@ -825,6 +829,10 @@ void Quad::EditorDirector::RegisterAssetFactory()
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkinningMesh,
                                               CoreAsset::MeshFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eSkeleton,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimation,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
 
@@ -841,6 +849,10 @@ void Quad::EditorDirector::RegisterAssetLoader()
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eSkeleton,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
 }
@@ -855,6 +867,10 @@ void Quad::EditorDirector::RegisterAssetStorer()
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMaterial, CoreAsset::MaterialStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eStaticMesh, CoreAsset::MeshStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkinningMesh, CoreAsset::MeshStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkeleton,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());
 }

@@ -1,4 +1,5 @@
 ﻿#include "DefaultPropertyInspector.h"
+#include <EditorDirector/EditorUIUtility.h>
 #include <DefaultEditorInspectorManager.h>
 #include <EditorSelectionManager.h>
 #include <PropertyPanel.h>
@@ -28,8 +29,8 @@ void DefaultPropertyInspector::BeginUI()
 
     auto editorSelectionManager = EditorSelectionManager::GetInstance();
 
-    mPropertyPanel = mCanvas->CreateUIElement<PropertyPanel>("PropertyPanel");
-    mPropertyPanel->SetStyleRole(UI::EUIStyleRole::ePanel);
+    mPropertyPanel = EditorUIUtility::Create<PropertyPanel>(mCanvas, "PropertyPanel");
+    EditorUIUtility::ApplyPreset(mPropertyPanel, UI::EUIStyleRole::ePanel);
 
     mPropertyPanel->Initialize(editorSelectionManager);
     mPropertyPanel->SetSize(mPanelWidth, 800);
@@ -75,7 +76,12 @@ void DefaultPropertyInspector::DeActivateInspector()
     }
 }
 
-void DefaultPropertyInspector::SetInspectorContext(const InspectorContext &inspectorContext) {}
+void DefaultPropertyInspector::SetInspectorContext(const InspectorContext &inspectorContext)
+{
+    // 새맵
+    if (mPropertyPanel)
+        mPropertyPanel->OnSelectedObject(nullptr);
+}
 
 void DefaultPropertyInspector::SetPanelWidth(float width)
 {

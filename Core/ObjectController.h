@@ -29,6 +29,9 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) ObjectController : public Object, 
     virtual bool HandleInput(const Quad::RawInputData &inputData) override;
     virtual bool HandleInput(const Core::InputData &inputData) = 0;
 
+    Core::MouseMode GetMouseMode() const;
+    void SetMouseMode(Core::MouseMode mode);
+
   protected:
     virtual void OnPossess(ControllableEntity *object);
     virtual void OnUnPossess();
@@ -37,4 +40,5 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) ObjectController : public Object, 
 
   private:
     Core::ObjectPtr<ControllableEntity> mObject;
+    Core::MouseMode mMouseMode = Core::MouseMode::Free;
 };

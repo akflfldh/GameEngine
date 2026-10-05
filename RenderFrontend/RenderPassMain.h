@@ -38,9 +38,9 @@ class RenderPassMain : public IRenderPass
 
     std::vector<RenderItem> BuildRenderItem(const RenderPassExecuteContext &executeContext);
 
-    bool BuildRenderItemMeshData(const Render::StaticMeshRenderCommnad &command, Render::RenderItem &renderItem);
+    bool BuildRenderItemMeshData(const Render::MeshRenderCommand &command, Render::RenderItem &renderItem);
 
-    void BuildRenderItemBufferGpuResources(const Render::StaticMeshRenderCommnad &command,
+    void BuildRenderItemBufferGpuResources(const Render::MeshRenderCommand &command,
                                            std::vector<BindingGpuResource> &bindingGpuResourceVector);
     void BuildRenderItemTexGpuResources(const MaterialRenderSnapshot &materialRenderSnapshot, MaterialID gpuMaterialID,
                                         std::vector<BindingGpuResource> &bindingGpuResourceVector);

@@ -361,6 +361,11 @@ struct alignas(16) COREMATH_API REFLECT_STRUCT(EngineClass) Vector4
     Vector4(const Vector3 &rhs) : X(rhs.X), Y(rhs.Y), Z(rhs.Z), W(1.0f) {}
     Vector4(const Vector3 &rhs, float w) : X(rhs.X), Y(rhs.Y), Z(rhs.Z), W(w) {}
 
+    Vector2 XY() const
+    {
+        return {X, Y};
+    }
+
     Vector3 XYZ() const
     {
         return {X, Y, Z};
