@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <CoreAsset/AssetType.h>
 #include <EditorDirector/IPropertyBindable.h>
@@ -9,7 +9,8 @@
 namespace UI
 {
 class UIText;
-}
+class UIElement;
+} // namespace UI
 
 class AnimatorComponent;
 class Component;
@@ -36,9 +37,15 @@ class REFLECT_CLASS(EngineClass) AnimatorComponentUIReflectPanel : public UI::UI
 
   private:
     void SetSkeleton(CoreAsset::AssetID id);
+
     void RefreshSkeleton();
+
+    void SetAnimationTransitionSet(CoreAsset::AssetID id);
+    void RefreshAnimationSet();
 
     AnimatorComponent *mDestAnimatorComponent = nullptr;
     UIFoldoutPanel *mSkeletonFoldPanel = nullptr;
     UI::UIText *mSkeletonText = nullptr;
+    UI::UIText *mAnimTransitionSetName = nullptr;
+    UI::UIElement *mAnimTransitionAssetPanel = nullptr;
 };

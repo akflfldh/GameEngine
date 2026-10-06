@@ -33,6 +33,7 @@ class REFLECT_CLASS(EngineClass) UIReflectFloatPanel : public UI::UIImage, publi
     virtual void Update(float deltaTime) override;
 
     void RefreshFromSource();
+    bool CommitEdit();
 
     void SetTagText(const std::string &tag);
     virtual void BindProperty(void *targetMemory, Quad::PropertyInfo *property) override;

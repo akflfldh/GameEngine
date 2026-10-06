@@ -18,7 +18,8 @@ bool AnimationAssetLoader::LoadAssetFile(EAssetType assetType, Arch &arch,
                                          AssetFactoryManager *assetFactoryManager, Asset *&outAsset,
                                          std::unique_ptr<AssetMetaData> &outMetaData)
 {
-    if (assetType != EAssetType::eSkeleton && assetType != EAssetType::eAnimation)
+    if (assetType != EAssetType::eSkeleton && assetType != EAssetType::eAnimation &&
+        assetType != EAssetType::eAnimationTransitionSet)
         return false;
 
     outAsset = assetFactoryManager->CreateEmptyAsset(assetType);
@@ -28,8 +29,9 @@ bool AnimationAssetLoader::LoadAssetFile(EAssetType assetType, Arch &arch,
     outMetaData = std::make_unique<AssetMetaData>();
     outAsset->Serialize(arch);
 
-    // byte stream을 끝까지 읽은 것만으로는 parent/signature/channel 계약을 보장할 수 없다.
-    // 역직렬화 직후 타입별 schema를 다시 검증해 의미상 손상된 에셋이 registry로 넘어가지 않게 한다.
+    // Skeleton/Clip은 byte stream을 읽은 뒤에도 parent/signature/channel 계약을 검증한다.
+    // 전이 세트는 현재 전용 Validate API가 없으므로 stream 상태만 확인한다.
+    // 참조 에셋은 아직 모두 등록되지 않았을 수 있어 여기서 Skeleton/Clip을 resolve하지 않는다.
     bool isValid = arch.IsGood();
     std::string failureReason;
     if (isValid && assetType == EAssetType::eSkeleton)

@@ -47,6 +47,8 @@ void UIReflectFloatPanel::OnBegin()
 
     mEditBox = EditorUIUtility::CreateNumberInput(this, "EditBox");
     mEditBox->SetWidth(100);
+    mEditBox->SetBackgroundColor(1, 1, 1);
+    mEditBox->SetTextColor(0, 0, 0);
     // EditorUIUtility의 기본 색상 유지: mEditBox->SetBackgroundColor(1, 1, 1);
     // EditorUIUtility의 기본 색상 유지: mEditBox->SetTextColor(0, 0, 0);
     mEditBox->SetOverflowMode(UI::EUITextOverflowMode::eScrollHorizontal);
@@ -65,7 +67,7 @@ void UIReflectFloatPanel::OnBegin()
             OnEndEdit(str);
         });
 
-    mTagText->SetText(mTagTextStr);
+    SetTagText(mTagTextStr);
 
     RefreshFromSource();
 }
@@ -104,6 +106,24 @@ void UIReflectFloatPanel::SetTagText(const std::string &tag)
     int editBoxOffsetX = tagTextWidth + mTagText->mTransform.GetLocalPosition().x + 30;
 
     mEditBox->SetPositionLocal(editBoxOffsetX, mEditBox->mTransform.GetLocalPosition().y);
+}
+
+bool UIReflectFloatPanel::CommitEdit()
+{
+    if (!mIsEditing)
+        return true;
+    if (!mEditBox)
+        return false;
+
+    // 적용 버튼은 Enter 없이 눌릴 수 있으므로 입력 중인 문자열도 기존 setter 경로로 확정한다.
+    // 파싱 실패 시 입력을 유지하고 호출자에게 적용을 중단하도록 알린다.
+    const std::string text = mEditBox->GetText();
+    float value = 0.0f;
+    if (!CoreUtility::Utility::TryParseFloat(text, value))
+        return false;
+
+    OnEndEdit(text);
+    return true;
 }
 
 void UIReflectFloatPanel::BindProperty(void *targetMemory, Quad::PropertyInfo *property)

@@ -30,6 +30,10 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIHorizontalLayoutComponent : publ
     void SetItemPaddingX(float x);
     void SetItemPaddingTop(float v);
 
+    void SetGlobalPaddingX(float x);
+
+    void SetRightAlign(bool flag);
+
   protected:
     virtual void OnBegin() override;
 
@@ -43,8 +47,13 @@ class UISYSTEM_API REFLECT_CLASS(EngineClass) UIHorizontalLayoutComponent : publ
     std::unordered_map<UIElement *, Core::CallbackID> mSizeCallbackIDTable;
     std::unordered_map<UIElement *, Core::CallbackID> mActiveCallbackIDTable;
 
+    float mGlboalPaddingX = 0.0f;
+
     // 활성 자식 사이의 가로 간격이며, 양 끝의 여백은 포함하지 않는다.
     float mPaddingX = 0.0f;
     float mPaddingTop = 0.0f;
+
+    // 오른쪽 정렬
+    bool mRightAlign = false;
 };
 } // namespace UI

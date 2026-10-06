@@ -3,6 +3,7 @@
 #include <Core/Map.h>
 #include <Core/Prefab.h>
 #include <CoreAsset/AnimationClip.h>
+#include <CoreAsset/AnimationTransitionSet.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
 #include <EditorDirector/EditorAssetManager.h>
@@ -325,6 +326,15 @@ void UIAssetBrowser::OnSelectedFile(QuadLF::LogicalNode *node)
                 file->GetAssetInfo().mAssetID);
             Quad::EditorDirector::GetInstance()->ChangeToAnimationClipEditWorkSpace(
                 clipAsset.As<CoreAsset::AnimationClip>());
+        }
+        break;
+        case CoreAsset::EAssetType::eAnimationTransitionSet:
+        {
+            CoreAsset::AssetPtr transitionSetAsset =
+                CoreAsset::AssetManager::GetInstance()->GetAsset<CoreAsset::AnimationTransitionSet>(
+                    file->GetAssetInfo().mAssetID);
+            Quad::EditorDirector::GetInstance()->ChangeToAnimationTransitionSetEditWorkSpace(
+                transitionSetAsset.As<CoreAsset::AnimationTransitionSet>());
         }
         break;
         }

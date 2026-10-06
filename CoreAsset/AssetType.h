@@ -40,7 +40,8 @@ enum class EAssetType : uint32_t
     eMap = 0x1 << 10,
     eFont = 0x1 << 11,
     eCXX = 0x1 << 12,
-    eSkeleton = 0x1 << 13
+    eSkeleton = 0x1 << 13,
+    eAnimationTransitionSet = 0x1 << 14
 };
 
 // 이설정들보고 렌더시스템이 샘플러를 동적으로 만들어서 바인딩하거나,기존의 샘플러를 바인딩할것이다.

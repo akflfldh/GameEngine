@@ -1,6 +1,7 @@
 ﻿#include "AnimatorComponent.h"
 #include <Core/AnimationSystem.h>
 #include <CoreAsset/AnimationClip.h>
+#include <CoreAsset/AnimationTransitionSet.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Skeleton.h>
 #include <CoreBase/Arch.h>
@@ -21,6 +22,21 @@ void AnimatorComponent::BindSkeleton(CoreAsset::AssetPtr skeleton)
     }
 }
 
+bool AnimatorComponent::BindTransitionSet(CoreAsset::AssetPtr set)
+{
+    mAnimTransitionSet = set;
+    auto animSystem = Core::AnimationSystem::GetInstance();
+
+    if (set.As<CoreAsset::AnimationTransitionSet>() != nullptr)
+    {
+
+        bool ret = animSystem->SetTransitionSet(mHandle, set);
+        return ret;
+    }
+
+    return false;
+}
+
 const CoreAsset::AssetPtr &AnimatorComponent::GetSkeleton() const
 {
     return mSkeleton;
@@ -32,7 +48,7 @@ void AnimatorComponent::Serialize(Arch &arch)
 
     // 재생 handle은 맵 등록 시 새로 생성되므로 저장하지 않고 Skeleton 에셋 참조만 복원한다.
     // 로드된 참조는 OnOwnerObjectAddedToMap에서 새 handle에 적용된다.
-    arch << mSkeleton;
+    arch << mSkeleton << mAnimTransitionSet;
 }
 
 bool AnimatorComponent::BuildFinalMatrix(const CoreAsset::SkinBinding &skinBinding,
@@ -56,6 +72,12 @@ void AnimatorComponent::OnOwnerObjectAddedToMap()
     if (mSkeleton.As<CoreAsset::Skeleton>() != nullptr)
     {
         bool ret = animSystem->SetSkeleton(mHandle, mSkeleton);
+    }
+
+    if (mAnimTransitionSet.As<CoreAsset::AnimationTransitionSet>() != nullptr)
+    {
+
+        bool ret = animSystem->SetTransitionSet(mHandle, mAnimTransitionSet);
     }
 }
 
@@ -142,4 +164,9 @@ void AnimatorComponent::ApplyPlayBackState(const Core::AnimPlaybackState &playba
     animSystem->SetPaused(mHandle, playbackState.bPause);
 
     animSystem->SetReserveCurrTime(mHandle, playbackState.mCurrPlayTime);
+}
+
+CoreAsset::AssetPtr AnimatorComponent::GetTransitionSet() const
+{
+    return mAnimTransitionSet;
 }

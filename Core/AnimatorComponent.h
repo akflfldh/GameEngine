@@ -26,6 +26,9 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) AnimatorComponent : public Compone
     void BindSkeleton(CoreAsset::AssetPtr skeleton);
     const CoreAsset::AssetPtr &GetSkeleton() const;
 
+    bool BindTransitionSet(CoreAsset::AssetPtr set);
+    CoreAsset::AssetPtr GetTransitionSet() const;
+
     void Serialize(Arch &arch) override;
 
     bool BuildFinalMatrix(const CoreAsset::SkinBinding &skinBinding,
@@ -55,6 +58,7 @@ class CORE_API_LIB REFLECT_CLASS(EngineClass) AnimatorComponent : public Compone
   private:
     /// 프리팹 복제·저장 시 ID로 유지되며 맵 등록 후 런타임 slot에 적용된다.
     CoreAsset::AssetPtr mSkeleton;
+    CoreAsset::AssetPtr mAnimTransitionSet;
 
     Core::AnimRuntimeSlotHandle mHandle;
 };

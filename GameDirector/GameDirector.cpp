@@ -296,6 +296,8 @@ void Quad::GameDirector::RegisterAssetFactory()
                                               CoreAsset::AnimationAssetFactory::GetInstance());
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimation,
                                               CoreAsset::AnimationAssetFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimationTransitionSet,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
 
@@ -316,6 +318,8 @@ void Quad::GameDirector::RegisterAssetLoader()
                                         CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimation,
                                         CoreAsset::AnimationAssetLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimationTransitionSet,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
 }
@@ -333,6 +337,8 @@ void Quad::GameDirector::RegisterAssetStorer()
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkeleton,
                                         CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimationTransitionSet,
                                         CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());

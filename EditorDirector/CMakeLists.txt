@@ -58,6 +58,10 @@ target_sources(EditorDirector PRIVATE
     AnimationClipWorkSpaceManager.cpp
     AnimationClipEditUIController.h
     AnimationClipEditUIController.cpp
+    AnimationTransitionSetWorkSpaceManager.h
+    AnimationTransitionSetWorkSpaceManager.cpp
+    AnimationTransitionSetEditUIController.h
+    AnimationTransitionSetEditUIController.cpp
 )
 
 if(GAMEENGINE_DEVELOPMENT_BUILD)

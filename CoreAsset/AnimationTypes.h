@@ -81,4 +81,26 @@ struct AnimationClipSettings
     bool bLoop = false;
 };
 
+enum class EAnimationTransitionBlendingType
+{
+    eLinear = 0
+};
+
+struct AnimationTransitionData
+{
+    CoreAsset::AssetID mPreAnimClip = NoneAssetID;
+    CoreAsset::AssetID mNextAnimClip = NoneAssetID;
+    float mDuration = 0.0f; // 전이시간
+    EAnimationTransitionBlendingType mBlendingType = EAnimationTransitionBlendingType::eLinear;
+    float mNextAnimClipStartTime = 0.0f;
+    // 전이중 사용 요청처리 - > 나중에
+};
+
+inline Arch &operator<<(Arch &arch, AnimationTransitionData &data)
+{
+    arch << data.mPreAnimClip << data.mNextAnimClip << data.mDuration << data.mBlendingType
+         << data.mNextAnimClipStartTime;
+    return arch;
+}
+
 } // namespace CoreAsset

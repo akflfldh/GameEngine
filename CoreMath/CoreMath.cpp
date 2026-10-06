@@ -20,6 +20,13 @@ const Vector3 Vector3::UintZ = Vector3{0.0f, 0.0f, 1.0f};
 
 Vector3::Vector3(const Vector4 &vec4) : X(vec4.X), Y(vec4.Y), Z(vec4.Z) {}
 
+Vector3 Vector3::Lerp(const Vector3 &from, const Vector3 &to, float alpha)
+{
+    // 위치·스케일 값에도 사용하므로 결과를 단위 벡터로 정규화하지 않는다.
+    // 기존 클립 샘플링과 같은 가중합을 사용하고 외삽을 위해 alpha를 clamp하지 않는다.
+    return from * (1.0f - alpha) + to * alpha;
+}
+
 const Vector4 Vector4::Zero = Vector4{0.0f, 0.0f, 0.0f, 0.0f};
 const Vector4 Vector4::One = Vector4{1.0f, 1.0f, 1.0f, 1.0f};
 const Vector4 Vector4::UnitX = Vector4{1.0f, 0.0f, 0.0f, 0.0f};
@@ -28,6 +35,24 @@ const Vector4 Vector4::UnitZ = Vector4{0.0f, 0.0f, 1.0f, 0.0f};
 const Vector4 Vector4::UnitW = Vector4{0.0f, 0.0f, 0.0f, 1.0f};
 
 Quaternion::Quaternion(const Vector3 &rhs) : X(rhs.X), Y(rhs.Y), Z(rhs.Z), W(0.0f) {}
+
+Quaternion Quaternion::NlerpShortest(const Quaternion &from, const Quaternion &to, float alpha)
+{
+    // q와 -q는 같은 회전이다. 내적이 음수면 목표의 부호만 뒤집어 긴 회전 경로와
+    // 반대 부호 quaternion의 상쇄를 피한다. 입력 객체는 변경하지 않는다.
+    Quaternion target = to;
+    const float dot = from.X * target.X + from.Y * target.Y + from.Z * target.Z + from.W * target.W;
+    if (dot < 0.0f)
+        target = {-target.X, -target.Y, -target.Z, -target.W};
+
+    Quaternion result{from.X * (1.0f - alpha) + target.X * alpha,
+                      from.Y * (1.0f - alpha) + target.Y * alpha,
+                      from.Z * (1.0f - alpha) + target.Z * alpha,
+                      from.W * (1.0f - alpha) + target.W * alpha};
+    // 성분별 선형 보간은 단위 길이를 유지하지 않으므로 회전 연산 전에 다시 정규화한다.
+    result.Normalize();
+    return result;
+}
 
 Quaternion Quaternion::operator*(const Quaternion &rhs) const
 {

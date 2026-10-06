@@ -80,6 +80,7 @@ bool CoreAsset::AssetMetaDataManager::Register(const AssetMetaData &assetMetaDat
     break;
     case EAssetType::eAnimation:
     case EAssetType::eSkeleton:
+    case EAssetType::eAnimationTransitionSet:
     {
         AssetMetaData *metaData = new AssetMetaData;
         *metaData = assetMetaData;
@@ -201,6 +202,7 @@ bool CoreAsset::AssetMetaDataManager::Register(Asset *asset, bool bEngine)
     break;
     case EAssetType::eAnimation:
     case EAssetType::eSkeleton:
+    case EAssetType::eAnimationTransitionSet:
     {
         AssetMetaData metaData;
         metaData.mAssetID = asset->GetID();

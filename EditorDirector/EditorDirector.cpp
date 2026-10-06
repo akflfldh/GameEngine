@@ -17,6 +17,7 @@
 #include "EditorDirector/SuperAssetBrowerController.h"
 #include "EditorDirector/SuperFrameController.h"
 #include <AnimationClipWorkSpaceManager.h>
+#include <AnimationTransitionSetWorkSpaceManager.h>
 #include <BinaryReaderWriter/BinaryReader.h>
 #include <ClassGenerationManager.h>
 #include <Core/MapFactory.h>
@@ -30,6 +31,7 @@
 #include <CoreAsset/AnimationAssetLoader.h>
 #include <CoreAsset/AnimationAssetStorer.h>
 #include <CoreAsset/AnimationClip.h>
+#include <CoreAsset/AnimationTransitionSet.h>
 #include <CoreAsset/AssetCommon.h>
 #include <CoreAsset/AssetFactoryManager.h>
 #include <CoreAsset/AssetIOManager.h>
@@ -221,6 +223,8 @@ void Quad::EditorDirector::Update(float deltaTime)
 
     AnimationClipWorkSpaceManager::GetInstance()->Update(deltaTime);
 
+    AnimationTransitionSetWorkSpaceManager::GetInstance()->Update();
+
     ProjectSettingWorkSpaceManager::GetInstance()->Update();
 
     GlobalOverlayManager::GetInstance()->Update(deltaTime);
@@ -347,6 +351,23 @@ bool Quad::EditorDirector::ChangeToAnimationClipEditWorkSpace(CoreAsset::Animati
     return true;
 }
 
+bool Quad::EditorDirector::ChangeToAnimationTransitionSetEditWorkSpace(
+    CoreAsset::AnimationTransitionSet *targetTransitionSet)
+{
+    auto *manager = AnimationTransitionSetWorkSpaceManager::GetInstance();
+    if (!manager->SetTransitionSet(targetTransitionSet))
+    {
+        GlobalOverlayManager::GetInstance()->ShowMessageBox("AnimationTransitionSet 에셋을 불러올 수 없습니다.");
+        return false;
+    }
+
+    // 새 에셋은 Skeleton 미설정이어도 열 수 있어야 이후 편집 화면에서 설정할 수 있다.
+    GlobalOverlayManager::GetInstance()->ChangeToAnimationTransitionSetEdit();
+    ChangeWorkSpace(manager->GetWorkSpace());
+    manager->OnWorkSpaceActive();
+    return true;
+}
+
 void Quad::EditorDirector::ChangeToDefaultEditWorkSpace()
 {
     GlobalOverlayManager::GetInstance()->ChangeToDefaultEdit();
@@ -381,6 +402,10 @@ void Quad::EditorDirector::ChangeWorkSpace(Core::WorkSpace *workspace)
     else if (currentWorkSpace == ProjectSettingWorkSpaceManager::GetInstance()->GetWorkSpace())
     {
         ProjectSettingWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
+    }
+    else if (currentWorkSpace == AnimationTransitionSetWorkSpaceManager::GetInstance()->GetWorkSpace())
+    {
+        AnimationTransitionSetWorkSpaceManager::GetInstance()->OnWorkSpaceInActive();
     }
 
     mSuperFrameController->SetWorkSpace(workspace);
@@ -504,6 +529,8 @@ void Quad::EditorDirector::CreateEditWorkSpace()
 
     CreateAnimationClipWorkSpace();
 
+    CreateAnimationTransitionSetWorkSpace();
+
     CreateProjectSettingWorkSpace();
 
     InitEditorTaskManagerList();
@@ -544,6 +571,12 @@ void Quad::EditorDirector::CreateMaterialEditWorkSpace()
 void Quad::EditorDirector::CreateAnimationClipWorkSpace()
 {
     AnimationClipWorkSpaceManager::GetInstance()->Initialize(mGlobalOverlayLogicalWindow.get(), *mCommonUITheme);
+}
+
+void Quad::EditorDirector::CreateAnimationTransitionSetWorkSpace()
+{
+    AnimationTransitionSetWorkSpaceManager::GetInstance()->Initialize(mGlobalOverlayLogicalWindow.get(),
+                                                                    *mCommonUITheme);
 }
 
 void Quad::EditorDirector::CreateProjectSettingWorkSpace()
@@ -833,6 +866,8 @@ void Quad::EditorDirector::RegisterAssetFactory()
                                               CoreAsset::AnimationAssetFactory::GetInstance());
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimation,
                                               CoreAsset::AnimationAssetFactory::GetInstance());
+    assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eAnimationTransitionSet,
+                                              CoreAsset::AnimationAssetFactory::GetInstance());
 
     assetFactoryManager->RegisterAssetFactory(CoreAsset::EAssetType::eMap, Core::MapFactory::GetInstance());
 
@@ -853,6 +888,8 @@ void Quad::EditorDirector::RegisterAssetLoader()
                                         CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimation,
                                         CoreAsset::AnimationAssetLoader::GetInstance());
+    assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eAnimationTransitionSet,
+                                        CoreAsset::AnimationAssetLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::eMap, Core::MapLoader::GetInstance());
     assetIOManager->RegisterAssetLoader(CoreAsset::EAssetType::ePrefab, PrefabLoader::GetInstance());
 }
@@ -870,6 +907,8 @@ void Quad::EditorDirector::RegisterAssetStorer()
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eSkeleton,
                                         CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimation,
+                                        CoreAsset::AnimationAssetStorer::GetInstance());
+    assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eAnimationTransitionSet,
                                         CoreAsset::AnimationAssetStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::eMap, Core::MapStorer::GetInstance());
     assetIOManager->RegisterAssetStorer(CoreAsset::EAssetType::ePrefab, Core::PrefabStorer::GetInstance());

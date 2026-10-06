@@ -1,6 +1,6 @@
 ﻿#include "UIFileItem.h"
-#include <EditorDirector/EditorUIUtility.h>
 #include <CoreBase/CallbackSystem.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIDragSourceComponent.h>
 #include <EditorDirector/UISelectableComponent.h>
 #include <LogicalFileSystem/LogicalFile.h>
@@ -121,10 +121,17 @@ void UIFileItem::SetLogicalFileNode(QuadLF::LogicalNode *node)
             mFileImageElement->mImageCom->SetTexture("Engine/Skeleton");
         }
         break;
-        // AnimationClip은 아직 드롭 대상이 없어 아이콘만 표시하고 payload는 eNone으로 둔다.
         case CoreAsset::EAssetType::eAnimation:
         {
+            payload.mType = EDragDropType::eAssetAnimationClip;
             mFileImageElement->mImageCom->SetTexture("Engine/AnimationClip");
+        }
+        break;
+        // 전이 세트의 브라우저 payload 연결은 별도 작업으로 남기고 여기서는 아이콘만 표시한다.
+        case CoreAsset::EAssetType::eAnimationTransitionSet:
+        {
+            payload.mType = EDragDropType::eAnimationTransition;
+            mFileImageElement->mImageCom->SetTexture("Engine/AnimTransitionSet");
         }
         break;
         case CoreAsset::EAssetType::eCXX:

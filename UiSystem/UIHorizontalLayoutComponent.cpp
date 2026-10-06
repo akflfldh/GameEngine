@@ -1,7 +1,7 @@
 ﻿#include "UIHorizontalLayoutComponent.h"
 #include "UIElement.h"
 
-UI::UIHorizontalLayoutComponent::UIHorizontalLayoutComponent() : mPaddingTop(0.0F) {}
+UI::UIHorizontalLayoutComponent::UIHorizontalLayoutComponent() : mPaddingTop(0.0F), mRightAlign(false) {}
 
 UI::UIHorizontalLayoutComponent::~UIHorizontalLayoutComponent() {}
 
@@ -114,24 +114,42 @@ void UI::UIHorizontalLayoutComponent::CalculateLayout()
     if (ownerElement->GetSize().Y != rowHeight)
         ownerElement->SetHeight(rowHeight);
 
-    float currentX = 0.0f;
+    float dir = mRightAlign ? -1 : 1;
+
+    float currentX = dir * mGlboalPaddingX;
+    if (mRightAlign)
+    {
+        currentX += ownerElement->GetWidth();
+    }
+
     bool hasPreviousChild = false;
+
     for (auto child : ownerElement->GetChildVector())
     {
         if (child == nullptr || child->GetDeadState() || !child->GetActiveFlag())
             continue;
 
-        if (hasPreviousChild)
-            currentX += mPaddingX;
-
-        const auto childSize = child->GetSize();
         const float y = mPaddingTop;
-        // (rowHeight - childSize.Y) * 0.5f;
+        const auto childSize = child->GetSize();
+        if (mRightAlign)
+        {
+            currentX -= (mPaddingX + childSize.X);
+            if (currentX < 0.0f)
+                currentX = 0.0f;
+        }
+        else
+        {
+            if (hasPreviousChild)
+                currentX += (dir * mPaddingX);
+        }
+
         const auto position = child->mTransform.GetLocalPosition();
         if (position.x != currentX || position.y != y)
             child->SetPositionLocal(currentX, y);
 
-        currentX += childSize.X;
+        if (mRightAlign == false)
+            currentX += (dir * childSize.X);
+
         currentX = glm::round(currentX);
         hasPreviousChild = true;
     }
@@ -150,5 +168,19 @@ void UI::UIHorizontalLayoutComponent::SetItemPaddingX(float x)
 void UI::UIHorizontalLayoutComponent::SetItemPaddingTop(float v)
 {
     mPaddingTop = std::max(0.0f, v);
+    CalculateLayout();
+}
+
+void UI::UIHorizontalLayoutComponent::SetGlobalPaddingX(float x)
+{
+
+    mGlboalPaddingX = std::max(0.0f, x);
+    CalculateLayout();
+}
+
+void UI::UIHorizontalLayoutComponent::SetRightAlign(bool flag)
+{
+
+    mRightAlign = flag;
     CalculateLayout();
 }

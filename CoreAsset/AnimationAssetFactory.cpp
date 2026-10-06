@@ -1,6 +1,7 @@
 ﻿#include "AnimationAssetFactory.h"
 
 #include <CoreAsset/AnimationClip.h>
+#include <CoreAsset/AnimationTransitionSet.h>
 #include <CoreAsset/IntermediateAsset.h>
 #include <CoreAsset/Skeleton.h>
 
@@ -19,12 +20,19 @@ Asset *AnimationAssetFactory::CreateEmptyAsset(EAssetType assetType)
         return new Skeleton;
     if (assetType == EAssetType::eAnimation)
         return new AnimationClip;
+    if (assetType == EAssetType::eAnimationTransitionSet)
+        return new AnimationTransitionSet;
 
     return nullptr;
 }
 
 Asset *AnimationAssetFactory::CreateAssetFromData(const IntermediateAsset &intermeidateAsset)
 {
+    // 전이 세트는 파일 임포트가 아니라 에디터에서 빈 설정 에셋으로 생성한다.
+    // 아직 전이 데이터용 intermediate가 없으므로 공통 이름·타입 정보만 사용한다.
+    if (intermeidateAsset.mAssetType == EAssetType::eAnimationTransitionSet)
+        return CreateEmptyAsset(EAssetType::eAnimationTransitionSet);
+
     // FBX skeleton/clip intermediate 생성은 Golden FBX가 준비되는 후속 importer 단계에서 연결한다.
 
     if (intermeidateAsset.mAssetType == EAssetType::eSkeleton)

@@ -42,25 +42,6 @@ bool IsUnit(const CoreMath::Quaternion &value)
     return std::isfinite(lengthSquared) && std::abs(lengthSquared - 1.0f) <= 0.0001f;
 }
 
-CoreMath::Vector3 Lerp(const CoreMath::Vector3 &lhs, const CoreMath::Vector3 &rhs, float alpha)
-{
-    return lhs * (1.0f - alpha) + rhs * alpha;
-}
-
-CoreMath::Quaternion NlerpShortest(CoreMath::Quaternion lhs, CoreMath::Quaternion rhs, float alpha)
-{
-    // q와 -q는 같은 회전을 나타낸다. dot이 음수면 한쪽 부호를 뒤집어 긴 호를 통과하지 않게 하고,
-    // 선형 보간 뒤 정규화하여 이후 회전 연산의 unit quaternion 전제를 유지한다.
-    const float dot = lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z + lhs.W * rhs.W;
-    if (dot < 0.0f)
-        rhs = {-rhs.X, -rhs.Y, -rhs.Z, -rhs.W};
-
-    CoreMath::Quaternion result{lhs.X * (1.0f - alpha) + rhs.X * alpha, lhs.Y * (1.0f - alpha) + rhs.Y * alpha,
-                                lhs.Z * (1.0f - alpha) + rhs.Z * alpha, lhs.W * (1.0f - alpha) + rhs.W * alpha};
-    result.Normalize();
-    return result;
-}
-
 bool HasValidChannelSize(size_t size, uint32_t sampleCount)
 {
     return size == 0 || size == 1 || size == sampleCount;
@@ -205,18 +186,21 @@ bool AnimationClip::SampleJoint(const std::string &jointKey, float timeSeconds, 
     {
         outPose.mPosition = track->mPositions.size() == 1
                                 ? track->mPositions[0]
-                                : Lerp(track->mPositions[lower], track->mPositions[upper], alpha);
+                                : CoreMath::Vector3::Lerp(track->mPositions[lower], track->mPositions[upper], alpha);
     }
     if (!track->mRotations.empty())
     {
         outPose.mRotation = track->mRotations.size() == 1
                                 ? track->mRotations[0]
-                                : NlerpShortest(track->mRotations[lower], track->mRotations[upper], alpha);
+                                : CoreMath::Quaternion::NlerpShortest(track->mRotations[lower],
+                                                                      track->mRotations[upper], alpha);
     }
     if (!track->mScales.empty())
     {
         outPose.mScale =
-            track->mScales.size() == 1 ? track->mScales[0] : Lerp(track->mScales[lower], track->mScales[upper], alpha);
+            track->mScales.size() == 1
+                ? track->mScales[0]
+                : CoreMath::Vector3::Lerp(track->mScales[lower], track->mScales[upper], alpha);
     }
 
     if (failureReason != nullptr)

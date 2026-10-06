@@ -207,10 +207,10 @@ void Quad::EditorSceneManager::PlayUserWorld()
         playMap->SetAssetDirtyActive(false);
 
         playMap->Serialize(archLoad);
+        mUserPlayWorld->Register(playMap);
         if (currentMap == map)
             playMap->SerilaizeRawData(archLoad);
 
-        mUserPlayWorld->Register(playMap);
         if (currentMap == map)
             mUserPlayWorld->SetCurrentMap(playMap);
 

@@ -12,6 +12,7 @@
 #include <Core/SuperController.h>
 #include <Core/World.h>
 #include <CoreAsset/GlobalAssetRegistrySystem.h>
+#include <CoreAsset/IntermediateAsset.h>
 #include <CoreAsset/assetManager.h>
 #include <CoreBase/AsyncThreadPool.h>
 #include <EditorDirector/BottomPanel.h>
@@ -276,6 +277,13 @@ void GlobalOverlayManager::ChangeToMaterialEdit()
 
 void GlobalOverlayManager::ChangeToAnimationClipEdit()
 {
+    mToolbar->SetActiveFlag(false);
+    mBottomPanel->SetActiveFlag(true);
+}
+
+void GlobalOverlayManager::ChangeToAnimationTransitionSetEdit()
+{
+    // 머터리얼 편집과 같이 기본 툴바만 숨기고 에셋 탐색용 하단 패널은 유지한다.
     mToolbar->SetActiveFlag(false);
     mBottomPanel->SetActiveFlag(true);
 }
@@ -634,7 +642,9 @@ void GlobalOverlayManager::CreateAssetContextPanel(UI::UITextButton *ownerButton
     auto verticalLayoutCom = panel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalLayoutCom");
     panel->SetActiveFlag(false);
 
-    std::vector<MenuData> menus = {{"ImportAsset", "에셋 임포트", 300.0f}, {"CreateMaterial", "머터리얼 생성", 300.0f}};
+    std::vector<MenuData> menus = {{"ImportAsset", "에셋 임포트", 300.0f},
+                                 {"CreateMaterial", "머터리얼 생성", 300.0f},
+                                 {"CreateAnimationTransitionSet", "애니메이션 전이 세트 생성", 300.0f}};
 
     std::unordered_map<std::string, UI::UITextButton *> menuMap;
 
@@ -661,6 +671,41 @@ void GlobalOverlayManager::CreateAssetContextPanel(UI::UITextButton *ownerButton
             // 임포트 시작전에 먼저 임포트 설정창 띄우기 그곳에서 startimport를 호출하는버튼이있는거임
 
             StartCreatingMaterial();
+        });
+
+    menuMap["CreateAnimationTransitionSet"]->mUIButtonComponent->mButtonClickCallbackSystem.Register(
+        [this](float, float)
+        {
+            CloseCurrentContextMenuAll();
+            auto *targetFolder = QuadLF::LogicalFileSystem::GetInstance()->GetCurrentLogicalFolder();
+            if (targetFolder == nullptr)
+            {
+                ShowMessageBox("에셋을 생성할 폴더가 없습니다.");
+                return;
+            }
+
+            CoreAsset::IntermediateAsset intermediate(CoreAsset::EAssetType::eAnimationTransitionSet);
+            intermediate.mAssetName = "NewAnimationTransitionSet";
+            CoreAsset::AssetCreationContext context;
+            context.mInitLoadState = CoreAsset::EAssetLoadState::Loaded;
+
+            // 직접 UI 항목을 추가하지 않는다. 기존 에셋 생성 경로가 이름·ID·메타데이터를 처리하고,
+            // 논리적 파일 생성 콜백이 해당 폴더를 표시하는 브라우저 목록을 갱신한다.
+            if (Quad::EditorAssetManager::GetInstance()
+                    ->CreateAsset(CoreAsset::EAssetType::eAnimationTransitionSet, &intermediate, context)
+                    .Get() == nullptr)
+            {
+                ShowMessageBox("애니메이션 전이 세트 생성에 실패했습니다.");
+                return;
+            }
+
+            // 브라우저의 탐색 폴더는 파일시스템의 현재 폴더와 다를 수 있다.
+            // 생성된 파일이 바로 보이도록 기존 생성 API가 사용한 폴더를 표시한다.
+            if (auto *bottomPanel = GetBottomPanel())
+            {
+                if (auto *browser = bottomPanel->GetAssetBrowser())
+                    browser->SelectFolderProgrammtically(targetFolder);
+            }
         });
 }
 

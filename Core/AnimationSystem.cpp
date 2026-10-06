@@ -1,6 +1,7 @@
 ﻿#include "AnimationSystem.h"
 
 #include <CoreAsset/AnimationClip.h>
+#include <CoreAsset/AnimationTransitionSet.h>
 #include <CoreAsset/Skeleton.h>
 #include <CoreAsset/SkinningMesh.h>
 
@@ -107,6 +108,22 @@ void Core::AnimationSystem::UpdateState(AnimRuntimeState &state, float deltaTime
             state.mCurrTime = clipEndTime;
     }
 
+    if (state.mTransition)
+    {
+        state.mCurrTransitionTime += deltaTime;
+        if (state.mCurrTransitionTime > state.mTransitionTotalTime)
+        {
+
+            state.mCurrAnimClip = state.mNextAnimClip;
+            state.mCurrTime = state.mCurrTransitionTime;
+            state.mTransitionTotalTime = 0.0F;
+            state.mTransition = false;
+            state.mCurrTransitionTime = 0.0F;
+            state.mLoop = state.mNextAnimClipLoop;
+            state.mNextAnimClipLoop = false;
+        }
+    }
+
     EvaluatePose(state, state.mCurrTime, state.mGlobalPoseBuffer);
 }
 
@@ -115,9 +132,19 @@ bool Core::AnimationSystem::EvaluatePose(const AnimRuntimeState &state, float ti
 {
     const auto *skeleton = state.mSkeleton.As<CoreAsset::Skeleton>();
     const auto *currAnimClip = state.mCurrAnimClip.As<CoreAsset::AnimationClip>();
+
     if (skeleton == nullptr || currAnimClip == nullptr || !currAnimClip->GetValid() ||
         !currAnimClip->IsCompatible(*skeleton))
         return false;
+
+    const auto *nextAnimClip = state.mNextAnimClip.As<CoreAsset::AnimationClip>();
+    if (state.mTransition)
+    {
+        if (nextAnimClip == nullptr || !nextAnimClip->GetValid())
+        {
+            return false;
+        }
+    }
 
     const auto &joints = skeleton->GetJoints();
     outGlobalPose.resize(joints.size());
@@ -125,18 +152,39 @@ bool Core::AnimationSystem::EvaluatePose(const AnimRuntimeState &state, float ti
     {
         const auto &joint = joints[i];
 
-        CoreAsset::AnimationLocalTransform sampledJointLocalTransform;
+        CoreAsset::AnimationLocalTransform currAnimSampledJointLocalTransform;
         std::string failReason;
 
-        bool ret = currAnimClip->SampleJoint(joint.mStableKey, timeSeconds, state.mLoop, joint.mReferenceLocalPose,
-                                             sampledJointLocalTransform, &failReason);
+        bool currAnimRet =
+            currAnimClip->SampleJoint(joint.mStableKey, timeSeconds, state.mLoop, joint.mReferenceLocalPose,
+                                      currAnimSampledJointLocalTransform, &failReason);
 
-        if (ret == false)
+        if (currAnimRet == false)
             return false;
 
-        outGlobalPose[i] =
-            CoreMath::Matrix4X4::MakeTransform(sampledJointLocalTransform.mPosition,
-                                               sampledJointLocalTransform.mRotation, sampledJointLocalTransform.mScale);
+        if (state.mTransition)
+        {
+            CoreAsset::AnimationLocalTransform nextAnimSampledJointLocalTransform;
+            bool nextAnimRet =
+                nextAnimClip->SampleJoint(joint.mStableKey, state.mCurrTransitionTime, state.mNextAnimClipLoop,
+                                          joint.mReferenceLocalPose, nextAnimSampledJointLocalTransform, &failReason);
+            if (nextAnimRet == false)
+            {
+                return false;
+            }
+
+            // blending
+            CoreAsset::AnimationLocalTransform blendedAnimSampleJointLocalTransform;
+            BlendingLocalTransform(currAnimSampledJointLocalTransform, nextAnimSampledJointLocalTransform,
+                                   state.mTransitionBlendingType, state.mCurrTransitionTime, state.mTransitionTotalTime,
+                                   blendedAnimSampleJointLocalTransform);
+
+            currAnimSampledJointLocalTransform = blendedAnimSampleJointLocalTransform;
+        }
+
+        outGlobalPose[i] = CoreMath::Matrix4X4::MakeTransform(currAnimSampledJointLocalTransform.mPosition,
+                                                              currAnimSampledJointLocalTransform.mRotation,
+                                                              currAnimSampledJointLocalTransform.mScale);
 
         // Skeleton의 parent-first 순서에 따라 local을 부모 global에 합성한다.
         if (joint.mParentIndex != joint.NoParent)
@@ -242,18 +290,54 @@ bool Core::AnimationSystem::ChangeAnimClip(AnimRuntimeSlotHandle handle, CoreAss
         return false;
     }
 
-    if (replayPolicy == EAnimationReplayPolicy::eKeepIfSame &&
-        animClip->GetID() == mRuntimeStateList[handle.mIndex].mCurrAnimClip.GetAssetID() && !IsClipFinished(handle))
+    if (replayPolicy == EAnimationReplayPolicy::eKeepIfSame && animClip->GetID() == state.mCurrAnimClip.GetAssetID() &&
+        !IsClipFinished(handle))
     {
 
         return true;
     }
 
-    mRuntimeStateList[handle.mIndex].mCurrAnimClip = animClip;
-    mRuntimeStateList[handle.mIndex].mCurrTime = 0.0f;
-    mRuntimeStateList[handle.mIndex].mPause = false;
-    mRuntimeStateList[handle.mIndex].mLoop = animClip->GetLoop();
+    if (state.mTransition)
+    {
+        // 전이중인 상태에서는 새로운 요청은 막는다.
+        return false;
+    }
 
+    // TransitionSet 테이블 조회
+    // 믈랜딩
+
+    CoreAsset::AnimationTransitionSet *transitionSet = state.mTransitionSet.As<CoreAsset::AnimationTransitionSet>();
+    if (transitionSet)
+    {
+
+        CoreAsset::AnimationTransitionData transitionData;
+        bool ret =
+            transitionSet->GetTransitionData(state.mCurrAnimClip.GetAssetID(), pAnimClip.GetAssetID(), transitionData);
+        if (ret == true && transitionData.mDuration > 0.01f)
+        {
+
+            state.mTransition = true;
+            state.mCurrTransitionTime = 0.0f;
+            state.mNextAnimClip = pAnimClip;
+            state.mTransitionBlendingType = transitionData.mBlendingType;
+            state.mTransitionTotalTime = transitionData.mDuration;
+            state.mNextAnimClipLoop = pAnimClip.As<CoreAsset::AnimationClip>()->GetLoop();
+            state.mPause = false;
+        }
+        else
+        {
+            state.mTransition = false;
+        }
+    }
+
+    if (state.mTransition == false)
+    {
+
+        mRuntimeStateList[handle.mIndex].mCurrAnimClip = animClip;
+        mRuntimeStateList[handle.mIndex].mCurrTime = 0.0f;
+        mRuntimeStateList[handle.mIndex].mPause = false;
+        mRuntimeStateList[handle.mIndex].mLoop = animClip->GetLoop();
+    }
     return true;
 }
 
@@ -334,6 +418,24 @@ bool Core::AnimationSystem::SetSkeleton(AnimRuntimeSlotHandle handle, CoreAsset:
     mRuntimeStateList[handle.mIndex].mSkeleton = pSkeleton;
 
     mRuntimeStateList[handle.mIndex].mGlobalPoseBuffer.resize(skeleton->GetJointNum());
+
+    return true;
+}
+
+bool Core::AnimationSystem::SetTransitionSet(AnimRuntimeSlotHandle handle, CoreAsset::AssetPtr pTransitionSet)
+{
+
+    if (CheckVaildHandle(handle) == false)
+        return false;
+
+    CoreAsset::AnimationTransitionSet *set = pTransitionSet.As<CoreAsset::AnimationTransitionSet>();
+
+    if (set == nullptr)
+    {
+        return false;
+    }
+
+    mRuntimeStateList[handle.mIndex].mTransitionSet = pTransitionSet;
 
     return true;
 }
@@ -419,4 +521,27 @@ bool Core::AnimationSystem::CheckVaildHandle(AnimRuntimeSlotHandle handle) const
         return false;
 
     return true;
+}
+
+void Core::AnimationSystem::BlendingLocalTransform(const CoreAsset::AnimationLocalTransform &preTransform,
+                                                   const CoreAsset::AnimationLocalTransform &nextTransform,
+                                                   CoreAsset::EAnimationTransitionBlendingType blendingType,
+                                                   float mCurrTransitionTime, float totalTranstionTime,
+                                                   CoreAsset::AnimationLocalTransform &oTransform) const
+{
+
+    switch (blendingType)
+    {
+    case CoreAsset::EAnimationTransitionBlendingType::eLinear:
+    {
+        //
+        float alpha = mCurrTransitionTime / totalTranstionTime;
+
+        oTransform.mPosition = CoreMath::Vector3::Lerp(preTransform.mPosition, nextTransform.mPosition, alpha);
+        oTransform.mScale = CoreMath::Vector3::Lerp(preTransform.mScale, nextTransform.mScale, alpha);
+        oTransform.mRotation =
+            CoreMath::Quaternion::NlerpShortest(preTransform.mRotation, nextTransform.mRotation, alpha);
+    }
+    break;
+    }
 }

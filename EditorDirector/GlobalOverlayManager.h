@@ -99,6 +99,7 @@ class GlobalOverlayManager
     void ChangeToPrefabEdit();
     void ChangeToMaterialEdit();
     void ChangeToAnimationClipEdit();
+    void ChangeToAnimationTransitionSetEdit();
     void ChangeToProjectSetting();
 
     void Initialize(UI::UICanvas *overlayCanvas, Core::LogicalWindow *overlayWindow);

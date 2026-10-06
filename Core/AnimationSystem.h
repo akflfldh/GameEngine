@@ -2,6 +2,7 @@
 
 #include <Core/AnimHeader.h>
 #include <Core/CoreDllExport.h>
+#include <CoreAsset/AnimationTypes.h>
 #include <CoreAsset/AssetPtr.h>
 #include <CoreMath/CoreMath.h>
 #include <stack>
@@ -30,9 +31,17 @@ struct AnimRuntimeState
     bool mPause = false;
     bool mLoop = false;
     bool mManuallyDriven = false; ///< 전역 Update 대신 에디터 미리보기 등에서 이 slot만 갱신한다.
+    bool mTransition = false;     // 전이진행중인가?
 
     CoreAsset::AssetPtr mSkeleton;
     CoreAsset::AssetPtr mCurrAnimClip;
+    CoreAsset::AssetPtr mNextAnimClip; // 전이중일때 유요한 next AnimClip
+    float mCurrTransitionTime = 0.0f;  // 전이 진행 시간
+    float mTransitionTotalTime = 0.0f;
+    bool mNextAnimClipLoop = false;
+    CoreAsset::EAnimationTransitionBlendingType mTransitionBlendingType; // 전이타입
+
+    CoreAsset::AssetPtr mTransitionSet;
 
     std::vector<CoreMath::Matrix4X4> mGlobalPoseBuffer;
 };
@@ -66,6 +75,7 @@ class CORE_API_LIB AnimationSystem
     bool IsClipFinished(AnimRuntimeSlotHandle handle) const;
 
     bool SetSkeleton(AnimRuntimeSlotHandle handle, CoreAsset::AssetPtr skeleton);
+    bool SetTransitionSet(AnimRuntimeSlotHandle handle, CoreAsset::AssetPtr transitionSet);
 
     CoreAsset::AssetPtr GetCurrentClip(AnimRuntimeSlotHandle handle) const;
     float GetCurrentPlayTime(AnimRuntimeSlotHandle handle) const;
@@ -82,6 +92,11 @@ class CORE_API_LIB AnimationSystem
     AnimRuntimeSlotHandle GetAvailableSlotHandle();
 
     bool CheckVaildHandle(AnimRuntimeSlotHandle handle) const;
+
+    void BlendingLocalTransform(const CoreAsset::AnimationLocalTransform &preTransform,
+                                const CoreAsset::AnimationLocalTransform &nextTransform,
+                                CoreAsset::EAnimationTransitionBlendingType blendingType, float mCurrTransitionTime,
+                                float totalTranstionTime, CoreAsset::AnimationLocalTransform &oTransform) const;
 
   private:
     // 향후 포인터리스트로 변경을 고려

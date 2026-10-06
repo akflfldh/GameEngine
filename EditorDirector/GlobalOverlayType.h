@@ -24,7 +24,9 @@ enum class EDragDropType
     eComponent,
     eAssetSkinningMesh,
     eAssetSkeleton,
-    eMap
+    eMap,
+    eAnimationTransition,
+    eAssetAnimationClip
 };
 
 struct DragPayload

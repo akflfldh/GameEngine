@@ -42,6 +42,7 @@ class AssetMetaDataManager;
 class AssetManager;
 class Material;
 class AnimationClip;
+class AnimationTransitionSet;
 } // namespace CoreAsset
 
 namespace Render
@@ -119,6 +120,7 @@ class EditorDirector : public IProgramDirector
     void ChangeToPrefabEditWorkSpace();
     void ChangeToMaterialEditWorkSpace(CoreAsset::Material *targetMaterial);
     bool ChangeToAnimationClipEditWorkSpace(CoreAsset::AnimationClip *targetClip);
+    bool ChangeToAnimationTransitionSetEditWorkSpace(CoreAsset::AnimationTransitionSet *targetTransitionSet);
     void ChangeToDefaultEditWorkSpace();
     void ChangeToProjectSettingWorkSpace();
 
@@ -149,6 +151,7 @@ class EditorDirector : public IProgramDirector
     void CreatePrefabEditWorkSpace();
     void CreateMaterialEditWorkSpace();
     void CreateAnimationClipWorkSpace();
+    void CreateAnimationTransitionSetWorkSpace();
     void CreateProjectSettingWorkSpace();
 
     void InitEditorWindows();

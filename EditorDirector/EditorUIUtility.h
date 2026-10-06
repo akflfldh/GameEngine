@@ -112,7 +112,8 @@ class EditorUIUtility
     static UI::UITextButton *CreateSmallTextButton(UI::UIElement *parent, const char *instanceName,
                                                    const std::string &text, float width);
     static UI::UIElement *CreateHorizontalRow(UI::UIElement *parent, const std::string &instanceName,
-                                              float width = 0.0f, bool bBackground = false);
+                                              float width = 0.0f, bool bBackground = false, bool bRightAlign = false,
+                                              float itemPaddingX = 0.0f);
 
   private:
     template <typename T>

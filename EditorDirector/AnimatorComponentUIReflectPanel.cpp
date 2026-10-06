@@ -1,4 +1,4 @@
-#include "AnimatorComponentUIReflectPanel.h"
+﻿#include "AnimatorComponentUIReflectPanel.h"
 #include <EditorDirector/EditorUIUtility.h>
 
 #include <Core/AnimatorComponent.h>
@@ -8,8 +8,10 @@
 #include <EditorDirector/UIDropTargetComponent.h>
 #include <EditorDirector/UIFoldoutPanel.h>
 #include <EditorInspectorUtility.h>
+#include <UiSystem/UIHorizontalLayoutComponent.h>
 #include <UiSystem/UIText.h>
 #include <UiSystem/UIVerticalLayoutComponent.h>
+#include <coreasset/AnimationTransitionSet.h>
 
 AnimatorComponentUIReflectPanel::AnimatorComponentUIReflectPanel()
 {
@@ -62,14 +64,55 @@ void AnimatorComponentUIReflectPanel::OnBegin()
 
     auto dropTarget = skeletonImage->CreateUIComponent<UIDropTargetComponent>("DropTargetCom");
     dropTarget->SetDragDropPayloadType(EDragDropType::eAssetSkeleton);
-    dropTarget->mOnDroppedPayloadCallbackSystem.Register(
-        [this](const DragPayload &payload) { SetSkeleton(payload.mAssetID); });
+    dropTarget->mOnDroppedPayloadCallbackSystem.Register([this](const DragPayload &payload)
+                                                         { SetSkeleton(payload.mAssetID); });
 
     mSkeletonText = EditorUIUtility::CreateLabel(skeletonPanel, "SkeletonText");
     mSkeletonText->SetPositionLocal(10.0f, 160.0f);
     mSkeletonText->SetWidth(width - 20.0f);
 
+    auto animTransitionSetRowPanel = EditorUIUtility::CreateHorizontalRow(this, "AnimatorTransitionSetRowPanel");
+
+    UI::UIHorizontalLayoutComponent *animTransitionSetRowPanelHorizontalCom = nullptr;
+    animTransitionSetRowPanel->GetComponents<UI::UIHorizontalLayoutComponent>(&animTransitionSetRowPanelHorizontalCom,
+                                                                              1);
+
+    if (animTransitionSetRowPanelHorizontalCom)
+    {
+        animTransitionSetRowPanelHorizontalCom->SetGlobalPaddingX(10.0f);
+        animTransitionSetRowPanelHorizontalCom->SetItemPaddingX(10.0f);
+    }
+
+    animTransitionSetRowPanel->SetHeight(200.0f);
+
+    auto animTransitionSetPanel = EditorUIUtility::CreatePanel(animTransitionSetRowPanel, "SetttingPanel");
+    //  animTransitionSetPanel->SetWidth(animTransitionSetRowPanel->GetWidth());
+    animTransitionSetPanel->SetHeight(200.0f);
+    animTransitionSetPanel->CreateUIComponent<UI::UIVerticalLayoutComponent>("VerticalCom");
+
+    mAnimTransitionAssetPanel = animTransitionSetPanel;
+
+    auto animTransitionTag = EditorUIUtility::CreateLabel(animTransitionSetPanel, "animTransitionTag");
+    animTransitionTag->SetText("에니메이션 상태 전이");
+
+    auto animTransitionImage = EditorUIUtility::Create<UI::UIImage>(animTransitionSetPanel, "SkeletonImagePanel");
+    animTransitionImage->SetSize(100.0f, 100.0f);
+    animTransitionImage->UseTexture(true);
+    animTransitionImage->SetTexture("Engine/AnimTransitionSet");
+
+    auto dropTransitionTarget = animTransitionImage->CreateUIComponent<UIDropTargetComponent>("DropTargetCom");
+    dropTransitionTarget->SetDragDropPayloadType(EDragDropType::eAnimationTransition);
+    dropTransitionTarget->mOnDroppedPayloadCallbackSystem.Register([this](const DragPayload &payload)
+                                                                   { SetAnimationTransitionSet(payload.mAssetID); });
+
+    mAnimTransitionSetName = EditorUIUtility::CreateLabel(animTransitionSetPanel, "transitionSetName");
+    // mAnimTransitionSetName->SetPositionLocal(10.0f, 160.0f);
+    mAnimTransitionSetName->SetWidth(width - 20.0f);
+
+    mSkeletonFoldPanel->AddItem(animTransitionSetRowPanel);
+
     RefreshSkeleton();
+    RefreshAnimationSet();
 }
 
 void AnimatorComponentUIReflectPanel::SetSkeleton(CoreAsset::AssetID id)
@@ -95,6 +138,33 @@ void AnimatorComponentUIReflectPanel::RefreshSkeleton()
         mDestAnimatorComponent != nullptr ? mDestAnimatorComponent->GetSkeleton().As<CoreAsset::Skeleton>() : nullptr;
     mSkeletonText->SetText(skeleton != nullptr ? skeleton->GetName().c_str() : "선택된 스켈레톤 없음");
 }
+void AnimatorComponentUIReflectPanel ::SetAnimationTransitionSet(CoreAsset::AssetID id)
+{
+
+    if (mDestAnimatorComponent == nullptr)
+        return;
+
+    CoreAsset::AssetPtr set = CoreAsset::AssetManager::GetInstance()->GetAsset<CoreAsset::AnimationTransitionSet>(id);
+    if (set.As<CoreAsset::AnimationTransitionSet>() == nullptr)
+        return;
+
+    mDestAnimatorComponent->BindTransitionSet(set);
+    Quad::CommitInspectorEdit(mDestAnimatorComponent);
+    RefreshAnimationSet();
+}
+
+void AnimatorComponentUIReflectPanel::RefreshAnimationSet()
+{
+
+    if (mAnimTransitionSetName == nullptr)
+        return;
+
+    CoreAsset::AnimationTransitionSet *set =
+        mDestAnimatorComponent != nullptr
+            ? mDestAnimatorComponent->GetTransitionSet().As<CoreAsset::AnimationTransitionSet>()
+            : nullptr;
+    mAnimTransitionSetName->SetText(set != nullptr ? set->GetName().c_str() : "선택된 에니메이션 전이 없음");
+}
 
 void AnimatorComponentUIReflectPanel::OnTransformChanged(UI::ETransformChangeType type)
 {
@@ -105,5 +175,10 @@ void AnimatorComponentUIReflectPanel::OnTransformChanged(UI::ETransformChangeTyp
             mSkeletonFoldPanel->SetWidth(GetWidth());
         if (mSkeletonText)
             mSkeletonText->SetWidth(GetWidth() - 20.0f);
+        if (mAnimTransitionSetName)
+            mAnimTransitionSetName->SetWidth(GetWidth() - 20.0f);
+
+        if (mAnimTransitionAssetPanel)
+            mAnimTransitionAssetPanel->SetWidth(GetWidth());
     }
 }

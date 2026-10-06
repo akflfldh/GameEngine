@@ -169,6 +169,10 @@ struct COREMATH_API REFLECT_STRUCT(EngineClass) Vector3
 
     Vector3 &operator=(const Vector3 &rhs) = default;
 
+    /// 위치·스케일 등의 성분을 선형 보간하며 결과 벡터를 정규화하지 않는다.
+    /// alpha는 제한하지 않는다. 보간에 [0, 1]이 필요하면 호출자가 제한한다.
+    static Vector3 Lerp(const Vector3 &from, const Vector3 &to, float alpha);
+
     float &operator[](uint32_t index)
     {
 
@@ -571,6 +575,10 @@ struct COREMATH_API REFLECT_STRUCT(EngineClass) Quaternion
 
     CoreMath::Vector3 RotateVector(const Vector3 &v) const;
     CoreMath::Vector3 InverseRotateVector(const Vector3 &v) const;
+
+    /// 유한한 단위 quaternion 사이의 최단 경로를 선형 보간한 뒤 정규화한다.
+    /// alpha는 제한하지 않으며, 회전 보간에는 호출자가 [0, 1] 범위를 사용한다.
+    static Quaternion NlerpShortest(const Quaternion &from, const Quaternion &to, float alpha);
 
     static Quaternion MakeFromEuler(const Vector3 &euler);
 

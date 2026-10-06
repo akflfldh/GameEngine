@@ -382,7 +382,7 @@ UI::UITextButton *EditorUIUtility::CreateSmallTextButton(UI::UIElement *parent, 
 }
 
 UI::UIElement *EditorUIUtility::CreateHorizontalRow(UI::UIElement *parent, const std::string &instanceName, float width,
-                                                    bool bBackground)
+                                                    bool bBackground, bool bRightAlign, float itemPaddingX)
 {
     if (!parent)
         return nullptr;
@@ -390,7 +390,13 @@ UI::UIElement *EditorUIUtility::CreateHorizontalRow(UI::UIElement *parent, const
         bBackground ? CreatePanel(parent, instanceName.c_str()) : Create<UI::UIElement>(parent, instanceName.c_str());
     if (!row)
         return nullptr;
-    row->CreateUIComponent<UI::UIHorizontalLayoutComponent>("HoriCom");
+    UI::UIHorizontalLayoutComponent *com = row->CreateUIComponent<UI::UIHorizontalLayoutComponent>("HoriCom");
     row->SetWidth(width == 0.0f ? parent->GetWidth() : width);
+
+    if (bRightAlign)
+        com->SetRightAlign(true);
+
+    com->SetItemPaddingX(itemPaddingX);
+
     return row;
 }
