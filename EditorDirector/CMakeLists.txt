@@ -34,6 +34,8 @@ endif()
 target_sources(EditorDirector PRIVATE
     EditorUIUtility.h
     EditorUIUtility.cpp
+    UIReflectVector2Panel.h
+    UIReflectVector2Panel.cpp
     CollisionChannelSettingPanel.h
     CollisionChannelSettingPanel.cpp
     ProjectSettingWorkSpaceManager.h

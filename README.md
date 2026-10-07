@@ -114,3 +114,13 @@ GameEngine/
 cmake --preset user-debug-ninja(직접 지정한 name)
 cmake --build --preset user-debug-ninja
 ```
+
+
+<details>
+<summary>업데이트 상황</summary>
+
+2026-10-07 - 머터리얼 텍스처 UV 타일링 기능추가 (스케일,회전)
+
+
+
+</details>

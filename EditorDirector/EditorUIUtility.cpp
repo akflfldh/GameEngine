@@ -3,6 +3,7 @@
 #include <EditorDirector/UIDropdown.h>
 #include <EditorDirector/UIFoldoutPanel.h>
 #include <EditorDirector/UIReflectFloatPanel.h>
+#include <EditorDirector/UIReflectVector2Panel.h>
 #include <EditorDirector/UIReflectVector3Panel.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIEditBox.h>
@@ -298,6 +299,16 @@ UIReflectFloatPanel *EditorUIUtility::CreateFloatField(UI::UICanvas *canvas, con
 UIReflectFloatPanel *EditorUIUtility::CreateFloatField(UI::UIElement *parent, const char *instanceName)
 {
     return CreateWithRole<UIReflectFloatPanel>(parent, instanceName, UI::EUIStyleRole::ePropertyRow);
+}
+
+UIReflectVector2Panel *EditorUIUtility::CreateVector2Field(UI::UICanvas *canvas, const char *instanceName)
+{
+    return CreateWithRole<UIReflectVector2Panel>(canvas, instanceName, UI::EUIStyleRole::eListItem);
+}
+
+UIReflectVector2Panel *EditorUIUtility::CreateVector2Field(UI::UIElement *parent, const char *instanceName)
+{
+    return CreateWithRole<UIReflectVector2Panel>(parent, instanceName, UI::EUIStyleRole::eListItem);
 }
 
 UIReflectVector3Panel *EditorUIUtility::CreateVector3Field(UI::UICanvas *canvas, const char *instanceName)

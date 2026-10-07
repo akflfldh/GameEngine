@@ -53,6 +53,9 @@ void Render::RenderUploadManager::UploadDefaultMaterialData(const MaterialRender
     data.gAmbient = snapshot.mAmbient;
     data.gEmissiveColor = snapshot.mEmissiveColor;
     data.gEmissiveIntensity = snapshot.mEmissiveIntensity;
+    data.gUVTiling = snapshot.mUVTiling;
+    data.gUVRotationPivot = snapshot.mUVRotationPivot;
+    data.gUVRotation = snapshot.mUVRotation;
 }
 
 void Render::RenderUploadManager::UploadDefaultLightData(const LightRenderCommand &cmd, DefaultLightData &data)

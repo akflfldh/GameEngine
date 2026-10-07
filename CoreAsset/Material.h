@@ -96,6 +96,18 @@ class CORE_ASSET_API Material : public Asset
     void SetShadingModel(EShadingModel shadingMode);
     EShadingModel GetShadingMode() const;
 
+    // 현재 지원 범위는 U/V 각 축이 양수인 타일링이다. 양수 배율은 정규화된 tangent 방향을 유지하지만,
+    // 음수 배율은 UV를 반전시켜 normal map의 T/B 방향 보정이 필요하며 아직 지원하지 않는다.
+    // 0 배율은 해당 UV 축을 소실시키므로 지원 범위에서 제외한다.
+    void SetUVTiling(const CoreMath::Vector2 &uv);
+    CoreMath::Vector2 GetUVTiling() const;
+
+    void SetUVRotation(float value);
+    float GetUVRotation() const;
+
+    void SetUVRotationPivot(const CoreMath::Vector2 &pivot);
+    CoreMath::Vector2 GetUVRotationPivot() const;
+
   private:
     uint32_t mMaterialHandle = 0;
 
@@ -106,6 +118,10 @@ class CORE_ASSET_API Material : public Asset
     AssetMaterialTexResourceContext mNormalMapResourceContext;
 
     bool mHasNormalMap = false;
+
+    CoreMath::Vector2 mUVTiling = {1, 1};
+    float mUVRotation = 0.0f;
+    CoreMath::Vector2 mUVRotationPivot = {0, 0};
 
     // sampler id
     std::vector<uint32_t> mSamplerResourceContextList;

@@ -35,8 +35,8 @@
 #include <UiSystem/UIManager.h>
 #include <UiSystem/UIRenderableComponent.h>
 #include <UiSystem/UITextComponent.h>
-#include <sstream>
 #include <algorithm>
+#include <sstream>
 
 bool Render::PooledRenderResource::isMatch(const RenderResourceDesc &rhs) const
 {
@@ -462,13 +462,14 @@ void Render::RenderPipelineManager::BuildPassGraph(Core::LogicalWindow *window, 
         {
             // 패스 생성도 명령 생성과 동일한 맵 목록을 사용해야 비참여 맵의 outline이 섞이지 않는다.
             const auto &renderingMaps = window->GetWorld()->GetRenderingMaps();
-            const bool hasOutline = std::any_of(renderingMaps.begin(), renderingMaps.end(),
-                                                [](const Map *map)
-                                                {
-                                                    return map != nullptr &&
-                                                        !ObjectRenderItemBuilder::GetInstance()
-                                                             ->GetOutlineRenderProxyList(map->GetRenderID()).empty();
-                                                });
+            const bool hasOutline =
+                std::any_of(renderingMaps.begin(), renderingMaps.end(),
+                            [](const Map *map)
+                            {
+                                return map != nullptr && !ObjectRenderItemBuilder::GetInstance()
+                                                              ->GetOutlineRenderProxyList(map->GetRenderID())
+                                                              .empty();
+                            });
             if (hasOutline)
             {
                 std::unique_ptr<IRenderPass> outlinePass = std::make_unique<RenderOutlinePass>();
@@ -697,9 +698,12 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
     /*
         평행광의 위치는 카메라의 위치로부터 계산하다.
 
-        그림자 구현시 현재 평행광의 위치를 항상 원점을 봐라보는게아니라 그 카메라를 따라가야할듯
-        에디터에서 개발시에는 에디터의 카메라를 따라가고
-        플레이시에는 플레이카메라를 따라가야하는거지
+        그림자 구현시 현재 평행광의 위치를
+     * 항상 원점을
+     * 봐라보는게아니라 그 카메라를 따라가야할듯
+        에디터에서 개발시에는 에디터의
+     * 카메라를 따라가고
+ 플레이시에는 플레이카메라를 따라가야하는거지
 
     */
     for (size_t i = 0; i < executeContext.mLightRenderCommandList.size(); ++i)
@@ -726,7 +730,6 @@ void Render::RenderPipelineManager::CreateRenderCommands(World *world, RenderPas
             break;
         }
     }
-
 }
 
 void Render::RenderPipelineManager::CreateMapRenderCommands(const Map *map, RenderPassExecuteContext &executeContext)
@@ -796,8 +799,8 @@ void Render::RenderPipelineManager::CreateMapRenderCommands(const Map *map, Rend
     // debug line command 생성(복사)
     // 추가 맵의 debug line도 누적한다. 대입하면 앞서 수집한 맵의 선이 사라진다.
     executeContext.mDebugLineRenderCommandList.insert(executeContext.mDebugLineRenderCommandList.end(),
-                                                     proxyContext->mDebugLineRenderCommandList.begin(),
-                                                     proxyContext->mDebugLineRenderCommandList.end());
+                                                      proxyContext->mDebugLineRenderCommandList.begin(),
+                                                      proxyContext->mDebugLineRenderCommandList.end());
 
     // 분류된 Command 생성
 
@@ -1115,7 +1118,9 @@ Render::MaterialRenderSnapshot Render::RenderPipelineManager::GetMaterialSnapsho
     materialRenderSnapshot.mMetallic = material->GetMetallic();
     materialRenderSnapshot.mRoughness = material->GetRoughness();
     materialRenderSnapshot.mUseExplicitGpuMat = material->GetUseExplicitGpuMaterial();
-    // materialRenderSnapshot.mGpuMatID = material->GetGpuMaterialID();
+    materialRenderSnapshot.mUVTiling = material->GetUVTiling();
+    materialRenderSnapshot.mUVRotationPivot = material->GetUVRotationPivot();
+    materialRenderSnapshot.mUVRotation = material->GetUVRotation();
     materialRenderSnapshot.mShadingModel = material->GetShadingMode();
     materialRenderSnapshot.mAmbient = material->GetAmbient();
     materialRenderSnapshot.mEmissiveColor = material->GetEmissiveColor();

@@ -34,6 +34,9 @@ cbuffer MaterialBuffer :register(b2)
     float gRoughness;
     float3 gEmissiveColor;
     float gEmissiveIntensity;
+    float2 gUVTiling;
+    float2 gUVRotationPivot;
+    float gUVRotation;
 }
 
 
@@ -195,9 +198,6 @@ float SmithHeightCorrelated(float3 light ,  float3 normal,  float3 toEye ,float 
 
     float inv_av=  (alpha * sqrt(  max(1.0f- (NdotV * NdotV), 0.0f))) / NdotV; 
     float inv_al=  (alpha * sqrt(max(1.0f- (NdotL * NdotL) , 0.0f)))/ NdotL; 
-
-
-
 
 
     float lamdaV = (-1  + sqrt(1+ (inv_av * inv_av)) )/ 2.0f;  
@@ -386,6 +386,58 @@ float3 ComputeLighting(LightData light,float3 albedo ,  float3 posW, float3 norm
 }
 
 
+//rotation먼저하고 scale 
+float2 TransformUV(float2 uv, float rotation, float2 rotationPivot, float2 scale)
+{
+
+    float s;
+    float c;
+    sincos(radians(rotation),s,c);
+    
+
+    float2x2 R =
+    {
+         c, -s,
+         s,  c
+    };
+
+
+
+    return   scale * ( mul(R, (uv-rotationPivot)) + rotationPivot); 
+
+}
+
+float2x2 GetUVTransformInvMatrix(float rotation , float2 scale)
+{
+
+       float s;
+    float c;
+    sincos(radians(rotation),s,c);
+    
+
+    float2x2 R =
+    {
+         c, -s,
+         s,  c
+    };
+    
+    float2x2 S=
+    {
+        scale.x ,0,
+        0,scale.y
+    };
+    
+     float2x2 mat = mul(S,R);
+   float det = determinant(mat);
+   float invDet = 1.0f / det;
+
+
+  return float2x2(
+         mat._m11, -mat._m01,
+        -mat._m10,  mat._m00
+    ) * invDet;
+
+}
 
 VertexOut VS(VertexIn vin)
 {
@@ -416,11 +468,32 @@ VertexOut VS(VertexIn vin)
     vout.mPosW = posW.xyz;
     vout.mPosH =mul(posW,gViewProj);
 
-    vout.mTex = vin.mTex;
-    vout.mNormal = mul(gWorldInvTrans, float4(normalLocal,0.0f));
-    vout.mTangent = mul(gWorldInvTrans,float4(tangentLocal,0.0f));
-    vout.mTangent.w = vin.mTangent.w;
+    vout.mTex = TransformUV(vin.mTex,gUVRotation,gUVRotationPivot,gUVTiling);  // vin.mTex * gUVTiling;
+    
+
+
+    float3 N  =normalize( mul(gWorldInvTrans, float4(normalLocal,0.0f))).xyz;
+    float3 T  = mul(gWorld,float4(tangentLocal,0.0f));
+
+    T=normalize(T -N * dot(N,T));    
+    float3 B = normalize( cross(N,T)) *vin.mTangent.w;
+    
+
     vout.mShadowPosH = mul(posW,mLightViewProj);
+
+  
+    
+    float2x2 uvTransformInv =  GetUVTransformInvMatrix(gUVRotation,gUVTiling);
+
+    
+   float3 newT =
+    T * uvTransformInv[0][0] +
+    B * uvTransformInv[1][0];
+
+    vout.mNormal =N;
+    vout.mTangent.xyz= newT;
+    vout.mTangent.w = vin.mTangent.w;
+    
     
     return vout;
 
@@ -487,6 +560,9 @@ cbuffer MaterialBuffer :register(b2)
     float gRoughness;
     float3 gEmissiveColor;
     float gEmissiveIntensity; 
+    float2 gUVTiling;
+    float2 gUVRotationPivot;
+    float gUVRotation;
 }
 
 Texture2D _TexMap :register(t1);

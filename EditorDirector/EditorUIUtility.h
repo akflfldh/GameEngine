@@ -17,6 +17,7 @@ class UIBoolPanel;
 class UIDropdown;
 class UIFoldoutPanel;
 class UIReflectFloatPanel;
+class UIReflectVector2Panel;
 class UIReflectVector3Panel;
 
 // 에디터의 생성 규격만 소유한다. UI의 수명·입력·레이아웃은 기존 Canvas/컴포넌트가 관리한다.
@@ -94,6 +95,8 @@ class EditorUIUtility
     static UIBoolPanel *CreateBoolField(UI::UIElement *parent, const char *instanceName);
     static UIReflectFloatPanel *CreateFloatField(UI::UICanvas *canvas, const char *instanceName);
     static UIReflectFloatPanel *CreateFloatField(UI::UIElement *parent, const char *instanceName);
+    static UIReflectVector2Panel *CreateVector2Field(UI::UICanvas *canvas, const char *instanceName);
+    static UIReflectVector2Panel *CreateVector2Field(UI::UIElement *parent, const char *instanceName);
     static UIReflectVector3Panel *CreateVector3Field(UI::UICanvas *canvas, const char *instanceName);
     static UIReflectVector3Panel *CreateVector3Field(UI::UIElement *parent, const char *instanceName);
     static UIFoldoutPanel *CreateFoldoutPanel(UI::UICanvas *canvas, const char *instanceName);

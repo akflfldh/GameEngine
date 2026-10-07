@@ -129,6 +129,9 @@ void CoreAsset::Material::Serialize(Arch &arch)
 
     arch << mDiffuseColor;
     arch << mDiffuseFactor;
+    arch << mUVTiling;
+    arch << mUVRotationPivot;
+    arch << mUVRotation;
     arch << mSpecular;
     arch << mSpecularFactor;
     arch << mAmbient;
@@ -366,6 +369,42 @@ CoreAsset::EShadingModel CoreAsset::Material::GetShadingMode() const
     return mShadingModel;
 }
 
+void CoreAsset::Material::SetUVTiling(const CoreMath::Vector2 &uv)
+{
+
+    // TODO: 양수만 허용하는 지원 범위와 달리 현재 clamp는 0도 허용한다.
+    // 음수 입력 역시 0으로 바뀌므로, 향후 양수 검증/거부 정책을 적용해야 한다.
+    mUVTiling = uv;
+    mUVTiling.X = std::max(0.001f, mUVTiling.X);
+    mUVTiling.Y = std::max(0.001f, mUVTiling.Y);
+}
+CoreMath::Vector2 CoreAsset::Material::GetUVTiling() const
+{
+
+    return mUVTiling;
+}
+
+void CoreAsset::Material::SetUVRotation(float value)
+{
+
+    mUVRotation = value;
+}
+
+float CoreAsset::Material::GetUVRotation() const
+{
+
+    return mUVRotation;
+}
+
+void CoreAsset::Material::SetUVRotationPivot(const CoreMath::Vector2 &pivot)
+{
+
+    mUVRotationPivot = pivot;
+}
+CoreMath::Vector2 CoreAsset::Material::GetUVRotationPivot() const
+{
+    return mUVRotationPivot;
+}
 const std::vector<uint32_t> &CoreAsset::Material::GetSamplerResourceContextList() const
 {
 

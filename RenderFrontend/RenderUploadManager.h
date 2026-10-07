@@ -48,6 +48,9 @@ struct DefaultMaterialData
     float gRoughness;
     CoreMath::Vector3 gEmissiveColor;
     float gEmissiveIntensity;
+    CoreMath::Vector2 gUVTiling = {1, 1};
+    CoreMath::Vector2 gUVRotationPivot = {0, 0};
+    float gUVRotation = 0.0f;
 };
 
 struct DefaultLightData

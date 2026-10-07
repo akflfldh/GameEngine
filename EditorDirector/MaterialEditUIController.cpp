@@ -1,8 +1,9 @@
 ﻿#include "MaterialEditUIController.h"
-#include <EditorDirector/EditorUIUtility.h>
 #include <CoreAsset/AssetManager.h>
 #include <CoreAsset/Material.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIAssetSlotPanel.h>
+#include <EditorDirector/UIReflectVector2Panel.h>
 #include <UIAssetSlotListPanel.h>
 #include <UIReflectFloatPanel.h>
 #include <UIReflectVector3Panel.h>
@@ -96,6 +97,24 @@ void MaterialEditUIController::BeginUI(float panelPosY)
         "Emissive 강도", [this]() { return GetEmissiveIntensity(); },
         [this](float value) { SetEmissiveIntensity(value); });
 
+    mUVTilingReflectPanel = EditorUIUtility::CreateVector2Field(mCanvas, "UVTilingPanel");
+    mUVTilingReflectPanel->SetTagText("UV 타일링");
+    mUVTilingReflectPanel->BindVector2([this]() { return GetUVTiling(); },
+                                       [this](const CoreMath::Vector2 &value) { SetUVTiling(value); });
+
+    // 기존 속성처럼 임시 편집 데이터에만 기록하고, 적용 버튼 경로에서 머터리얼에 반영한다.
+    mUVRotationReflectPanel = CreateFloatReflectPanel(
+        "UV 회전", [this]() { return GetUVRotation(); }, [this](float value) { SetUVRotation(value); });
+
+    mUVRotationPivotReflectPanel = EditorUIUtility::CreateVector2Field(mCanvas, "UVRotationPivotPanel");
+    mUVRotationPivotReflectPanel->SetTagText("UV 회전 피벗");
+    mUVRotationPivotReflectPanel->BindVector2(
+        [this]() { return GetUVRotationPivot(); },
+        [this](const CoreMath::Vector2 &value) { SetUVRotationPivot(value); });
+
+    mScrollBox->AddItem(mUVTilingReflectPanel);
+    mScrollBox->AddItem(mUVRotationReflectPanel);
+    mScrollBox->AddItem(mUVRotationPivotReflectPanel);
     mScrollBox->AddItem(mRoughnessReflectPanel);
     mScrollBox->AddItem(mMetalicReflectPanel);
     mScrollBox->AddItem(mEmissiveColorReflectPanel);
@@ -161,6 +180,9 @@ void MaterialEditUIController::ReBuild()
     mDiffuseColorReflectPanel->RefreshFromSource();
     mDiffuseFactorReflectPanel->RefreshFromSource();
     mRoughnessReflectPanel->RefreshFromSource();
+    mUVTilingReflectPanel->RefreshFromSource();
+    mUVRotationReflectPanel->RefreshFromSource();
+    mUVRotationPivotReflectPanel->RefreshFromSource();
 
     // ReBuildDiffuseMapListPanel
 
@@ -225,6 +247,9 @@ void MaterialEditUIController::BuildMaterialEdtiData(const CoreAsset::Material &
     oEditData.mSpecular = material.GetSpecular();
     oEditData.mSpecularFactor = material.GetSpecularFactor();
 
+    oEditData.mUVTiling = material.GetUVTiling();
+    oEditData.mUVRotation = material.GetUVRotation();
+    oEditData.mUVRotationPivot = material.GetUVRotationPivot();
     oEditData.mRoughness = material.GetRoughness();
     oEditData.mMetallic = material.GetMetallic();
     oEditData.mUseExplicitGpuMaterial = material.GetUseExplicitGpuMaterial();
@@ -255,6 +280,9 @@ void MaterialEditUIController::ApplyEditDataToMaterial(const MaterialEditData &e
     material.SetEmissiveColor(editData.mEmissiveColor);
     material.SetEmissiveIntensity(editData.mEmissiveIntensity);
     material.SetUseExplicitGpuMaterial(editData.mUseExplicitGpuMaterial);
+    material.SetUVTiling(editData.mUVTiling);
+    material.SetUVRotation(editData.mUVRotation);
+    material.SetUVRotationPivot(editData.mUVRotationPivot);
 
     std::vector<CoreAsset::AssetMaterialTexResourceContext> &albedoList = material.GetAlbedoTexResourceList();
     albedoList.clear();
@@ -315,6 +343,22 @@ float MaterialEditUIController::GetEmissiveIntensity() const
     return mMaterialEditData.mEmissiveIntensity;
 }
 
+CoreMath::Vector2 MaterialEditUIController::GetUVTiling() const
+{
+
+    return mMaterialEditData.mUVTiling;
+}
+
+float MaterialEditUIController::GetUVRotation() const
+{
+    return mMaterialEditData.mUVRotation;
+}
+
+CoreMath::Vector2 MaterialEditUIController::GetUVRotationPivot() const
+{
+    return mMaterialEditData.mUVRotationPivot;
+}
+
 void MaterialEditUIController::SetDiffuseColor(const CoreMath::Vector3 &value)
 {
 
@@ -349,6 +393,21 @@ void MaterialEditUIController::SetEmissiveIntensity(float value)
 {
 
     mMaterialEditData.mEmissiveIntensity = value;
+}
+void MaterialEditUIController::SetUVTiling(const CoreMath::Vector2 &value)
+{
+
+    mMaterialEditData.mUVTiling = value;
+}
+
+void MaterialEditUIController::SetUVRotation(float value)
+{
+    mMaterialEditData.mUVRotation = value;
+}
+
+void MaterialEditUIController::SetUVRotationPivot(const CoreMath::Vector2 &value)
+{
+    mMaterialEditData.mUVRotationPivot = value;
 }
 
 UIReflectVector3Panel *MaterialEditUIController::CreateVector3ReflectPanel(

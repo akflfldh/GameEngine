@@ -14,6 +14,7 @@ struct PropertyInfo;
 }
 
 class UIReflectSinglePrimitivePanel;
+class UIReflectVector2Panel;
 class UIReflectVector3Panel;
 class UIReflectBoolPanel;
 class UIReflectVectorPanel;
@@ -47,6 +48,7 @@ class UIReflectPanelFactory
   private:
     std::vector<UIReflectSinglePrimitivePanel *> mSinglePrimitivePanelPool;
     std::vector<UIReflectFloatPanel *> mFloatPanelPool;
+    std::vector<UIReflectVector2Panel *> mVector2PanelPool;
     std::vector<UIReflectVector3Panel *> mVector3PanelPool;
     std::vector<UIReflectBoolPanel *> mBoolPanelPool;
     std::vector<UIReflectVectorPanel *> mVectorPanelPool;

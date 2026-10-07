@@ -1,5 +1,4 @@
 ﻿#include "MaterialWorkSpaceManager.h"
-#include <EditorDirector/EditorUIUtility.h>
 #include <Core/LightObject.h>
 #include <Core/LogicalWindow.h>
 #include <Core/Map.h>
@@ -15,6 +14,7 @@
 #include <EditorDirector/EditorSceneController.h>
 #include <EditorDirector/EditorSceneManager.h>
 #include <EditorDirector/EditorSelectionManager.h>
+#include <EditorDirector/EditorUIUtility.h>
 #include <EditorDirector/UIScrollBox.h>
 #include <UiSystem/UIButton.h>
 #include <UiSystem/UIButtonComponent.h>
@@ -162,7 +162,7 @@ void MaterialWorkSpaceManager::InitWorld()
 
     // 실제 광원/카메라는 유지하되, 편집용 조명 시각화와 기즈모는 생성하지 않는다.
     Quad::EditorProjectManager::GetInstance()->CreateEditorObjects(map, EditorMaterialSelectionManager::GetInstance(),
-                                                                 false, false);
+                                                                   false, false);
 
     // Sphere Object
     mSphereElement = mWorld->CreateEntity<Core::StaticMeshObject>("SphereElement");
@@ -255,6 +255,10 @@ void MaterialWorkSpaceManager::CopyMaterial(CoreAsset::Material *sourceMaterial,
     targetMaterial->SetUseExplicitGpuMaterial(sourceMaterial->GetUseExplicitGpuMaterial());
     targetMaterial->SetEmissiveColor(sourceMaterial->GetEmissiveColor());
     targetMaterial->SetEmissiveIntensity(sourceMaterial->GetEmissiveIntensity());
+    targetMaterial->SetUVTiling(sourceMaterial->GetUVTiling());
+    // 열 때 원본→프리뷰, 적용할 때 프리뷰→원본에 동일한 UV 편집 속성을 전달한다.
+    targetMaterial->SetUVRotation(sourceMaterial->GetUVRotation());
+    targetMaterial->SetUVRotationPivot(sourceMaterial->GetUVRotationPivot());
     std::vector<CoreAsset::AssetMaterialTexResourceContext> &targetAlbedoList =
         targetMaterial->GetAlbedoTexResourceList();
     targetAlbedoList.clear();

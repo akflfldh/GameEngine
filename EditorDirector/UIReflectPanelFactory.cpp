@@ -12,6 +12,7 @@
 #include <SkeletalMeshComponentUIReflectPanel.h>
 #include <UIReflectBoolPanel.h>
 #include <UIReflectSinglePrimitivePanel.h>
+#include <UIReflectVector2Panel.h>
 #include <UIReflectVector3Panel.h>
 #include <UiSystem/UIEditBox.h>
 #include <UiSystem/UIElement.h>
@@ -100,6 +101,26 @@ std::vector<UI::UIElement *> UIReflectPanelFactory::GetReflectPanel(void *target
         primitivePanel->SetActiveFlag(true);
         primitivePanel->SetParent(parentElement);
         panel = primitivePanel;
+    }
+    else if (std::strcmp(property->mType, "Vector2") == 0)
+    {
+        // Vector3와 동일하게 reflection 바인딩을 사용하고 Canvas 소유 패널을 풀에서 재사용한다.
+        UIReflectVector2Panel *vector2Panel = nullptr;
+        if (mVector2PanelPool.empty())
+        {
+            vector2Panel = EditorUIUtility::CreateVector2Field(parentElement, "ReflectVector2Panel");
+            vector2Panel->mReturnToPoolCallback = [this](UI::UIElement *element)
+            { mVector2PanelPool.push_back(static_cast<UIReflectVector2Panel *>(element)); };
+        }
+        else
+        {
+            vector2Panel = mVector2PanelPool.back();
+            mVector2PanelPool.pop_back();
+        }
+        vector2Panel->SetTagText(tagName);
+        vector2Panel->SetActiveFlag(true);
+        vector2Panel->SetParent(parentElement);
+        panel = vector2Panel;
     }
     else if (std::strcmp(property->mType, "Vector3") == 0)
     {

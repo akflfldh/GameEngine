@@ -130,9 +130,13 @@ struct MaterialRenderSnapshot
     CoreMath::Vector3 mDiffuseFactor = {1, 1, 1};
     CoreMath::Vector3 mAmbient = {0, 0, 0};
     CoreMath::Vector3 mEmissiveColor = {0, 0, 0};
+    CoreMath::Vector2 mUVTiling = {1, 1};
+    CoreMath::Vector2 mUVRotationPivot = {0, 0};
+    float mUVRotation = 0.0f;
     float mEmissiveIntensity = 1.0f;
     float mMetallic;
     float mRoughness;
+
     std::vector<CoreAsset::Texture *> mAlbedoMapList;
     CoreAsset::Texture *mNormalMap = nullptr;
     uint32_t mHandle = 0;

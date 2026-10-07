@@ -17,6 +17,7 @@ class UIAssetSlotListPanel;
 class UIReflectFloatPanel;
 class UIReflectVector3Panel;
 class UIAssetSlotPanel;
+class UIReflectVector2Panel;
 
 struct MaterialEditData
 {
@@ -26,6 +27,9 @@ struct MaterialEditData
     CoreMath::Vector3 mSpecular;
     float mSpecularFactor = 1.0f;
 
+    CoreMath::Vector2 mUVTiling = {1, 1};
+    float mUVRotation = 0.0f;
+    CoreMath::Vector2 mUVRotationPivot = {0, 0};
     float mMetallic = 0.0f;
     float mRoughness = 0.4f;
 
@@ -74,6 +78,9 @@ class MaterialEditUIController
     float GetMetalic() const;
     CoreMath::Vector3 GetEmissiveColor() const;
     float GetEmissiveIntensity() const;
+    CoreMath::Vector2 GetUVTiling() const;
+    float GetUVRotation() const;
+    CoreMath::Vector2 GetUVRotationPivot() const;
 
     void SetDiffuseColor(const CoreMath::Vector3 &value);
     void SetDiffuseFactor(float value);
@@ -81,6 +88,9 @@ class MaterialEditUIController
     void SetMetalic(float value);
     void SetEmissiveColor(const CoreMath::Vector3 &value);
     void SetEmissiveIntensity(float value);
+    void SetUVTiling(const CoreMath::Vector2 &value);
+    void SetUVRotation(float value);
+    void SetUVRotationPivot(const CoreMath::Vector2 &value);
 
     UIReflectVector3Panel *CreateVector3ReflectPanel(const std::string &tagText,
                                                      std::function<CoreMath::Vector3()> getter,
@@ -105,4 +115,7 @@ class MaterialEditUIController
     UIReflectFloatPanel *mMetalicReflectPanel = nullptr;
     UIReflectVector3Panel *mEmissiveColorReflectPanel = nullptr;
     UIReflectFloatPanel *mEmissiveIntensityReflectPanel = nullptr;
+    UIReflectVector2Panel *mUVTilingReflectPanel = nullptr;
+    UIReflectFloatPanel *mUVRotationReflectPanel = nullptr;
+    UIReflectVector2Panel *mUVRotationPivotReflectPanel = nullptr;
 };
