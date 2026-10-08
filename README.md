@@ -119,7 +119,7 @@ cmake --build --preset user-debug-ninja
 <details>
 <summary>업데이트 상황</summary>
 
-2026-10-07 - 머터리얼 텍스처 UV 타일링 기능추가 (스케일,회전)
+2026-10-07 - 머터리얼 텍스처 UV 타일링 기능추가 (스케일,회전)\
 2026-10-08 - 빌트인 세이더 로드구조 를  파일로드구조 &  런타임 컴파일된 Shader.bin 로드 구조로 전환
 
 
