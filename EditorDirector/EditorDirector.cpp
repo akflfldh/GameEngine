@@ -1,7 +1,7 @@
 ﻿#ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
 #include <EditorDirector/EditorUIUtility.h>
+#include <crtdbg.h>
 #endif
 
 #include "EditorDirector/EditorDirector.h"
@@ -80,6 +80,7 @@
 #include <EditorDirector/GlobalOverlayManager.h>
 #include <EditorDirector/ObjectHierarchyPanel.h>
 #include <EditorDirector/ProjectGenerator.h>
+#include <EditorDirector/Shader/ShaderCompiler.h>
 #include <EditorDirector/UIAssetBrowser.h>
 #include <IEditorTaskManager.h>
 #include <ImportModule/TextureImporter.h>
@@ -97,6 +98,7 @@
 #include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
 #include <RenderFrontend/RenderPipelineManager.h>
+#include <RenderFrontend/ShaderSourceLibrary.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <SystemInitializer/ISystemInitializer.h>
@@ -107,7 +109,10 @@
 #include <UiSystem/UIType.h>
 #include <Window/BaseWindow.h>
 #include <core/PrefabStorer.h>
+#include <algorithm>
 #include <memory>
+#include <unordered_map>
+#include <utility>
 
 #pragma comment(lib, "ImportModule.lib")
 
@@ -143,7 +148,8 @@ void Quad::EditorDirector::Initialize()
     auto app = Application::GetInstance();
     mApp = app;
 
-    InitSystems();
+    if (!InitSystems())
+        return;
     LoadEditorAssets();
 
     mSuperFrameController = SuperFrameController::GetInstance();
@@ -510,7 +516,6 @@ void Quad::EditorDirector::InitEngineAssetLogicalFile()
     mLogicalFileSystem->MakeFile(cylinderInfo, "Cylinder", mLogicalFileSystem->GetEngineFolder());
 }
 
-
 void Quad::EditorDirector::CreateCommonUITheme()
 {
     *mCommonUITheme = EditorUIUtility::CreateVisualTheme();
@@ -576,7 +581,7 @@ void Quad::EditorDirector::CreateAnimationClipWorkSpace()
 void Quad::EditorDirector::CreateAnimationTransitionSetWorkSpace()
 {
     AnimationTransitionSetWorkSpaceManager::GetInstance()->Initialize(mGlobalOverlayLogicalWindow.get(),
-                                                                    *mCommonUITheme);
+                                                                      *mCommonUITheme);
 }
 
 void Quad::EditorDirector::CreateProjectSettingWorkSpace()
@@ -918,7 +923,7 @@ void Quad::EditorDirector::SwitchFrameWindow() {}
 
 void Quad::EditorDirector::SwitchCommonEditWindow() {}
 
-void Quad::EditorDirector::InitSystems()
+bool Quad::EditorDirector::InitSystems()
 {
     CHECK(mAssetManager != nullptr);
     CHECK(mUIManager != nullptr);
@@ -1006,9 +1011,14 @@ void Quad::EditorDirector::InitSystems()
       auto instance = CoreAsset::GlobalAssetRegistrySystem ::GetInstance();*/
     // instance->SetNextAssetID(2, true);
 
-    // Asset Resolver
+
+
+    // Resolver는 초기화 중 기본 머터리얼을 생성하므로 필요한 바이트코드를 먼저 공급한다.
+    if (!LoadAndCompileShaders())
+        return false;
+
     Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
-    assetResolver->Initialize(mAssetManager, mGpuResourceManager);
+    assetResolver->Initialize(mAssetManager, mGpuResourceManager, Render::ShaderSourceLibrary::GetInstance());
 
     // TextureImporter
     mTextureImporter = std::make_unique<EditorTextureImporter>(Import::TextureImporter::GetInstance(),
@@ -1026,6 +1036,130 @@ void Quad::EditorDirector::InitSystems()
                                    CoreAsset::AssetMetaDataManager::GetInstance());
 
     AsyncThreadPool::GetInstance();
+    return true;
+}
+
+bool Quad::EditorDirector::LoadAndCompileShaders()
+{
+    const std::filesystem::path shaderRoot = EditorConfig::GetInstance()->GetEditorRootPath() / "Shader";
+
+    // 파일명만으로는 entry point와 스키닝 변형을 구분할 수 없다. 현재 기본 패스와 에디터
+    // 오버레이의 컴파일 조건을 명시하고, 공용 PS나 lit/unlit에서 공유하는 VS는 한 번만 등록한다.
+    // PSO의 렌더 상태·InputLayout·머터리얼 ID는 이 목록에 포함하지 않는다.
+    const std::vector<Render::ShaderVariantKey> shaderVariantList = {
+        {"DefaultStaticMesh.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DefaultStaticMesh.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {{"ENABLE_SKINNING", "1"}}},
+        {"DefaultStaticMesh.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"DefaultStaticMesh_Unlit.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+
+        {"OutlineStaticMesh.hlsl", "VS_Stencil", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"OutlineStaticMesh.hlsl", "VS_Stencil", "vs_5_1", Render::EShaderStage::eVertex,
+         {{"ENABLE_SKINNING", "1"}}},
+        {"OutlineStaticMesh.hlsl", "VS_DrawOutline", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"OutlineStaticMesh.hlsl", "VS_DrawOutline", "vs_5_1", Render::EShaderStage::eVertex,
+         {{"ENABLE_SKINNING", "1"}}},
+        {"OutlineStaticMesh.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+
+        {"GrayScale.hlsl", "VSMain", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"GrayScale.hlsl", "PSMain", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"DebugGrid.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DebugGrid.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"Billboard.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"Billboard.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"Billboard.hlsl", "GS", "gs_5_1", Render::EShaderStage::eGeometry, {}},
+        {"DebugLine.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DebugLine.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+
+        {"DefaultUI.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DefaultUI.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"DefaultFont.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DefaultFont.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"SkySphere.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"SkySphere.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+
+        {"Shadow.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"Shadow.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {{"ENABLE_SKINNING", "1"}}},
+        {"ToneMapping.hlsl", "VSMain", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"ToneMapping.hlsl", "PSMain", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"BloomHorizontal.hlsl", "CSMain", "cs_5_1", Render::EShaderStage::eCompute, {}},
+        {"BloomVertical.hlsl", "CSMain", "cs_5_1", Render::EShaderStage::eCompute, {}},
+
+        {"GizmoMesh.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"GizmoMesh.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}},
+        {"DebugCollider.hlsl", "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+        {"DebugCollider.hlsl", "PS", "ps_5_1", Render::EShaderStage::ePixel, {}}};
+
+    std::unordered_map<std::string, std::vector<uint8_t>> sourceBufferTable;
+    Render::ShaderBytecodeTable compiledTable;
+    compiledTable.reserve(shaderVariantList.size());
+    auto compiler = ShaderCompiler::GetInstance();
+
+    for (auto key : shaderVariantList)
+    {
+        // 조회 키에는 설치 경로를 넣지 않는다. 매크로 순서도 통일하여 동일 조건의 중복을 제거한다.
+        key.mShaderPath = std::filesystem::path(key.mShaderPath).lexically_normal().generic_string();
+        std::sort(key.mShaderMacros.begin(), key.mShaderMacros.end(),
+                  [](const Render::ShaderMacroDefinition &a, const Render::ShaderMacroDefinition &b)
+                  { return a.mMacro < b.mMacro; });
+        if (std::adjacent_find(key.mShaderMacros.begin(), key.mShaderMacros.end(),
+                               [](const Render::ShaderMacroDefinition &a, const Render::ShaderMacroDefinition &b)
+                               { return a.mMacro == b.mMacro; }) != key.mShaderMacros.end())
+        {
+            LOG_MESSAGE_ERROR("ShaderCompile", std::string("중복 매크로 이름이 있습니다: ") + key.mShaderPath);
+            return false;
+        }
+
+        if (compiledTable.find(key) != compiledTable.end())
+            continue;
+
+        auto sourceIt = sourceBufferTable.find(key.mShaderPath);
+        if (sourceIt == sourceBufferTable.end())
+        {
+            const std::filesystem::path sourcePath = shaderRoot / key.mShaderPath;
+            BinaryArch arch(true);
+            arch.SetFile(sourcePath);
+            arch.Start();
+            if (arch.IsFail())
+            {
+                LOG_MESSAGE_ERROR("ShaderCompile", std::string("HLSL 파일 읽기 실패: ") + sourcePath.generic_string());
+                return false;
+            }
+
+            std::vector<uint8_t> sourceBuffer(arch.GetFileSize());
+            if (sourceBuffer.empty() || !arch.CopyFromBuffer(sourceBuffer.data(), sourceBuffer.size()))
+            {
+                LOG_MESSAGE_ERROR("ShaderCompile", std::string("HLSL 파일이 비어 있거나 복사에 실패했습니다: ") +
+                                                       sourcePath.generic_string());
+                return false;
+            }
+
+            sourceIt = sourceBufferTable.emplace(key.mShaderPath, std::move(sourceBuffer)).first;
+        }
+
+        // 원본은 이 메서드의 캐시가 소유한다. 동기 Compile 호출 동안 ShaderSourceInfo의 포인터가
+        // 유효하며, 결과 테이블에는 원본 주소가 아닌 독립적인 바이트코드만 저장한다.
+        Render::ShaderSourceInfo shaderInfo = {};
+        shaderInfo.mShadeCode = sourceIt->second.data();
+        shaderInfo.mShaderCodeSize = sourceIt->second.size();
+        shaderInfo.mEntryPoint = key.mEntryPoint;
+        shaderInfo.mTarget = key.mTarget;
+        shaderInfo.mStage = key.mStage;
+        shaderInfo.mShaderMacros = key.mShaderMacros;
+
+        std::vector<uint8_t> bytecode;
+        if (!compiler->Compile(shaderInfo, bytecode) || bytecode.empty())
+        {
+            LOG_MESSAGE_ERROR("ShaderCompile", std::string("셰이더 변형 컴파일 실패: ") + key.mShaderPath + " [" +
+                                                   key.mEntryPoint + ", " + key.mTarget + "]");
+            return false;
+        }
+
+        compiledTable.emplace(std::move(key), std::move(bytecode));
+    }
+
+    // 실패 도중의 부분 테이블은 공개하지 않는다. 모두 성공한 경우에만 라이브러리로 소유권을 넘긴다.
+    Render::ShaderSourceLibrary::GetInstance()->SetShaderBytecodeTable(std::move(compiledTable));
+    return true;
 }
 
 void Quad::EditorDirector::UpdateEditorTaskManagers()

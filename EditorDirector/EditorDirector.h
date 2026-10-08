@@ -172,7 +172,10 @@ class EditorDirector : public IProgramDirector
     void SwitchFrameWindow();
     void SwitchCommonEditWindow();
 
-    void InitSystems();
+    bool InitSystems();
+
+    // 에디터 루트의 HLSL을 변형별로 컴파일하고, 완성된 바이트코드 테이블만 렌더에 공급한다.
+    bool LoadAndCompileShaders();
 
     void UpdateEditorTaskManagers();
 

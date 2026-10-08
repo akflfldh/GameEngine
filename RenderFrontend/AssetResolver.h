@@ -29,6 +29,8 @@ class IGpuResourceManager;
 namespace Render
 {
 
+class ShaderSourceLibrary;
+
 struct MeshGpuResourceContext
 {
 
@@ -43,7 +45,8 @@ class RENDER_FRONTEND_API AssetResolver
     AssetResolver();
     ~AssetResolver();
 
-    void Initialize(CoreAsset::AssetManager *assetManager, GRM::IGpuResourceManager *gpuResourceManager);
+    void Initialize(CoreAsset::AssetManager *assetManager, GRM::IGpuResourceManager *gpuResourceManager,
+                    ShaderSourceLibrary *shaderSourceLibrary);
 
     bool RequestResolveAsset(CoreAsset::Asset *asset);
 

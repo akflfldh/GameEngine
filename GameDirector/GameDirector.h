@@ -76,6 +76,7 @@ class GameDirector : public Quad::IProgramDirector
     bool LoadGameBuildManifest();
     void LoadAssets();
     bool LoadProjectCollisionCfg();
+    bool LoadShaderBin();
 
     /*
     렌더와 관련된 시스템들 초기화

@@ -2,6 +2,7 @@
 
 #include "Application.h"
 #include "GameDirector/GameWindowController.h"
+#include <Core/CoreType.h>
 #include <Core/LogicalWindow.h>
 #include <Core/MapFactory.h>
 #include <Core/MapLoader.h>
@@ -32,6 +33,7 @@
 #include <RenderFrontend/AssetResolver.h>
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
 #include <RenderFrontend/RenderPipelineManager.h>
+#include <RenderFrontend/ShaderSourceLibrary.h>
 #include <UiSystem/UICanvas.h>
 #include <UiSystem/UIManager.h>
 #include <Utility/Utility.h>
@@ -46,6 +48,7 @@
 #include <PhysicalFileSystem/PhysicalFileSystem.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
+#include <utility>
 
 Quad::GameDirector *Quad::GameDirector::GetInstance()
 {
@@ -78,6 +81,11 @@ void Quad::GameDirector::Initialize()
     }
 
     if (!LoadProjectCollisionCfg())
+    {
+        return;
+    }
+
+    if (!LoadShaderBin())
     {
         return;
     }
@@ -428,7 +436,11 @@ void Quad::GameDirector::LoadAssets()
     Render::AssetResolver *assetResolver = Render::AssetResolver::GetInstance();
 
     // GpuResourceManager는 플랫폼에 맞추어서 (이미 App 모듈에서 적절히 생성 - 초기화함 )
-    assetResolver->Initialize(CoreAsset::AssetManager::GetInstance(), GRM::IGpuResourceManager::GetInstance());
+    // 독립 실행에서는 게임 루트의 Shader 폴더를 공급한다. 에디터 설치 경로에 의존하지 않는다.
+    auto shaderSourceLibrary = Render::ShaderSourceLibrary::GetInstance();
+    // shaderSourceLibrary->LoadShaderSources(mGameRuntimeConfig->GetGameRootDirectory() / "Shader");
+    assetResolver->Initialize(CoreAsset::AssetManager::GetInstance(), GRM::IGpuResourceManager::GetInstance(),
+                              shaderSourceLibrary);
 
     // 나머지 pak 에셋
 
@@ -471,6 +483,47 @@ bool Quad::GameDirector::LoadProjectCollisionCfg()
     }
     Core::CollisionChannelSystem::GetInstance()->Serialize(collisionArch);
     collisionArch.End();
+
+    return true;
+}
+
+bool Quad::GameDirector::LoadShaderBin()
+{
+
+    const std::filesystem::path &path = mGameRuntimeConfig->GetGameRootDirectory() / "Shader.bin";
+    BinaryArch arch(true);
+    arch.SetFile(path);
+    arch.Start();
+
+    if (arch.IsFail())
+        return false;
+
+    Core::ShaderRecordSet set;
+    arch << set;
+
+    arch.End();
+
+    if (arch.IsFail() || set.mRecordNum != set.mRecordList.size())
+        return false;
+
+    auto shaderSourceLibrary = Render::ShaderSourceLibrary::GetInstance();
+
+    Render::ShaderBytecodeTable table;
+    table.reserve(set.mRecordList.size());
+
+    // 로드한 키와 바이트코드의 소유권을 임시 테이블로 옮긴다. 빈 코드나 중복 키는
+    // 잘못된 패키지로 판단하고, 전체 변환이 성공한 경우에만 라이브러리 테이블을 교체한다.
+    for (auto &record : set.mRecordList)
+    {
+        if (record.mBytecode.empty())
+            return false;
+
+        const auto result = table.emplace(std::move(record.mKey), std::move(record.mBytecode));
+        if (!result.second)
+            return false;
+    }
+
+    shaderSourceLibrary->SetShaderBytecodeTable(std::move(table));
 
     return true;
 }

@@ -27,14 +27,15 @@ Render::AssetResolver::AssetResolver() : mIsWorkerRunning(true) {}
 Render::AssetResolver::~AssetResolver() {}
 
 void Render::AssetResolver::Initialize(CoreAsset::AssetManager *assetManager,
-                                       GRM::IGpuResourceManager *gpuResourceManager)
+                                       GRM::IGpuResourceManager *gpuResourceManager,
+                                       ShaderSourceLibrary *shaderSourceLibrary)
 {
     mAssetManager = assetManager;
     mGpuResourceManager = gpuResourceManager;
 
     RegisterBuiltInAsset();
     BuildGpuBuffers();
-    RenderMaterialResolver::GetInstance()->Initialize();
+    RenderMaterialResolver::GetInstance()->Initialize(shaderSourceLibrary);
 
     mWorkerThread = std::thread(&Render::AssetResolver::WokerThreadLoop, this);
 }

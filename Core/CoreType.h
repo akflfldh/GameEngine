@@ -5,7 +5,18 @@
 #include <CoreMath/Geometry.h>
 #include <InputSystem/InputType.h>
 #include <Physics/PhysicsType.h>
+#include <RenderSystem/MaterialType.h>
 #include <RenderSystem/RenderType.h>
+
+namespace Render
+{
+inline Arch &operator<<(Arch &arch, Render::ShaderMacroDefinition &def)
+{
+    arch << def.mMacro << def.mValue;
+    return arch;
+}
+
+} // namespace Render
 
 namespace Core
 {
@@ -191,5 +202,47 @@ enum class EActionValueType : uint8_t
     eFloat,
     eVector2
 };
+
+struct ShaderBytecodeRecord
+{
+    Render::ShaderVariantKey mKey;
+    std::vector<uint8_t> mBytecode;
+};
+
+inline Arch &operator<<(Arch &arch, ShaderBytecodeRecord &record)
+{
+    arch << record.mKey.mEntryPoint << record.mKey.mShaderPath << record.mKey.mStage << record.mKey.mTarget
+         << record.mKey.mShaderMacros;
+    uint64_t size = record.mBytecode.size();
+    arch << size;
+    if (arch.GetLoadingFlag())
+    {
+        record.mBytecode.resize(size);
+    }
+
+    arch << QUAD_SERIALIZEBUFFER(record.mBytecode.data(), size);
+
+    return arch;
+}
+
+struct ShaderRecordSet
+{
+    uint32_t mRecordNum = 0;
+    std::vector<ShaderBytecodeRecord> mRecordList;
+};
+
+inline Arch &operator<<(Arch &arch, ShaderRecordSet &set)
+{
+    arch << set.mRecordNum;
+
+    if (arch.GetLoadingFlag())
+    {
+        set.mRecordList.resize(set.mRecordNum);
+    }
+
+    arch << set.mRecordList;
+
+    return arch;
+}
 
 } // namespace Core

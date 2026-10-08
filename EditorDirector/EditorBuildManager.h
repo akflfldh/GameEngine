@@ -40,6 +40,9 @@ class EditorBuildManager : public IEditorTaskManager
 
     void OnClickedExitButton();
 
+    // 세이더파일컴파일 & 파일저장
+    bool BuildShaders(const ProjectBuildRequest &projectBuildRequest);
+
   private:
     ProjectBuildTaskHandle mTaskHandle;
     ProjectBuildEvent mCurrentEvent;

@@ -1,3 +1,5 @@
+
+
 cbuffer PassBuffer :register(b0)
 {
 float4x4 gViewProj;
@@ -19,7 +21,7 @@ struct VertexOut
 {
     float4 mPosH :SV_POSITION;
     float3 mPosW: POSITION;
-}
+};
 
 VertexOut VS(uint vertexID : SV_VertexID)
 {
@@ -43,6 +45,7 @@ VertexOut VS(uint vertexID : SV_VertexID)
 VertexOut vout;
 vout.mPosW =worldPos;
 vout.mPosH =mul(float4(worldPos,1.0f),gViewProj);
+
 
 return vout;
 
@@ -73,11 +76,11 @@ float DrawGrid(float2 worldPos, float gridSize)
 
 float4 PS(VertexOut pin) :SV_Target{
 
-float thinLine = DrawGrid(pin.mPosW.xz,1.0f);
+float thinLine = DrawGrid(pin.mPosW.xz , 1.0f);
 
 float thickLine= DrawGrid(pin.mPosW.xz, 10.0F);
 
-float dist = length(pin.mPosW -  gEye);
+float dist = length(pin.mPosW - gEye);
 
 float fade = 1.0f- saturate(dist/100.0f); //100 이하 
 
@@ -89,3 +92,7 @@ float alpha = max(thinLine * 0.3f, thickLine * 0.8f) * fade;
 return float4(gridColor,alpha);
 
 }
+
+
+
+

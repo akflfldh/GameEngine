@@ -53,6 +53,7 @@
 #include <RenderFrontend/ObjectRenderItemBuilder.h>
 #include <RenderFrontend/RenderFrontendType.h>
 #include <RenderFrontend/RenderMaterialResolver.h>
+#include <RenderFrontend/ShaderSourceLibrary.h>
 #include <RenderFrontend/UIRenderItemBuilder.h>
 #include <RenderSystem/IMaterialManager.h>
 #include <Utility/Utility.h>
@@ -499,23 +500,39 @@ void Quad::EditorProjectManager::CreateEditorAsset()
 
     Render::RenderMaterialResolver *renderMaterialAssetResolver = Render::RenderMaterialResolver::GetInstance();
 
-    EditorConfig *editorConfig = EditorConfig::GetInstance();
-    const std::filesystem::path &editorRootPath = editorConfig->GetEditorRootPath();
-    const std::filesystem::path editorShaderPath = editorRootPath / "Shader";
-
-    const std::filesystem::path GizmoMaterialHLSLPath = editorShaderPath / "GizmoMesh.hlsl";
-
-    std::vector<uint8_t> shaderBuffer;
-
-    auto pysicalFileSystem = QuadPF::PhysicalFileSystem::GetInstance();
-    if (!pysicalFileSystem->ReadFileToBuffer(GizmoMaterialHLSLPath, shaderBuffer))
+    auto shaderLibrary = Render::ShaderSourceLibrary::GetInstance();
+    auto getOverlayShaderBytecodes =
+        [shaderLibrary](const char *fileName, std::vector<Render::ShaderBytecodeInfo> &bytecodeInfoList)
     {
-        // error 출력
+        const Render::ShaderVariantKey keys[] = {{fileName, "VS", "vs_5_1", Render::EShaderStage::eVertex, {}},
+                                                 {fileName, "PS", "ps_5_1", Render::EShaderStage::ePixel, {}}};
+
+        for (const auto &key : keys)
+        {
+            const auto *buffer = shaderLibrary->GetShaderBytecode(key);
+            if (!buffer || buffer->empty())
+            {
+                LOG_MESSAGE_ERROR("EditorAsset",
+                                  std::string("에디터 오버레이 셰이더 바이트코드를 조회할 수 없습니다: ") +
+                                      key.mShaderPath + " [" + key.mEntryPoint + ", " + key.mTarget + "]");
+                return false;
+            }
+
+            // EditorDirector가 미리 컴파일한 버퍼를 라이브러리에서 참조한다.
+            // 동기 GPU 머터리얼 생성이 끝날 때까지 라이브러리의 테이블은 교체하지 않는다.
+            bytecodeInfoList.push_back({buffer->data(), buffer->size(), key.mStage});
+        }
+        return true;
+    };
+
+    // 두 오버레이의 VS/PS를 모두 확인한 뒤 에셋을 생성하여 조회 실패 시 부분 생성을 피한다.
+    std::vector<Render::ShaderBytecodeInfo> gizmoShaderBytecodes;
+    std::vector<Render::ShaderBytecodeInfo> colliderShaderBytecodes;
+    if (!getOverlayShaderBytecodes("GizmoMesh.hlsl", gizmoShaderBytecodes) ||
+        !getOverlayShaderBytecodes("DebugCollider.hlsl", colliderShaderBytecodes))
         return;
-    }
 
     auto assetManager = CoreAsset::AssetManager::GetInstance();
-    auto materialSystem = Core::MaterialSystem::GetInstance();
 
     // gizmo material
     CoreAsset::IntermediateMaterial intermediateGizmoMat;
@@ -538,15 +555,7 @@ void Quad::EditorProjectManager::CreateEditorAsset()
     gizmoRenderSettingInfo.mDepthWriteMode = Render::EDepthWriteMode::eEnabled;
     gizmoGpuMatGenInfo.mInputLayoutType = Render::EInputLayoutType::eStaticMesh;
 
-    //    uint8_t *mShadeCode;
-    // size_t mShaderCodeSize;
-    // std::string mEntryPoint; // 셰이더 진입함수이름
-    // std::string mTarget;     // ex) vs_5_1, ps_5_0
-    // EShaderStage mStage;     // 각 셰이더 타입
-
-    gizmoGpuMatGenInfo.mShaderInfoList = {
-        {shaderBuffer.data(), shaderBuffer.size(), "VS", "vs_5_1", Render::EShaderStage::eVertex},
-        {shaderBuffer.data(), shaderBuffer.size(), "PS", "ps_5_1", Render::EShaderStage::ePixel}};
+    gizmoGpuMatGenInfo.mShaderByteCodeInfoList = gizmoShaderBytecodes;
 
     Render::RenderMaterialContext renderMaterialContext;
     renderMaterialContext.mGeometryType = Render::ERenderGeometryType::eStaticMesh;
@@ -555,23 +564,6 @@ void Quad::EditorProjectManager::CreateEditorAsset()
 
     renderMaterialAssetResolver->CreateAndRegisterAssetMaterialOverride(
         gizmoMaterial->GetID(), renderMaterialContext, Render::ERenderPassType::eEditorOverlay, gizmoGpuMatGenInfo);
-
-    // material asset resolver register
-
-    // Render::RenderMaterialVariantKey gizmoGpuMatKey;
-
-    // renderMaterialAssetResolver->RegisterAssetMaterialOverride(gizmoMaterial->GetID(), gizmoGpuMatKey, );
-
-    // materialSystem->BuildGpuMaterialDirectly(gizmoMaterial, shaderBuffer.data(), shaderBuffer.size(),
-    //                                          gizmoRenderSettingInfo);
-
-    const std::filesystem::path DebugColliderMaterialHLSLPath = editorShaderPath / "DebugCollider.hlsl";
-
-    if (!pysicalFileSystem->ReadFileToBuffer(DebugColliderMaterialHLSLPath, shaderBuffer))
-    {
-        // error 출력
-        return;
-    }
 
     // default collider material
     CoreAsset::IntermediateMaterial intermediateMat;
@@ -594,9 +586,7 @@ void Quad::EditorProjectManager::CreateEditorAsset()
     defaultColliderRenderSettingInfo.mDepthWriteMode = Render::EDepthWriteMode::eEnabled;
     defaultColliderGpuMatGenInfo.mInputLayoutType = Render::EInputLayoutType::eStaticMesh;
 
-    defaultColliderGpuMatGenInfo.mShaderInfoList = {
-        {shaderBuffer.data(), shaderBuffer.size(), "VS", "vs_5_1", Render::EShaderStage::eVertex},
-        {shaderBuffer.data(), shaderBuffer.size(), "PS", "ps_5_1", Render::EShaderStage::ePixel}};
+    defaultColliderGpuMatGenInfo.mShaderByteCodeInfoList = colliderShaderBytecodes;
 
     Render::RenderMaterialContext defaultColliderRenderMaterialContext;
     defaultColliderRenderMaterialContext.mGeometryType = Render::ERenderGeometryType::eStaticMesh;
@@ -675,6 +665,7 @@ Map *Quad::EditorProjectManager::CreateDefaultUserMap()
 
     SaveMap(defaultMap);
     ProjectConfig *projectConfig = ProjectConfig::GetInstance();
+    projectConfig->SetStartMapID(defaultMap->GetID());
     projectConfig->Save();
 
     return defaultMap;

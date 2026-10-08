@@ -1,8 +1,10 @@
-cbuffer PassBuffer : register(b0)
-{
-    float gGrayScale;
-};
 
+
+
+cbuffer PassBuffer:register(b0)
+{
+    float gExposure;
+};
 
 struct VertexIn
 {
@@ -22,7 +24,8 @@ struct VertexOut
     float4 mColor : COLOR;
 };
 
-Texture2D _TexMap : register(t0);
+Texture2D _TexMap : register(t1);
+Texture2D _TexMapTwo : register(t2);
 SamplerState _LinearSampler : register(s0);
 
 VertexOut VSMain(uint vertexID : SV_VertexID)
@@ -45,6 +48,17 @@ VertexOut VSMain(uint vertexID : SV_VertexID)
 
 float4 PSMain(VertexOut pin) : SV_Target
 {
-    float4 color = _TexMap.Sample(_LinearSampler,pin.mTex);
-    return color * gGrayScale;
-}
+    float3 color = _TexMap.Sample(_LinearSampler,pin.mTex).rgb;
+    float3 color2 =_TexMapTwo.Sample(_LinearSampler,pin.mTex).rgb;
+
+    color+=color2 * 0.3f;
+
+    color *= gExposure;
+    color =  color /(1.0f + color);
+
+
+    return float4(color, 1.0f);
+
+
+};
+

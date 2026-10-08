@@ -10,7 +10,7 @@
 namespace Render
 {
 class IMaterialManager;
-
+class ShaderSourceLibrary;
 struct RenderMaterialVariantKey
 {
 
@@ -48,7 +48,7 @@ class RENDER_FRONTEND_API RenderMaterialResolver
     RenderMaterialResolver();
     ~RenderMaterialResolver();
 
-    void Initialize();
+    void Initialize(ShaderSourceLibrary *shaderSourceLibrary);
 
     MaterialID Resolve(CoreAsset::AssetID materialAssetID, const RenderMaterialContext &context,
                        ERenderPassType passType);
@@ -107,6 +107,7 @@ class RENDER_FRONTEND_API RenderMaterialResolver
   private:
     IMaterialManager *mGpuMaterialManager = nullptr;
     bool mInitialized = false;
+    ShaderSourceLibrary *mShaderSourceLibrary = nullptr;
 };
 
 } // namespace Render

@@ -1,6 +1,7 @@
 
 
 
+
 cbuffer PassBuffer :register(b0)
 {
     float4x4 gViewProj;
@@ -11,6 +12,8 @@ struct ObjectData
 {
     float4x4 mWorld;
     float2 mSize;
+    float mPadding1;
+    float mPadding2;
 };
 
 
@@ -105,16 +108,4 @@ float4 PS(GeoOut pin) :SV_Target
     return color;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
 

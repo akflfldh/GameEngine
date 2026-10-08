@@ -27,6 +27,9 @@ class COREBASE_API BinaryArch : public Arch
     void SetFile(const std::filesystem::path &filepath);
 
     // load
+    size_t GetFileSize() const;
+    // 시작지점에 size만큼복사 , size가 파일버퍼 크기보다 출력버퍼가 더 크면 복사실패
+    bool CopyFromBuffer(uint8_t *oBuffer, size_t size);
 
     // write
     uint8_t *GetBufferFromMemory();

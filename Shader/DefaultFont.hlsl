@@ -21,10 +21,10 @@ struct VertexOut
     float mPxRange : COMMON;
 };
 
-Texture2D _TexMap : register(t0);
+Texture2D _TexMap : register(t1);
 SamplerState _LinearSampler : register(s0);
 
-VertexOut VSMain(VertexIn vin)
+VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
     vout.mPos = mul(float4(vin.mPos, 0.0f, 1.0f), gViewProj);
@@ -39,7 +39,7 @@ float middle(float r, float g, float b)
     return max(min(r, g), min(max(r, g), b));
 }
 
-float4 PSMain(VertexOut pin) : SV_Target
+float4 PS(VertexOut pin) : SV_Target
 {
     float3 msd = _TexMap.Sample(_LinearSampler, pin.mTex).rgb;
 

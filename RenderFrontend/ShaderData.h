@@ -467,6 +467,7 @@ VertexOut VS(VertexIn vin)
     float4 posW = mul(gWorld, positionLocal);
     vout.mPosW = posW.xyz;
     vout.mPosH =mul(posW,gViewProj);
+   vout.mShadowPosH = mul(posW,mLightViewProj);
 
     vout.mTex = TransformUV(vin.mTex,gUVRotation,gUVRotationPivot,gUVTiling);  // vin.mTex * gUVTiling;
     
@@ -479,9 +480,7 @@ VertexOut VS(VertexIn vin)
     float3 B = normalize( cross(N,T)) *vin.mTangent.w;
     
 
-    vout.mShadowPosH = mul(posW,mLightViewProj);
 
-  
     
     float2x2 uvTransformInv =  GetUVTransformInvMatrix(gUVRotation,gUVTiling);
 

@@ -378,6 +378,8 @@ bool QuadPF::StandardPhysicalFileSystem::GetFileListByExtension(const std::files
         }
     }
 
+    return true;
+
     // WIN32_FIND_DATAW findFileData;
     // HANDLE hFind;
 

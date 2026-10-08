@@ -22,7 +22,8 @@ SerializedAssetContainer.cpp
 SuperAssetBrowerController.cpp
 SuperController.cpp
 SuperFrameController.cpp   
-   
+"Shader/ShaderCompiler.h"
+"Shader/ShaderCompiler.cpp"
  "EditorConfig.h" "EditorConfig.cpp" "FNameTableFileIOManager.h" "FNameTableFileIOManager.cpp" "EditorAssetImporterModule.h" "EditorAssetImporterModule.cpp" "EditorAssetManager.h" "EditorAssetManager.cpp")
      
 if(MSVC)   

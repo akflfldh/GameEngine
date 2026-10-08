@@ -67,6 +67,23 @@ void BinaryArch::End()
         }
     }
 }
+size_t BinaryArch::GetFileSize() const
+{
+
+    if (GetLoadingFlag())
+    {
+        return mReader.GetFileSize();
+    }
+}
+bool BinaryArch::CopyFromBuffer(uint8_t *buffer, size_t size)
+{
+
+    if (GetLoadingFlag())
+    {
+        mReader.SetReadPointer(0);
+        return mReader.ReadRaw(buffer, size);
+    }
+}
 
 void BinaryArch::SetFile(const std::filesystem::path &filepath)
 {
@@ -93,6 +110,7 @@ size_t BinaryArch::GetBufferSize() const
 
         return mWriter.GetBufferSize();
     }
+
     return 0;
 }
 

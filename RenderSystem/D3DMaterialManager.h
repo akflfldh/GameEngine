@@ -164,12 +164,11 @@ class RENDER_SYSTEM_API D3DMaterialManager : public Render::IMaterialManager
 
     Microsoft::WRL::ComPtr<ID3DBlob> CompileHLSL(const Render::ShaderSourceInfo &);
 
-    ID3D12PipelineState *CreatePSO(const Render::MaterialGenerationInfo &info,
-                                   const std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>
-                                       &shaderTable /*필요한 데이터 받는다*/);
+    ID3D12PipelineState *CreatePSO(const Render::MaterialGenerationInfo &info
+                                  );
 
-    ID3D12PipelineState *CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info,
-                                          Microsoft::WRL::ComPtr<ID3DBlob> &csBlob);
+    ID3D12PipelineState *CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info
+                                      );
     ;
 
     D3D12_PRIMITIVE_TOPOLOGY_TYPE GetPrimitiveTopologyType(Render::EInputLayoutType inputLayoutType);

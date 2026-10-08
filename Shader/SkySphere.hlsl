@@ -1,11 +1,14 @@
+
+
 cbuffer PassBuffer:register(b0)
 {
     float4x4 gViewProj;
     float3 gEye;
     int gLightNums;
     float4 gAmbientLight; 
-       float4x4 gWorld;
+    float4x4 gWorld;
 };
+
 
 
 

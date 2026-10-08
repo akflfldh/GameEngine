@@ -1,21 +1,100 @@
 ﻿#include "RenderMaterialResolver.h"
-#include <RenderFrontend/ShaderData.h>
+#include <Logger/Logger.h>
+#include <RenderFrontend/ShaderSourceLibrary.h>
 #include <RenderSystem/IMaterialManager.h>
+#include <initializer_list>
+#include <utility>
 
 namespace
 {
-void ConfigureSkinningVertexVariant(Render::MaterialGenerationInfo &generationInfo)
+// Bloom의 Compute 입력 전환은 이번 작업에서 보류한다.
+// TODO: Compute 바이트코드 입력을 연결할 때 이 기존 소스 조회 경로도 함께 제거한다.
+bool GetShaderSource(Render::ShaderSourceLibrary *library, const char *fileName, std::vector<uint8_t> &buffer)
 {
-    // 정적/스키닝 변형은 렌더 상태와 HLSL을 공유하고, 정점 입력 및 VS 컴파일 계약만 분리한다.
-    generationInfo.mInputLayoutType = Render::EInputLayoutType::eSkinningMesh;
-    for (Render::ShaderSourceInfo &shaderInfo : generationInfo.mShaderInfoList)
+    // if (!library || !library->GetShaderSource(fileName, buffer) || buffer.empty())
+    //{
+    //     LOG_MESSAGE_ERROR("RenderMaterialResolver", std::string("HLSL 소스를 조회할 수 없거나 비어 있습니다: ") +
+    //     fileName); return false;
+    // }
+
+    //// ShaderSourceInfo는 바이트를 소유하지 않는다. Bloom의 로컬 버퍼는 동기 컴파일/PSO 생성이
+    //// 모두 끝날 때까지 유지하며, 파일 바이트 길이를 그대로 전달한다(문자열의 null 종단은 필요 없다).
+    return true;
+}
+
+bool GetShaderBytecode(Render::ShaderSourceLibrary *library, const Render::ShaderVariantKey &key,
+                       Render::ShaderBytecodeInfo &bytecodeInfo)
+{
+    const auto *buffer = library ? library->GetShaderBytecode(key) : nullptr;
+    if (!buffer || buffer->empty())
+    {
+        LOG_MESSAGE_ERROR("RenderMaterialResolver", std::string("컴파일된 셰이더를 조회할 수 없거나 비어 있습니다: ") +
+                                                        key.mShaderPath + " [" + key.mEntryPoint + ", " + key.mTarget +
+                                                        "]");
+        return false;
+    }
+
+    // 라이브러리의 버퍼를 복사하지 않는다. 동기 PSO 생성이 끝날 때까지 테이블을 교체하거나
+    // 버퍼를 해제하지 않아야 하며, 컴파일 조건은 조회 키에서만 사용한다.
+    bytecodeInfo = {buffer->data(), buffer->size(), key.mStage};
+    return true;
+}
+
+bool SetShaderBytecodeList(Render::ShaderSourceLibrary *library, Render::MaterialGenerationInfo &generationInfo,
+                           std::initializer_list<Render::ShaderVariantKey> keys)
+{
+    std::vector<Render::ShaderBytecodeInfo> bytecodeInfoList;
+    bytecodeInfoList.reserve(keys.size());
+    for (const auto &key : keys)
+    {
+        Render::ShaderBytecodeInfo bytecodeInfo;
+        if (!GetShaderBytecode(library, key, bytecodeInfo))
+            return false;
+        bytecodeInfoList.push_back(bytecodeInfo);
+    }
+
+    // 필요한 stage를 모두 조회한 뒤 반영하여 누락된 변형으로 PSO 생성 요청을 하지 않는다.
+    generationInfo.mShaderByteCodeInfoList = std::move(bytecodeInfoList);
+    return true;
+}
+
+bool SetShaderBytecode(Render::ShaderSourceLibrary *library, Render::ComputeMaterialGenerationInfo &generationInfo,
+                       const Render::ShaderVariantKey &key)
+{
+
+    Render::ShaderBytecodeInfo bytecodeInfo;
+    if (!GetShaderBytecode(library, key, bytecodeInfo))
+        return false;
+
+    // 필요한 stage를 모두 조회한 뒤 반영하여 누락된 변형으로 PSO 생성 요청을 하지 않는다.
+    generationInfo.mComputeShaderInfo = std::move(bytecodeInfo);
+    return true;
+}
+
+bool ConfigureSkinningVertexVariant(Render::ShaderSourceLibrary *library,
+                                    Render::MaterialGenerationInfo &generationInfo, const char *fileName,
+                                    const char *entryPoint)
+{
+    Render::ShaderBytecodeInfo skinningVertexInfo;
+    if (!GetShaderBytecode(library,
+                           {fileName, entryPoint, "vs_5_1", Render::EShaderStage::eVertex, {{"ENABLE_SKINNING", "1"}}},
+                           skinningVertexInfo))
+        return false;
+
+    // 매크로는 이미 컴파일에 반영되어 있다. PS 등 다른 stage와 렌더 상태는 유지하고,
+    // VS 바이트코드와 정점 레이아웃만 함께 스키닝 변형으로 교체한다.
+    for (auto &shaderInfo : generationInfo.mShaderByteCodeInfoList)
     {
         if (shaderInfo.mStage == Render::EShaderStage::eVertex)
         {
-            shaderInfo.mShaderMacros = {{"ENABLE_SKINNING", "1"}};
-            return;
+            shaderInfo = skinningVertexInfo;
+            generationInfo.mInputLayoutType = Render::EInputLayoutType::eSkinningMesh;
+            return true;
         }
     }
+
+    LOG_MESSAGE_ERROR("RenderMaterialResolver", "스키닝 변형으로 교체할 버텍스셰이더가 없습니다.");
+    return false;
 }
 } // namespace
 
@@ -31,10 +110,18 @@ Render::RenderMaterialResolver::RenderMaterialResolver() {}
 
 Render::RenderMaterialResolver::~RenderMaterialResolver() {}
 
-void Render::RenderMaterialResolver::Initialize()
+void Render::RenderMaterialResolver::Initialize(ShaderSourceLibrary *shaderSourceLibrary)
 {
     if (mInitialized)
         return;
+
+    if (!shaderSourceLibrary)
+    {
+        LOG_MESSAGE_ERROR("RenderMaterialResolver", "ShaderSourceLibrary가 주입되지 않았습니다.");
+        return;
+    }
+
+    mShaderSourceLibrary = shaderSourceLibrary;
 
     mGpuMaterialManager = IMaterialManager::GetInstance();
 
@@ -183,7 +270,6 @@ Render::MaterialID Render::RenderMaterialResolver::GetGpuMaterialID(const Render
 
 void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
 {
-
     {
         // Static
         MaterialGenerationInfo gpuMaterialGenerationInfo;
@@ -193,17 +279,10 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
-        gpuMaterialGenerationInfo.mShaderInfoList.push_back({
-            (uint8_t *)DefaultStaticMeshHLSL,
-            sizeof(DefaultStaticMeshHLSL) - 1,
-            "VS",
-            "vs_5_1",
-            EShaderStage::eVertex,
-        });
-
-        gpuMaterialGenerationInfo.mShaderInfoList.push_back({(uint8_t *)DefaultStaticMeshHLSL,
-                                                             sizeof(DefaultStaticMeshHLSL) - 1, "PS", "ps_5_1",
-                                                             EShaderStage::ePixel});
+        if (!SetShaderBytecodeList(mShaderSourceLibrary, gpuMaterialGenerationInfo,
+                                   {{"DefaultStaticMesh.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                    {"DefaultStaticMesh.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+            return;
 
         gpuMaterialGenerationInfo.mName = "StaticMeshOpaque";
 
@@ -214,7 +293,9 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         rmc.mTransparent = false;
         RegisterGpuMaterial(rmc, Render::ERenderPassType::eMain, matID);
 
-        ConfigureSkinningVertexVariant(gpuMaterialGenerationInfo);
+        if (!ConfigureSkinningVertexVariant(mShaderSourceLibrary, gpuMaterialGenerationInfo, "DefaultStaticMesh.hlsl",
+                                            "VS"))
+            return;
         gpuMaterialGenerationInfo.mName = "SkinningMeshOpaque";
         MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(gpuMaterialGenerationInfo);
 
@@ -233,13 +314,10 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
 
         gpuMaterialGenerationInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
-        gpuMaterialGenerationInfo.mShaderInfoList.push_back({(uint8_t *)DefaultStaticMeshHLSL,
-                                                             sizeof(DefaultStaticMeshHLSL) - 1, "VS", "vs_5_1",
-                                                             EShaderStage::eVertex});
-
-        gpuMaterialGenerationInfo.mShaderInfoList.push_back({(uint8_t *)DefaultStaticMesh_Unlit_HLSL,
-                                                             sizeof(DefaultStaticMesh_Unlit_HLSL) - 1, "PS", "ps_5_1",
-                                                             EShaderStage::ePixel});
+        if (!SetShaderBytecodeList(mShaderSourceLibrary, gpuMaterialGenerationInfo,
+                                   {{"DefaultStaticMesh.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                    {"DefaultStaticMesh_Unlit.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+            return;
 
         gpuMaterialGenerationInfo.mName = "StaticMeshOpaque_Unlit";
 
@@ -251,7 +329,9 @@ void Render::RenderMaterialResolver::BuildStaticMeshOpaqueGpuMaterial()
         rmc.mShadingModel = CoreAsset::EShadingModel::eUnlit;
         RegisterGpuMaterial(rmc, Render::ERenderPassType::eMain, matID);
 
-        ConfigureSkinningVertexVariant(gpuMaterialGenerationInfo);
+        if (!ConfigureSkinningVertexVariant(mShaderSourceLibrary, gpuMaterialGenerationInfo, "DefaultStaticMesh.hlsl",
+                                            "VS"))
+            return;
         gpuMaterialGenerationInfo.mName = "SkinningMeshOpaque_Unlit";
         MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(gpuMaterialGenerationInfo);
 
@@ -280,8 +360,9 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineWriteStencilGpuMateri
     staticMeshOutlineWriteStencilRenderSettingInfo.mStencilFrontPassOp = EStencilOP::eReplace;
     staticMeshOutlineWriteStencilRenderSettingInfo.mStencilFrontFailOp = EStencilOP::eKeep;
 
-    mgInfo.mShaderInfoList = {{(uint8_t *)OutlineStaticMeshHLSL, sizeof(OutlineStaticMeshHLSL) - 1, "VS_Stencil",
-                               "vs_5_1", EShaderStage::eVertex}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"OutlineStaticMesh.hlsl", "VS_Stencil", "vs_5_1", EShaderStage::eVertex, {}}}))
+        return;
     mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
     MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
@@ -292,7 +373,8 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineWriteStencilGpuMateri
     RegisterGpuMaterial(rmc, Render::ERenderPassType::eOutlineStencil, matID);
 
     // outline 상태는 공유하고 정점 입력/VS만 스키닝 변형으로 분리한다.
-    ConfigureSkinningVertexVariant(mgInfo);
+    if (!ConfigureSkinningVertexVariant(mShaderSourceLibrary, mgInfo, "OutlineStaticMesh.hlsl", "VS_Stencil"))
+        return;
     mgInfo.mName = "SkinningMeshOutlineStencil";
     MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
     rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
@@ -301,7 +383,6 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineWriteStencilGpuMateri
 
 void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
 
     MaterialRenderSettingInfo &staticMeshOutlineDrawRenderSettingInfo = mgInfo.mRenderSettingInfo;
@@ -315,10 +396,10 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
     staticMeshOutlineDrawRenderSettingInfo.mStencilFrontPassOp = EStencilOP::eZero;
     staticMeshOutlineDrawRenderSettingInfo.mStencilFrontFailOp = EStencilOP::eKeep;
 
-    uint8_t *pShader = (uint8_t *)OutlineStaticMeshHLSL;
-    size_t shaderSize = sizeof(OutlineStaticMeshHLSL) - 1;
-    mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS_DrawOutline", "vs_5_1", EShaderStage::eVertex},
-                              {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"OutlineStaticMesh.hlsl", "VS_DrawOutline", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"OutlineStaticMesh.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+        return;
 
     mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -329,7 +410,8 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
     rmc.mTransparent = false;
     RegisterGpuMaterial(rmc, ERenderPassType::eOutlineDraw, matID);
 
-    ConfigureSkinningVertexVariant(mgInfo);
+    if (!ConfigureSkinningVertexVariant(mShaderSourceLibrary, mgInfo, "OutlineStaticMesh.hlsl", "VS_DrawOutline"))
+        return;
     mgInfo.mName = "SkinningMeshOutlineDraw";
     MaterialID skinningMatID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
     rmc.mGeometryType = ERenderGeometryType::eSkinnedMesh;
@@ -338,7 +420,6 @@ void Render::RenderMaterialResolver::BuildStaticMeshOutlineDrawGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildGrayScaleGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
     // GrayScale gpuMaterial
     MaterialRenderSettingInfo &grayScaleRenderSettingInfo = mgInfo.mRenderSettingInfo;
@@ -351,9 +432,10 @@ void Render::RenderMaterialResolver::BuildGrayScaleGpuMaterial()
     grayScaleRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
     grayScaleRenderSettingInfo.mBlendOp = EBlendOp::eADD;
 
-    size_t shaderSize = sizeof(GrayScaleHLSL) - 1;
-    mgInfo.mShaderInfoList = {{(uint8_t *)GrayScaleHLSL, shaderSize, "VSMain", "vs_5_1", EShaderStage::eVertex},
-                              {(uint8_t *)GrayScaleHLSL, shaderSize, "PSMain", "ps_5_1", EShaderStage::ePixel}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"GrayScale.hlsl", "VSMain", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"GrayScale.hlsl", "PSMain", "ps_5_1", EShaderStage::ePixel, {}}}))
+        return;
 
     MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
 
@@ -366,7 +448,6 @@ void Render::RenderMaterialResolver::BuildGrayScaleGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildDebugGridGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
 
     // DebugGrid GpuMaterial
@@ -382,9 +463,10 @@ void Render::RenderMaterialResolver::BuildDebugGridGpuMaterial()
     debugGridRenderSettingInfo.mBlendOp = EBlendOp::eADD;
     debugGridRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
-    size_t shaderSize = sizeof(DebugGridHLSL) - 1;
-    mgInfo.mShaderInfoList = {{(uint8_t *)DebugGridHLSL, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                              {(uint8_t *)DebugGridHLSL, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"DebugGrid.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"DebugGrid.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+        return;
 
     MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
 
@@ -397,7 +479,6 @@ void Render::RenderMaterialResolver::BuildDebugGridGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildBillboardGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
 
     MaterialRenderSettingInfo &gpuRenderSettingInfo = mgInfo.mRenderSettingInfo;
@@ -406,11 +487,11 @@ void Render::RenderMaterialResolver::BuildBillboardGpuMaterial()
     gpuRenderSettingInfo.mCCW = false;
     gpuRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
 
-    uint8_t *pShader = (uint8_t *)BillboardHLSL;
-    size_t shaderSize = sizeof(BillboardHLSL) - 1;
-    mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                              {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel},
-                              {pShader, shaderSize, "GS", "gs_5_1", EShaderStage::eGeometry}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"Billboard.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"Billboard.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}},
+                                {"Billboard.hlsl", "GS", "gs_5_1", EShaderStage::eGeometry, {}}}))
+        return;
 
     mgInfo.mInputLayoutType = EInputLayoutType::eBillboard;
 
@@ -425,7 +506,6 @@ void Render::RenderMaterialResolver::BuildBillboardGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildDebugLineGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
 
     MaterialRenderSettingInfo &gpuRenderSettingInfo = mgInfo.mRenderSettingInfo;
@@ -434,10 +514,10 @@ void Render::RenderMaterialResolver::BuildDebugLineGpuMaterial()
     gpuRenderSettingInfo.mCCW = false;
     gpuRenderSettingInfo.mDepthCompareMode = EDepthStencilCompareMode::eLess;
 
-    uint8_t *pShader = (uint8_t *)DebugLineHLSL;
-    size_t shaderSize = sizeof(DebugLineHLSL) - 1;
-    mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                              {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"DebugLine.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"DebugLine.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+        return;
 
     mgInfo.mInputLayoutType = EInputLayoutType::eLine;
 
@@ -468,19 +548,15 @@ void Render::RenderMaterialResolver::BuildUIGpuMaterial()
         defaultUIMatRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
         defaultUIMatRenderSettingInfo.mBlendOp = EBlendOp::eADD;
 
-        uint8_t *pShader = (uint8_t *)DefaultUIHLSL;
-        size_t shaderSize = sizeof(DefaultUIHLSL) - 1;
-
-        mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                                  {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+        if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                                   {{"DefaultUI.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                    {"DefaultUI.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+            return;
 
         mgInfo.mInputLayoutType = EInputLayoutType::eUI;
 
         defaultUIGpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
     }
-    // MaterialID defaultUIGpuMaterialID = materialSystem->CreateSystemGpuMaterial(
-    //     (uint8_t *)DefaultUIHLSL, sizeof(DefaultUIHLSL) - 1, defaultUIMatRenderSettingInfo,
-    //     defaultUIMatShaderInfoList, EInputLayoutType::eUI);
 
     // defaultFontMat
     MaterialID defaultUIFontGpuMaterialID;
@@ -498,10 +574,10 @@ void Render::RenderMaterialResolver::BuildUIGpuMaterial()
         defaultUIFontMatRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
         defaultUIFontMatRenderSettingInfo.mBlendOp = EBlendOp::eADD;
 
-        uint8_t *pShader = (uint8_t *)DefaultFontHLSL;
-        size_t shaderSize = sizeof(DefaultFontHLSL) - 1;
-        mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                                  {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+        if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                                   {{"DefaultFont.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                    {"DefaultFont.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+            return;
 
         mgInfo.mInputLayoutType = EInputLayoutType::eUI;
 
@@ -513,7 +589,6 @@ void Render::RenderMaterialResolver::BuildUIGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
 {
-
     MaterialID gpuMaterialID;
     {
         MaterialGenerationInfo mgInfo;
@@ -527,10 +602,10 @@ void Render::RenderMaterialResolver::BuildSkySphereGpuMaterial()
         matRenderSettingInfo.mDepthWriteMask = false;
         matRenderSettingInfo.mRenderTargetFormat[0] = GRM::ETextureFormat::eR16G16B16A16_FLOAT;
 
-        uint8_t *pShader = (uint8_t *)SkySphereHLSL;
-        size_t shaderSize = sizeof(SkySphereHLSL) - 1;
-        mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex},
-                                  {pShader, shaderSize, "PS", "ps_5_1", EShaderStage::ePixel}};
+        if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                                   {{"SkySphere.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}},
+                                    {"SkySphere.hlsl", "PS", "ps_5_1", EShaderStage::ePixel, {}}}))
+            return;
 
         mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
 
@@ -563,9 +638,9 @@ void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
     matRenderSettingInfo.mDepthBias = 10000;
     matRenderSettingInfo.mSlopeScaledDepthBias = 2.0f;
 
-    uint8_t *pShader = (uint8_t *)ShadowHLSL;
-    size_t shaderSize = sizeof(ShadowHLSL) - 1;
-    mgInfo.mShaderInfoList = {{pShader, shaderSize, "VS", "vs_5_1", EShaderStage::eVertex}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"Shadow.hlsl", "VS", "vs_5_1", EShaderStage::eVertex, {}}}))
+        return;
 
     mgInfo.mInputLayoutType = EInputLayoutType::eStaticMesh;
     mgInfo.mName = "StaticMeshShadow";
@@ -577,7 +652,8 @@ void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
     rmc.mShadingModel = CoreAsset::EShadingModel::eNone;
     RegisterGpuMaterial(rmc, ERenderPassType::eShadow, gpuMaterialID);
 
-    ConfigureSkinningVertexVariant(mgInfo);
+    if (!ConfigureSkinningVertexVariant(mShaderSourceLibrary, mgInfo, "Shadow.hlsl", "VS"))
+        return;
     mgInfo.mName = "SkinningMeshShadow";
     MaterialID skinningGpuMaterialID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
 
@@ -590,7 +666,6 @@ void Render::RenderMaterialResolver::BuildShadowGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildToneMappingGpuMaterial()
 {
-
     MaterialGenerationInfo mgInfo;
     // GrayScale gpuMaterial
     MaterialRenderSettingInfo &toneMappingRenderSettingInfo = mgInfo.mRenderSettingInfo;
@@ -606,9 +681,10 @@ void Render::RenderMaterialResolver::BuildToneMappingGpuMaterial()
     // grayScaleRenderSettingInfo.mBlendDest = EBlend::eBLEND_INV_SRC_ALPHA;
     // grayScaleRenderSettingInfo.mBlendOp = EBlendOp::eADD;
 
-    size_t shaderSize = sizeof(ToneMappingHLSL) - 1;
-    mgInfo.mShaderInfoList = {{(uint8_t *)ToneMappingHLSL, shaderSize, "VSMain", "vs_5_1", EShaderStage::eVertex},
-                              {(uint8_t *)ToneMappingHLSL, shaderSize, "PSMain", "ps_5_1", EShaderStage::ePixel}};
+    if (!SetShaderBytecodeList(mShaderSourceLibrary, mgInfo,
+                               {{"ToneMapping.hlsl", "VSMain", "vs_5_1", EShaderStage::eVertex, {}},
+                                {"ToneMapping.hlsl", "PSMain", "ps_5_1", EShaderStage::ePixel, {}}}))
+        return;
 
     MaterialID matID = mGpuMaterialManager->CreateMaterialDirectly(mgInfo);
 
@@ -621,20 +697,33 @@ void Render::RenderMaterialResolver::BuildToneMappingGpuMaterial()
 
 void Render::RenderMaterialResolver::BuildBloomGpuMaterial()
 {
+    std::vector<uint8_t> horizontalShaderSource;
+    std::vector<uint8_t> verticalShaderSource;
+    if (!GetShaderSource(mShaderSourceLibrary, "BloomHorizontal.hlsl", horizontalShaderSource) ||
+        !GetShaderSource(mShaderSourceLibrary, "BloomVertical.hlsl", verticalShaderSource))
+        return;
+
     RenderMaterialContext rmc = {};
 
     ComputeMaterialGenerationInfo horizontalMaterialInfo;
     horizontalMaterialInfo.mName = "BloomHorizontalHLSL";
-    horizontalMaterialInfo.mComputeShaderInfo = {(uint8_t *)BloomHorizontalHLSL, sizeof(BloomHorizontalHLSL) - 1,
-                                                 "CSMain", "cs_5_1", EShaderStage::eCompute};
+    // horizontalMaterialInfo.mComputeShaderInfo = {};
+
+    if (!SetShaderBytecode(mShaderSourceLibrary, horizontalMaterialInfo,
+                           {"BloomHorizontal.hlsl", "CSMain", "cs_5_1", EShaderStage::eCompute}))
+        return;
 
     MaterialID horizontalMaterialID = mGpuMaterialManager->CreateComputeMaterial(horizontalMaterialInfo);
     RegisterGpuMaterial(rmc, ERenderPassType::eBloomHorizontal, horizontalMaterialID);
 
     ComputeMaterialGenerationInfo verticalMaterialInfo;
     verticalMaterialInfo.mName = "BloomVerticalHLSL";
-    verticalMaterialInfo.mComputeShaderInfo = {(uint8_t *)BloomVerticalHLSL, sizeof(BloomVerticalHLSL) - 1, "CSMain",
-                                               "cs_5_1", EShaderStage::eCompute};
+    // verticalMaterialInfo.mComputeShaderInfo = {verticalShaderSource.data(), verticalShaderSource.size(), "CSMain",
+    //                                            "cs_5_1", EShaderStage::eCompute};
+
+    if (!SetShaderBytecode(mShaderSourceLibrary, verticalMaterialInfo,
+                           {"BloomVertical.hlsl", "CSMain", "cs_5_1", EShaderStage::eCompute}))
+        return;
 
     MaterialID verticalMaterialID = mGpuMaterialManager->CreateComputeMaterial(verticalMaterialInfo);
     RegisterGpuMaterial(rmc, ERenderPassType::eBloomVertical, verticalMaterialID);

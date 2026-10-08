@@ -1,4 +1,7 @@
 
+
+
+
 cbuffer PassBuffer:register(b0)
 {
     float4x4 gViewProj; 
@@ -9,7 +12,7 @@ cbuffer PassBuffer:register(b0)
 struct VertexIn
 {
 
-float3 mPosW :POSITION;
+float4 mPosW :POSITION;
 float4 mColor:COLOR;
 
 };
@@ -27,7 +30,7 @@ float4 mColor :COLOR;
 VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
-    vout.mPosH = mul(float4(vin.mPosW,1.0f),gViewProj);
+    vout.mPosH = mul(vin.mPosW,gViewProj);
     vout.mColor = vin.mColor;
     return vout;
 
@@ -39,3 +42,4 @@ float4 PS(VertexOut pin ):SV_Target{
     return pin.mColor;
 
 }
+

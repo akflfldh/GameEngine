@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,17 @@ struct ShaderMacroDefinition
 {
     std::string mMacro;
     std::string mValue;
+
+    bool operator==(const ShaderMacroDefinition &macro) const
+    {
+
+        if (mMacro != macro.mMacro)
+            return false;
+        if (mValue != macro.mValue)
+            return false;
+
+        return true;
+    }
 };
 
 struct ShaderSourceInfo
@@ -40,6 +52,23 @@ struct ShaderSourceInfo
     std::string mTarget;                              // ex) vs_5_1, ps_5_0
     EShaderStage mStage;                              // 각 셰이더 타입
     std::vector<ShaderMacroDefinition> mShaderMacros; // 이 stage에만 적용하며 다른 stage로 암묵적으로 전파하지 않는다.
+};
+
+// 하나의 컴파일 변형을 식별한다. 원본 메모리 주소나 실행 중 MaterialID는 소유하지 않는다.
+// mShaderPath는 공급자가 정규화한 셰이더 루트 기준 상대 경로이며, 매크로 순서도 비교에 포함된다.
+struct ShaderVariantKey
+{
+    std::string mShaderPath;
+    std::string mEntryPoint;                          // 셰이더 진입함수이름
+    std::string mTarget;                              // ex) vs_5_1, ps_5_0
+    EShaderStage mStage;                              // 각 셰이더 타입
+    std::vector<ShaderMacroDefinition> mShaderMacros; // 이 stage에만 적용하며 다른 stage로 암묵적으로 전파하지 않는다.
+
+    bool operator==(const ShaderVariantKey &key) const
+    {
+        return mShaderPath == key.mShaderPath && mEntryPoint == key.mEntryPoint && mTarget == key.mTarget &&
+               mStage == key.mStage && mShaderMacros == key.mShaderMacros;
+    }
 };
 
 enum class EShaderResourceType
@@ -110,8 +139,7 @@ enum class EMasterRootBindingSemantic
     eSkinPaletteStructuredBuffer
 };
 
-using MaterialBindingRecordTable =
-    std::unordered_map<EMasterRootBindingSemantic, MaterialBindingRecord>;
+using MaterialBindingRecordTable = std::unordered_map<EMasterRootBindingSemantic, MaterialBindingRecord>;
 
 struct ShaderResourceInfo
 {
@@ -342,6 +370,13 @@ struct MaterialShaderResourceInfoSet
     // Normal map num
 };
 
+struct ShaderBytecodeInfo
+{
+    const uint8_t *mData = nullptr;
+    size_t mSize = 0;
+    EShaderStage mStage = EShaderStage::eVertex;
+};
+
 struct MaterialGenerationInfo
 {
     MaterialHLSLGenerationInfo mHLSLGenerationInfo;
@@ -352,7 +387,7 @@ struct MaterialGenerationInfo
     MaterialShaderResourceInfoSet mShaderResourceInfoSet;
 
     // Shader Info
-    std::vector<Render::ShaderSourceInfo> mShaderInfoList;
+    std::vector<Render::ShaderBytecodeInfo> mShaderByteCodeInfoList;
 
     std::string mName;
 
@@ -362,7 +397,7 @@ struct MaterialGenerationInfo
 struct ComputeMaterialGenerationInfo
 {
     std::string mName;
-    ShaderSourceInfo mComputeShaderInfo;
+    ShaderBytecodeInfo mComputeShaderInfo;
 };
 
 #pragma endregion
@@ -377,6 +412,33 @@ template <> struct hash<Render::EShaderStage>
     size_t operator()(const Render::EShaderStage &stage) const noexcept
     {
         return static_cast<size_t>(stage);
+    }
+};
+
+template <> struct hash<Render::ShaderVariantKey>
+{
+
+    size_t operator()(const Render::ShaderVariantKey &key) const noexcept
+    {
+        size_t hash = 0;
+        auto combine = [&hash](size_t valueHash)
+        { hash ^= valueHash + static_cast<size_t>(0x9e3779b9u) + (hash << 6) + (hash >> 2); };
+
+        // 문자열 객체의 주소가 아닌 내용을 해시하고, 비교 연산과 동일한 필드·순서를 사용한다.
+        const std::hash<std::string> stringHash;
+        combine(stringHash(key.mShaderPath));
+        combine(stringHash(key.mEntryPoint));
+        combine(stringHash(key.mTarget));
+        combine(std::hash<uint32_t>{}(static_cast<uint32_t>(key.mStage)));
+        combine(std::hash<size_t>{}(key.mShaderMacros.size()));
+
+        for (const auto &macro : key.mShaderMacros)
+        {
+            combine(stringHash(macro.mMacro));
+            combine(stringHash(macro.mValue));
+        }
+
+        return hash;
     }
 };
 

@@ -1,6 +1,7 @@
 ﻿#include "EditorBuildManager.h"
 #include "PhysicalFileSystem/PhysicalFileSystem.h"
 #include <Core/CollisionChannelSystem.h>
+#include <Core/CoreType.h>
 #include <Core/GameBuildManifest.h>
 #include <Core/Map.h>
 #include <Core/ProjectConfig.h>
@@ -16,11 +17,15 @@
 #include <EditorDirector/EditorConfig.h>
 #include <EditorDirector/EditorProjectManager.h>
 #include <EditorDirector/EditorSceneManager.h>
+#include <EditorDirector/Shader/ShaderCompiler.h>
 #include <EditorDirector/TaskUIController.h>
+#include <Logger/Logger.h>
 #include <LogicalFileSystem/LogicalFile.h>
 #include <LogicalFileSystem/LogicalFileSystem.h>
 #include <LogicalFileSystem/LogicalFolder.h>
+#include <RenderFrontend/ShaderSourceLibrary.h>
 #include <stack>
+#include <utility>
 
 Quad::EditorBuildManager *Quad::EditorBuildManager::GetInstance()
 {
@@ -331,6 +336,12 @@ void Quad::EditorBuildManager::ExecuteBuild(ProjectBuildJobContext jobContext,
         return;
     }
 
+    if (BuildShaders(projectBuildRequest) == false)
+    {
+        jobContext.ReportFailed("세이더 빌드파일 생성 실패");
+        return;
+    }
+
     /*
       에셋 패키징
      */
@@ -363,4 +374,75 @@ void Quad::EditorBuildManager::OnClickedExitButton()
     mUIController->SetActive(false);
 
     // 마우스캡처 풀기 등등
+}
+
+bool Quad::EditorBuildManager::BuildShaders(const ProjectBuildRequest &projectBuildRequest)
+{
+    auto shaderSourceLibrary = Render::ShaderSourceLibrary::GetInstance();
+
+    std::vector<Render::ShaderVariantKey> keyList = shaderSourceLibrary->GetShaderKeyList();
+
+    auto shaderCompiler = ShaderCompiler::GetInstance();
+
+    Core::ShaderRecordSet recordSet;
+
+    BinaryArch buildArch(false);
+    buildArch.SetFile(projectBuildRequest.mOutputDirectory / "Shader.bin");
+    buildArch.Start();
+
+    uint32_t keyNum = keyList.size();
+    recordSet.mRecordNum = keyNum;
+
+    for (const auto &key : keyList)
+    {
+
+        const std::filesystem::path sourcePath = projectBuildRequest.mEngineDirectory / "Shader" / key.mShaderPath;
+        BinaryArch arch(true);
+        arch.SetFile(sourcePath);
+        arch.Start();
+        if (arch.IsFail())
+        {
+            LOG_MESSAGE_ERROR("ShaderCompile", std::string("HLSL 파일 읽기 실패: ") + sourcePath.generic_string());
+            return false;
+        }
+
+        std::vector<uint8_t> sourceBuffer(arch.GetFileSize());
+        if (sourceBuffer.empty() || !arch.CopyFromBuffer(sourceBuffer.data(), sourceBuffer.size()))
+        {
+            LOG_MESSAGE_ERROR("ShaderCompile", std::string("HLSL 파일이 비어 있거나 복사에 실패했습니다: ") +
+                                                   sourcePath.generic_string());
+            return false;
+        }
+
+        // 등록된 변형과 동일한 컴파일 조건을 사용한다. 원본 버퍼는 이 루프 안에서
+        // 동기 Compile 호출이 끝날 때까지 유지하고, 저장 레코드에는 원본 주소를 남기지 않는다.
+        Render::ShaderSourceInfo info = {};
+        info.mShadeCode = sourceBuffer.data();
+        info.mShaderCodeSize = sourceBuffer.size();
+        info.mEntryPoint = key.mEntryPoint;
+        info.mTarget = key.mTarget;
+        info.mStage = key.mStage;
+        info.mShaderMacros = key.mShaderMacros;
+
+        std::vector<uint8_t> compiledBuffer;
+        if (shaderCompiler->Compile(info, compiledBuffer) == false)
+            return false;
+
+        Core::ShaderBytecodeRecord record;
+        // 런타임에서 동일한 키로 조회할 수 있도록 메타데이터 전체를 보존하고,
+        // 컴파일 결과 버퍼의 소유권은 레코드로 옮겨 직렬화가 끝날 때까지 유지한다.
+        record.mKey = key;
+        record.mBytecode = std::move(compiledBuffer);
+
+        recordSet.mRecordList.push_back(record);
+    }
+
+    buildArch << recordSet;
+
+    buildArch.End();
+
+    if (buildArch.IsFail())
+        return false;
+
+    return true;
 }

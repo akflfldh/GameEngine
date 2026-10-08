@@ -135,18 +135,18 @@ Render::ShaderResourceInfoSet &D3DRender::D3DMaterialManager::GetMaterialShaderR
 Render::MaterialID D3DRender::D3DMaterialManager::CreateMaterial(const Render::MaterialGenerationInfo &info)
 {
     // Material Root Sinature 사용한다.
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
+    //  std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
 
-    std::vector<uint8_t> shaderCode;
-    CreateHLSL(info.mHLSLGenerationInfo, shaderCode);
+    // std::vector<uint8_t> shaderCode;
+    //  CreateHLSL(info.mHLSLGenerationInfo, shaderCode);
 
-    bool ret = CompileHLSL(info, compiledShaderTable);
-    if (ret == false)
-    {
-        return MaterialIDNone;
-    }
+    // bool ret = CompileHLSL(info, compiledShaderTable);
+    // if (ret == false)
+    //{
+    //    return MaterialIDNone;
+    //}
 
-    ID3D12PipelineState *pso = CreatePSO(info, compiledShaderTable);
+    ID3D12PipelineState *pso = CreatePSO(info);
 
     if (pso)
     {
@@ -165,16 +165,7 @@ Render::MaterialID D3DRender::D3DMaterialManager::CreateMaterialDirectly(const R
 {
     // Material Root Sinature 사용한다.
     std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
-
-    // 직접세이더코드가 들어오기때문에 HLSL을 생성할필요는없다 따라서 CreateHLSL은 수행하지않는다.
-
-    if (CompileHLSL(info, compiledShaderTable) == false)
-    {
-        // variant macro가 잘못되었거나 HLSL 계약과 맞지 않으면 불완전한 shader table로 PSO를 만들지 않는다.
-        return MaterialIDNone;
-    }
-
-    ID3D12PipelineState *pso = CreatePSO(info, compiledShaderTable);
+    ID3D12PipelineState *pso = CreatePSO(info);
 
     if (pso)
     {
@@ -193,19 +184,19 @@ Render::MaterialID D3DRender::D3DMaterialManager::CreateComputeMaterial(
 {
 
     // Material Root Sinature 사용한다.
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
+    //  std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> compiledShaderTable;
 
-    std::vector<uint8_t> shaderCode;
+    // std::vector<uint8_t> shaderCode;
     // CreateHLSL(info.mHLSLGenerationInfo, shaderCode);
 
-    auto csBlob = CompileHLSL(info.mComputeShaderInfo);
+    // auto csBlob = CompileHLSL(info.mComputeShaderInfo);
 
-    if (csBlob == nullptr)
-    {
-        return MaterialIDNone;
-    }
+    /*   if (csBlob == nullptr)
+       {
+           return MaterialIDNone;
+       }*/
 
-    ID3D12PipelineState *pso = CreateComputePSO(info, csBlob);
+    ID3D12PipelineState *pso = CreateComputePSO(info);
 
     if (pso)
     {
@@ -1114,11 +1105,9 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
     // Root Signature와 별도의 하드코딩 테이블이 어긋나지 않도록 각 root parameter를 정의하는
     // 같은 함수에서 semantic/register/root binding 계약을 함께 구성한다.
     Render::MaterialBindingRecordTable bindingRecordTable;
-    auto registerBinding = [&bindingRecordTable](Render::EMasterRootBindingSemantic semantic,
-                                                 uint32_t registerIndex, uint32_t registerSpace,
-                                                 Render::EShaderResourceType resourceType,
-                                                 uint32_t rootParameterIndex,
-                                                 Render::ERootBindingMode bindingMode)
+    auto registerBinding = [&bindingRecordTable](Render::EMasterRootBindingSemantic semantic, uint32_t registerIndex,
+                                                 uint32_t registerSpace, Render::EShaderResourceType resourceType,
+                                                 uint32_t rootParameterIndex, Render::ERootBindingMode bindingMode)
     {
         Render::MaterialBindingRecord record;
         record.mShaderBinding.mRegisterIndex = registerIndex;
@@ -1191,23 +1180,23 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> D3DRender::D3DMaterialManager::Creat
         parameterIndex += 1;
     }
 
-    registerBinding(Render::EMasterRootBindingSemantic::eAlbedoTexture, 1, 0,
-                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
-    registerBinding(Render::EMasterRootBindingSemantic::eNormalTexture, 2, 0,
-                    Render::EShaderResourceType::eTexture, 5, Render::ERootBindingMode::DescriptorTable);
-    registerBinding(Render::EMasterRootBindingSemantic::eShadowMapTexture, 3, 0,
-                    Render::EShaderResourceType::eTexture, 6, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eAlbedoTexture, 1, 0, Render::EShaderResourceType::eTexture, 4,
+                    Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eNormalTexture, 2, 0, Render::EShaderResourceType::eTexture, 5,
+                    Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eShadowMapTexture, 3, 0, Render::EShaderResourceType::eTexture,
+                    6, Render::ERootBindingMode::DescriptorTable);
 
     // 각 pass는 같은 Master Root Signature 슬롯을 서로 다른 의미로 사용한다. Frontend가 물리 슬롯을
     // 알지 않도록 pass별 semantic을 동일한 register/root parameter 계약에 별칭으로 등록한다.
     registerBinding(Render::EMasterRootBindingSemantic::eEditorOverlayTexture, 1, 0,
                     Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
-    registerBinding(Render::EMasterRootBindingSemantic::eBillboardTexture, 1, 0,
-                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
-    registerBinding(Render::EMasterRootBindingSemantic::eUITexture, 1, 0,
-                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
-    registerBinding(Render::EMasterRootBindingSemantic::eSkyTexture, 1, 0,
-                    Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eBillboardTexture, 1, 0, Render::EShaderResourceType::eTexture,
+                    4, Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eUITexture, 1, 0, Render::EShaderResourceType::eTexture, 4,
+                    Render::ERootBindingMode::DescriptorTable);
+    registerBinding(Render::EMasterRootBindingSemantic::eSkyTexture, 1, 0, Render::EShaderResourceType::eTexture, 4,
+                    Render::ERootBindingMode::DescriptorTable);
     registerBinding(Render::EMasterRootBindingSemantic::ePostProcessInputTexture, 1, 0,
                     Render::EShaderResourceType::eTexture, 4, Render::ERootBindingMode::DescriptorTable);
     registerBinding(Render::EMasterRootBindingSemantic::ePostProcessSecondaryTexture, 2, 0,
@@ -1437,18 +1426,18 @@ bool D3DRender::D3DMaterialManager::CompileHLSL(
     std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> &oShaderTable)
 {
 
-    for (auto shaderStageInfo : info.mShaderInfoList)
-    {
+    /* for (auto shaderStageInfo : info.mShaderInfoList)
+     {
 
-        Microsoft::WRL::ComPtr<ID3DBlob> blob = nullptr;
+         Microsoft::WRL::ComPtr<ID3DBlob> blob = nullptr;
 
-        blob = CompileHLSL(shaderStageInfo);
+         blob = CompileHLSL(shaderStageInfo);
 
-        if (blob != nullptr)
-            oShaderTable[shaderStageInfo.mStage] = blob;
-        else
-            return false;
-    }
+         if (blob != nullptr)
+             oShaderTable[shaderStageInfo.mStage] = blob;
+         else
+             return false;
+     }*/
 
     return true;
 }
@@ -1495,9 +1484,7 @@ Microsoft::WRL::ComPtr<ID3DBlob> D3DRender::D3DMaterialManager::CompileHLSL(cons
     return blob;
 }
 
-ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
-    const Render::MaterialGenerationInfo &info,
-    const std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>> &shaderTable)
+ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(const Render::MaterialGenerationInfo &info)
 {
 
     // PSO 구축
@@ -1572,53 +1559,39 @@ ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
     pipelineStateDesc.DSVFormat =
         D3DGRM::ConvertToDxgiFormat(info.mRenderSettingInfo.mDepthStencilFormat); // 일단 기본설정
 
-    // VS
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator vsIt =
-        shaderTable.find(Render::EShaderStage::eVertex);
-    if (vsIt == shaderTable.cend())
+    for (const auto &shaderInfo : info.mShaderByteCodeInfoList)
     {
-        LOG_MESSAGE_ERROR("MaterialManager", "컴파일된 버텍스셰이더가 없습니다.");
-        return nullptr;
-    }
-    pipelineStateDesc.VS.pShaderBytecode = vsIt->second->GetBufferPointer();
-    pipelineStateDesc.VS.BytecodeLength = vsIt->second->GetBufferSize();
 
-    // PS
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator psIt =
-        shaderTable.find(Render::EShaderStage::ePixel);
-    if (psIt != shaderTable.cend())
-    {
-        pipelineStateDesc.PS.pShaderBytecode = psIt->second->GetBufferPointer();
-        pipelineStateDesc.PS.BytecodeLength = psIt->second->GetBufferSize();
-    }
+        // VS
 
-    // GS
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator gsIt =
-        shaderTable.find(Render::EShaderStage::eGeometry);
-    if (gsIt != shaderTable.cend())
-    {
-        pipelineStateDesc.GS.pShaderBytecode = gsIt->second->GetBufferPointer();
-        pipelineStateDesc.GS.BytecodeLength = gsIt->second->GetBufferSize();
-    }
+        switch (shaderInfo.mStage)
+        {
+        case Render::EShaderStage::eVertex:
+            pipelineStateDesc.VS.pShaderBytecode = shaderInfo.mData;
+            pipelineStateDesc.VS.BytecodeLength = shaderInfo.mSize;
+            break;
 
-    // DS
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator dsIt =
-        shaderTable.find(Render::EShaderStage::eDomain);
-    if (dsIt != shaderTable.cend())
-    {
-        pipelineStateDesc.DS.pShaderBytecode = dsIt->second->GetBufferPointer();
-        pipelineStateDesc.DS.BytecodeLength = dsIt->second->GetBufferSize();
-    }
+        case Render::EShaderStage::ePixel:
+            pipelineStateDesc.PS.pShaderBytecode = shaderInfo.mData;
+            pipelineStateDesc.PS.BytecodeLength = shaderInfo.mSize;
+            break;
 
-    // HS
-    std::unordered_map<Render::EShaderStage, Microsoft::WRL::ComPtr<ID3DBlob>>::const_iterator hsIt =
-        shaderTable.find(Render::EShaderStage::eHull);
-    if (hsIt != shaderTable.cend())
-    {
-        pipelineStateDesc.HS.pShaderBytecode = hsIt->second->GetBufferPointer();
-        pipelineStateDesc.HS.BytecodeLength = hsIt->second->GetBufferSize();
-    }
+        case Render::EShaderStage::eGeometry:
+            pipelineStateDesc.GS.pShaderBytecode = shaderInfo.mData;
+            pipelineStateDesc.GS.BytecodeLength = shaderInfo.mSize;
+            break;
 
+        case Render::EShaderStage::eDomain:
+            pipelineStateDesc.DS.pShaderBytecode = shaderInfo.mData;
+            pipelineStateDesc.DS.BytecodeLength = shaderInfo.mSize;
+            break;
+
+        case Render::EShaderStage::eHull:
+            pipelineStateDesc.HS.pShaderBytecode = shaderInfo.mData;
+            pipelineStateDesc.HS.BytecodeLength = shaderInfo.mSize;
+            break;
+        }
+    }
     ID3D12PipelineState *pipelineState = nullptr;
     HRESULT ret = mDevice->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState));
     if (FAILED(ret))
@@ -1630,16 +1603,15 @@ ID3D12PipelineState *D3DRender::D3DMaterialManager::CreatePSO(
     return pipelineState;
 }
 
-ID3D12PipelineState *D3DRender::D3DMaterialManager::CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info,
-                                                                     Microsoft::WRL::ComPtr<ID3DBlob> &csBlob)
+ID3D12PipelineState *D3DRender::D3DMaterialManager::CreateComputePSO(const Render::ComputeMaterialGenerationInfo &info)
 {
 
     D3D12_COMPUTE_PIPELINE_STATE_DESC pso = {};
 
     pso.pRootSignature = mMasterComputeRootSignature.Get();
 
-    pso.CS.pShaderBytecode = csBlob->GetBufferPointer();
-    pso.CS.BytecodeLength = csBlob->GetBufferSize();
+    pso.CS.pShaderBytecode = info.mComputeShaderInfo.mData;
+    pso.CS.BytecodeLength = info.mComputeShaderInfo.mSize;
 
     ID3D12PipelineState *pipelineState = nullptr;
     HRESULT ret = mDevice->CreateComputePipelineState(&pso, IID_PPV_ARGS(&pipelineState));
